@@ -1,0 +1,4 @@
+#!/bin/bash -e
+
+du --ma=1 | sort -n > du-ma1
+

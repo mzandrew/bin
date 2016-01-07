@@ -1,0 +1,253 @@
+#!/usr/bin/perl -w
+# 2012-05 mza
+# updated 2015-09 by mza
+# updated 2015-12 by mza
+
+use strict;
+use Spreadsheet::Read;
+use File::Basename;
+#use Env qw{COLUMNS};
+my $width = 196; #print $ENV{"COLUMNS"} . "\n";
+
+# perl -MCPAN -e "install Spreadsheet::Read"
+# perl -MCPAN -e "install Spreadsheet::ParseExcel"
+
+my $dirname = "";
+$dirname = "/cygdrive/c/mza/orders";
+#$dirname = "/cygdrive/c/mza/orders/JKennedy";
+
+my $dir;
+my @all_lines;
+my $total = 0;
+my ($range_min, $range_max) = (23, 56);
+
+my @entry;
+my $e = 0;
+sub read_all_POs {
+	print "reading in all POs...\n";
+	opendir($dir, $dirname);
+	my @filenames = readdir($dir);
+	closedir($dir);
+	#while (my $filename = readdir($dir)) {
+	for my $filename (sort @filenames) {
+		#next if ($filename =~ /^\.$/ || $filename =~ /^\.\.$/ || -d $filename);
+		$filename = $dirname . "/" . $filename;
+		next if (-d $filename);
+		#print "$filename\n";
+		my $count = 0;
+		if (! defined $filename || $filename =~ /^$/ || ! -e $filename) {
+			print "can't find file \"$filename\"\n"
+		}
+		if ($filename =~ /\.xls$/) {
+			my $partial_filename = basename($filename);
+			#my $partial_filename = $filename;
+			#$partial_filename =~ s/.*\/(.*)$/$1/;
+			#print "$partial_filename ";
+			my $spreadsheet = ReadData($filename, parser => "xls");
+			for (my $i=$range_min; $i<=$range_max; $i++) {
+				my $line_has_content = 0;
+				my $line = "";
+				# another way of doing it
+				my ($A, $B, $C, $D, $E, $F, $G, $I, $K, $M);
+				my ($quantity, $description, $vendor_part_number, $unit_price, $comment) = ("", "", "", "", "");
+				$A = $spreadsheet->[1]{"A$i"};
+				if (defined $A && $A =~ /COMMENTS/) {
+					$i = $range_max + 1;
+				} else {
+					$B = $spreadsheet->[1]{"B$i"};
+					if (defined $B && $B !~ /^\s*$/) {
+						$quantity = $B;
+						$quantity =~ s/[\s]*([^\s].*[^\s])[\s]*/$1/;
+						$C = $spreadsheet->[1]{"C$i"};
+						$D = $spreadsheet->[1]{"D$i"};
+						$E = $spreadsheet->[1]{"E$i"};
+						$F = $spreadsheet->[1]{"F$i"};
+						$description .=       $C if (defined $C && $C !~ /^\s*$/);
+						$description .= " " . $D if (defined $D && $D !~ /^\s*$/);
+						$description .= " " . $E if (defined $E && $E !~ /^\s*$/);
+						$description .= " " . $F if (defined $F && $F !~ /^\s*$/);
+						$description =~ s/[\s]*([^\s].*[^\s])[\s]*/$1/;
+						$G = $spreadsheet->[1]{"G$i"};
+						$vendor_part_number = $G if (defined $G && $G !~ /^\s*$/);
+						$vendor_part_number =~ s/[\s]*([^\s].*[^\s])[\s]*/$1/;
+						$I = $spreadsheet->[1]{"I$i"};
+						$unit_price = $I if (defined $I && $I !~ /^\s*$/);
+						$unit_price =~ s/[\s]*([^\s].*[^\s])[\s]*/$1/;
+						$unit_price =~ s/^\$(.*)/$1/;
+						$unit_price =~ s/,//g;
+						$unit_price =~ s/^$/0/;
+						#$unit_price =~ s/^([0-9]*)\.([0-9]*[1-9])[0]*$/$1.$2/;
+						$unit_price = sprintf("%g", $unit_price);
+						#print $unit_price . " ";
+						$K = $spreadsheet->[1]{"K$i"};
+						$M = $spreadsheet->[1]{"M$i"};
+						$comment = $K if (defined $K && $K !~ /^\s*$/);
+						$comment .= " " . $M if (defined $M && $M !~ /^\s*$/);
+						$comment =~ s/[\s]*([^\s].*[^\s])[\s]*/$1/;
+						#print $quantity . " | " .  $description . " | " .  $vendor_part_number . " | " .  $unit_price . " | " .  $comment . "\n";
+						if ($description !~ /shipping/) {
+							$partial_filename =~ s/\.xls$//;
+							# from http://www.perlmonks.org/?node_id=613765
+							$description        =~ s/[^[:ascii:]]+//g;
+							$vendor_part_number =~ s/[^[:ascii:]]+//g;
+							$comment            =~ s/[^[:ascii:]]+//g;
+							$entry[$e++] = [$quantity, $description, $vendor_part_number, $unit_price, $comment, $partial_filename];
+						}
+					}
+				}
+				# done
+				#for my $j ("B", "C", "D", "E", "F", "G", "I", "K") {
+				#	my $cell_address = "A$i";
+				#	my $cell_contents = $spreadsheet->[1]{$cell_address};
+				#	if (defined $cell_contents && $cell_contents =~ /COMMENTS/) {
+				#		$i = $range_max + 1;
+				#	} else {
+				#		$cell_address = "$j$i";
+				#		$cell_contents = $spreadsheet->[1]{$cell_address};
+#				#		$cell{$cell_address} = $cell_contents;
+				#		if (defined $cell_contents && $cell_contents !~ /^$/ && $cell_contents !~ /^\s\+$/) {
+#				#			print "[$cell_contents] [$line]\n";
+				#			$line .= $cell_contents;
+#				#			$list.append($cell_contents)
+				#			if ($j =~ /B/) {
+				#				$line_has_content = 1;
+				#				$count++;
+				#			}
+#				#			if ($j !~ /K/) {
+				#				$line .= " | ";
+#				#			}
+				#		}
+				#	}
+				#}
+				#if ($line_has_content && $line !~ /shipping/) {
+				#	my $string = $line . $partial_filename;
+				#	push(@all_lines, $string);
+				#}
+			}
+		}
+		#print "found $count lines\n";
+		$total += $count;
+	}
+	print "found $e total lines\n";
+#	print "found $total total lines\n";
+#	print "$#all_lines\n";
+}
+
+my ($max_quantity_width, $max_description_width, $max_vendor_part_number_width, $max_unit_price_width, $max_comment_width, $max_filename_width) = (5, 75, 22, 9, 28, 80);
+sub find_matches {
+	my ($matchstring) = @_;
+	print "\nsearching for \"$matchstring\"...\n";
+	my ($quantity_width, $description_width, $vendor_part_number_width, $unit_price_width, $comment_width, $filename_width) = (0, 0, 0, 0, 0, 0);
+	my ($i, $j) = (0, 0);
+	my @matching_entry;
+	for my $item (@entry) {
+		my $quantity           = $item->[0];
+		my $description        = $item->[1];
+		my $vendor_part_number = $item->[2];
+		my $unit_price         = $item->[3];
+		my $comment            = $item->[4];
+		my $filename           = $item->[5];
+		my $string = $description . " " .  $vendor_part_number . " " .  $comment . " " . $filename;
+		if ($string =~ /$matchstring/i) {
+			$matching_entry[$j++] = $i;
+			#print $string . " = " . $entry[$i][1] . "\n";
+			my $qw = length($quantity);           $quantity_width           = $qw if ($qw > $quantity_width);
+			my $dw = length($description);        $description_width        = $dw if ($dw > $description_width);
+			my $vw = length($vendor_part_number); $vendor_part_number_width = $vw if ($vw > $vendor_part_number_width);
+			my $uw = length($unit_price);         $unit_price_width         = $uw if ($uw > $unit_price_width);
+			my $cw = length($comment);            $comment_width            = $cw if ($cw > $comment_width);
+			my $fw = length($filename);           $filename_width           = $fw if ($fw > $filename_width);
+			#print $description_width . "\n";
+		}
+		$i++;
+	}
+	my $total_width = $quantity_width + $description_width + $vendor_part_number_width + $unit_price_width + $comment_width + $filename_width;
+	if ($total_width > $width) {
+		$quantity_width           = $max_quantity_width           if ($quantity_width > $max_quantity_width);
+		$description_width        = $max_description_width        if ($description_width > $max_description_width);
+		$vendor_part_number_width = $max_vendor_part_number_width if ($vendor_part_number_width > $max_vendor_part_number_width);
+		$unit_price_width         = $max_unit_price_width         if ($unit_price_width > $max_unit_price_width);
+		$comment_width            = $max_comment_width            if ($comment_width > $max_comment_width);
+	}
+	#$filename_width = $width - $quantity_width - $description_width - $vendor_part_number_width - $unit_price_width - $comment_width - 1;
+	#$filename_width = $max_filename_width if ($filename_width > $max_filename_width);
+	for my $m (@matching_entry) {
+		#my ($quantity, $description, $vendor_part_number, $unit_price, $comment, $partial_filename) = ();
+		#printf("%*d [%*s] [%*s] [%*s] [%*s] [%s]\n", $quantity_width, $entry[$m][0], -$description_width, $entry[$m][1], -$vendor_part_number_width, $entry[$m][2], -$unit_price_width, $entry[$m][3], -$comment_width, $entry[$m][4], $entry[$m][5]);
+		printf("%*d %*s %*s %*g %*s %s\n", $quantity_width, $entry[$m][0], -$description_width, $entry[$m][1], -$vendor_part_number_width, $entry[$m][2], -$unit_price_width, $entry[$m][3], -$comment_width, $entry[$m][4], $entry[$m][5]);
+	}
+#	for my $line (@all_lines) {
+#		if ($line =~ /$matchstring/i) {
+#			#print "$line matches $line\n   in file \"$filename\"\n";
+#			#print "$line \"$partial_filename\"\n";
+#			print "$line\n";
+#		}
+#	}
+}
+
+sub find_matches_from_file {
+	my ($filename) = @_;
+	my @lines;
+	if (! defined $filename || $filename =~ /^$/) {
+		print "\nreading data inline with \"$0\" script...\n";
+		@lines = <DATA>;
+	} elsif (-e $filename) {
+		print "\nreading data from file \"$filename\"...\n";
+		open(FILE, $filename);
+		@lines = <FILE>;
+		close(FILE);
+	}
+#		while (my $line = <DATA>) {
+	for my $line (@lines) {
+		chomp($line);
+		$line =~ s/#.*$//;
+		next if ($line =~ /^$/ || $line =~ /^\s\+$/);
+#		print "$line\n";
+		find_matches($line);
+	}
+}
+
+read_all_POs();
+
+if ($#ARGV > -1) {
+	for my $string (@ARGV) {
+		if ($string =~ /^@/) {
+			$string =~ s/^@//;
+#			$string =~ s/^~/${HOME}/;
+			if (-e $string) {
+				find_matches_from_file($string);
+			} else {
+				print "can't find file \"$string\"\n";
+			}
+		} else {
+			find_matches($string);
+		}
+	}
+} else {
+#	find_matches("AP7333");
+#	find_matches("ap7333");
+	find_matches_from_file();
+}
+
+__DATA__
+
+#sma
+#LTC2637CMS-LZ12#PBF-ND
+#LTC2637
+#A97430CT-ND
+
+MCP1700T-1202E/TTCT-ND
+568-1377-5-ND
+AP7333-33SAG-7DICT-ND
+587-1451-2-ND
+445-7015-1-ND
+490-5408-2-ND
+LTC2637IMS-LMI12#PBF-ND
+568-1932-1-ND
+445-4114-2-ND
+497-10662-1-ND
+H11581TR-ND
+541-49.9LTR-ND
+ADP3338AKCZ-2.5RL7CT-ND
+P7.50KLTR-ND
+

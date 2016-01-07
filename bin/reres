@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# done properly 2014-07-07 by mza
+# 2015-01-25 updated
+
+declare res
+#res="1024x768"
+res="1280x1024"
+
+function run {
+	local -i count_of_valid_source_files=0
+	for each in *.jpg *.jpeg *.JPG *.png; do
+		#echo "${each}" | grep -v '*' | xargs -i convert {} -geometry ${res} "lowres/${each}"
+		#echo "${each}"
+		name="$(echo "${each}" | grep -v '*')"
+		if [ -e "${name}" ]; then
+			count_of_valid_source_files=$((count_of_valid_source_files+1))
+			if [ ${count_of_valid_source_files} -eq 1 ]; then
+				if [ ! -e "lowres" ]; then mkdir "lowres"; fi
+				if [ ! -d "lowres" ]; then echo "cannot create directory lowres"; exit 7; fi
+				if [ ! -w "lowres" ]; then echo "cannot write to directory lowres"; exit 8; fi
+			fi
+			if [ "${name}" -nt "lowres/${name}" ]; then
+				echo "converting ${name} to ${res}"
+				convert "${name}" -geometry ${res} "lowres/${name}"
+			fi
+		fi
+	done
+	if [ ${count_of_valid_source_files} -lt 1 ]; then
+		if [ -e "lowres" ]; then
+			echo "removing unneeded lowres subdir..."
+			rm -rf "lowres"
+		fi
+	fi
+}
+
+if [ -z "${@}" ]; then
+	run
+else
+	for each; do
+		if [ -e "${each}" ] && [ -d "${each}" ]; then
+			cd "${each}"
+			run
+		fi
+	done
+fi
+

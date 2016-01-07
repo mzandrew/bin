@@ -1,0 +1,4 @@
+#!/bin/bash -e
+
+for each; do date=$(stat "${each}" --format="%y" | colrm 11); echo "${each} -> ${date}"; mv "${each}" "${date}.${each}"; done
+

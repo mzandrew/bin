@@ -1,0 +1,4 @@
+#!/bin/bash -e
+
+env helo='() { echo hi there; }; echo "you have shellshock"' bash -c echo "this is a test"
+

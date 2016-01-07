@@ -1,0 +1,269 @@
+#!/bin/bash -e
+
+# 2012 mza
+
+declare -i current_layer_number=0 maximum_layer_number=1
+declare dir=$(echo "${PWD}" | sed -e "s,/cygdrive/\([a-z]\),\1:,")
+#echo "${dir}"
+declare zipfile="fab-gerbers.zip"
+#zipfile="the-bicentennial-board.revA.gerbers.zip"
+#zipfile="the-bypass-board.revB.gerbers.zip"
+
+function gerbv_fab_file {
+	local -i drill_file_exists=0 board_outline_exists=0 drill_drawing_exists=0
+	current_layer_number=$((${maximum_layer_number}+3))
+	local -i drill_drawing_exists=0 board_outline_exists=0 edge_plating_exists=0
+	if [ -e "edge-plating.gerber" ]; then
+		edge_plating_exists=1
+		current_layer_number=$((${current_layer_number}+1))
+	fi
+	if [ -e "drill-drawing.gerber" ]; then
+		drill_drawing_exists=1
+		current_layer_number=$((${current_layer_number}+1))
+	fi
+	if [ -e "board-outline.gerber" ]; then
+		board_outline_exists=1
+		current_layer_number=$((${current_layer_number}+1))
+	fi
+	#if [ -e "drill.DRL" ]; then
+	for each in *.DRL; do
+		if [ -e "${each}" ]; then
+			drill_file_exists=$((drill_file_exists+1))
+			current_layer_number=$((${current_layer_number}+1))
+		fi
+	done
+	echo "(gerbv-file-version! \"2.0A\")"
+	echo "(define-layer! ${current_layer_number} (cons 'filename \"bottom-copper.GBL\")(cons 'visible #t)(cons 'color #(0 0 65535)))"
+	current_layer_number=$((${current_layer_number}-1))
+	if [ ${maximum_layer_number} -gt 12 ]; then
+		echo "error: can't handle more than 12 layers" > /dev/stderr
+		exit 12
+	fi
+	if [ ${maximum_layer_number} -gt 10 ]; then
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"11-copper.G11L\")(cons 'visible #t)(cons 'color #(54227 54227 65535)))"
+		current_layer_number=$((${current_layer_number}-1))
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"10-copper.G10L\")(cons 'visible #t)(cons 'color #(47802 47802 47802)))"
+		current_layer_number=$((${current_layer_number}-1))
+	fi
+	if [ ${maximum_layer_number} -gt 8 ]; then
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"9-copper.G9L\")(cons 'visible #t)(cons 'color #(65535 50629 13107)))"
+		current_layer_number=$((${current_layer_number}-1))
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"8-copper.G8L\")(cons 'visible #t)(cons 'color #(53713 6939 26728)))"
+		current_layer_number=$((${current_layer_number}-1))
+	fi
+	if [ ${maximum_layer_number} -gt 6 ]; then
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"7-copper.G7L\")(cons 'visible #t)(cons 'color #(54741 65021 13107)))"
+		current_layer_number=$((${current_layer_number}-1))
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"6-copper.G6L\")(cons 'visible #t)(cons 'color #(0 50115 50115)))"
+		current_layer_number=$((${current_layer_number}-1))
+	fi
+	if [ ${maximum_layer_number} -gt 4 ]; then
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"5-copper.G5L\")(cons 'visible #t)(cons 'color #(30069 62194 26471)))"
+		current_layer_number=$((${current_layer_number}-1))
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"4-copper.G4L\")(cons 'visible #t)(cons 'color #(49601 0 57568)))"
+		current_layer_number=$((${current_layer_number}-1))
+	fi
+	if [ ${maximum_layer_number} -gt 2 ]; then
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"3-copper.G3L\")(cons 'visible #t)(cons 'color #(65535 32639 29555)))"
+		current_layer_number=$((${current_layer_number}-1))
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"2-copper.G2L\")(cons 'visible #t)(cons 'color #(29555 29555 57054)))"
+		current_layer_number=$((${current_layer_number}-1))
+	fi
+	echo "(define-layer! ${current_layer_number} (cons 'filename \"top-copper.GTL\")(cons 'visible #t)(cons 'color #(65535 0 0)))"
+	current_layer_number=$((${current_layer_number}-1))
+	echo "(define-layer! ${current_layer_number} (cons 'filename \"bottom-soldermask.GBS\")(cons 'visible #t)(cons 'color #(53456 63993 52428)))"
+	current_layer_number=$((${current_layer_number}-1))
+	echo "(define-layer! ${current_layer_number} (cons 'filename \"top-soldermask.GTS\")(cons 'visible #t)(cons 'color #(65021 61166 50629)))"
+	current_layer_number=$((${current_layer_number}-1))
+	echo "(define-layer! ${current_layer_number} (cons 'filename \"bottom-silkscreen.GBO\")(cons 'visible #t)(cons 'color #(60652 49858 62194)))"
+	current_layer_number=$((${current_layer_number}-1))
+	echo "(define-layer! ${current_layer_number} (cons 'filename \"top-silkscreen.GTO\")(cons 'visible #t)(cons 'color #(65535 51914 57825)))"
+	current_layer_number=$((${current_layer_number}-1))
+	if [ ${drill_file_exists} -gt 0 ]; then
+		#echo "(define-layer! ${current_layer_number} (cons 'filename \"drill.DRL\")(cons 'visible #t)(cons 'color #(65535 65535 65535))(cons 'attribs (list (list 'autodetect 'Boolean 0) (list 'zero_supression 'Enum 1) (list 'units 'Enum 0) (list 'digits 'Integer 4))))"
+		for each in *.DRL; do
+			echo "(define-layer! ${current_layer_number} (cons 'filename \"${each}\")(cons 'visible #t)(cons 'color #(65535 65535 65535))(cons 'attribs (list (list 'autodetect 'Boolean 0) (list 'zero_supression 'Enum 0) (list 'units 'Enum 1) (list 'digits 'Integer 3))))"
+			current_layer_number=$((${current_layer_number}-1))
+		done
+	fi
+	if [ ${drill_drawing_exists} -ne 0 ]; then
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"drill-drawing.gerber\")(cons 'visible #t)(cons 'color #(65535 65535 65535)))"
+		current_layer_number=$((${current_layer_number}-1))
+	fi
+	if [ ${edge_plating_exists} -ne 0 ]; then
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"edge-plating.gerber\")(cons 'visible #t)(cons 'color #(54741 65021 13107)))"
+		current_layer_number=$((${current_layer_number}-1))
+	fi
+	if [ ${board_outline_exists} -ne 0 ]; then
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"board-outline.gerber\")(cons 'visible #t)(cons 'color #(65535 65535 65535)))"
+	fi
+	echo "(define-layer! -1 (cons 'filename "${dir}")(cons 'visible #f)(cons 'color #(0 0 0)))"
+	echo "(set-render-type! 2)"
+}
+
+function gerbv_assy_file {
+	local -i drill_file_exists=0 board_outline_exists=0 drill_drawing_exists=0
+	current_layer_number=$((5))
+	local -i drill_drawing_exists=0 board_outline_exists=0
+#	if [ -e "drill-drawing.gerber" ]; then
+#		drill_drawing_exists=1
+#		current_layer_number=$((${current_layer_number}+1))
+#	fi
+#	if [ -e "board-outline.gerber" ]; then
+#		board_outline_exists=1
+#		current_layer_number=$((${current_layer_number}+1))
+#	fi
+#	if [ -e "drill.DRL" ]; then
+#		drill_file_exists=1
+#		current_layer_number=$((${current_layer_number}+1))
+#	fi
+	echo "(gerbv-file-version! \"2.0A\")"
+#	echo "(define-layer! ${current_layer_number} (cons 'filename \"bottom-soldermask.GBS\")(cons 'visible #t)(cons 'color #(53456 63993 52428)))"
+#	current_layer_number=$((${current_layer_number}-1))
+#	echo "(define-layer! ${current_layer_number} (cons 'filename \"top-soldermask.GTS\")(cons 'visible #t)(cons 'color #(65021 61166 50629)))"
+#	current_layer_number=$((${current_layer_number}-1))
+	echo "(define-layer! ${current_layer_number} (cons 'filename \"bottom-copper.GBL\")(cons 'visible #t)(cons 'color #(0 0 65535)))"
+	current_layer_number=$((${current_layer_number}-1))
+	echo "(define-layer! ${current_layer_number} (cons 'filename \"top-copper.GTL\")(cons 'visible #t)(cons 'color #(65535 0 0)))"
+	current_layer_number=$((${current_layer_number}-1))
+	echo "(define-layer! ${current_layer_number} (cons 'filename \"bottom-pastemask.GBP\")(cons 'visible #t)(cons 'color #(53456 63993 52428)))"
+	current_layer_number=$((${current_layer_number}-1))
+	echo "(define-layer! ${current_layer_number} (cons 'filename \"top-pastemask.GTP\")(cons 'visible #t)(cons 'color #(65021 61166 50629)))"
+	current_layer_number=$((${current_layer_number}-1))
+	echo "(define-layer! ${current_layer_number} (cons 'filename \"bottom-silkscreen.GBO\")(cons 'visible #t)(cons 'color #(60652 49858 62194)))"
+	current_layer_number=$((${current_layer_number}-1))
+	echo "(define-layer! ${current_layer_number} (cons 'filename \"top-silkscreen.GTO\")(cons 'visible #t)(cons 'color #(65535 51914 57825)))"
+	current_layer_number=$((${current_layer_number}-1))
+#	echo "(define-layer! ${current_layer_number} (cons 'filename \"bottom-assembly-drawing.gerber\")(cons 'visible #t)(cons 'color #(60652 49858 62194)))"
+#	current_layer_number=$((${current_layer_number}-1))
+#	echo "(define-layer! ${current_layer_number} (cons 'filename \"top-assembly-drawing.gerber\")(cons 'visible #t)(cons 'color #(65535 51914 57825)))"
+#	current_layer_number=$((${current_layer_number}-1))
+	if [ ${drill_drawing_exists} -ne 0 ]; then
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"drill-drawing.gerber\")(cons 'visible #t)(cons 'color #(65535 65535 65535)))"
+		current_layer_number=$((${current_layer_number}-1))
+	fi
+	if [ ${drill_file_exists} -ne 0 ]; then
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"drill.DRL\")(cons 'visible #t)(cons 'color #(65535 65535 65535))(cons 'attribs (list (list 'autodetect 'Boolean 0) (list 'zero_supression 'Enum 1) (list 'units 'Enum 0) (list 'digits 'Integer 4))))"
+		current_layer_number=$((${current_layer_number}-1))
+	fi
+	if [ ${board_outline_exists} -ne 0 ]; then
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"board-outline.gerber\")(cons 'visible #t)(cons 'color #(65535 65535 65535)))"
+	fi
+	echo "(define-layer! -1 (cons 'filename "${dir}")(cons 'visible #f)(cons 'color #(0 0 0)))"
+	echo "(set-render-type! 2)"
+}
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function fab {
+	if [ ! -e fab ]; then mkdir fab; fi
+	for each in *.GTL *.GBL *.GTS *.GBS *.GTO *.GBO *.DRL board-outline.gerber drill-drawing.gerber edge-plating.gerber; do
+		if [ -e "${each}" ]; then
+			cp -a "${each}" "fab/"
+		fi
+	done
+	for each in *.G[0-9]L *.G[0-9][0-9]L; do
+		if [ -e "${each}" ]; then
+			cp -a "${each}" "fab/"
+			current_layer_number=$(echo "${each}" | sed -e "s/\.G\([0-9]\{1,2\}\)L$/\1/")
+#			echo "cur: ${current_layer_number}"
+			if [ ${maximum_layer_number} -lt ${current_layer_number} ]; then
+				maximum_layer_number=${current_layer_number}
+			fi
+		fi
+	done
+	maximum_layer_number=$((${maximum_layer_number}+1))
+	echo "number of copper layers in design: ${maximum_layer_number}"
+	if [ ! -d originals ]; then mkdir originals; fi
+	gerbv_fab_file > "originals/fab.gvp"
+	if [ ! -e "fab/fab.gvp" ]; then cp -a originals/fab.gvp fab/; fi
+	#zip fab.zip fab
+	if [ -e "${zipfile}" ]; then
+		rm "${zipfile}"
+	fi
+	zip -r "${zipfile}" fab/
+	#rm the-bicentennial-board.revA.gerbers.zip; zip -r the-bicentennial-board.revA.gerbers.zip fab/
+
+}
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function assembly {
+	if [ ! -e "assembly" ]; then mkdir "assembly"; fi
+	for each in *.GTL *.GBL *.GTO *.GBO *.GTP *.GBP; do
+		if [ -e "${each}" ]; then
+			cp -a "${each}" "assembly/"
+		fi
+	done
+	if [ ! -d originals ]; then mkdir originals; fi
+	gerbv_assy_file > "originals/assy.gvp"
+	if [ ! -e "assembly/assy.gvp" ]; then cp -a originals/assy.gvp assembly/; fi
+}
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+#function batchpcb {
+#	if [ ! -e batchpcb ]; then mkdir batchpcb; fi
+#	for each in *.GTL *.GBL *.GTS *.GBS *.GTO *.GBO *.DRL board-outline.gerber drill-drawing.gerber; do
+#		if [ -e "${each}" ]; then
+#			cp -a "${each}" "batchpcb/"
+#		fi
+#	done
+#	for each in *.G[0-9]L; do
+#		if [ -e "${each}" ]; then
+#			new=$(echo "${each}" | sed -e "s,\.G\([0-9]\)L$,.G\1,")
+#			cp -a "${each}" "batchpcb/${new}"
+#		fi
+#	done
+##	cd batchpcb
+##	zip
+#}
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function old_style_gerber_filenames {
+	# old style
+	for each in old-style-gerber-filenames; do if [ ! -e "${each}" ]; then mkdir "${each}"; fi; done
+	for each in *.GTC; do if [ -e "${each}" ]; then cp "${each}" old-style-gerber-filenames/top-copper.GTL; fi; done
+	for each in *.GTM; do if [ -e "${each}" ]; then cp "${each}" old-style-gerber-filenames/top-soldermask.GTS; fi; done
+	for each in *.GTS; do if [ -e "${each}" ]; then cp "${each}" old-style-gerber-filenames/top-silkscreen.GTO; fi; done
+	for each in *.GBC; do if [ -e "${each}" ]; then cp "${each}" old-style-gerber-filenames/bottom-copper.GBL; fi; done
+	for each in *.GBM; do if [ -e "${each}" ]; then cp "${each}" old-style-gerber-filenames/bottom-soldermask.GBS; fi; done
+	for each in *.GBS; do if [ -e "${each}" ]; then cp "${each}" old-style-gerber-filenames/bottom-silkscreen.GBO; fi; done
+	for each in *.GC[2-9]; do if [ -e "${each}" ]; n=$(echo "${each}" | sed -e "s,.*GC\([2-9]\{1\}\)$,\1,"); then cp "${each}" old-style-gerber-filenames/${n}-copper.G${n}L; fi; done
+	for each in *.DRL; do if [ -e "${each}" ]; then cp "${each}" old-style-gerber-filenames/drill.DRL; fi; done
+}
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+function move_originals {
+	for each in originals; do if [ ! -e "${each}" ]; then mkdir "${each}"; fi; done
+	for each in *.rep *.lst *.G[TB]L *.G[TB]S *.G[TB]O *.G[0-9]L *.G[0-9][0-9]L *.G[TB]P *.DRL board-outline.gerber drill-drawing.gerber edge-plating.gerber *.GC[0-9] *.G[TB]M *.G[TB]C; do
+		if [ -e "${each}" ]; then
+			mv "${each}" originals/
+		fi
+	done
+}
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+fab
+assembly
+
+#old_style_gerber_filenames
+#batchpcb
+
+move_originals
+#cp -af *.gerber fab/
+#mv -f *.gerber originals/
+for each in *.gerber; do
+	if [ -e "${each}" ]; then
+		if [ "${each: -24}" = "-assembly-drawing.gerber" ]; then
+			cp -af "${each}" assembly/
+		else
+			cp -af "${each}" fab/
+		fi
+		mv -f "${each}" originals/
+	fi
+done
+

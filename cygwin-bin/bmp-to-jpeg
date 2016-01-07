@@ -1,0 +1,12 @@
+#!/bin/bash -e
+
+for each in *.[bB][mM][pP]; do
+	if [ -e "${each}" ]; then
+		new=$(echo "${each}" | sed -e "s,\.[bB][mM][pP]$,,")
+		echo "${each}"
+		convert "${each}" "${new}.jpeg"
+		mkdir -p originals
+		mv "${each}" originals/
+	fi
+done
+

@@ -1,0 +1,133 @@
+#!/usr/bin/perl -w
+
+# 2013-02-04 mza (modified from po/2012-05/mza)
+# future: do simple match against lines that are already in index.html and don't print them
+
+use strict;
+
+my $dirname = "/cygdrive/c/mza/public_html/presentations";
+
+my $dir;
+my $count_of_primary_entries = 0;
+my @list_of_primary_entries;
+my $primary_file_extension="\.pdf"; # code that follows hardcodes a three character extension in two places
+my @primary_entry_corresponding_to_this_entry;
+
+sub generate_listing {
+	print "reading list of presentations...\n";
+	opendir($dir, $dirname);
+	my @filenames = readdir($dir);
+	my @dealt_with_filename;
+	closedir($dir);
+	@filenames = sort {$b cmp $a} @filenames;
+	my $i = 0;
+	my $j = 0;
+	for my $filename (@filenames) {
+		$i++;
+#		print "$filename\n";
+		if ($filename =~ /$primary_file_extension$/) {
+			$count_of_primary_entries++;
+			push(@list_of_primary_entries, $filename);
+#			print "matched $filename as primary file\n";
+			$primary_entry_corresponding_to_this_entry[$i] = $count_of_primary_entries;
+			#$whole_filename = $dirname . "/" . $filename;
+			#print "$whole_filename\n";
+#			delete $filenames[$i];
+		} else {
+			$primary_entry_corresponding_to_this_entry[$i] = 0;
+		}
+	}
+#	print "\nnumber of primary entries: $count_of_primary_entries\n\n";
+	$i = 0;
+	for my $filename (@filenames) {
+		$i++;
+		if (!$primary_entry_corresponding_to_this_entry[$i]) {
+			$j = 0;
+			for my $primary_filename (@list_of_primary_entries) {
+				$j++;
+				my $partial_primary_filename = substr($primary_filename, 0, -4);
+				#my $partial_primary_filename = $primary_filename;
+				#$partial_primary_filename =~ s/.*\/(.*)$primary_file_extension$/$1/;
+#				print "$primary_filename\n";
+#				print "$partial_primary_filename\n";
+				if ($filename =~ m/^$partial_primary_filename\..*$/) {
+#					print "matched $filename as secondary file\n";
+					$dealt_with_filename[$i] = 1;
+					$primary_entry_corresponding_to_this_entry[$i] = $j;
+				}
+			}
+		}
+	}
+	print "\n";
+	$i = 0;
+	for my $filename (@filenames) {
+		$i++;
+		if (!$primary_entry_corresponding_to_this_entry[$i]) {
+			print "unmatched entry: $filename\n"
+		}
+	}
+	print "\n";
+	$j = 0;
+	my $count;
+	for my $primary_filename (@list_of_primary_entries) {
+#		print "$primary_filename:\n";
+		$j++;
+		$i = 0;
+		$count = 0;
+		for my $filename (@filenames) {
+			$i++;
+			if ($primary_entry_corresponding_to_this_entry[$i] == $j) {
+#				print "$filename\n";
+#				print "$filename $primary_entry_corresponding_to_this_entry[$i] $i $j\n";
+#				if ($primary_entry_corresponding_to_this_entry[$i] != $i) {
+				if ($primary_filename !~ m/^$filename$/) {
+					print_list_item_with_secondary($primary_filename, $filename);
+					#$primary_entry_corresponding_to_this_entry[$i] = 0;
+					$count++;
+				}
+			}
+		}
+		if (!$count) {
+			print_list_item($primary_filename);
+		}
+	}
+#	print "$#all_lines\n";
+}
+
+sub print_list_item {
+	my ($primary_filename, $filename) = @_;
+	print_primary_list_item($primary_filename);
+	print "\n";
+}
+
+sub print_primary_list_item {
+	my ($primary_filename) = @_;
+#	print "primary: $primary_filename\n";
+	if ($primary_filename =~ /^([0-9]{4}-[0-9]{2}[-]*[0-9]{0,2})(.*)/) {
+		#print "[$1] [$2]\n";
+		my $date = $1;
+		#print "date: $date\n";
+		my $descriptive_text = $2;
+		$descriptive_text =~ s/^\.//g;
+		$descriptive_text =~ s/\./ /g;
+		$descriptive_text =~ s/-/ /g;
+		$descriptive_text =~ s/$primary_file_extension//g;
+		#print "descriptive text: $descriptive_text\n";
+		print "		<li><a href=\"$primary_filename\">$date $descriptive_text (pdf)</a>";
+	} else {
+		print "		<li><a href=\"$primary_filename\">$primary_filename (pdf)</a>";
+	}
+}
+
+sub print_list_item_with_secondary {
+	my ($primary_filename, $filename) = @_;
+	print_primary_list_item($primary_filename);
+#	print "primary: $primary_filename\n";
+#	print "secondary: $filename\n";
+	my $extension = $filename;
+	$extension =~ s/.*\.(...)/$1/;
+	print " <a href=\"$filename\">($extension)</a>\n";
+}
+
+generate_listing();
+

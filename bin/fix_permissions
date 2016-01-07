@@ -1,0 +1,8 @@
+#!/bin/bash -e
+
+#find -type f -exec chmod --changes 644 {} \;
+#find -type d -exec chmod --changes 755 {} \;
+
+#find -type f -exec chmod --changes 644 {} \; -o -type d -exec chmod --changes 755 {} \;
+find -type f -exec chmod --changes 644 {} + -o -type d -exec chmod --changes 755 {} +
+

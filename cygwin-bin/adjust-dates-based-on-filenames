@@ -1,0 +1,17 @@
+#!/bin/bash -e
+# written by mza
+# updated 2015-08-17
+
+for each in 20*.xls; do
+	# mdate = current modification date
+	# ndate = date according to first part of filename
+	#mdate=$(find "${each}" -printf "%TY-%Tm-%Td+%TH:%TM\n")
+	mdate=$(find "${each}" -printf "%TY-%Tm-%Td\n")
+	ndate=$(echo "${each}" | sed -e "s,^\(20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]\).*,\1,")
+	#echo "\\t${mdate} ${ndate} ${each}"
+	if [ "${mdate}" != "$ndate" ]; then
+		echo "${each}"
+		touch "${each}" --date="${ndate} 13:00:00"
+	fi
+done
+
