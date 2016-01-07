@@ -1,0 +1,65 @@
+#!/bin/bash -ex
+# written 2016-01-04 by mza
+# updated 2016-01-05
+
+function watch_for_brute_force_ssh_attack {
+	sudo iptables -F SSHATTACK | /bin/true
+	sudo iptables -N SSHATTACK | /bin/true
+	sudo iptables -A SSHATTACK -j LOG --log-prefix "SSH brute-force attack?: " --log-level 4
+	sudo iptables -A SSHATTACK -j DROP
+	sudo iptables -A INPUT -p tcp -m state --dport 22 --state NEW -m recent --set
+	sudo iptables -A INPUT -p tcp -m state --dport 22 --state NEW -m recent --update --seconds 120 --hitcount 4 -j SSHATTACK
+}
+
+function setup_basic_rules_and_watch_for_brute_force_ssh_attack {
+	#sudo iptables -P INPUT ACCEPT
+	sudo iptables -F # flush rules
+	sudo iptables -P INPUT DROP # deny incoming traffic by default
+	sudo iptables -P FORWARD DROP # deny routing traffic by default
+	sudo iptables -P OUTPUT ACCEPT # accept outgoing traffic by default
+	sudo iptables -A INPUT -i lo -j ACCEPT # allow localhost interface
+	watch_for_brute_force_ssh_attack # this must come before the tcp 22 ssh accept line below
+	sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT # accept incoming ssh
+	sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT # keep track of state and allow traffic for connections related to existing traffic
+	# should that be "-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT" instead?
+}
+
+function ignore_isar_port7 {
+	sudo iptables -A INPUT -s 192.168.153.53 -p udp --dport 7    -j DROP # silently ignore the rather frequent requests from isar's laptop to port 7 (dpt:echo)
+}
+
+function ignore_isar_port2987 {
+	sudo iptables -A INPUT -s 192.168.153.53 -p tcp --dport 2987 -j DROP # silently ignore the rather frequent requests from isar's laptop to port 2987 (dpt:identify)
+}
+
+function ignore_broadcast_traffic {
+	sudo iptables -A INPUT -m pkttype --pkt-type broadcast -j DROP # ignore random broadcast traffic; this rule saves a ton of logfile space
+}
+
+function log_all_denied_traffic {
+	sudo iptables -F DROPLOG | /bin/true
+	sudo iptables -N DROPLOG | /bin/true
+	sudo iptables -A DROPLOG -p tcp  -m limit --limit 5/min -j LOG --log-prefix "Denied TCP: "  --log-level 4
+	sudo iptables -A DROPLOG -p udp  -m limit --limit 5/min -j LOG --log-prefix "Denied UDP: "  --log-level 4
+	sudo iptables -A DROPLOG -p icmp -m limit --limit 5/min -j LOG --log-prefix "Denied ICMP: " --log-level 4
+	sudo iptables -A DROPLOG -j DROP
+	sudo iptables -A INPUT -j DROPLOG
+}
+
+function show_rules {
+	sudo iptables --list -v
+}
+
+function save_rules {
+	sudo service iptables save # save to /etc/sysconfig/iptables
+}
+
+#show_rules
+setup_basic_rules_and_watch_for_brute_force_ssh_attack
+ignore_isar_port7
+ignore_isar_port2987
+ignore_broadcast_traffic
+log_all_denied_traffic 
+show_rules
+save_rules
+

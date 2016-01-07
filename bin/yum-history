@@ -1,0 +1,9 @@
+#!/bin/bash -e
+
+for i in $(seq 1 28); do
+	i=$(printf %02d $i)
+	filename="yum-history-info-$i"
+	echo "$filename"
+	yum history info $i > "$filename"
+done
+

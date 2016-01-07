@@ -1,0 +1,8 @@
+#!/bin/bash -e
+
+date=$(date +"%Y-%m-%d")
+#echo ${date}
+filename="/root/${date}.cadence-server-config-files.tar"
+cd /
+sudo tar cf ${filename} etc/rsyslog.conf etc/logrotate.conf etc/sudoers etc/ssh/sshd_config etc/sysconfig/networking/devices/ifcfg-em1 etc/fstab etc/ntp.conf etc/inittab etc/resolv.conf etc/yum.repos.d/
+
