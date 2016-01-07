@@ -1,10 +1,21 @@
 #!/bin/bash -e
 
-cd /mza
+configfile="${HOME}/.update-files-lists-rc"
+if [ ! -e "${configfile}" ]; then
+	echo "
+source=\"${HOME}\"
+name=\"mza-carbon-x1\"
+destination=\"${HOME}/files-lists\"
+" >"${configfile}"
+fi
+
+. "${configfile}"
+
+cd "${source}"
 date=$(date +"%Y-%m-%d")
-filename="${HOME}/files-lists/${date}.mza-carbon-x1.lf-r"
+filename="${destination}/${date}.${name}.lf-r"
 lf > ${filename} 2>/dev/null
-#cd -
-cd "${HOME}/files-lists"
-find -maxdepth 1 -type f -iname "*carbon*" | sort
+
+cd "${destination}"
+find -maxdepth 1 -type f -iname "*${name}*" | sort
 
