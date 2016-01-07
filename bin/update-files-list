@@ -1,0 +1,10 @@
+#!/bin/bash -e
+
+cd /mza
+date=$(date +"%Y-%m-%d")
+filename="${HOME}/files-lists/${date}.mza-carbon-x1.lf-r"
+lf > ${filename} 2>/dev/null
+#cd -
+cd "${HOME}/files-lists"
+find -maxdepth 1 -type f -iname "*carbon*" | sort
+
