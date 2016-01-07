@@ -1,0 +1,9 @@
+#!/bin/bash -e
+
+declare string=""
+if [ $# -gt 0 ]; then
+	string="-iname $1"
+fi
+
+find -type f $string -exec du {} \; | awk '{ total += $1 } END { print total }'
+

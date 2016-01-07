@@ -1,0 +1,12 @@
+#!/bin/bash
+
+cd /home
+for each in *; do
+	echo "${each}"
+	sudo grep sudo "${each}/.bash_history"
+	#sudo 'if [ -e "'${each}'/.history" ]; then grep sudo "'${each}'/.history"; fi;'
+done
+
+echo root
+sudo cat /root/.bash_history
+

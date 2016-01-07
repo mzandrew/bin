@@ -1,0 +1,20 @@
+#!/bin/bash
+
+bc --version >/dev/null 2>&1
+if [ $? -gt 0 ]; then
+	echo "ERROR:  need bc installed (sudo apt-get install bc)" >/dev/stderr
+	exit 17
+fi
+
+declare interface=eth0
+declare RXTX=RX
+declare -i t=10
+
+function get_size {
+	/sbin/ifconfig ${interface} | grep "${RXTX} bytes" | sed -e "s,[ ]*${RXTX} bytes:\([0-9]\+\).*,\1,"
+}
+
+declare string=$(echo "-("; get_size; echo "-"; sleep ${t}; get_size; echo ") / ${t}")
+echo ${string}
+echo ${string} | bc -l
+
