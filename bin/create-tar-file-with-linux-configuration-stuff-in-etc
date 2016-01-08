@@ -1,8 +1,18 @@
 #!/bin/bash -e
 
+configfile="${HOME}/.create-tar-file-with-linux-configuration-stuff-in-etc-rc"
+if [ ! -e "${configfile}" ]; then
+	echo "
+name=\"server-config-files\"
+destination=\"/root\"
+" >"${configfile}"
+fi
+
+. "${configfile}"
+
 date=$(date +"%Y-%m-%d")
 #echo ${date}
-filename="/root/${date}.cadence-server-config-files.tar"
+filename="${destination}/${date}.${name}.tar"
 cd /
-sudo tar cf ${filename} etc/rsyslog.conf etc/logrotate.conf etc/sudoers etc/ssh/sshd_config etc/sysconfig/networking/devices/ifcfg-em1 etc/fstab etc/ntp.conf etc/inittab etc/resolv.conf etc/yum.repos.d/
+sudo tar cf ${filename} --ignore-failed-read etc/rsyslog.conf etc/logrotate.conf etc/sudoers etc/ssh/sshd_config etc/sysconfig/networking/devices/ifcfg-em1 etc/fstab etc/ntp.conf etc/inittab etc/resolv.conf etc/yum.repos.d/
 
