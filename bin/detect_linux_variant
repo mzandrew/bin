@@ -3,10 +3,14 @@
 # OS-detecting code suggestions from http://unix.stackexchange.com/questions/6345/how-can-i-get-distribution-name-and-version-number-in-a-simple-shell-script
 function detect_OS_ARCH_VER_BITS {
         ARCH=$(uname -m | sed 's/x86_//;s/i[3-6]86/32/')
-        if [ -f /etc/lsb-release ]; then
+        if [ -f /etc/lsb-release ] && [ $(grep -c ^DISTRIB /etc/lsb-release) -gt 0 ]; then
             . /etc/lsb-release
             OS=$DISTRIB_ID
             VER=$DISTRIB_RELEASE
+        elif [ -f /etc/redhat-release ]; then
+            STRING=$(cat /etc/redhat-release)
+            OS=$(echo $STRING | sed -e "s,^\([^ ]\+\) .*,\1,")
+            VER=$(echo $STRING | sed -e "s,.* release \(.*\),\1,")
         elif [ -f /etc/debian_version ]; then
             OS=Debian  # XXX or Ubuntu??
             VER=$(cat /etc/debian_version)
