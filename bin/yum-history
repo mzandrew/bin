@@ -1,9 +1,12 @@
 #!/bin/bash -e
 
-for i in $(seq 1 28); do
+dir="${HOME}/yum-history"
+mkdir -p "${dir}"
+max=$(sudo yum history list | head -n 4 | tail -n 1 | colrm 8)
+for i in $(seq 1 $max); do
 	i=$(printf %02d $i)
-	filename="yum-history-info-$i"
+	filename="${dir}/yum-history-info-$i"
 	echo "$filename"
-	yum history info $i > "$filename"
+	sudo yum history info $i > "$filename"
 done
 
