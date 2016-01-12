@@ -3,6 +3,7 @@
 # started 2014-12-09 by mza, based upon "move-components-around-in-PADS-layout-ascii-exported-file.carrier-revE.py"
 # modified 2014-12-10 (to export directly to an openoffice spreadsheet)
 # modified 2015-10-20 (to match RESISTOR@2010 as a part type)
+# modified 2016-01-12 (to grab all components at negative or zero Y-coordinates)
 #
 # this script works on a mentor graphics PADS layout ASCII export file:
 # to export your layout, do file->export, format=PADS layout v9.5
@@ -51,7 +52,9 @@ def get_XYRS_of_components():
 			# example line:
 			#DAC             AD5686R 66562500 77812500 270.000 U M 0 -1 0 -1 2
 			#R2-             RESISTOR@2010 10500000 36000000 0.000 U M 0 -1 0 -1 2
-			match = re.search("^(" + name_regex + "*)[ ]*[A-Z0-9-_'@]* ([0-9]*) ([0-9]*) ([\.0-9\-]*) ([UG]) ([NM]) (.*)", line)
+			#match = re.search("^(" + name_regex + "*)[ ]*[A-Z0-9-_'@]* ([0-9-]+) ([0-9-]+) ([\.0-9\-]+) ([UG]) ([NM]) (.*)", line)
+			match_count = 0
+			match = re.search("^(" + name_regex + "*)[ ]+[\.A-Z0-9-_'@]+[ ]+([0-9-]+)[ ]+([0-9-]+)[ ]+([\.0-9\-]+)[ ]+([UG])[ ]+([NM])[ ]+(.*)", line)
 			if match:
 				mode = 2
 				count = count + 1
@@ -63,11 +66,19 @@ def get_XYRS_of_components():
 				#print "original[" + str(i) + "]: " + X + " " + Y + " " + R
 				if (S == "N"):
 					S = "TOP"
+					match_count = match_count + 1
 				elif (S == "M"):
 					S = "BOTTOM"
+					match_count = match_count + 1
 				else:
-					print "ERROR:  could not parse line" + line
+					print "ERROR:  could not parse line: " + line
 				component[match.group(1)] = [X, Y, R, S]
+			else:
+				match = re.search("(VALUE|Part Type|Regular|Ref.Des.|test_point_setting).*", line)
+				if match:
+					match_count = match_count + 1
+			#if match_count == 0:
+			#	print "ERROR:  could not parse line: " + line
 #		if (mode>=2):
 #			print line
 		match = re.search("^Part Type", line)
