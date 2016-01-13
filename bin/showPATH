@@ -1,0 +1,6 @@
+#!/bin/bash -e
+
+set | grep "^PATH=" | sed -e "s,^PATH=,," | sed -e "s,:,\n,g"| sort -u
+
+#PATH=$(showPATH | grep -v cadence | tr n : | sed -e "s,:$,,")
+
