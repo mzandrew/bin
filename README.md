@@ -1,2 +1,2 @@
 # bin
-all my bash scripts, etc
+all my bash/perl/python scripts, etc
