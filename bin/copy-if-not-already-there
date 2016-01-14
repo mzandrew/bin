@@ -1,0 +1,11 @@
+#!/bin/bash -e
+
+for source; do
+	#dest="${HOME}/files-lists/accumulated/"$(echo "${source}" | sed -e "s,^\./,," | sed -e "s,/,-,g")
+	dest="${HOME}/files-lists/accumulated/"$(echo "${source}" | sed -e "s,^/,," | sed -e "s,/,-,g")
+	#echo "${source} - ${dest}"
+	if [ "${dest}" -ot "${source}" ]; then
+		cp -av "${source}" "${dest}"
+	fi
+done
+

@@ -6,6 +6,7 @@ if [ ! -e "${configfile}" ]; then
 source=\"${HOME}\"
 name=\"mza-carbon-x1\"
 destination=\"${HOME}/files-lists\"
+accumulation_destination=\"${HOME}/files-lists/accumulated\"
 " >"${configfile}"
 fi
 
@@ -15,6 +16,13 @@ cd "${source}"
 date=$(date +"%Y-%m-%d")
 filename="${destination}/${date}.${name}.lf-r"
 lf > ${filename} 2>/dev/null
+
+if [ ! -e "${accumulation_destination}" ]; then
+	mkdir "${accumulation_destination}"
+fi
+#cd "${accumulation_destination}"
+script="$(dirname $0)/copy-if-not-already-there"
+find "${source}" -wholename ${HOME}/files-lists -prune -o -type f -iname "*.lf-r" -exec ${script} {} +
 
 cd "${destination}"
 find -maxdepth 1 -type f -iname "*${name}*" | sort
