@@ -1,0 +1,9 @@
+#!/bin/bash -e
+
+# get GID for asic group:
+GID=$(getent group asic | sed -e "s,[^:]*:[^:]:\([0-9]*\):.*,\1,")
+#echo $GID
+
+# if it is a file, make it mode 640 (rw-r-----), if it is a dir, make it mode 750 (rwxr-x---), if it is not uid=me or not gid=asic, then make it so:
+find -type f -exec chmod --changes 640 {} + -o -type d -exec chmod --changes 750 {} + -o -not -uid $UID , -not -gid $GID -exec chown --changes $UID:$GID {} +
+
