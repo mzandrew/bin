@@ -1,0 +1,7 @@
+#!/bin/bash -e
+
+# put this in your ~/.bashrc for this to work:
+#export GID=$(grep ^asic /etc/group | sed -e "s,asic:x:\([0-9]\+\):.*,\1,")
+
+find ! -uid ${UID} -o ! -gid ${GID}
+
