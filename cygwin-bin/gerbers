@@ -21,7 +21,7 @@ function gerbv_fab_file {
 		drill_drawing_exists=1
 		current_layer_number=$((${current_layer_number}+1))
 	fi
-	if [ -e "board-outline.gerber" ]; then
+	if [ -e "board-outline.GKO" ]; then
 		board_outline_exists=1
 		current_layer_number=$((${current_layer_number}+1))
 	fi
@@ -95,7 +95,7 @@ function gerbv_fab_file {
 		current_layer_number=$((${current_layer_number}-1))
 	fi
 	if [ ${board_outline_exists} -ne 0 ]; then
-		echo "(define-layer! ${current_layer_number} (cons 'filename \"board-outline.gerber\")(cons 'visible #t)(cons 'color #(65535 65535 65535)))"
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"board-outline.GKO\")(cons 'visible #t)(cons 'color #(65535 65535 65535)))"
 	fi
 	echo "(define-layer! -1 (cons 'filename "${dir}")(cons 'visible #f)(cons 'color #(0 0 0)))"
 	echo "(set-render-type! 2)"
@@ -109,7 +109,7 @@ function gerbv_assy_file {
 #		drill_drawing_exists=1
 #		current_layer_number=$((${current_layer_number}+1))
 #	fi
-#	if [ -e "board-outline.gerber" ]; then
+#	if [ -e "board-outline.GKO" ]; then
 #		board_outline_exists=1
 #		current_layer_number=$((${current_layer_number}+1))
 #	fi
@@ -147,7 +147,7 @@ function gerbv_assy_file {
 		current_layer_number=$((${current_layer_number}-1))
 	fi
 	if [ ${board_outline_exists} -ne 0 ]; then
-		echo "(define-layer! ${current_layer_number} (cons 'filename \"board-outline.gerber\")(cons 'visible #t)(cons 'color #(65535 65535 65535)))"
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"board-outline.GKO\")(cons 'visible #t)(cons 'color #(65535 65535 65535)))"
 	fi
 	echo "(define-layer! -1 (cons 'filename "${dir}")(cons 'visible #f)(cons 'color #(0 0 0)))"
 	echo "(set-render-type! 2)"
@@ -157,7 +157,7 @@ function gerbv_assy_file {
 
 function fab {
 	if [ ! -e fab ]; then mkdir fab; fi
-	for each in *.GTL *.GBL *.GTS *.GBS *.GTO *.GBO *.DRL board-outline.gerber drill-drawing.gerber edge-plating.gerber; do
+	for each in *.GTL *.GBL *.GTS *.GBS *.GTO *.GBO *.DRL board-outline.GKO drill-drawing.gerber edge-plating.gerber; do
 		if [ -e "${each}" ]; then
 			cp -a "${each}" "fab/"
 		fi
@@ -204,7 +204,7 @@ function assembly {
 
 #function batchpcb {
 #	if [ ! -e batchpcb ]; then mkdir batchpcb; fi
-#	for each in *.GTL *.GBL *.GTS *.GBS *.GTO *.GBO *.DRL board-outline.gerber drill-drawing.gerber; do
+#	for each in *.GTL *.GBL *.GTS *.GBS *.GTO *.GBO *.DRL board-outline.GKO drill-drawing.gerber; do
 #		if [ -e "${each}" ]; then
 #			cp -a "${each}" "batchpcb/"
 #		fi
@@ -238,7 +238,7 @@ function old_style_gerber_filenames {
 
 function move_originals {
 	for each in originals; do if [ ! -e "${each}" ]; then mkdir "${each}"; fi; done
-	for each in *.rep *.lst *.G[TB]L *.G[TB]S *.G[TB]O *.G[0-9]L *.G[0-9][0-9]L *.G[TB]P *.DRL board-outline.gerber drill-drawing.gerber edge-plating.gerber *.GC[0-9] *.G[TB]M *.G[TB]C; do
+	for each in *.rep *.lst *.G[TB]L *.G[TB]S *.G[TB]O *.G[0-9]L *.G[0-9][0-9]L *.G[TB]P *.DRL board-outline.GKO drill-drawing.gerber edge-plating.gerber *.GC[0-9] *.G[TB]M *.G[TB]C; do
 		if [ -e "${each}" ]; then
 			mv "${each}" originals/
 		fi

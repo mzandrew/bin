@@ -4,12 +4,16 @@
 # open invoice pdf file in foxit reader, then save as a txt file
 
 #filename = "2013-12-23.mcmcaster-carr.Receipt 68987523.txt"
-filename = "2013-11-19,22,27.mcmaster-carr.txt"
+#filename = "2013-11-19,22,27.mcmaster-carr.txt"
 
 import re # search
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("filename", help="file name to parse")
+args = parser.parse_args()
 
 lines = []
-for line in open(filename):
+for line in open(args.filename):
 	line = line.rstrip("\n\r")
 	lines.append(line)
 
@@ -64,8 +68,10 @@ for line in lines:
 	if match:
 		if (in_the_middle_of_processing_a_line_item >= 1):
 			description = re.sub("[ ]{2,}", "", description)
+			description = re.sub(",", ";", description)
 			#print "[" + description + "]"
-			print line_item_number + "\t" + order_quantity + "\t" + description + "\t" + part_number + "\tE\t" + unit_price + "\t" + total_price
+			#print line_item_number + "\t" + order_quantity + "\t" + description + "\t" + part_number + "\tE\t" + unit_price + "\t" + total_price
+			print line_item_number + "," + order_quantity + "," + description + "," + part_number + ",E," + unit_price + "," + total_price
 		matches = matches + 1
 		in_the_middle_of_processing_a_line_item = 0
 #	if (matches < 1):
