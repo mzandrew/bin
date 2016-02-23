@@ -4,27 +4,19 @@
 # updated 2013-12-28
 # updated 2014-01-25
 # updated 2016-01-13
+# updated 2016-02-23 (rewritten as a single "find | sort | xargs" line)
 
 declare first="${1}"
+declare rest=""
 shift
-for each in ${@}; do
+for each in "${@}"; do
 	rest="${rest} | grep -i ${each}"
 done
-#echo "grep -i \"${first}\" ${file} ${rest}"
-#exit 1
 
 cd
-cd files-lists
-#declare files="$(find -maxdepth 1 -iname '*.lf-r' | sort -n)"
-#declare files="$(find -maxdepth 1 -iname '*.lf-r' -o -wholename "accumulated/*.lf-r" | sort -n)"
-declare files="$(find . accumulated -maxdepth 1 -iname '*.lf-r' | sort -n)"
 
-for file in ${files}; do
-	#echo "grepping ${file}..."
-	declare string="grep -i \"${first}\" ${file} ${rest}"
-	#string="${string} -printf \"%TY-%Tm-%Td+%TH:%TM %12s %p\n\" "
-	echo "${string}"
-	eval ${string} || /bin/true | sort -n
-	echo
-done
+string="grep -i ${first} \"{}\" ${rest}"
+#echo "${string}"
+
+find ${HOME}/files-lists ${HOME}/files-lists/accumulated -maxdepth 1 -name '*.lf-r' | sort -n | xargs -i sh -cx "${string}"
 
