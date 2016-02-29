@@ -6,8 +6,8 @@ function showPATH {
 export -f showPATH
 
 function canonicalPATH {
-	export PATH
-	export PATH=$(showPATH | /usr/bin/uniq | /usr/bin/tr '\n' : | /bin/sed -e "s,:$,,")
+	#PATH
+	PATH=$(showPATH | ${HOME}/bin/uniq.py | /usr/bin/tr '\n' : | /bin/sed -e "s,:$,,")
 }
 export -f canonicalPATH
 
@@ -27,7 +27,7 @@ function delPATH {
 		for each; do
 			string="${string} | /bin/grep -v ${each}"
 		done
-		export PATH=$(eval showPATH $string | /usr/bin/tr '\n' : | /bin/sed -e "s,:$,,")
+		PATH=$(eval showPATH $string | /usr/bin/tr '\n' : | /bin/sed -e "s,:$,,")
 	fi
 	canonicalPATH
 }
@@ -51,6 +51,9 @@ export -f GIDof
 #export GID=$(GIDof asic)
 
 alias df="df --block-size=1000000000"
+
+export HISTSIZE=
+export HISTFILESIZE=
 
 # cadence/asic related:
 #export mydk="${HOME}/asic/design-kits/TSMC-130nm"
