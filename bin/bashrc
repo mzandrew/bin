@@ -1,0 +1,70 @@
+#!/bin/bash -e
+
+function showPATH {
+	set | /bin/grep "^PATH=" | /bin/sed -e "s,^PATH=,," | /bin/sed -e "s,:,\n,g"
+}
+export -f showPATH
+
+function canonicalPATH {
+	export PATH
+	export PATH=$(showPATH | /usr/bin/uniq | /usr/bin/tr '\n' : | /bin/sed -e "s,:$,,")
+}
+export -f canonicalPATH
+
+function addPATH {
+	if [ $# -ge 1 ]; then
+		for each; do
+			PATH="$PATH:$each"
+		done
+	fi
+	canonicalPATH
+}
+export -f addPATH
+
+function delPATH {
+	if [ $# -ge 1 ]; then
+		string=""
+		for each; do
+			string="${string} | /bin/grep -v ${each}"
+		done
+		export PATH=$(eval showPATH $string | /usr/bin/tr '\n' : | /bin/sed -e "s,:$,,")
+	fi
+	canonicalPATH
+}
+export -f delPATH
+
+# use the 4 above functions like so:
+# showPATH # shows the current PATH, one entry per line
+# canonicalPATH # removes duplicate entries from the PATH
+# addPATH /usr/sbin # adds an entry to the PATH and goes through to remove duplicates
+# delPATH cadence xilinx # removes all entries that match "cadence" or "xilinx" from the PATH
+
+alias restorePATH="export PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/root/bin:/sbin:/usr/sbin"
+
+umask 0027
+
+function GIDof {
+	group=$1
+	grep ^$group /etc/group | sed -e "s,$group:x:\([0-9]\+\):.*,\1,"
+}
+export -f GIDof
+#export GID=$(GIDof asic)
+
+alias df="df --block-size=1000000000"
+
+# cadence/asic related:
+#export mydk="${HOME}/asic/design-kits/TSMC-130nm"
+#export mydk="${HOME}/asic/design-kits/IBM_Latest_IC615"
+#alias dk='cd ${mydk}; . bashrc-64'
+#alias v="virtuoso"
+
+#addPATH /sbin /usr/sbin
+#addPATH /sbin /usr/sbin
+#PATH=$PATH:/sbin:/usr/sbin
+#export PATH
+
+# include this file in your ${HOME}/.bashrc with the following 3 lines:
+#if [ -e "${HOME}/bin/bashrc" ]; then
+#	. "${HOME}/bin/bashrc"
+#fi
+
