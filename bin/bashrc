@@ -41,6 +41,14 @@ export -f delPATH
 
 alias restorePATH="export PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/root/bin:/sbin:/usr/sbin"
 
+# \w is $PWD, but with ~
+# \u is $USER
+# \h is $HOST
+# \$ is $ normally and # for root
+declare PS1='[\u@\h \w]\$ '
+# prepend some stuff to get the xterm titlebar to be the same:
+PS1='\[\033]0;'${PS1}'\007\]'${PS1}
+
 umask 0027
 
 function GIDof {
