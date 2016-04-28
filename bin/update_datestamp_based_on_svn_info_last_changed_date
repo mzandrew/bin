@@ -1,0 +1,24 @@
+#!/bin/bash -e
+
+# written 2016-04-28 by mza
+# to remedy the fact that svn checkout does not make file datestamps reflect
+# the time the file changed...
+
+# format of svn info is:
+# Last Changed Date: 2015-01-16 20:56:54 -1000 (Fri, 16 Jan 2015)
+
+declare temp=$(mktemp)
+if [ $# -gt 0 ]; then
+	for each; do
+		declare date=$(svn info $each | grep "Last Changed Date" | sed -e "s,^Last Changed Date: \(.*\),\1,")
+		touch --date="$date" $temp
+		if [ $each -nt $temp ]; then
+			echo "changing datestamp of $each to $date"
+			touch --reference=$temp $each
+		fi
+	done
+else
+	find -type f -exec $0 {} +
+fi
+rm $temp
+

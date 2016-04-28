@@ -4,8 +4,9 @@
 # 2015-01-25 updated
 
 declare res
-#res="1024x768"
-res="1280x1024"
+#res="640x480"
+res="1024x768"
+#res="1280x1024"
 
 function run {
 	local -i count_of_valid_source_files=0

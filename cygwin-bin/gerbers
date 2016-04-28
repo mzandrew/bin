@@ -5,9 +5,8 @@
 declare -i current_layer_number=0 maximum_layer_number=1
 declare dir=$(echo "${PWD}" | sed -e "s,/cygdrive/\([a-z]\),\1:,")
 #echo "${dir}"
-declare zipfile="fab-gerbers.zip"
-#zipfile="the-bicentennial-board.revA.gerbers.zip"
-#zipfile="the-bypass-board.revB.gerbers.zip"
+declare fabzipfile="fab-gerbers.zip"
+declare assyzipfile="assembly-gerbers.zip"
 
 function gerbv_fab_file {
 	local -i drill_file_exists=0 board_outline_exists=0 drill_drawing_exists=0
@@ -178,10 +177,11 @@ function fab {
 	gerbv_fab_file > "originals/fab.gvp"
 	if [ ! -e "fab/fab.gvp" ]; then cp -a originals/fab.gvp fab/; fi
 	#zip fab.zip fab
-	if [ -e "${zipfile}" ]; then
-		rm "${zipfile}"
+	if [ -e "${fabzipfile}" ]; then
+		rm "${fabzipfile}"
 	fi
-	zip -r "${zipfile}" fab/
+	echo
+	zip -r "${fabzipfile}" fab/
 	#rm the-bicentennial-board.revA.gerbers.zip; zip -r the-bicentennial-board.revA.gerbers.zip fab/
 
 }
@@ -198,6 +198,11 @@ function assembly {
 	if [ ! -d originals ]; then mkdir originals; fi
 	gerbv_assy_file > "originals/assy.gvp"
 	if [ ! -e "assembly/assy.gvp" ]; then cp -a originals/assy.gvp assembly/; fi
+	if [ -e "${assyzipfile}" ]; then
+		rm "${assyzipfile}"
+	fi
+	echo
+	zip -r "${assyzipfile}" assembly/
 }
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

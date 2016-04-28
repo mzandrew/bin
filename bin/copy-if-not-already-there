@@ -1,11 +1,16 @@
 #!/bin/bash -e
 
+if [ -z ${accumulation_destination} ]; then
+	accumulation_destination="$HOME/files-lists/accumulated"
+fi
+
 for source; do
 	#dest="${HOME}/files-lists/accumulated/"$(echo "${source}" | sed -e "s,^\./,," | sed -e "s,/,-,g")
-	dest="${HOME}/files-lists/accumulated/"$(echo "${source}" | sed -e "s,^/,," | sed -e "s,/,-,g")
+	dest="${accumulation_destination}/"$(echo "${source}" | sed -e "s,^\./,," | sed -e "s,^/,," | sed -e "s,/,-,g")
 	#echo "${source} - ${dest}"
 	if [ "${dest}" -ot "${source}" ]; then
-		cp -av "${source}" "${dest}"
+		echo "${source} -> ${dest}"
+		#cp -av "${source}" "${dest}"
 	fi
 done
 
