@@ -1,5 +1,10 @@
 #!/bin/bash -e
 
 #find "${@}" -printf "%TY-%Tm-%Td+%TH:%TM %12s %p\n" | sort -n -k 1
-find "${@}" -printf "%TY-%Tm-%Td+%TH:%TM %12s %p\n" | grep -v '\.git\|\.svn' | sort -n -k 1
+
+# to sort by dir+filename:
+#find "${@}" \( -name "proc" -o -name "dev" \) -prune -o -type f -printf "%TY-%Tm-%Td+%TH:%TM %12s %p\n" | grep -v '\.git\|\.svn' | sort -n -k 3
+
+# to sort by modification date:
+find "${@}" \( -name "proc" -o -name "dev" \) -prune -o -type f -printf "%TY-%Tm-%Td+%TH:%TM %12s %p\n" | grep -v '\.git\|\.svn' | sort -n -k 1
 
