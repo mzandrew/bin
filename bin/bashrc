@@ -45,9 +45,14 @@ alias restorePATH="export PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/root/bin:
 # \u is $USER
 # \h is $HOST
 # \$ is $ normally and # for root
-declare PS1='[\u@\h \w]\$ '
+declare myPS1='[\u@\h \w]\$ '
 # prepend some stuff to get the xterm titlebar to be the same:
-PS1='\[\033]0;'${PS1}'\007\]'${PS1}
+case $TERM in
+	xterm*)
+		PS1='\[\033]0;'${myPS1}'\007\]'${myPS1}
+#	*)
+#		:
+esac
 
 umask 0027
 
