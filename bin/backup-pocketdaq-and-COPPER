@@ -6,15 +6,15 @@ declare filename
 
 function append {
 	for each; do
-		if [ -e "${each}" ]; then
+		if [ -e "${each}" ] && [ -r "${each}" ]; then
 			tar rf "${filename}" "${each}"
 		fi
 	done
 }
 
 function COPPER_export {
-	cd /tftpboot/copper/root || cd /tftpboot/sl57-export/root
 	filename="$HOME/${date}.${hostname}.COPPER-export.key-files.tar"
+	cd /tftpboot/copper/root || cd /tftpboot/sl57-export/root
 	tar cf "${filename}" \
 	        lib/modules/2.6.18/misc \
 	        lib/modules/2.6.18/kernel/drivers/net/e100.ko \
@@ -33,9 +33,8 @@ function COPPER_export {
 	append lib/modules/2.6.18/build/.config
 	append lib/modules/2.6.18/build/drivers/net/Kconfig
 	append lib/modules/2.6.18/build/drivers/net/Makefile
-
-	#sudo append boot/initrd-2.6.18.img
-	#sudo append etc/sudoers
+	append boot/initrd-2.6.18.img
+	append etc/sudoers
 	compress
 }
 
@@ -53,11 +52,19 @@ function compress {
 
 function pocketDAQ {
 # need to save all custom pxe boot files:
-	cd /tftpboot
 	filename="$HOME/${date}.${hostname}.pocketDAQ.key-files.tar"
-	tar cf "${filename}" \
-		linux-install \
-		copper/snapshot \
+	cd /tftpboot
+	if [ "$hostname" = "bdaq" ]; then
+		tar cf "${filename}" \
+			sl57-pxelinux \
+			sl57-export/snapshot \
+
+	else
+		tar cf "${filename}" \
+			linux-install \
+			copper/snapshot \
+		
+	fi
 
 	compress
 }
