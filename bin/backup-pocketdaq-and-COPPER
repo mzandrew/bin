@@ -1,0 +1,52 @@
+#!/bin/bash -e
+
+declare date=$(date +"%Y-%m-%d")
+
+#cd /tftpboot/copper/root
+cd /tftpboot/sl57-export/root
+
+function COPPER_root {
+        filename="$HOME/${date}.COPPER.key-files.tar"
+        tar cf "${filename}" \
+                lib/modules/2.6.18/misc \
+                lib/modules/2.6.18/kernel/drivers/net/e100.ko \
+                lib/modules/2.6.18/kernel/drivers/net/e1000e \
+                boot/System.map-2.6.18 \
+                boot/vmlinuz-2.6.18 \
+                usr/local/bin/ \
+                etc/rc.d/init.d/ttrx \
+                etc/rc.d/init.d/copper \
+                etc/rc.d/init.d/vme \
+                etc/sysconfig/ntpd \
+                etc/ntp.conf \
+                etc/syslog.conf \
+
+	if [ -e lib/modules/2.6.18/extras ]; then
+		tar rf "${filename}" \
+	                lib/modules/2.6.18/extras
+	fi
+
+#       sudo tar rf "${filename}" \
+#               boot/initrd-2.6.18.img \
+#               etc/sudoers \
+
+	if [ -e "${filename}.bz2" ]; then rm "${filename}.bz2"; fi
+        bzip2 "${filename}"
+	ls -l "${filename}.bz2"
+}
+
+function COPPER_kernel_source {
+tar cjf ~/${date}.COPPER.kernel-source.tar.bz2 \
+        usr/src/kernels/linux-2.6.18/ \
+
+}
+
+COPPER_root
+#COPPER_kernel_source
+
+# need to save all custom pxe boot files:
+#/tftpboot/linux-install
+
+# need to save custom kernel config, Kconfig and Makefiles that were customized
+# ...
+
