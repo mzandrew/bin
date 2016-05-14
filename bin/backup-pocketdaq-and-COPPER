@@ -1,52 +1,68 @@
-#!/bin/bash -e
+#!/bin/bash
 
+declare hostname=$(/bin/hostname)
 declare date=$(date +"%Y-%m-%d")
+declare filename
 
-#cd /tftpboot/copper/root
-cd /tftpboot/sl57-export/root
+function append {
+	for each; do
+		if [ -e "${each}" ]; then
+			tar rf "${filename}" "${each}"
+		fi
+	done
+}
 
-function COPPER_root {
-        filename="$HOME/${date}.COPPER.key-files.tar"
-        tar cf "${filename}" \
-                lib/modules/2.6.18/misc \
-                lib/modules/2.6.18/kernel/drivers/net/e100.ko \
-                lib/modules/2.6.18/kernel/drivers/net/e1000e \
-                boot/System.map-2.6.18 \
-                boot/vmlinuz-2.6.18 \
-                usr/local/bin/ \
-                etc/rc.d/init.d/ttrx \
-                etc/rc.d/init.d/copper \
-                etc/rc.d/init.d/vme \
-                etc/sysconfig/ntpd \
-                etc/ntp.conf \
-                etc/syslog.conf \
+function COPPER_export {
+	cd /tftpboot/copper/root || cd /tftpboot/sl57-export/root
+	filename="$HOME/${date}.${hostname}.COPPER-export.key-files.tar"
+	tar cf "${filename}" \
+	        lib/modules/2.6.18/misc \
+	        lib/modules/2.6.18/kernel/drivers/net/e100.ko \
+	        lib/modules/2.6.18/kernel/drivers/net/e1000e \
+	        boot/System.map-2.6.18 \
+	        boot/vmlinuz-2.6.18 \
+	        usr/local/bin \
+	        etc/rc.d/init.d/ttrx \
+	        etc/rc.d/init.d/copper \
+	        etc/sysconfig/ntpd \
+	        etc/ntp.conf \
+	        etc/syslog.conf \
 
-	if [ -e lib/modules/2.6.18/extras ]; then
-		tar rf "${filename}" \
-	                lib/modules/2.6.18/extras
-	fi
+	append etc/rc.d/init.d/vme
+	append lib/modules/2.6.18/extras
+	append lib/modules/2.6.18/build/.config
+	append lib/modules/2.6.18/build/drivers/net/Kconfig
+	append lib/modules/2.6.18/build/drivers/net/Makefile
 
-#       sudo tar rf "${filename}" \
-#               boot/initrd-2.6.18.img \
-#               etc/sudoers \
+	#sudo append boot/initrd-2.6.18.img
+	#sudo append etc/sudoers
+	compress
+}
 
+function compress {
 	if [ -e "${filename}.bz2" ]; then rm "${filename}.bz2"; fi
-        bzip2 "${filename}"
+	bzip2 "${filename}"
 	ls -l "${filename}.bz2"
 }
 
-function COPPER_kernel_source {
-tar cjf ~/${date}.COPPER.kernel-source.tar.bz2 \
-        usr/src/kernels/linux-2.6.18/ \
+#function COPPER_kernel_source {
+#tar cjf ~/${date}.COPPER.kernel-source.tar.bz2 \
+#	usr/src/kernels/linux-2.6.18/ \
+#
+#}
 
+function pocketDAQ {
+# need to save all custom pxe boot files:
+	cd /tftpboot
+	filename="$HOME/${date}.${hostname}.pocketDAQ.key-files.tar"
+	tar cf "${filename}" \
+		linux-install \
+		copper/snapshot \
+
+	compress
 }
 
-COPPER_root
+COPPER_export
 #COPPER_kernel_source
-
-# need to save all custom pxe boot files:
-#/tftpboot/linux-install
-
-# need to save custom kernel config, Kconfig and Makefiles that were customized
-# ...
+pocketDAQ
 
