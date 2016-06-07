@@ -1,0 +1,33 @@
+#!/bin/bash -e
+
+#2016-06-06 following https://tobinsramblings.wordpress.com/2011/05/03/snmp-tutorial-apc-pdus/ :
+#sudo yum install net-snmp net-snmp-libs net-snmp-utils
+#snmpwalk -v 1 -c public apc
+#git clone git://github.com/joshuatobin/dotfiles.git
+#sudo cp -a dotfiles/.snmp/* /usr/share/snmp/
+#snmpset -v 1 -c private apc PowerNet-MIB::sPDUOutletCtl.8 i 3 # reboot outlet 8
+
+declare -i outlet=${1}
+declare pdu_ip="apc"
+declare -i mode=3 # default behavior is to power cycle the outlet
+
+if [ $# -gt 1 ]; then
+	if [ $2 == "on" ]; then
+		mode=1
+	elif [ $2 == "off" ]; then
+		mode=2
+	elif [ $2 == "cycle" ]; then
+		mode=3
+	else
+		echo "ERROR: unsupported mode" > /dev/stderr
+		exit 17
+	fi
+fi
+
+if [ $outlet -ge 1 ] && [ $outlet -le 8 ]; then
+	snmpset -v 1 -c private $pdu_ip PowerNet-MIB::sPDUOutletCtl.${outlet} i $mode
+else
+	echo "error: outlet $outlet out of range [1,8]" > /dev/stderr
+	exit 18
+fi
+
