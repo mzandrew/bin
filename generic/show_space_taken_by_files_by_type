@@ -1,0 +1,4 @@
+#!/bin/bash -e
+
+find -type f -printf "%f\n" | sed -e "s,.*\.\([-a-zA-Z0-9]\+\)$,\1," | sort -u | sed -e "s,^\(.*\)$,*.\1," | xargs -L1 add_up_files | sort -n
+

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+declare string=""
+declare whole_string="${@}"
+
+if [ $# -gt 0 ]; then
+	string="( -iname $1"
+	shift
+	for spec; do
+		string="$string -o -iname $1"
+		shift
+	done
+	string="$string )"
+fi
+#echo "$string"
+
+#find -type f $string -exec du {} \; | awk '{ total += $1 } END { print total }'
+declare -i size=$(find -type f $string -exec du {} \; | awk '{ total += $1 } END { print total }')
+echo $size $whole_string
+
