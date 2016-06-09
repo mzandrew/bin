@@ -11,6 +11,11 @@
 # read in border shapes as closed shapes so they can be filled
 # set origin to be the middle of the panel/stencil, build at origin and do explicit rotations/translations to final destination
 
+# from http://stackoverflow.com/questions/3144089/expand-python-search-path-to-other-source :
+from os.path import dirname
+import sys
+sys.path.append(dirname(__file__) + "/lib")
+
 from DebugInfoWarningError import info, debug, debug2, warning, error
 import svgwrite # pip install svgwrite
 import re # used for search
@@ -18,7 +23,8 @@ import math # used for sqrt, ceil, floor
 import subprocess # call
 
 # input filenames:
-bottom_pastemask_filename = "../assembly/bottom-pastemask.GBP"
+#bottom_pastemask_filename = "../assy/bottom-pastemask.GBP"
+top_pastemask_filename = "../assy/top-pastemask.GTP"
 #bottom_pastemask_filename = "bottom-pastemask.v2.GBP" # slightly reordered to find bug in this code
 board_outline_filename = "../fab/board-outline.gerber"
 #board_outline_filename = "../fab/top-copper.GTL"
@@ -26,7 +32,7 @@ board_outline_filename = "../fab/board-outline.gerber"
 #board_outline_filename = "board-outline.carrier02revD.gerber"
 #stencil_filename = "zelflex-stencil.QR_362x480.GBX"
 #stencil_filename = "zelflex-stencil.QR_362x480.GBX"
-drill_filename = "../fab/drill.DRL"
+drill_filename = "../fab/drill-through.DRL"
 #board_outline_filename = "IDL_15_23_A.GM1" # altium board outline gerber
 #drill_filename = "IDL_15_23_A-Plated.TXT" # altium drill
 # output filenames:
@@ -37,8 +43,10 @@ eps_filename = base_filename + ".eps"
 dxf_filename = base_filename + ".dxf"
 
 # parameters of our laser:
-laser_stroke_width = 0.1016 # 250 dpi - parameter from laser cutter
-stroke_length = 0.2032 # 0.2032 mm = 8 mils; twice the line spacing of the laser in 250 dpi mode
+laser_stroke_width = 0.0254 # 1000 dpi - parameter from laser cutter
+#laser_stroke_width = 0.1016 # 250 dpi - parameter from laser cutter
+stroke_length = 2 * laser_stroke_width
+#stroke_length = 0.2032 # 0.2032 mm = 8 mils; twice the line spacing of the laser in 250 dpi mode
 
 # user input:
 board_width = 57.66 # fixme (can get from outline gerber)
@@ -46,7 +54,7 @@ board_height = 56.61 # fixme (can get from outline gerber)
 x_offset = 25.4 # have to know this from CAM file definitions
 y_offset = 25.4 # have to know this from CAM file definitions
 number_of_horizontal_instances = 1
-number_of_vertical_instances = 4
+number_of_vertical_instances = 1
 fill_protoboard = 0 # this overrides the above if == 1
 panel_frame_thickness = 10.0 # mm - overall border thickness
 #panel_tab_length = 7.0 # mm
@@ -241,7 +249,7 @@ def parse_gerber(filename):
 			matches = matches + 1
 			if (match.group(1) == "IN"):
 				#debug("set units to inches: " + line)
-				ratio = 1000.0 / 25.4
+				ratio = 1000.0 / 25.4 / 1.55 # fixme/todo: 1.55 is a magic number here
 			else:
 				#debug("set units to mm: " + line)
 				ratio = 1.0
@@ -266,20 +274,26 @@ def parse_gerber(filename):
 			#decimal_places = decimal_places + 1
 			debug("number of digits to use for coordinates = " + str(number_of_digits))
 			matched_format = 1
-		match = re.search("^%ADD([0-9]*)C,([.0-9]*)\*%$", line) # %ADD010C,0.0254*%
+		match = re.search("^%ADD([0-9]+)C,([.0-9]+)\*%$", line) # %ADD010C,0.0254*%
 		if match:
 			matches = matches + 1
 			#aperture_length = len(match.group(1))
 			ap = int(match.group(1))
 			apertures[ap] = ("C", float(match.group(2)), float(match.group(2)))
 			debug("aperture definition: " + line)
-		match = re.search("^%ADD0([0-9]*)R,([.0-9]*)X([.0-9]*)\*%$", line) # %ADD028R,2.6X1.6*% 
+		match = re.search("^%ADD([0-9]+)R,([.0-9]+)X([.0-9]+)\*%$", line) # %ADD028R,2.6X1.6*% or %ADD34R,0.0138X0.0472*%
 		if match:
 			matches = matches + 1
 			ap = int(match.group(1))
 			apertures[ap] = ("R", float(match.group(2)), float(match.group(3)))
 			debug("aperture definition: " + line)
-		match = re.search("^%LN([a-zA-Z0-9]*)\*%$", line)
+		match = re.search("^%ADD([0-9]+)O,([.0-9]+)X([.0-9]+)\*%$", line) # %ADD11O,0.0138X0.0669*%
+		if match:
+			matches = matches + 1
+			ap = int(match.group(1))
+			apertures[ap] = ("O", float(match.group(2)), float(match.group(3)))
+			debug("aperture definition: " + line)
+		match = re.search("^%LN([a-zA-Z0-9]+)\*%$", line)
 		if match:
 			matches = matches + 1
 			gerber_instructions.append("setlayer" + match.group(1))
@@ -296,7 +310,7 @@ def parse_gerber(filename):
 			matches = matches + 1
 			#debug(line)
 			gerber_instructions.append(match.group(1))
-		match = re.search("^(G54D)([0-9]*)\*$", line)
+		match = re.search("^(G54D)([0-9]+)\*$", line)
 		if match:
 			matches = matches + 1
 			debug("aperture selection: " + match.group(2))
@@ -396,6 +410,8 @@ def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color = "#
 	aperture = "00"
 	mode = "linear"
 	ratio = 5.0
+	#global verbosity
+	#verbosity = 4
 	for instruction in gerber_instructions:
 		debug("instruction: " + instruction)
 		match = re.search("^setratio([.0-9]*[e]*[-0-9]*)$", instruction)
@@ -407,13 +423,17 @@ def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color = "#
 			layer_name = match.group(1)
 			layer = add_layer(overall_layer, layer_name)
 			group = add_group(layer, color=color, stroke_width=stroke_width)
-		match = re.search("^G54D([0-9]*)$", instruction)
+		match = re.search("^G54D([1-9][0-9])$", instruction) # "G54D22" means follow the goto X,Y instructions after this line, and flash the D22 aperture every time we get a D03 ("flash aperture") command
 		if match:
 			debug("aperture selection: " + match.group(1))
 			aperture = int(match.group(1))
+			if not aperture in apertures.keys():
+				error("can't find aperture #" + str(aperture), 4)
 			(CROP, w, h) = apertures[aperture]
+			w = 25.4 * w # fixme/todo:  magic number here
+			h = 25.4 * h # fixme/todo:  magic number here
 			debug("aperture[" + str(aperture) + "]: " + CROP + " " + str(w) + " " + str(h))
-			d_string = "04"
+			d_string = "04" # skip doing anything this pass through the following code
 		match = re.search("^G(0[0-3])(.*)$", instruction)
 		if match:
 			instruction = match.group(2)
@@ -448,7 +468,7 @@ def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color = "#
 				elif (match.group(1) == "J"):
 					j_string = match.group(2)
 					j = +int(j_string) * ratio
-		match = re.search("^D(0[0-9])$", instruction)
+		match = re.search("^D(0[1-3])$", instruction)
 		if match:
 			d_string = match.group(1)
 		if (d_string == "01"): # pen down
@@ -488,12 +508,15 @@ def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color = "#
 			if (aperture == 0):
 				warning("unhandled D03 flash operation")
 			else:
-				debug("flashing aperture[" + str(aperture) + "]: " + CROP + " " + str(w) + " " + str(h) + " at (" + str(x) + "," + str(y) + ")")
 				t = laser_stroke_width / 2.0
+				#x = x / 1.5
+				#y = y / 1.5
+				debug("flashing aperture[" + str(aperture) + "]: " + CROP + " " + str(w) + " " + str(h) + " at (" + str(x) + "," + str(y) + ")")
 				if (CROP == "R"):
 					group.add(svg.rect( (x-w/2.0+t,y-h/2.0+t), (w-2*t,h-2*t) ))
+				# should add a special case here for O (oval) and make a rectangle and two half-circles
 		elif (d_string == "04"):
-			pass # silently fall thorough, otherwise G54D commands trigger output
+			pass # silently fall thorough, otherwise G54D commands trigger output the first pass through
 		else:
 			error("unknown d string", 5)
 		x_old = x
@@ -602,6 +625,18 @@ def draw_stencil_layer():
 	group.add(svg.rect( (x,y), (w,h) ))
 	#stencil_layer.translate(-x_offset, -y_offset)
 
+def draw_top_pastemask_layer():
+	global apertures
+	apertures = top_pastemask_apertures
+	layer_name_string = "top pastemask"
+	layer_name_string = layer_name_string + "(" + str(horizontal_instance) + "," + str(vertical_instance) + ")"
+	top_pastemask_layer = draw_gerber_layer(stencil_layer, top_pastemask_instructions, layer_name_string, "#ff0000")
+	top_pastemask_layer.scale(1, -1)
+	#top_pastemask_layer.translate(-x_offset+horizontal_instance*board_width+horizontal_instance*x_gap_between_instances_of_boards, -y_offset-panel_height+vertical_instance*board_height+vertical_instance*y_gap_between_instances_of_boards)
+	top_pastemask_layer.translate(-x_offset,-y_offset-panel_height)
+	top_pastemask_layer.translate(+horizontal_instance*board_width,+vertical_instance*board_height)
+	top_pastemask_layer.translate(+horizontal_instance*x_gap_between_instances_of_boards,+vertical_instance*y_gap_between_instances_of_boards)
+
 def draw_bottom_pastemask_layer():
 	global apertures
 	apertures = bottom_pastemask_apertures
@@ -613,6 +648,10 @@ def draw_bottom_pastemask_layer():
 	bottom_pastemask_layer.translate(-x_offset,-y_offset-panel_height)
 	bottom_pastemask_layer.translate(+horizontal_instance*board_width,+vertical_instance*board_height)
 	bottom_pastemask_layer.translate(+horizontal_instance*x_gap_between_instances_of_boards,+vertical_instance*y_gap_between_instances_of_boards)
+
+def draw_pastemask_layer():
+	draw_top_pastemask_layer()
+	#draw_bottom_pastemask_layer()
 
 def draw_board_outline_layer():
 	#info("drawing board outline gerber layer...")
@@ -684,11 +723,14 @@ def try_making_a_tiled_object():
 	blah = svg.use(tilly, insert=(10,10))
 	svg.add(blah)
 
+verbosity = 4
 parse_drill_file(drill_filename) # stores info in "tool"
 board_outline_instructions = parse_gerber(board_outline_filename)
 board_outline_apertures = apertures
-bottom_pastemask_instructions = parse_gerber(bottom_pastemask_filename)
-bottom_pastemask_apertures = apertures
+top_pastemask_instructions = parse_gerber(top_pastemask_filename)
+top_pastemask_apertures = apertures
+#bottom_pastemask_instructions = parse_gerber(bottom_pastemask_filename)
+#bottom_pastemask_apertures = apertures
 #svg = svgwrite.Drawing(svg_filename, profile='tiny')
 #svg = svgwrite.Drawing(size=(str(panel_width) + "mm", str(panel_height) + "mm"))
 svg = svgwrite.Drawing()
@@ -701,9 +743,9 @@ draw_stencil_layer()
 for horizontal_instance in range(0, number_of_horizontal_instances):
 	for vertical_instance in range(0, number_of_vertical_instances):
 		draw_board_outline_layer()
-		generate_drill_layers()
+		#generate_drill_layers()
 		#verbosity = 4
-		draw_bottom_pastemask_layer()
+		draw_pastemask_layer()
 		#verbosity = 3
 if (fill_protoboard == 1):
 	draw_protoboard_outline_layer()
