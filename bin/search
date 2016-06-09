@@ -18,5 +18,5 @@ cd
 string="grep -i ${first} \"{}\" ${rest}"
 #echo "${string}"
 
-find ${HOME}/files-lists ${HOME}/files-lists/accumulated -maxdepth 1 -name '*.lf-r' | sort -n | xargs -i sh -cx "${string}"
+find ${HOME}/files-lists/accumulated ${HOME}/files-lists -maxdepth 1 -name '*.lf-r' | sort -n | xargs -i sh -cx "${string}"
 
