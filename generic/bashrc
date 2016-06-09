@@ -77,10 +77,21 @@ export HISTFILESIZE=
 #addPATH /sbin /usr/sbin
 #addPATH /sbin /usr/sbin
 #PATH=$PATH:/sbin:/usr/sbin
-#export PATH
+#PATH="${PATH}:${HOME}/bin"
+#echo $(find \( -type d -o -type l \)) | sed -e "s,^\. ,./ ,"
+#. ./bin ./cygwin-bin ./generic
+set | grep ^PATH=
+if [ -e "${HOME}/bin" ]; then
+	cd "${HOME}/bin" 
+	PATH=$PATH:$(echo $(find \( -type d -o -type l \)) | sed -e "s,^\. ,./ ," | sed -e "s,$, ," | sed -e "s,\./\([^ ]*\) ,${HOME}/bin/\1:,g" | sed -e "s,:$,,")
+fi
+set | grep ^PATH=
+#/home/mza/bin/:/home/mza/bin/bin:/home/mza/bin/cygwin-bin:/home/mza/bin/generic
 
 # include this file in your ${HOME}/.bashrc with the following 3 lines:
 #if [ -e "${HOME}/bin/bashrc" ]; then
 #	. "${HOME}/bin/bashrc"
 #fi
+
+export PATH
 
