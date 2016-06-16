@@ -1,5 +1,68 @@
 #!/bin/bash -e
 
-# from http://www.commandlinefu.com/commands/view/3555/find-duplicate-files-based-on-size-first-then-md5-hash
-find -not -empty -type f -printf "%s\n" | sort -rn | uniq -d | xargs -I{} -n1 find -type f -size {}c -print0 | xargs -0 md5sum | sort | uniq -w32 --all-repeated=separate
+# original from http://www.commandlinefu.com/commands/view/3555/find-duplicate-files-based-on-size-first-then-md5-hash
+#find -not -empty -type f -printf "%s\n" | sort -rn | uniq -d | xargs -I{} -n1 find -type f -size {}c -print0 | xargs -0 md5sum | sort | uniq -w32 --all-repeated=separate
+
+# the following version is by mza (variation on the theme above)
+# avoids considering duplicates in dirs: .git .svn proc dev
+# avoids considering files below a certain size
+# writes out a script to delete all duplicate files newer than the first one found (by modification date)
+# last updated 2016-06-16
+# todo/future/bug: if the first file found does not match the hash of the next 2, script will not detect the duplication
+
+declare -i lower_size_limit=250000 # in bytes
+declare script_to_remove_all_but_oldest_duplicate="script_to_remove_all_but_oldest_duplicate"
+declare action="#rm" # if you'd prefer it to leave everything commented out by default
+action="rm" # if you like to live dangerously
+#action="svn remove" # if you're in a repo situation
+
+echo "#/bin/bash -e" >> "$script_to_remove_all_but_oldest_duplicate"
+declare prune_string="-type d ( -name proc -o -name dev -o -name \.svn -o -name \.git ) -prune"
+declare file_sizes=$(find "${@}" $prune_string -o -type f -size +${lower_size_limit}c -printf "%s\n" | sort -rn | uniq -d)
+declare -i total_potential_savings=0
+for size in $file_sizes; do
+	#echo "$size bytes:"
+	declare script_string=""
+	declare list_of_files_to_potentially_remove=""
+	declare -i i=0 j=0
+	declare first_md5sum=""
+	declare is_dup=" "
+	declare old_IFS="$IFS"
+	IFS=$'\n'
+	for filename in $(IFS="$old_IFS"; find "${@}" $prune_string -o -type f -size ${size}c -printf "%TY-%Tm-%Td+%TH:%TM %p\n" | sort -k 1n | colrm 1 17); do
+		declare md5sum=$(md5sum "$filename" | colrm 33)
+		is_dup=" "
+		if [ $i -eq 0 ]; then
+			first_md5sum="$md5sum"
+		else
+			if [ "$md5sum" == "$first_md5sum" ]; then
+				list_of_files_to_potentially_remove="$list_of_files_to_potentially_remove \"$filename\""
+				j=$((j+1))
+				is_dup="d"
+			fi
+		fi
+		declare result=$(find -wholename "$filename" -printf "%TY-%Tm-%Td+%TH:%TM %12s $md5sum $is_dup %p\n")
+		echo "$result"
+		script_string="$script_string\n# $result"
+		i=$((i+1))
+	done
+	IFS="$old_IFS"
+	script_string="$script_string\n# uncomment the following line to delete all but the oldest of the duplicate files immediately above:"
+	script_string="$script_string\n${action} -v$list_of_files_to_potentially_remove"
+	if [ $j -gt 0 ]; then
+		echo -e "${script_string}" >> "$script_to_remove_all_but_oldest_duplicate"
+	fi
+	total_potential_savings=$((total_potential_savings+j*size))
+done
+echo >> "$script_to_remove_all_but_oldest_duplicate"
+
+echo
+echo "total potential savings is $total_potential_savings bytes"
+echo "# total potential savings is $total_potential_savings bytes" >> "$script_to_remove_all_but_oldest_duplicate"
+if [ ${action:0:1} == "#" ]; then
+	echo
+	echo "now edit file \"$script_to_remove_all_but_oldest_duplicate\" and only uncomment the lines you're sure you want"
+	echo "(suggest useful vim expression \":s/^#rm/rm/\" (etc) and then repeatedly \"/\" and \"&\")"
+	echo "then do \"bash $script_to_remove_all_but_oldest_duplicate\" to actually do it"
+fi
 
