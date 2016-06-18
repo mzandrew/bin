@@ -6,6 +6,7 @@
 # updated 2016-01-13
 # updated 2016-02-23 (rewritten as a single "find | sort | xargs" line)
 # updated 2016-06-17 to sort lf-r files by datestamp before grepping them
+# updated 2016-06-18 to awk away the non-matching filenames
 
 declare first="${1}"
 declare rest=""
@@ -20,7 +21,5 @@ string="grep -i ${first} \"{}\" ${rest}"
 #echo "${string}"
 
 cd "${HOME}/files-lists"
-#find ${HOME}/files-lists/accumulated ${HOME}/files-lists -maxdepth 1 -type f -name '*.lf-r' -printf "%TY-%Tm-%Td+%TH:%TM %12s %p\n" | sort -n | colrm 1 30 | xargs -i sh -cx "${string}"
-find ./accumulated . -maxdepth 1 -type f -name '*.lf-r' -printf "%TY-%Tm-%Td+%TH:%TM %12s %p\n" | sort -n | colrm 1 30 | xargs -i sh -c "echo \"{}:\" >/dev/stderr; ${string}" 2>&1
-#find ${HOME}/files-lists/accumulated ${HOME}/files-lists -maxdepth 1 -type f -name '*.lf-r' -printf "%TY-%Tm-%Td+%TH:%TM %12s %p\n" | sort -n | colrm 1 30 | xargs -i sh -c "result=$(grep -i ${first} \"{}\" ${rest}); echo \"{}\" >/dev/stderr; echo ${result}" 2>&1
+find ./accumulated . -maxdepth 1 -type f -name '*.lf-r' -printf "%TY-%Tm-%Td+%TH:%TM %12s %p\n" | sort -n | colrm 1 30 | xargs -i sh -c "echo \"{}:\"; ${string}" | awk '/^\./ { filename=$0"\n"; } /^[0-9]/ { printf "%s",filename; print $0; filename="" }'
 
