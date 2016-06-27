@@ -52,6 +52,9 @@ for size in $file_sizes; do
 				hash[$maxhash]="$md5sum"
 			fi
 		fi
+		if [ "${filename:0:1}" != "/" ]; then
+			filename="./$filename"
+		fi
 		declare result=$(find -wholename "$filename" -printf "%TY-%Tm-%Td+%TH:%TM %12s $md5sum $is_dup %p\n")
 		echo "$result"
 		script_string="$script_string\n# $result"
