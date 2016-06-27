@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# writtn 2016-06-27 by mza
+# call it like so:
+# scan_ip_addresses_in_etc_hosts 2 254 | grep on
+
 declare ip=""
 declare names=""
 
