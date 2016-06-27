@@ -1,0 +1,48 @@
+#!/bin/bash
+
+declare ip=""
+declare names=""
+
+function go {
+	printf "%15s" "$ip"
+	ping -q -c 1 -w 1 $ip > /dev/null
+	if [ $? -eq 0 ]; then
+		echo -n " on "
+		if [ "$(nmap $ip -p22 | grep -c open)" ]; then
+			echo -n " ssh"
+		else
+			echo -n "    "
+		fi
+	else
+		echo -n " off    "
+	fi
+	if [ $blind == "yes" ]; then
+		names=$(cat /etc/hosts | grep "$ip[[:space:]]" | sed -e "s,^[[:space:]]*\([0-9.]\+\)[[:space:]]\(.*\)$,\2,")
+	else
+		names=""
+	fi
+	echo -n " $names"
+	echo
+	usleep 100000
+}
+
+if [ $# -gt 0 ]; then
+	for i in $(seq $1 $2); do
+		blind="yes"
+		ip="192.168.153.$i"
+		go
+	done
+else
+	blind="no"
+	cat /etc/hosts | grep -v '^#' | grep -v '^::' | grep -v '^127.0' | while read line; do
+		if [ -z "$line" ] || [ "$line" == "" ]; then
+			continue
+		fi
+		#echo -n $line
+		ip=$(echo $line | sed -e "s,^[[:space:]]*\([0-9.]\+\)[[:space:]]\(.*\)$,\1,")
+		names=$(echo $line | sed -e "s,^[[:space:]]*\([0-9.]\+\)[[:space:]]\(.*\)$,\2,")
+		#echo " [$ip] [$names]"
+		go
+	done
+fi
+
