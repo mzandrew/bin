@@ -1,0 +1,22 @@
+#!/bin/bash
+
+cat /etc/hosts | grep -v '^#' | grep -v '^::' | grep -v '^127.0' | while read line; do
+	if [ -z "$line" ] || [ "$line" == "" ]; then
+		continue
+	fi
+	#echo -n $line
+	declare ip=$(echo $line | sed -e "s,^[[:space:]]*\([0-9.]\+\)[[:space:]]\(.*\)$,\1,")
+	declare names=$(echo $line | sed -e "s,^[[:space:]]*\([0-9.]\+\)[[:space:]]\(.*\)$,\2,")
+	#echo " [$ip] [$names]"
+	printf "%15s" "$ip"
+	ping -q -c 1 -w 1 $ip > /dev/null
+	if [ $? -eq 0 ]; then
+		echo -n " on "
+	else
+		echo -n " off"
+	fi
+	echo -n " $names"
+	echo
+	usleep 100000
+done
+
