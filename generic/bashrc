@@ -92,5 +92,7 @@ fi
 #	. "${HOME}/bin/bashrc"
 #fi
 
+export EDITOR=/usr/bin/vim
+
 export PATH
 

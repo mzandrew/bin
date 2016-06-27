@@ -1,0 +1,31 @@
+#!/bin/bash
+
+declare string=""
+declare whole_string="${@}"
+
+declare -i also_search_for_extensionless_files=0
+declare -i things_in_string=0
+if [ $# -gt 0 ]; then
+	string="\("
+	for i in $(seq 1 $#); do
+		ext=$1
+		shift
+		if [ $things_in_string -gt 0 ]; then
+			string="$string -o"
+		fi
+		if [ $ext == "*." ]; then
+			string="$string ! -iname \"*.*\""
+
+		else
+			string="$string -iname \"$ext\""
+		fi
+		things_in_string=$((things_in_string+1))
+	done
+	string="$string \)"
+fi
+#echo "$string"
+
+set -f # noglob
+declare -i size=$(find -type f $(eval echo "$string") -exec du {} \; | awk '{ total += $1 } END { print total }')
+echo $size $whole_string
+
