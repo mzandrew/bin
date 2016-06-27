@@ -1,0 +1,92 @@
+#!/bin/bash -e
+
+# finds unique occurances of files named the same thing, and orders them by datestamp
+# first version 2016-06-27 by mza (based on duplicates_finder)
+
+#declare -i lower_size_limit=250000 # in bytes
+#lower_size_limit=0 # in bytes
+#declare script_to_remove_all_but_oldest_duplicate="script_to_remove_all_but_oldest_duplicate"
+#declare action="#rm" # if you'd prefer it to leave everything commented out by default
+#action="rm" # if you like to live dangerously
+#action="svn remove" # if you're in a repo situation
+
+#echo "#/bin/bash -e" >> "$script_to_remove_all_but_oldest_duplicate"
+declare prune_string="-type d ( -name proc -o -name dev -o -name \.svn -o -name \.git ) -prune"
+declare filenames=$(find "${@}" $prune_string -o -type f -printf "%f\n" | sort -u)
+#echo "${filenames}"
+#exit 0
+
+#declare -i total_potential_savings=0
+for basename in $filenames; do
+	#echo "$size bytes:"
+#	declare script_string=""
+#	declare list_of_files_to_potentially_remove=""
+	declare -i filecount=0 # filecount increments for each file that is $size bytes
+#	declare -i numdups=0 # numdups increments for each duplicate that is found
+	declare -i maxhash=0 # maxhash increments each time a new hash is found
+	declare -i k=0 # hash counter
+	declare -a hash=()
+	declare is_uniq
+	declare -i matches
+	declare old_IFS="$IFS"
+	declare first_result="" result=""
+	IFS=$'\n'
+	for filename in $(IFS="$old_IFS"; find "${@}" $prune_string -o -type f -name "$basename" -printf "%TY-%Tm-%Td+%TH:%TM %p\n" | sort -k 1n | colrm 1 17); do
+		matches=0
+		declare md5sum=$(md5sum "$filename" | colrm 33)
+		if [ $filecount -eq 0 ]; then
+			hash[0]="$md5sum"
+			is_uniq=" 0"
+		else
+			for k in $(seq 0 $maxhash); do
+				if [ "$md5sum" == "${hash[$k]}" ]; then
+#					list_of_files_to_potentially_remove="$list_of_files_to_potentially_remove \"$filename\""
+#					numdups=$((numdups+1))
+					matches=$((matches+1))
+#				else
+				fi
+			done
+			if [ $matches -eq 0 ]; then
+				maxhash=$((maxhash+1))
+				hash[$maxhash]="$md5sum"
+				is_uniq="$(printf "%2d" $maxhash)"
+			else
+				is_uniq="  "
+			fi
+		fi
+		if [ "${filename:0:1}" != "/" ]; then
+			filename="./$filename"
+		fi
+		result=$(find -wholename "$filename" -printf "%TY-%Tm-%Td+%TH:%TM %12s $md5sum $is_uniq %p\n")
+		if [ $filecount -eq 0 ]; then
+			first_result="$result"
+		elif [ $matches -eq 0 ]; then
+			if [ $maxhash -eq 1 ]; then
+				echo
+				echo "$first_result"
+			fi
+			echo "$result"
+		fi
+#		script_string="$script_string\n# $result"
+		filecount=$((filecount+1))
+	done
+	IFS="$old_IFS"
+#	script_string="$script_string\n# uncomment the following line to delete all but the oldest of the duplicate files immediately above:"
+#	script_string="$script_string\n${action} -v$list_of_files_to_potentially_remove"
+#	if [ $numdups -gt 0 ]; then
+#		echo -e "${script_string}" >> "$script_to_remove_all_but_oldest_duplicate"
+#	fi
+#	total_potential_savings=$((total_potential_savings+numdups*size))
+done
+#echo >> "$script_to_remove_all_but_oldest_duplicate"
+
+#echo
+#echo "total potential savings is $total_potential_savings bytes"
+#echo "# total potential savings is $total_potential_savings bytes" >> "$script_to_remove_all_but_oldest_duplicate"
+#if [ ${action:0:1} == "#" ]; then
+#	echo
+#	echo "now edit file \"$script_to_remove_all_but_oldest_duplicate\" and only uncomment the lines you're sure you want"
+#	echo "(suggest useful vim expression \":s/^#rm/rm/\" (etc) and then repeatedly \"/\" and \"&\")"
+#	echo "then do \"bash $script_to_remove_all_but_oldest_duplicate\" to actually do it"
+#fi
+
