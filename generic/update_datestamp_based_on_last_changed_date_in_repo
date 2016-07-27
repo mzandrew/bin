@@ -11,10 +11,28 @@
 # indicators, so the trick is to append @ to every filename to avoid this
 # from http://stackoverflow.com/questions/3511348/how-to-remove-a-file-with-in-its-name-from-svn-in-command-line
 
+# git format is:
+# Date:   Fri Jun 17 07:36:46 2016 +0900
+# touch doesn't like the +9000 on the end...
+
+# mode can come from output status of:
+# git log --max-count 1
+# or
+# svn info
+declare mode="svn"
+mode=“git“
+#if [ $# -gt 0 ]; then
+#	mode=$1
+#fi
 declare temp=$(mktemp)
 if [ $# -gt 0 ]; then
 	for each; do
-		declare date=$(svn info "$each@" 2>/dev/null | grep "Last Changed Date" | sed -e "s,^Last Changed Date: \(.*\),\1,")
+		declare date
+		if [ "$mode" == "svn" ]; then
+			date=$(svn info "$each@" 2>/dev/null | grep "Last Changed Date" | sed -e "s,^Last Changed Date: \(.*\),\1,")
+		else
+			date=$(git log --follow "$each" | grep '^Date' | sed -e "s,^Date:[[:space:]]*,," | sed -e "s, [+-][0-9]\{4\}$,," | head -n1)
+		fi
 		if [ ! -z "$date" ]; then
 			touch --date="$date" $temp
 			if [ "$each" -nt $temp ]; then
@@ -24,7 +42,7 @@ if [ $# -gt 0 ]; then
 		fi
 	done
 else
-	find -type d -name '.svn' -prune -o -type f -exec $0 {} +
+	find -type d \( -name '.svn' -o -name '.git' \) -prune -o -type f -exec $0 {} +
 fi
 rm $temp
 
