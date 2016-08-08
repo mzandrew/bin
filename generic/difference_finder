@@ -12,7 +12,8 @@
 
 #echo "#/bin/bash -e" >> "$script_to_remove_all_but_oldest_duplicate"
 declare prune_string="-type d ( -name proc -o -name dev -o -name \.svn -o -name \.git ) -prune"
-declare filenames=$(find "${@}" $prune_string -o -type f -printf "%f\n" | sort -u)
+#declare filenames=$(find "${@}" $prune_string -o -type f -printf "%f\n" | sort -u)
+declare filenames=$(find "${@}" $prune_string -o -type f -printf "%TY-%Tm-%Td+%TH:%TM %f\n" | sort -k 1n | colrm 1 17)
 #echo "${filenames}"
 #exit 0
 
@@ -54,8 +55,10 @@ for basename in $filenames; do
 				is_uniq="  "
 			fi
 		fi
-		if [ "${filename:0:1}" != "/" ]; then
-			filename="./$filename"
+		if [ "${filename:0:2}" != "./" ]; then
+			if [ "${filename:0:1}" != "/" ]; then
+				filename="./$filename"
+			fi
 		fi
 		result=$(find -wholename "$filename" -printf "%TY-%Tm-%Td+%TH:%TM %12s $md5sum $is_uniq %p\n")
 		if [ $filecount -eq 0 ]; then

@@ -63,7 +63,6 @@ for size in $file_sizes; do
 		echo "$result"
 		script_string="$script_string\n# $result"
 		filecount=$((filecount+1))
-		total_numdups=$((total_numdups+numdups))
 	done
 	IFS="$old_IFS"
 	script_string="$script_string\n# uncomment the following line to delete all but the oldest of the duplicate files immediately above:"
@@ -72,6 +71,7 @@ for size in $file_sizes; do
 		echo -e "${script_string}" >> "$script_to_remove_all_but_oldest_duplicate"
 	fi
 	total_potential_savings=$((total_potential_savings+numdups*size))
+	total_numdups=$((total_numdups+numdups))
 done
 echo >> "$script_to_remove_all_but_oldest_duplicate"
 
