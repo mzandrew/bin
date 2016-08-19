@@ -12,10 +12,18 @@
 
 #echo "#/bin/bash -e" >> "$script_to_remove_all_but_oldest_duplicate"
 declare prune_string="-type d ( -name proc -o -name dev -o -name \.svn -o -name \.git ) -prune"
-#declare filenames=$(find "${@}" $prune_string -o -type f -printf "%f\n" | sort -u)
-declare filenames=$(find "${@}" $prune_string -o -type f -printf "%TY-%Tm-%Td+%TH:%TM %f\n" | sort -k 1n | colrm 1 17)
+#declare filenames=$(find "${@}" $prune_string -o -type f -printf "%f\n" | sort -u) # this version sorts by basename
+#declare filenames=$(find "${@}" $prune_string -o -type f -printf "%TY-%Tm-%Td+%TH:%TM %f\n" | sort -k 1n | colrm 1 17 | uniq.py) # this version sorts by date of oldest version of each file
+declare filenames=$(find "${@}" $prune_string -o -type f -printf "%h\t%f\n" | sort -k 1,1 | awk '{ print $2 }' | uniq.py) # this version sorts by dirname instead of basename
 #echo "${filenames}"
 #exit 0
+declare -i show_singles=1 # whether to show files that only appear once in the given dirs
+declare -i show_context_diff=1 # whether to show the diff -u between the first and second files that differ
+#declare -i width=$(($(set | grep "^COLUMNS=" | sed -e "s,COLUMNS=,,")-67)) # must "export COLUMNS" in ~/.bashrc or /etc/bashrc for this to work...
+declare -i width=$(find "${@}" $prune_string -o -type f -print | wc -L)
+if [ $width -gt 129 ]; then
+	width=129
+fi
 
 #declare -i total_potential_savings=0
 for basename in $filenames; do
@@ -30,9 +38,9 @@ for basename in $filenames; do
 	declare is_uniq
 	declare -i matches
 	declare old_IFS="$IFS"
-	declare first_result="" result=""
+	declare first_result="" result="" previous_filename=""
 	IFS=$'\n'
-	for filename in $(IFS="$old_IFS"; find "${@}" $prune_string -o -type f -name "$basename" -printf "%TY-%Tm-%Td+%TH:%TM %p\n" | sort -k 1n | colrm 1 17); do
+	for filename in $(IFS="$old_IFS"; find "${@}" $prune_string -o -type f -name "$basename" -printf "%TY-%Tm-%Td+%TH:%TM\t%p\t%h\n" | sort -k 1,1 -k 3,3 | awk '{print $2}'); do
 		matches=0
 		declare md5sum=$(md5sum "$filename" | colrm 33)
 		if [ $filecount -eq 0 ]; then
@@ -60,19 +68,35 @@ for basename in $filenames; do
 				filename="./$filename"
 			fi
 		fi
-		result=$(find -wholename "$filename" -printf "%TY-%Tm-%Td+%TH:%TM %12s $md5sum $is_uniq %p\n")
+		result=$(find "${@}" -wholename "$filename" -printf "%TY-%Tm-%Td+%TH:%TM %12s $md5sum $is_uniq %${width}p\n")
+		if [ -z "$result" ]; then
+			echo "$filename"
+		fi
 		if [ $filecount -eq 0 ]; then
 			first_result="$result"
+			#if [ $show_singles -gt 0 ]; then
+			#	echo
+			#	echo "$first_result"
+			#fi
 		elif [ $matches -eq 0 ]; then
+			#if [ $show_singles -eq 0 ] && [ $maxhash -eq 1 ]; then
 			if [ $maxhash -eq 1 ]; then
 				echo
 				echo "$first_result"
 			fi
 			echo "$result"
+			if [ $show_context_diff -gt 0 ] && [ $maxhash -eq 1 ]; then
+				diff -u "$previous_filename" "$filename" || /bin/true
+			fi
 		fi
 #		script_string="$script_string\n# $result"
 		filecount=$((filecount+1))
+		previous_filename="$filename"
 	done
+	if [ $show_singles -gt 0 ] && [ $filecount -eq 1 ]; then
+		echo
+		echo "$first_result"
+	fi
 	IFS="$old_IFS"
 #	script_string="$script_string\n# uncomment the following line to delete all but the oldest of the duplicate files immediately above:"
 #	script_string="$script_string\n${action} -v$list_of_files_to_potentially_remove"
