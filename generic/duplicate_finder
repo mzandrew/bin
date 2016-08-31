@@ -21,6 +21,7 @@ echo "#/bin/bash -e" >> "$script_to_remove_all_but_oldest_duplicate"
 declare prune_string="-type d ( -name proc -o -name dev -o -name \.svn -o -name \.git ) -prune"
 declare file_sizes=$(find "${@}" $prune_string -o -type f -size +${lower_size_limit}c -printf "%s\n" | sort -rn | uniq -d)
 declare -i total_potential_savings=0
+declare -i total_numdups=0
 for size in $file_sizes; do
 	echo
 	#echo "$size bytes:"
@@ -52,9 +53,12 @@ for size in $file_sizes; do
 				hash[$maxhash]="$md5sum"
 			fi
 		fi
-		if [ "${filename:0:1}" != "/" ]; then
-			filename="./$filename"
+		if [ "${filename:0:2}" != "./" ]; then
+			if [ "${filename:0:1}" != "/" ]; then
+				filename="./$filename"
+			fi
 		fi
+		#echo "$filename"
 		declare result=$(find -wholename "$filename" -printf "%TY-%Tm-%Td+%TH:%TM %12s $md5sum $is_dup %p\n")
 		echo "$result"
 		script_string="$script_string\n# $result"
@@ -67,12 +71,13 @@ for size in $file_sizes; do
 		echo -e "${script_string}" >> "$script_to_remove_all_but_oldest_duplicate"
 	fi
 	total_potential_savings=$((total_potential_savings+numdups*size))
+	total_numdups=$((total_numdups+numdups))
 done
 echo >> "$script_to_remove_all_but_oldest_duplicate"
 
 echo
-echo "total potential savings is $total_potential_savings bytes"
-echo "# total potential savings is $total_potential_savings bytes" >> "$script_to_remove_all_but_oldest_duplicate"
+echo "total potential savings:  $total_potential_savings bytes in $total_numdups files"
+echo "# total potential savings:  $total_potential_savings bytes in $total_numdups files" >> "$script_to_remove_all_but_oldest_duplicate"
 if [ ${action:0:1} == "#" ]; then
 	echo
 	echo "now edit file \"$script_to_remove_all_but_oldest_duplicate\" and only uncomment the lines you're sure you want"
