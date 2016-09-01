@@ -13,12 +13,12 @@
 #echo "#/bin/bash -e" >> "$script_to_remove_all_but_oldest_duplicate"
 declare prune_string="-type d ( -name proc -o -name dev -o -name \.svn -o -name \.git ) -prune"
 #declare filenames=$(find "${@}" $prune_string -o -type f -printf "%f\n" | sort -u) # this version sorts by basename
-#declare filenames=$(find "${@}" $prune_string -o -type f -printf "%TY-%Tm-%Td+%TH:%TM %f\n" | sort -k 1n | colrm 1 17 | uniq.py) # this version sorts by date of oldest version of each file
-declare filenames=$(find "${@}" $prune_string -o -type f -printf "%h\t%f\n" | sort -k 1,1 | awk '{ print $2 }' | uniq.py) # this version sorts by dirname instead of basename
+declare filenames=$(find "${@}" $prune_string -o -type f -printf "%TY-%Tm-%Td+%TH:%TM %f\n" | sort -k 1n | colrm 1 17 | uniq.py) # this version sorts by date of oldest version of each file
+#declare filenames=$(find "${@}" $prune_string -o -type f -printf "%h\t%f\n" | sort -k 1,1 | awk '{ print $2 }' | uniq.py) # this version sorts by dirname instead of basename
 #echo "${filenames}"
 #exit 0
 declare -i show_singles=1 # whether to show files that only appear once in the given dirs
-declare -i show_context_diff=1 # whether to show the diff -u between the first and second files that differ
+declare -i show_context_diff=0 # whether to show the diff -u between the first and second files that differ
 #declare -i width=$(($(set | grep "^COLUMNS=" | sed -e "s,COLUMNS=,,")-67)) # must "export COLUMNS" in ~/.bashrc or /etc/bashrc for this to work...
 declare -i width=$(find "${@}" $prune_string -o -type f -print | wc -L)
 if [ $width -gt 129 ]; then
