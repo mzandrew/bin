@@ -7,6 +7,8 @@
 # https://xkcd.com/710/
 
 import sqlite3
+filename = "collatz.sqlite"
+how_often_to_commit_db = 1000
 
 # select * from collatz where depth>300 order by depth;
 # took 85 minutes to run 1 to 69999 with 1 to 6999 already in db
@@ -22,7 +24,7 @@ def odd(number):
 def get_depth(number):
 	cursor.execute("select depth from collatz where number=?", (number,))
 	depth = cursor.fetchone()[0]
-	print "already know that depth from " + str(number) + " is " + str(depth)
+	#print "already know that depth from " + str(number) + " is " + str(depth)
 	return depth
 
 def start(number):
@@ -62,21 +64,57 @@ def insert(number, depth):
 		#print "updating"
 		cursor.execute("update collatz set depth=? where number=?", (depth, number))
 
-filename = "collatz.sqlite"
-connection = sqlite3.connect(filename)
-with connection:
-	cursor = connection.cursor()
-	#cursor.execute("select name from sqlite_master where type='table'")
-	cursor.execute('select name from sqlite_master where type=?', ('table',))
-	found_collatz_table = 0
-	rows = cursor.fetchall()
-	for row in rows:
-		if row[0]=="collatz":
-			print "found existing table " + row[0] + " in file " + filename
-			found_collatz_table = 1
-	if not found_collatz_table:
-		#cursor.execute("create table collatz(id INT, number INT, depth INT)")
-		cursor.execute("create table collatz(id integer primary key, number INT, depth INT)")
+def open_db_file(filename):
+	global connection
+	global cursor
+	connection = sqlite3.connect(filename)
+	with connection:
+		cursor = connection.cursor()
+		#cursor.execute("select name from sqlite_master where type='table'")
+		cursor.execute('select name from sqlite_master where type=?', ('table',))
+		found_collatz_table = 0
+		rows = cursor.fetchall()
+		for row in rows:
+			if row[0]=="collatz":
+				print "found existing table " + row[0] + " in file " + filename
+				found_collatz_table = 1
+		if not found_collatz_table:
+			#cursor.execute("create table collatz(id INT, number INT, depth INT)")
+			cursor.execute("create table collatz(id integer primary key, number INT, depth INT)")
+
+def find_deepest_depth_in_table():
+	cursor.execute("select max(depth) from collatz")
+	depth = cursor.fetchone()[0]
+	print "highest depth in table is " + str(depth)
+	return depth
+
+def find_highest_number_in_table():
+	cursor.execute("select max(number) from collatz")
+	number = cursor.fetchone()[0]
+	print "highest number in table is " + str(number)
+	return number
+
+#   last_row_id = cursor.lastrowid
+#   if last_row_id == None:
+#	   print "nothing in table"
+#   else:
+#	   print "last id#" + str(last_row_id)
+
+def add_this_many_to_end_of_table(increment):
+	start_number = find_highest_number_in_table() + 1
+	end_number = start_number + increment - 1
+	if end_number > start_number:
+		print "start number = " + str(start_number)
+		print "end number = " + str(end_number)
+		for i in range(start_number, end_number+1):
+			if count(i) == 0:
+				(number, depth) = collatz(i)
+				insert(number, depth)
+			if i%how_often_to_commit_db==0:
+				print "current number = " + str(i)
+				connection.commit()
+
+def add_to_end_of_table_until(maximum_number):
 	#cursor.execute("select table collatz")
 	#last_row_id = cursor.lastrowid
 	#if last_row_id == None:
@@ -86,17 +124,20 @@ with connection:
 	#cursor.execute("insert into collatz values(?, ?, ?)", (1, 7, 0))
 	#cursor.execute("insert into collatz(number, depth) values(?, ?)", (7, 0))
 	#for i in range(1, 70000000):
-	for i in range(1, 70000):
-		if count(i) == 0:
-			(number, depth) = collatz(i)
-			insert(number, depth)
-	    	if i%1000==0:
-			connection.commit()
-#   last_row_id = cursor.lastrowid
-#   if last_row_id == None:
-#	   print "nothing in table"
-#   else:
-#	   print "last id#" + str(last_row_id)
+	start_number = find_highest_number_in_table() + 1
+	end_number = maximum_number
+	if end_number > start_number:
+		print "start number = " + str(start_number)
+		print "end number = " + str(end_number)
+		for i in range(start_number, end_number+1):
+			if count(i) == 0:
+				(number, depth) = collatz(i)
+				insert(number, depth)
+			if i%how_often_to_commit_db==0:
+				print "current number = " + str(i)
+				connection.commit()
+
+def print_table():
 	#cursor.execute("select * from collatz")
 	cursor.execute("select number, depth from collatz")
 	#rows = cursor.fetchall()
@@ -111,4 +152,35 @@ with connection:
 			break
 		else:
 			print row
+
+def print_histogram():
+	cursor.execute("select depth from collatz order by depth")
+	histogram = {}
+	while True:
+		row = cursor.fetchone()
+		if row == None:
+			break
+		else:
+			depth = row[0]
+			try:
+				histogram[depth] = histogram[depth] + 1
+			except:
+				histogram[depth] = 1
+	for depth in histogram.keys():
+#		print "there are " + str(histogram[depth]) + " entries with depth=" + str(depth)
+		print depth, histogram[depth]
+#	for entries in sorted(set(histogram.values())):
+#		print "#entries=" + str(entries) + ": ",
+#		for depth in histogram.keys():
+#			if histogram[depth]==entries:
+#				print depth,
+#		print
+
+open_db_file(filename)
+#add_to_end_of_table_until(100000)
+#add_this_many_to_end_of_table(1000)
+#print_table()
+print_histogram()
+find_highest_number_in_table()
+find_deepest_depth_in_table()
 
