@@ -1,0 +1,52 @@
+#!/bin/bash -e
+
+declare date=$(date +"%Y-%m-%d")
+
+cd /tftpboot/copper/root
+
+function COPPER_root {
+	filename="$HOME/${date}.COPPER.key-files.tar"
+	tar cf "${filename}" \
+		lib/modules/2.6.18/ \
+		boot/System.map-2.6.18 \
+		boot/vmlinuz-2.6.18 \
+		usr/local/bin/booths \
+		usr/local/bin/bootrx \
+		usr/local/bin/stat4r \
+		usr/local/bin/staths \
+		lib/modules/2.6.18/misc/ttrx.ko \
+		lib/modules/2.6.18/misc/ttrx_fifo.ko \
+		lib/modules/2.6.18/misc/tt4r037.bit \
+		lib/modules/2.6.18/misc/tt5r037.bit \
+		lib/modules/2.6.18/misc/hslb.ko \
+		lib/modules/2.6.18/misc/hslb046_rck.bit \
+		lib/modules/2.6.18/misc/hslb052_xtal.bit \
+		lib/modules/2.6.18/misc/copper.ko \
+		etc/rc.d/init.d/ttrx \
+		etc/rc.d/init.d/copper \
+		etc/sysconfig/ntpd \
+		etc/ntp.conf \
+		etc/syslog.conf \
+	
+	sudo tar rf "${filename}" \
+		boot/initrd-2.6.18.img \
+		etc/sudoers \
+	
+	bzip2 "${filename}"
+}
+
+function COPPER_kernel_source {
+tar cjf ~/${date}.COPPER.kernel-source.tar.bz2 \
+	usr/src/kernels/linux-2.6.18/ \
+	
+}
+
+COPPER_root
+#COPPER_kernel_source
+
+# need to save all custom pxe boot files:
+#/tftpboot/linux-install
+
+# need to save custom kernel config, Kconfig and Makefiles that were customized
+# ...
+
