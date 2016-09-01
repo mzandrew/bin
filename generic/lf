@@ -1,5 +1,15 @@
 #!/bin/bash -e
 
+TYPE_STRING="-type f"
+if [ $# -gt 0 ]; then
+#	for each; do
+		if [ "$1" == "-d" ]; then
+			TYPE_STRING=""
+			shift
+		fi
+#	done
+fi
+
 #find "${@}" -printf "%TY-%Tm-%Td+%TH:%TM %12s %p\n" | sort -n -k 1
 
 # to sort by dir+filename:
@@ -7,5 +17,6 @@
 
 # to sort by modification date:
 #find "${@}" \( -name "proc" -o -name "dev" \) -prune -o -type f -printf "%TY-%Tm-%Td+%TH:%TM %12s %p\n" | grep -v '\.git\|\.svn' | sort -n -k 1
-find "${@}" -type d \( -name "proc" -o -name "dev" -o -name "\.svn" -o -name "\.git" \) -prune -o -type f -printf "%TY-%Tm-%Td+%TH:%TM %12s %p\n" | sort -k 1n
+find "${@}" -type d \( -name "proc" -o -name "dev" -o -name "\.svn" -o -name "\.git" \) -prune -o $TYPE_STRING -printf "%TY-%Tm-%Td+%TH:%TM %12s %p\n" | sort -k 1n,1
+# a second -k 3 should then sort by filename to break ties, but it doesn't seem to work
 
