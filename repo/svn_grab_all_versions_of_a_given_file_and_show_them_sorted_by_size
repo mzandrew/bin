@@ -1,0 +1,11 @@
+#!/bin/bash -e
+
+declare filename="$1"
+#cd ~/build/uh-svn-repo
+#svn log --verbose > ../svn-log-verbose
+#cd ~/build
+#cat svn-log-verbose | grep "  A " | sed -e "s,^   A \([^ ]\+\).*,\1," | sort -u > svn-list-of-files
+cd ~/build/test
+for each in $(grep "$filename" ../svn-list-of-files); do svn_grab_all_versions_of_a_given_file https://www.phys.hawaii.edu/repos/belle2/$each; done
+lf | grep "$filename" | sort -k2n,2
+
