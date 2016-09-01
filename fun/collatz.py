@@ -1,11 +1,17 @@
+#!/bin/python2
 #!/usr/bin/python2
-#!/data/data/com.termux/files/usr/bin/python2
 
 # written 2016-08-30 by mza
 # after watching https://youtu.be/5mFpVDpKX70
-# and getting python+sqlite help from http://zetcode.com/db/sqlitepythontutorial/
+# and getting python+sqlite help from http://zetcode.com/db/sqlitepythontutorial
+# https://xkcd.com/710/
 
 import sqlite3
+
+# select * from collatz where depth>300 order by depth;
+# took 85 minutes to run 1 to 69999 with 1 to 6999 already in db
+# took 108 minutes to run with 1 to 69999 already in db
+# takes 24 minutes to run if we change fethcall to fetchone for the print part
 
 def even(number):
 	return number/2
@@ -79,21 +85,30 @@ with connection:
 	#	print "last id#" + str(last_row_id)
 	#cursor.execute("insert into collatz values(?, ?, ?)", (1, 7, 0))
 	#cursor.execute("insert into collatz(number, depth) values(?, ?)", (7, 0))
-	for i in range(1, 30):
+	#for i in range(1, 70000000):
+	for i in range(1, 70000):
 		if count(i) == 0:
 			(number, depth) = collatz(i)
 			insert(number, depth)
- #   last_row_id = cursor.lastrowid
- #   if last_row_id == None:
- #	   print "nothing in table"
- #   else:
- #	   print "last id#" + str(last_row_id)
+	    	if i%1000==0:
+			connection.commit()
+#   last_row_id = cursor.lastrowid
+#   if last_row_id == None:
+#	   print "nothing in table"
+#   else:
+#	   print "last id#" + str(last_row_id)
 	#cursor.execute("select * from collatz")
 	cursor.execute("select number, depth from collatz")
-	rows = cursor.fetchall()
-	if rows == None:
-		print "nothing in table"
-	else:
-		for row in rows:
+	#rows = cursor.fetchall()
+	#if rows == None:
+	#	print "nothing in table"
+	#else:
+	#	for row in rows:
+	#		print row
+	while True:
+		row = cursor.fetchone()
+		if row == None:
+			break
+		else:
 			print row
 
