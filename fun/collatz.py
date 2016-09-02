@@ -1,5 +1,5 @@
-#!/bin/python2
 #!/usr/bin/python2
+#!/data/data/com.termux/files/usr/bin/python2
 
 # written 2016-08-30 by mza
 # after watching https://youtu.be/5mFpVDpKX70
@@ -166,9 +166,15 @@ def print_histogram():
 				histogram[depth] = histogram[depth] + 1
 			except:
 				histogram[depth] = 1
+	histfile = open("histogram.gnuplot", "w")
+	print >>histfile, "set terminal png size 1280,1024"
+	print >>histfile, "set output \"histogram.png\""
+	print >>histfile, "plot \"histogram.txt\""
+	histfile.close()
+	histfile = open("histogram.txt", "w")
 	for depth in histogram.keys():
 #		print "there are " + str(histogram[depth]) + " entries with depth=" + str(depth)
-		print depth, histogram[depth]
+		print >>histfile, depth, histogram[depth]
 #	for entries in sorted(set(histogram.values())):
 #		print "#entries=" + str(entries) + ": ",
 #		for depth in histogram.keys():
@@ -177,8 +183,8 @@ def print_histogram():
 #		print
 
 open_db_file(filename)
-#add_to_end_of_table_until(100000)
-#add_this_many_to_end_of_table(1000)
+add_to_end_of_table_until(100000)
+#add_this_many_to_end_of_table(10000)
 #print_table()
 print_histogram()
 find_highest_number_in_table()
