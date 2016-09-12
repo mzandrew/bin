@@ -1,0 +1,47 @@
+#!/bin/bash -e
+
+# written 2016-06-28 by mza, but basic idea stolen from:
+# http://stackoverflow.com/questions/282802/how-can-i-view-all-historical-changes-to-a-file-in-svn
+
+# datestamp thing is from update_datestamp_based_on_svn_info_last_changed_date script
+
+declare url
+declare filename
+for url; do
+	if [ "${url:0:4}" == "http" ]; then
+		#set -x
+		repo=$(echo "$url"     | sed -e "s,\(http[s]://[^/]\+\)/\(.\+\)/\([^/]\+\)$,\1,")
+		dir=$(echo "$url"      | sed -e "s,\(http[s]://[^/]\+\)/\(.\+\)/\([^/]\+\)$,\2,")
+		filename=$(echo "$url" | sed -e "s,\(http[s]://[^/]\+\)/\(.\+\)/\([^/]\+\)$,\3,")
+		mkdir -p "$(dirname $dir)"
+		cd "$(dirname $dir)"
+		svn checkout "$repo/$dir" --depth=immediates || continue
+		cd "$(basename $dir)"
+	else
+		exit 17
+		filename="$url"
+	fi
+	echo "$url:"
+	svn log -q "$filename" | grep -E -e "^r[[:digit:]]+" -o | cut -c2- | sort -n | {
+		while read r; do
+			outfile="$filename.r$r"
+			if [ ! -e "$outfile" ]; then
+				# svn info returns:
+				#Last Changed Date: 2015-11-07 23:45:33 -1000 (Sat, 07 Nov 2015)
+				#Text Last Updated: 2016-06-27 18:18:32 -1000 (Mon, 27 Jun 2016)
+				#declare date=$(svn info "$filename@$r" 2>/dev/null | grep "Last Changed Date" | sed -e "s,^Last Changed Date: \(.*\),\1,")
+				#declare date=$(svn info "$filename@$r" | grep "Last Changed Date" | sed -e "s,^Last Changed Date: \(.*\),\1,")
+				declare date=$(svn info "$filename" --revision=$r | grep "Last Changed Date" | sed -e "s,^Last Changed Date: \(.*\),\1,")
+				#echo "$outfile $date"
+				svn cat -r$r $filename > "$outfile"
+				if [ ! -z "$date" ]; then
+					touch --date="$date" $outfile
+				else
+					echo "shenanigans \"$date\" $dir $outfile"
+				fi
+				ls -lart "$outfile"
+			fi
+		done
+	}
+done
+

@@ -97,3 +97,5 @@ export EDITOR=/usr/bin/vim
 
 export PATH
 
+export COLUMNS
+

@@ -1,8 +1,12 @@
 #!/bin/bash
 
-# writtn 2016-06-27 by mza
-# call it like so:
+# written 2016-06-27 by mza
+# updated 2016-06-30
+
+# call this script like so:
 # scan_ip_addresses_in_etc_hosts 2 254 | grep on
+# or just:
+# scan_ip_addresses_in_etc_hosts
 
 declare ip=""
 declare names=""
@@ -12,18 +16,24 @@ function go {
 	ping -q -c 1 -w 1 $ip > /dev/null
 	if [ $? -eq 0 ]; then
 		echo -n " on "
-		if [ "$(nmap $ip -p22 | grep -c open)" ]; then
+		if [ "$(nmap $ip -p22 -P0 | grep -c open)" -gt 0 ]; then
 			echo -n " ssh"
 		else
 			echo -n "    "
 		fi
+		if [ "$(nmap $ip -p80 -P0 | grep -c open)" -gt 0 ]; then
+			echo -n " http"
+		else
+			echo -n "     "
+		fi
 	else
-		echo -n " off    "
+		#echo -n " off    "
+		echo -n "             "
 	fi
-	if [ $blind == "yes" ]; then
-		names=$(cat /etc/hosts | grep "$ip[[:space:]]" | sed -e "s,^[[:space:]]*\([0-9.]\+\)[[:space:]]\(.*\)$,\2,")
-	else
-		names=""
+	if [ "$blind" == "yes" ]; then
+		names="$(cat /etc/hosts | grep "$ip[[:space:]]" | sed -e "s,^[[:space:]]*\([0-9.]\+\)[[:space:]]\(.*\)$,\2,")"
+#	else
+#		names=""
 	fi
 	echo -n " $names"
 	echo
@@ -31,8 +41,8 @@ function go {
 }
 
 if [ $# -gt 0 ]; then
+	blind="yes"
 	for i in $(seq $1 $2); do
-		blind="yes"
 		ip="192.168.153.$i"
 		go
 	done
@@ -43,8 +53,8 @@ else
 			continue
 		fi
 		#echo -n $line
-		ip=$(echo $line | sed -e "s,^[[:space:]]*\([0-9.]\+\)[[:space:]]\(.*\)$,\1,")
-		names=$(echo $line | sed -e "s,^[[:space:]]*\([0-9.]\+\)[[:space:]]\(.*\)$,\2,")
+		ip=$(echo $line    | sed -e "s,^[[:space:]]*\([0-9.]\+\)[[:space:]]*\(.*\)$,\1,")
+		names=$(echo $line | sed -e "s,^[[:space:]]*\([0-9.]\+\)[[:space:]]*\(.*\)$,\2,")
 		#echo " [$ip] [$names]"
 		go
 	done

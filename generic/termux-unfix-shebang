@@ -1,0 +1,42 @@
+#!/data/data/com.termux/files/usr/bin/bash
+#!/bin/bash
+
+declare string
+declare mode="2termux"
+
+function go {
+	local file="$1"
+	local -i count=$(head -n1 "$file" | grep -c $string)
+	echo "$file [$count]"
+	if [ $count -gt 0 ]; then
+		touch $temp --reference="$file"
+		if [ "$mode" == "2termux" ]; then
+			sed -i -E "1 s@^#\!(.*)/bin/(.*)@#\!/data/data/com.termux/files/usr/bin/\2@" `realpath $@`
+		else
+			sed -i -E "1 s@^#\!/data/data/com.termux/files/usr/(bin/.*)@#\!/\1@" `realpath $@`
+		fi
+		touch "$file" --reference=$temp
+	fi
+}
+
+if [ $# -eq 1 ] && [ "$1" == "-r" ]; then
+	find -type d \( -name '.svn' -o -name '.git' \) -prune -o -type f -exec $0 -r {} +
+elif [ $# -eq 0 ]; then
+	find -type d \( -name '.svn' -o -name '.git' \) -prune -o -type f -exec $0 {} +
+else
+	temp=$(mktemp)
+	for file; do
+		if [ "$file" == "-r" ]; then
+			mode="2regular"
+			continue
+		fi
+		if [ "$mode" == "2termux" ]; then
+			string="#!/bin"
+		else
+			string="#!/data/data/com.termux/files/usr"
+		fi
+		go "$file"
+	done
+	rm $temp
+fi
+
