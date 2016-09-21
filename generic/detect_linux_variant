@@ -41,7 +41,7 @@ function detect_OS_ARCH_VER_BITS {
             # leave ARCH as-is
             ;;
         esac
-	KERNEL=$(uname -r | sed -e "s,^\([0-9]\.[0-9]\+\.[0-9]\+\).*,\1,")
+	KERNEL=$(uname -r | sed -e "s,^\([2]\.[0-9]\+\.[0-9]\+\).*,\1, ; s,^\([34]\.[0-9]\+\)\..*,\1,")
 	KERNEL_RELEASE_DATE=$(grep Released $0 | grep $KERNEL | sed -e "s,.* Released \(.\+\) (.*,(\1)," || echo "")
 }
 
