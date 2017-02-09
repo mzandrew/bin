@@ -7,6 +7,10 @@ function detect_OS_ARCH_VER_BITS {
             . /etc/lsb-release
             OS=$DISTRIB_ID
             VER=$DISTRIB_RELEASE
+        elif [ -f /etc/os-release ] && [ $(grep -c ^NAME /etc/os-release) -gt 0 ]; then
+            . /etc/os-release
+            OS=$NAME
+            VER=$VERSION
         elif [ -f /etc/redhat-release ]; then
             STRING=$(cat /etc/redhat-release)
             OS=$(echo $STRING | sed -e "s,^\([^ ]\+\) .*,\1,")
@@ -22,27 +26,23 @@ function detect_OS_ARCH_VER_BITS {
         case $(uname -m) in
         x86_64)
             BITS=64
+            ARCH=x64  # or AMD64 or Intel64 or whatever
             ;;
         i*86)
             BITS=32
+            ARCH=x86  # or IA32 or Intel32 or whatever
+            ;;
+        armv*)
+            BITS=32
+            ARCH=armhf
             ;;
         *)
             BITS=?
             ;;
         esac
-        case $(uname -m) in
-        x86_64)
-            ARCH=x64  # or AMD64 or Intel64 or whatever
-            ;;
-        i*86)
-            ARCH=x86  # or IA32 or Intel32 or whatever
-            ;;
-        *)
-            # leave ARCH as-is
-            ;;
-        esac
-	KERNEL=$(uname -r | sed -e "s,^\([2]\.[0-9]\+\.[0-9]\+\).*,\1, ; s,^\([34]\.[0-9]\+\)\..*,\1,")
-	KERNEL_RELEASE_DATE=$(grep Released $0 | grep $KERNEL | sed -e "s,.* Released \(.\+\) (.*,(\1)," || echo "")
+	KERNEL=$(uname -r | sed -e "s,^\([2]\.[0-9]\+\.[0-9]\+\).*,\1,")
+	KERNEL_SHORT=$(echo $KERNEL | sed -e "s,^\([34]\.[0-9]\+\)\..*,\1,")
+	KERNEL_RELEASE_DATE=$(grep Released $0 | grep $KERNEL_SHORT | sed -e "s,.* Released \(.\+\) (.*,(\1)," || echo "")
 }
 
 declare OS ARCH VER BITS KERNEL KERNEL_RELEASE_DATE
@@ -63,6 +63,9 @@ exit 0
 # from https://kernelnewbies.org/LinuxVersions?action=raw
 
 = 4.x =
+ * ["Linux 4.9"] Released 11 December, 2016 (70 days)
+ * ["Linux 4.8"] Released 2 October, 2016 (70 days)
+ * ["Linux 4.7"] Released 24 July, 2016 (70 days)
  * ["Linux 4.6"] Released 15 May, 2016 (63 days)
  * ["Linux 4.5"] Released 13 March, 2016 (63 days)
  * ["Linux 4.4"] Released 10 January, 2016 (70 days)
