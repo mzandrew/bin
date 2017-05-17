@@ -99,3 +99,5 @@ export PATH
 
 export COLUMNS
 
+alias bin="cd $HOME/build/bin"
+
