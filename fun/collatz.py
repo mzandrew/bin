@@ -265,8 +265,8 @@ def plot_evens_and_odds():
 	subprocess.call(["gnuplot", "evens_and_odds.gnuplot"])
 
 open_db_file(filename)
-#add_to_end_of_table_until(300000)
-add_this_many_to_end_of_table(100)
+add_to_end_of_table_until(500000)
+#add_this_many_to_end_of_table(100)
 #print_table()
 plot_histogram()
 plot_evens_and_odds()
