@@ -66,7 +66,7 @@ export -f GIDof
 
 alias df="df --block-size=1000000000"
 
-export HISTSIZE=-1
+export HISTSIZE=5000
 export HISTFILESIZE=
 
 # cadence/asic related:
