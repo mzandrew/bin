@@ -66,7 +66,7 @@ export -f GIDof
 
 alias df="df --block-size=1000000000"
 
-export HISTSIZE=
+export HISTSIZE=5000
 export HISTFILESIZE=
 
 # cadence/asic related:
@@ -89,8 +89,8 @@ fi
 #/home/mza/bin/:/home/mza/bin/bin:/home/mza/bin/cygwin-bin:/home/mza/bin/generic
 
 # include this file in your ${HOME}/.bashrc with the following 3 lines:
-#if [ -e "${HOME}/bin/bashrc" ]; then
-#	. "${HOME}/bin/bashrc"
+#if [ -e "${HOME}/build/bin/nofizbin/bashrc" ]; then
+#	. "${HOME}/build/bin/nofizbin/bashrc"
 #fi
 
 export EDITOR=/usr/bin/vim
