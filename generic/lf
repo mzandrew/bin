@@ -1,20 +1,34 @@
 #!/bin/bash -e
 
-declare TYPE_STRING="-type f"
+REGULAR_FILE_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p\n'
+REGULAR_DIR_STRING=''
+SYMLINK_STRING=''
+
 if [ $# -gt 0 ]; then
 	for each; do
-		if [ "$1" == "-d" ]; then
-			TYPE_STRING="$TYPE_STRING -o -type d"
+		if [ "$each" == "-d" ]; then
+			REGULAR_DIR_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p\n'
 			shift
-		elif [ "$1" == "-l" ]; then
-			TYPE_STRING="$TYPE_STRING -o -type l"
+		elif [ "$each" == "-l" ]; then
+			SYMLINK_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p -> %l\n'
 			shift
+		elif [ "$each" == "-ld" ] || [ "$each" == "-dl" ]; then
+			REGULAR_DIR_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p\n'
+			SYMLINK_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p -> %l\n'
+			shift
+		else
+			break;
 		fi
 	done
 fi
-TYPE_STRING="( $TYPE_STRING )"
 
-# to sort by modification date:
-find "${@}" -type d \( -name "proc" -o -name "dev" -o -name "\.svn" -o -name "\.git" \) -prune -o $TYPE_STRING -printf "%TY-%Tm-%Td+%TH:%TM %12s %p\n" | sort -k 1n,1
+# page 421 of "bash Cookbook" is helpful here
+find "${@}" \
+	-type d \( -name "proc" -o -name "dev" -o -name "\.svn" -o -name "\.git" \) -prune \
+	-o -type d -printf "$REGULAR_DIR_STRING" \
+	-o -type l -printf "$SYMLINK_STRING" \
+	-o         -printf "$REGULAR_FILE_STRING" \
+	| sort -k 1n,1
+
 # a second -k 3 should then sort by filename to break ties, but it doesn't seem to work
 
