@@ -7,13 +7,13 @@ SYMLINK_STRING=''
 if [ $# -gt 0 ]; then
 	for each; do
 		if [ "$each" == "-d" ]; then
-			REGULAR_DIR_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p\n'
+			REGULAR_DIR_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p/\n'
 			shift
 		elif [ "$each" == "-l" ]; then
 			SYMLINK_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p -> %l\n'
 			shift
 		elif [ "$each" == "-ld" ] || [ "$each" == "-dl" ]; then
-			REGULAR_DIR_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p\n'
+			REGULAR_DIR_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p/\n'
 			SYMLINK_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p -> %l\n'
 			shift
 		else
