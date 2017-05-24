@@ -63,6 +63,8 @@ exit 0
 # from https://kernelnewbies.org/LinuxVersions?action=raw
 
 = 4.x =
+ * ["Linux 4.11"] Released 30 April, 2017 (70 days)
+ * ["Linux 4.10"] Released 19 February, 2017 (70 days)
  * ["Linux 4.9"] Released 11 December, 2016 (70 days)
  * ["Linux 4.8"] Released 2 October, 2016 (70 days)
  * ["Linux 4.7"] Released 24 July, 2016 (70 days)
