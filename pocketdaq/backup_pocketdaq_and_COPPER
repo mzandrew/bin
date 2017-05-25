@@ -53,18 +53,37 @@ function compress {
 function pocketDAQ {
 # need to save all custom pxe boot files:
 	filename="$HOME/${date}.${hostname}.pocketDAQ.key-files.tar"
-	cd /tftpboot
+	cd /
 	if [ "$hostname" = "bdaq" ]; then
 		tar cf "${filename}" \
-			sl57-pxelinux \
-			sl57-export/snapshot \
+			tftpboot/sl57-pxelinux \
+			tftpboot/sl57-export/snapshot \
 
 	else
 		tar cf "${filename}" \
-			linux-install \
-			copper/snapshot \
+			tftpboot/linux-install \
+			tftpboot/copper/snapshot \
 		
 	fi
+	append etc/dhcp/dhcpd.conf
+	append etc/ntp.conf
+	append etc/inittab
+	append etc/hosts
+	append etc/sysconfig/network
+	append etc/sysconfig/network-scripts
+	append etc/exports
+	append etc/bashrc
+	append etc/fstab
+	append etc/rc.d/rc.local
+	append etc/xinetd.d/tftp
+	append etc/udev/rules.d/52-xilinx-pcusb.rules
+	append etc/udev/rules.d/52-xilinx-digilent-usb.rules
+	append etc/udev/rules.d/70-persistent-cd.rules
+	append etc/udev/rules.d/95-usb-serial.rules
+	append etc/modprobe.d/aliases.conf
+	append etc/sysconfig/system-config-firewall
+	append etc/default/useradd
+	append etc/yum.repos.d
 
 	compress
 }
