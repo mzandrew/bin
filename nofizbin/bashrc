@@ -101,3 +101,34 @@ export COLUMNS
 
 alias bin="cd $HOME/build/bin"
 
+declare interactive_ysq="ask"
+function interactive {
+	local command="${1}"
+	local description="${2}"
+	echo; echo "the command \"$command\" will:"; echo "$description"
+	if [ "$interactive_ysq" = "yes" ]; then
+		eval $command
+	else
+		echo "okay to continue?"
+		select s in yes skip-this-step quit; do
+			if [ "$s" = "yes" ]; then
+				echo "running \"$command\"..."
+				eval $command
+			elif [ "$s" = "skip-this-step" ]; then
+				echo "user skipped this step"
+				echo
+				return
+			elif [ "$s" = "quit" ]; then
+				echo "user quit $0"
+				if [ -z "$PS1" ]; then
+					exit 1
+				else
+					return
+				fi
+			fi
+			break;
+		done
+		echo
+	fi
+}
+

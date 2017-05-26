@@ -4,6 +4,6 @@
 #find -type d -exec chmod --changes 755 {} \;
 
 #find -type f -exec chmod --changes 644 {} \; -o -type d -exec chmod --changes 755 {} \;
-find -type f -exec chmod --changes 644 {} + -o -type d -exec chmod --changes 755 {} +
-#find -type f -exec chmod --changes 640 {} + -o -type d -exec chmod --changes 750 {} +
+#find -type f -exec chmod --changes 644 {} + -o -type d -exec chmod --changes 755 {} +
+find -type f -exec chmod --changes 640 {} + -o -type d -exec chmod --changes 750 {} +
 
