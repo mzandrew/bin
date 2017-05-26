@@ -1,10 +1,11 @@
 #!/bin/bash -e
 
+name=$(hostname)
 configfile="${HOME}/.update-files-lists-rc"
 if [ ! -e "${configfile}" ]; then
 	echo "
 source=\"${HOME}\"
-name=\"mza-carbon-x1\"
+name=\"${name}\"
 destination=\"${HOME}/files-lists\"
 accumulation_destination=\"${HOME}/files-lists/accumulated\"
 " >"${configfile}"
@@ -15,6 +16,9 @@ fi
 cd "${source}"
 date=$(date +"%Y-%m-%d")
 filename="${destination}/${date}.${name}.lf-r"
+if [ ! -e "${destination}" ]; then
+	mkdir "${destination}"
+fi
 lf > ${filename} 2>/dev/null
 
 export accumulation_destination
