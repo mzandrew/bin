@@ -5,6 +5,7 @@ if [ $UID -gt 0 ]; then
 	echo "sudo $0"
 	exit 1
 fi
+declare localdir=$(cd $(dirname $(readlink -f $0)); pwd)
 
 declare date=$(date +"%Y-%m-%d")
 declare hostname=$(hostname)
@@ -34,10 +35,11 @@ function whole_backup {
 		if [ -d $each ]; then
 			file="$ddir/$date.$each.tar"
 			if [ -e $file ]; then
-				echo "file $file already exists"
+				echo "file $file already exists; skipping"
 			else
 				echo "creating file $file..."
 				nice tar cf $file $each
+				$localdir/extract-lf-listing-from-tar-file $file
 			fi
 		fi
 	done
@@ -50,14 +52,13 @@ function incremental_backup {
 	mkdir -p "$ddir"
 	cd $sdir
 	#du --ma=1 > du-ma1
-	#for each in *; do
-	for each in mza; do
+	for each in *; do
 		if [ -d $each ]; then
 			local oldfile=$(find $destination -type f -name "20[0-9][0-9]-[0-9][0-9]-[0-9][0-9].$each.tar" | sort | tail -n1)
 			#echo $oldfile
 			local newfile="$ddir/$date.$each.tar"
 			if [ -e $newfile ]; then
-				echo "file $newfile already exists"
+				echo "file $newfile already exists; skipping"
 			else
 				if [ -e $oldfile ]; then
 					echo "creating file $newfile (as an incremental backup relative to $oldfile)..."
@@ -67,12 +68,13 @@ function incremental_backup {
 					nice tar -c -f $newfile $each
 				fi
 			fi
+			if [ ! -e "${newfile}.lf-r" ]; then
+				echo -n "generating listing file for "
+				$localdir/extract-lf-listing-from-tar-file $newfile
+			fi
 		fi
 	done
 }
 
 . "${configfile}"
-
-#go /opt/asiclib asiclib
-#go /opt/cadence cadence
 
