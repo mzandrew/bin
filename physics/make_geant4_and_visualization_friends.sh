@@ -7,8 +7,10 @@ declare tdir="$dir"
 if [ -e "/opt/shared/software/geant4" ]; then
 	tdir="/opt/shared/software/geant4"
 fi
-declare list="build-essential mesa-utils mercurial"
-declare CMAKE="cmake" # cmake3 for RHEL
+declare deblist="build-essential mesa-utils mercurial"
+declare rpmlist="mercurial"
+	rpmlist="$rpmlist gcc gcc-c++ make automake autoconf"
+declare CMAKE="cmake"
 declare MAKE="make -j4"
 
 # check http://geant4.cern.ch/support/download.shtml
@@ -25,7 +27,21 @@ declare clhep_version_string_a="clhep-2.3.4.4" # latest as of 2017-06-02
 declare clhep_version_string_b="2.3.4.4" # untar subdir name
 declare clhep_version_string_c="CLHEP-2.3.4.4" # install subdir name
 
-declare list_of_things_that_should_be_there_after_complete_installation="/usr/local/share/$geant_version_string_b /usr/local/lib/$geant_version_string_b /usr/local/include/Inventor /usr/local/bin/soxt-config /usr/local/share/Coin /usr/local/lib/libSoXt.* /usr/local/lib/libCoin* /usr/local/include/CLHEP /usr/local/lib/$clhep_version_string_a /usr/local/doc/$cmake_version_string_b /usr/local/share/$cmake_version_string_b /usr/local/bin/cmake /usr/local/bin/ctest /usr/local/bin/cpack"
+declare list_of_things_that_should_be_there_after_complete_installation="/usr/local/share/$geant_version_string_b /usr/local/lib/$geant_version_string_b /usr/local/include/Geant4 /usr/local/include/Inventor /usr/local/bin/soxt-config /usr/local/share/Coin /usr/local/lib/libSoXt.* /usr/local/lib/libCoin* /usr/local/include/CLHEP /usr/local/lib/$clhep_version_string_c /usr/local/doc/$cmake_version_string_b /usr/local/share/$cmake_version_string_b /usr/local/bin/cmake /usr/local/bin/ctest /usr/local/bin/cpack"
+
+declare -i redhat=0 SL6=0 SL7=0 deb=0
+if [ -e /etc/redhat-release ]; then
+	redhat=1
+	set +e
+	SL6=$(grep -c "Scientific Linux release 6" /etc/redhat-release)
+	SL7=$(grep -c "Scientific Linux release 7" /etc/redhat-release)
+	set -e
+elif [ -e /etc/debian_version ]; then
+	deb=1
+else
+	echo "what kind of linux is this?"
+	exit 1
+fi
 
 function show_all_files {
 	ls -lart $list_of_things_that_should_be_there_after_complete_installation || /bin/true
@@ -82,13 +98,18 @@ function build_and_install_cmake {
 	cd $cmake_version_string_a
 	./configure
 	$MAKE
-	sudo apt -y purge cmake cmake-data
+	if [ $deb -gt 0 ]; then
+		sudo apt -y purge cmake cmake-data
+	else
+		sudo yum -y erase cmake cmake-data
+	fi
 	sudo make install
 	sudo chmod -R o+rx /usr/local/doc/$cmake_version_string_b /usr/local/share/$cmake_version_string_b /usr/local/bin/cmake /usr/local/bin/ctest /usr/local/bin/cpack /usr/local/doc/
 	# "/opt/cmake/bin/cmake: cannot execute binary file: Exec format error" means you have the wrong binary downloaded; just do it from source (above)
 }
 
-list="$list qtdeclarative5-dev"
+deblist="$deblist qtdeclarative5-dev"
+rpmlist="$rpmlist qt5-qtdeclarative-devel"
 function build_and_install_clhep {
 	echo; echo "clhep"
 	file="${clhep_version_string_a}.tgz"
@@ -135,7 +156,8 @@ function build_and_install_coin {
 	sudo chmod -R o+rx /usr/local/lib/Coin /usr/local/lib/libCoin*
 }
 
-list="$list dos2unix"
+deblist="$deblist dos2unix"
+rpmlist="$rpmlist dos2unix"
 function build_and_install_coinStandard {
 	echo; echo "coinStandard"
 	cd $dir
@@ -172,7 +194,8 @@ function build_and_install_coinStandard {
 	sudo chmod -R o+rx /usr/local/share/Coin
 }
 
-list="$list libmotif-dev libxpm-dev"
+deblist="$deblist libmotif-dev libxpm-dev"
+rpmlist="$rpmlist motif-devel libXpm-devel"
 function build_and_install_soxt {
 	echo; echo "soxt"
 	cd $dir
@@ -190,17 +213,15 @@ function build_and_install_soxt {
 	cd $dir/soxt
 	mkdir -p build
 	cd build
+	export LD_RUN_PATH="/usr/local/lib/" # https://bitbucket.org/Coin3D/coin/issues/19/configure-error-could-not-determine-the
 	../configure
 	$MAKE
 	sudo make install
-	#locate soxt
-	#locate SoXt
-	#ls -lart /usr/local/bin/soxt-config /usr/local/share/Coin/conf/soxt-default.cfg /usr/local/lib/libSoXt.*
-	sudo chmod -R o+rx /usr/local/include/Inventor/Xt
+	sudo chmod -R o+rx /usr/local/include/Inventor /usr/local/bin/soxt-config /usr/local/share/Coin/conf/soxt-default.cfg /usr/local/lib/libSoXt.*
 }
 
-# SciL/RHEL/Cent expat-devel
-list="$list libexpat1-dev libxmu-dev"
+deblist="$deblist libexpat1-dev libxmu-dev"
+rpmlist="$rpmlist expat-devel libXmu-devel"
 function build_and_install_geant {
 	echo; echo "geant4"
 	file="${geant_version_string_a}.tar.gz"
@@ -216,7 +237,7 @@ function build_and_install_geant {
 	cd $geant_version_string_a
 	mkdir -p build
 	cd build
-	export INVENTOR_SOXT_LIBRARY="/usr/local/lib/libSoXt.so"
+	#export INVENTOR_SOXT_LIBRARY="/usr/local/lib/libSoXt.so"
 	#$CMAKE .. -DGEANT4_USE_QT=ON -DGEANT4_USE_INVENTOR=ON -DGEANT4_BUILD_EXAMPLES=ON -DGEANT4_INSTALL_EXAMPLES=ON
 	$CMAKE .. -DGEANT4_USE_QT=ON -DGEANT4_USE_INVENTOR=ON
 	$MAKE
@@ -274,12 +295,29 @@ function hard_uninstall {
 	show_all_files
 }
 
+function install_prerequisites {
+	if [ $deb -gt 0 ]; then
+		sudo apt -y install $deblist
+	else
+		sudo yum -y install $rpmlist
+	fi
+}
+
+function uninstall_prerequisites {
+	if [ $deb -gt 0 ]; then
+		sudo apt -y remove $deblist
+	else
+		sudo yum -y erase $rpmlist
+	fi
+}
+
 function install {
 	build_and_install_cmake
 	if [ ! -e /usr/local/bin/cmake ]; then
-		list="$list $CMAKE"
+		deblist="$deblist $CMAKE"
+		rpmlist="$rpmlist $CMAKE"
 	fi
-	sudo apt -y install $list
+	install_prerequisites
 	#download_datasets # do this just once and save the files
 	install_datasets
 	build_and_install_clhep
@@ -295,10 +333,14 @@ if [ $# -gt 0 ]; then
 		# useful in some situations:
 		uninstall
 		hard_uninstall
+	elif [ "$1" = "uninstall_prerequisites" ]; then
+		uninstall_prerequisites
 	elif [ "$1" = "clean" ]; then
 		clean
 	elif [ "$1" = "realclean" ]; then
 		realclean
+	elif [ "$1" = "status" ]; then
+		show_all_files
 	elif [ "$1" = "example" ]; then
 		# show that it worked:
 		build_and_run_example
