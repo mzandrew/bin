@@ -27,7 +27,50 @@ declare clhep_version_string_a="clhep-2.3.4.4" # latest as of 2017-06-02
 declare clhep_version_string_b="2.3.4.4" # untar subdir name
 declare clhep_version_string_c="CLHEP-2.3.4.4" # install subdir name
 
-declare list_of_things_that_should_be_there_after_complete_installation="/usr/local/share/$geant_version_string_b /usr/local/lib/$geant_version_string_b /usr/local/include/Geant4 /usr/local/include/Inventor /usr/local/bin/soxt-config /usr/local/share/Coin /usr/local/lib/libSoXt.* /usr/local/lib/libCoin* /usr/local/include/CLHEP /usr/local/lib/$clhep_version_string_c /usr/local/doc/$cmake_version_string_b /usr/local/share/$cmake_version_string_b /usr/local/bin/cmake /usr/local/bin/ctest /usr/local/bin/cpack"
+declare list_of_things_that_should_be_there_after_complete_installation="
+	/usr/local/include/Geant4
+	/usr/local/include/Inventor
+	/usr/local/include/CLHEP
+	/usr/local/share/aclocal/cmake.m4
+	/usr/local/share/aclocal/coin.m4
+	/usr/local/share/aclocal/soxt.m4
+	/usr/local/share/$geant_version_string_b
+	/usr/local/share/$cmake_version_string_b
+	/usr/local/share/Coin
+	/usr/local/share/man/man1/coin-config.1
+	/usr/local/share/man/man1/soxt-config.1
+	/usr/local/lib/libSoXt.*
+	/usr/local/lib/libCoin*
+	/usr/local/lib/libCLHEP*
+	/usr/local/lib/Coin
+	/usr/local/lib/$clhep_version_string_c
+	/usr/local/lib/libG4*
+	/usr/local/lib/$geant_version_string_b 
+	/usr/local/lib64/$geant_version_string_b 
+	/usr/local/lib64/libG4*
+	/usr/local/doc/$cmake_version_string_b
+	/usr/local/bin/soxt-config
+	/usr/local/bin/clhep-config
+	/usr/local/bin/Vector-config
+	/usr/local/bin/Utility-config
+	/usr/local/bin/Units-config
+	/usr/local/bin/RefCount-config
+	/usr/local/bin/RandomObjects-config
+	/usr/local/bin/Random-config
+	/usr/local/bin/Matrix-config
+	/usr/local/bin/Geometry-config
+	/usr/local/bin/GenericFunctions-config
+	/usr/local/bin/Exceptions-config
+	/usr/local/bin/Evaluator-config
+	/usr/local/bin/Cast-config
+	/usr/local/bin/geant4.sh
+	/usr/local/bin/geant4.csh
+	/usr/local/bin/geant4-config
+	/usr/local/bin/coin-config
+	/usr/local/bin/cmake
+	/usr/local/bin/ctest
+	/usr/local/bin/cpack
+"
 
 declare -i redhat=0 SL6=0 SL7=0 deb=0
 if [ -e /etc/redhat-release ]; then
@@ -43,8 +86,37 @@ else
 	exit 1
 fi
 
-function show_all_files {
-	ls -lart $list_of_things_that_should_be_there_after_complete_installation || /bin/true
+function show_all_installed_files {
+	echo; echo "searching for installed files..."
+	#ls -lart $list_of_things_that_should_be_there_after_complete_installation || /bin/true
+	local REGULAR_FILE_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p\n'
+	local REGULAR_DIR_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p/\n'
+	local SYMLINK_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p -> %l\n'
+	local list=""
+	for each in $list_of_things_that_should_be_there_after_complete_installation; do
+		if [ -e "$each" ]; then
+			list="$list $each"
+		fi
+	done
+	if [ ! -z "$list" ]; then
+		find $list \
+			   -type d -printf "$REGULAR_DIR_STRING" \
+			-o -type l -printf "$SYMLINK_STRING" \
+			-o         -printf "$REGULAR_FILE_STRING" \
+			| sort -k 1n,1 > $dir/geant4-and-friends.find
+		du $list -s > $dir/geant4-and-friends.du
+	else
+		echo "no installed files found"
+		rm -f $dir/geant4-and-friends.find $dir/geant4-and-friends.du
+	fi
+}
+
+function look_for_installed_files {
+	# this function is mainly to test that we found everything that gets installed (when writing this script)
+	sudo updatedb
+	#cmake 
+	#locate coin soxt geant g4 clhep | grep -v '^/home\|^/opt/Xilinx\|bitcoin\|g48\|mpeg4\|sg4\|g4[05]0\|docg4\|Dialog4\|dialog4\|config4\|geant3\|working4\|typing4\|pidgin\|pkg4\|g4_makedist\|dg460\|bash-completion' | sort > $dir/geant4-and-friends.locate
+	show_all_installed_files
 }
 
 function download_datasets {
@@ -96,15 +168,27 @@ function build_and_install_cmake {
 		tar xzf $file
 	fi
 	cd $cmake_version_string_a
-	./configure
-	$MAKE
+	if [ ! -e Makefile ]; then
+		./configure
+	else
+		echo "cmake already configured"
+	fi
+	if [ ! -e Bootstrap.cmk/cmTryRunCommand.o ]; then
+		$MAKE
+	else
+		echo "cmake already built"
+	fi
 	if [ $deb -gt 0 ]; then
 		sudo apt -y purge cmake cmake-data
 	else
 		sudo yum -y erase cmake cmake-data
 	fi
-	sudo make install
-	sudo chmod -R o+rx /usr/local/doc/$cmake_version_string_b /usr/local/share/$cmake_version_string_b /usr/local/bin/cmake /usr/local/bin/ctest /usr/local/bin/cpack /usr/local/doc/
+	if [ ! -e /usr/local/bin/cmake ]; then
+		sudo make install --quiet --no-print-directory
+	else
+		echo "cmake already installed"
+	fi
+	sudo chmod -R o+rx /usr/local/doc/$cmake_version_string_b /usr/local/share/$cmake_version_string_b /usr/local/bin/cmake /usr/local/bin/ctest /usr/local/bin/cpack /usr/local/doc/ /usr/local/share/aclocal /usr/local/share/aclocal/cmake.m4
 	# "/opt/cmake/bin/cmake: cannot execute binary file: Exec format error" means you have the wrong binary downloaded; just do it from source (above)
 }
 
@@ -126,9 +210,21 @@ function build_and_install_clhep {
 	cd $dir/$clhep_version_string_a
 	mkdir -p build
 	cd build
-	$CMAKE ../CLHEP
-	$MAKE
-	sudo make install
+	if [ ! -e Makefile ]; then
+		$CMAKE ../CLHEP
+	else
+		echo "clhep already cmake'd"
+	fi
+	if [ ! -e lib/lib${clhep_version_string_c}.so ]; then
+		$MAKE
+	else
+		echo "clhep already built"
+	fi
+	if [ ! -e /usr/local/lib/libCLHEP.so ]; then
+		sudo make install --quiet --no-print-directory
+	else
+		echo "clhep already installed"
+	fi
 	sudo chmod -R o+rx /usr/local/include/CLHEP /usr/local/lib/$clhep_version_string_c
 }
 
@@ -149,9 +245,21 @@ function build_and_install_coin {
 	cd $dir/coin
 	mkdir -p build
 	cd build
-	$CMAKE ..
-	$MAKE
-	sudo make install
+	if [ ! -e Makefile ]; then
+		$CMAKE ..
+	else
+		echo "coin already cmake'd"
+	fi
+	if [ ! -e src/libCoin.so ]; then
+		$MAKE
+	else
+		echo "coin already built"
+	fi
+	if [ ! -e /usr/local/lib/libCoin.so ]; then
+		sudo make install --quiet --no-print-directory
+	else
+		echo "coin already installed"
+	fi
 	sudo cp ../bin/coin-config /usr/local/bin/
 	sudo chmod -R o+rx /usr/local/lib/Coin /usr/local/lib/libCoin*
 }
@@ -186,12 +294,24 @@ function build_and_install_coinStandard {
 	dos2unix -k $dir/coinStandard/src/nodes/Makefile.am
 	mkdir -p build
 	cd build
-	../configure
-	$MAKE
-	sudo make install
+	if [ ! -e Makefile ]; then
+		../configure
+	else
+		echo "coinStandard already configured"
+	fi
+	if [ ! -e src/libCoin.la ]; then
+		$MAKE
+	else
+		echo "coinStandard already built"
+	fi
+	if [ ! -e /usr/local/lib/libCoin.la ]; then
+		sudo make install --quiet --no-print-directory
+	else
+		echo "coinStandard already installed"
+	fi
 	sudo mkdir -p /usr/local/share/Coin/conf/
 	sudo cp coin-default.cfg /usr/local/share/Coin/conf/
-	sudo chmod -R o+rx /usr/local/share/Coin
+	sudo chmod -R o+rx /usr/local/share/Coin /usr/local/share/aclocal/coin.m4
 }
 
 deblist="$deblist libmotif-dev libxpm-dev"
@@ -214,10 +334,22 @@ function build_and_install_soxt {
 	mkdir -p build
 	cd build
 	export LD_RUN_PATH="/usr/local/lib/" # https://bitbucket.org/Coin3D/coin/issues/19/configure-error-could-not-determine-the
-	../configure
-	$MAKE
-	sudo make install
-	sudo chmod -R o+rx /usr/local/include/Inventor /usr/local/bin/soxt-config /usr/local/share/Coin/conf/soxt-default.cfg /usr/local/lib/libSoXt.*
+	if [ ! -e Makefile ]; then
+		../configure
+	else
+		echo "soxt already configured"
+	fi
+	if [ ! -e soxt-config ]; then
+		$MAKE
+	else
+		echo "soxt already built"
+	fi
+	if [ ! -e /usr/local/bin/soxt-config ]; then
+		sudo make install --quiet --no-print-directory
+	else
+		echo "soxt already installed"
+	fi
+	sudo chmod -R o+rx /usr/local/include/Inventor /usr/local/bin/soxt-config /usr/local/share/Coin/conf/soxt-default.cfg /usr/local/lib/libSoXt.* /usr/local/share/aclocal/soxt.m4
 }
 
 deblist="$deblist libexpat1-dev libxmu-dev"
@@ -239,10 +371,27 @@ function build_and_install_geant {
 	cd build
 	#export INVENTOR_SOXT_LIBRARY="/usr/local/lib/libSoXt.so"
 	#$CMAKE .. -DGEANT4_USE_QT=ON -DGEANT4_USE_INVENTOR=ON -DGEANT4_BUILD_EXAMPLES=ON -DGEANT4_INSTALL_EXAMPLES=ON
-	$CMAKE .. -DGEANT4_USE_QT=ON -DGEANT4_USE_INVENTOR=ON
-	$MAKE
-	sudo make install
-	sudo chmod -R o+rx /usr/local/share/$geant_version_string_b /usr/local/lib/$geant_version_string_b
+	if [ ! -e Makefile ]; then
+		$CMAKE .. -DGEANT4_USE_QT=ON -DGEANT4_USE_INVENTOR=ON
+	else
+		echo "geant4 already cmake'd"
+	fi
+	if [ ! -e source/physics_lists/CMakeFiles/G4physicslists.dir/lists/src/G4PhysListRegistry.cc.o ] || [ ! -e source/visualization/OpenInventor/CMakeFiles/G4OpenInventor.dir/src/G4OpenInventorXtExtended.cc.o ]; then
+		$MAKE
+	else
+		echo "geant4 already built"
+	fi
+	if [ ! -e /usr/local/bin/geant4.sh ] || [ ! -e /usr/local/bin/geant4-config ]; then
+		sudo make install --quiet --no-print-directory
+	else
+		echo "geant4 already installed"
+	fi
+	sudo chmod -R o+rx /usr/local/share/$geant_version_string_b
+	if [ -e /usr/local/lib/$geant_version_string_b ]; then
+		sudo chmod -R o+rx /usr/local/lib/$geant_version_string_b
+	elif [ -e /usr/local/lib64/$geant_version_string_b ]; then
+		sudo chmod -R o+rx /usr/local/lib64/$geant_version_string_b
+	fi
 }
 
 function build_and_run_example {
@@ -272,8 +421,8 @@ function realclean {
 
 function uninstall {
 	echo; echo "uninstalling..."
-	echo "before:"
-	show_all_files
+	#echo "before:"
+	#show_all_installed_files
 	for each in $clhep_version_string_a/build coin/build coinStandard/build soxt/build $geant_version_string_a/build $cmake_version_string_a; do
 		echo "uninstalling $each..."
 		if [ -e $dir/$each ]; then
@@ -283,16 +432,21 @@ function uninstall {
 			echo "can't uninstall from $each"
 		fi
 	done
-	echo "after regular uninstall:"
-	show_all_files
+	echo "uninstall done"
+	#echo "after regular uninstall:"
+	#show_all_installed_files
+	look_for_installed_files
 }
 
 function hard_uninstall {
-	echo "before:"
-	show_all_files
+	echo; echo "hard uninstalling..."
+	#echo "before:"
+	#show_all_installed_files
 	sudo rm -rf $list_of_things_that_should_be_there_after_complete_installation
-	echo "after hard uninstall:"
-	show_all_files
+	echo "hard uninstall done"
+	#echo "after hard uninstall:"
+	#show_all_installed_files
+	look_for_installed_files
 }
 
 function install_prerequisites {
@@ -326,12 +480,16 @@ function install {
 	build_and_install_soxt
 	build_and_install_geant
 	#geant4.sh
+	look_for_installed_files
 }
 
 if [ $# -gt 0 ]; then
-	if [ "$1" = "uninstall" ]; then
+	if [ "$1" = "install" ]; then
+		install
+	elif [ "$1" = "uninstall" ]; then
 		# useful in some situations:
 		uninstall
+	elif [ "$1" = "hard_uninstall" ]; then
 		hard_uninstall
 	elif [ "$1" = "uninstall_prerequisites" ]; then
 		uninstall_prerequisites
@@ -340,12 +498,13 @@ if [ $# -gt 0 ]; then
 	elif [ "$1" = "realclean" ]; then
 		realclean
 	elif [ "$1" = "status" ]; then
-		show_all_files
+		show_all_installed_files
 	elif [ "$1" = "example" ]; then
 		# show that it worked:
 		build_and_run_example
 	else
-		install
+		echo "unknown directive $1"
+		exit 1
 	fi
 else
 	install
