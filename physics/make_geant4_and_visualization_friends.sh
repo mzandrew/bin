@@ -6,6 +6,8 @@ declare dir="$HOME/build/geant4"
 declare tdir="$dir"
 if [ -e "/opt/shared/software/geant4" ]; then
 	tdir="/opt/shared/software/geant4"
+elif [ -e /opt/backup/active/mza/geant4 ]; then
+	tdir="/opt/backup/active/mza/geant4"
 fi
 declare deblist="build-essential mesa-utils mercurial"
 declare rpmlist="mercurial"
@@ -69,8 +71,7 @@ declare list_of_things_that_should_be_there_after_complete_installation="
 	/usr/local/bin/coin-config
 	/usr/local/bin/cmake
 	/usr/local/bin/ctest
-	/usr/local/bin/cpack
-"
+	/usr/local/bin/cpack"
 
 declare -i redhat=0 SL6=0 SL7=0 deb=0
 if [ -e /etc/redhat-release ]; then
@@ -85,6 +86,22 @@ else
 	echo "what kind of linux is this?"
 	exit 1
 fi
+
+function fix_permissions {
+	for each; do
+		if [ -e "$each" ]; then
+			sudo find "$each" -type d -exec chmod 755 --changes {} \+ -o -type f -exec chmod +r --changes {} \+
+		fi
+	done
+}
+
+function fix_ownership {
+	for each; do
+		if [ -e "$each" ]; then
+			sudo chown -R --reference=$dir $each
+		fi
+	done
+}
 
 function show_all_installed_files {
 	echo; echo "searching for installed files..."
@@ -105,6 +122,7 @@ function show_all_installed_files {
 			-o         -printf "$REGULAR_FILE_STRING" \
 			| sort -k 1n,1 > $dir/geant4-and-friends.find
 		du $list -s > $dir/geant4-and-friends.du
+		wc $dir/geant4-and-friends.find | awk '{print $1" files installed"}'
 	else
 		echo "no installed files found"
 		rm -f $dir/geant4-and-friends.find $dir/geant4-and-friends.du
@@ -133,14 +151,16 @@ function install_dataset {
 	cd /usr/local/share/$geant_version_string_b/data
 	if [ ! -e "$1" ] && [ -e "$tdir/$2" ]; then
 		echo "installing $1..."
-		sudo tar xzf "$tdir/$2"
+		#sudo tar xzf "$tdir/$2"
+		cat "$tdir/$2" | sudo tar xz
+		sudo chown -R root:root "$1"
 	fi
 }
 
 function install_datasets {
 	echo; echo "installing datasets..."
 	sudo mkdir -p /usr/local/share/$geant_version_string_b/data
-	sudo chmod -R o+rx /usr/local/share/$geant_version_string_b
+	fix_permissions /usr/local/share/$geant_version_string_b
 	#for each in G4NDL.4.5.tar.gz G4EMLOW.6.50.tar.gz G4PhotonEvaporation.4.3.2.tar.gz G4RadioactiveDecay.5.1.1.tar.gz G4NEUTRONXS.1.4.tar.gz G4PII.1.3.tar.gz RealSurface.1.0.tar.gz G4SAIDDATA.1.1.tar.gz G4ABLA.3.0.tar.gz G4ENSDFSTATE.2.1.tar.gz; do
 	install_dataset G4ABLA3.0 G4ABLA.3.0.tar.gz
 	install_dataset G4EMLOW6.50 G4EMLOW.6.50.tar.gz
@@ -152,7 +172,7 @@ function install_datasets {
 	install_dataset PhotonEvaporation4.3.2 G4PhotonEvaporation.4.3.2.tar.gz
 	install_dataset RadioactiveDecay5.1.1 G4RadioactiveDecay.5.1.1.tar.gz
 	install_dataset RealSurface1.0 RealSurface.1.0.tar.gz
-	sudo chmod -R o+rx /usr/local/share/$geant_version_string_b/data
+	fix_permissions /usr/local/share/$geant_version_string_b/data
 	ls -lart /usr/local/share/$geant_version_string_b/data
 }
 
@@ -161,11 +181,12 @@ function build_and_install_cmake {
 	cd $dir
 	file="${cmake_version_string_a}.tar.gz"
 	if [ ! -e $tdir/$file ]; then
+		cd $tdir
 		wget https://cmake.org/files/$cmake_version_string_c/$file
 	fi
 	if [ ! -e $cmake_version_string_a ]; then
 		echo "extracting from $file..."
-		tar xzf $file
+		tar xzf $tdir/$file
 	fi
 	cd $cmake_version_string_a
 	if [ ! -e Makefile ]; then
@@ -173,7 +194,7 @@ function build_and_install_cmake {
 	else
 		echo "cmake already configured"
 	fi
-	if [ ! -e Bootstrap.cmk/cmTryRunCommand.o ]; then
+	if [ ! -e Source/libCMakeLib.a ] || [ ! -e bin/cmake ] || [ ! -e bin/ctest ]; then
 		$MAKE
 	else
 		echo "cmake already built"
@@ -188,7 +209,8 @@ function build_and_install_cmake {
 	else
 		echo "cmake already installed"
 	fi
-	sudo chmod -R o+rx /usr/local/doc/$cmake_version_string_b /usr/local/share/$cmake_version_string_b /usr/local/bin/cmake /usr/local/bin/ctest /usr/local/bin/cpack /usr/local/doc/ /usr/local/share/aclocal /usr/local/share/aclocal/cmake.m4
+	fix_ownership install_manifest.txt CMakeFiles/uninstall.dir/depend.make CMakeFiles/uninstall.dir/depend.internal
+	fix_permissions /usr/local/doc/$cmake_version_string_b /usr/local/share/$cmake_version_string_b /usr/local/bin/cmake /usr/local/bin/ctest /usr/local/bin/cpack /usr/local/doc/ /usr/local/share/aclocal /usr/local/share/aclocal/cmake.m4
 	# "/opt/cmake/bin/cmake: cannot execute binary file: Exec format error" means you have the wrong binary downloaded; just do it from source (above)
 }
 
@@ -215,7 +237,7 @@ function build_and_install_clhep {
 	else
 		echo "clhep already cmake'd"
 	fi
-	if [ ! -e lib/lib${clhep_version_string_c}.so ]; then
+	if [ ! -e lib/lib${clhep_version_string_c}.so ] || [ ! -e Random/test/testInstanceRestore ]; then
 		$MAKE
 	else
 		echo "clhep already built"
@@ -225,7 +247,8 @@ function build_and_install_clhep {
 	else
 		echo "clhep already installed"
 	fi
-	sudo chmod -R o+rx /usr/local/include/CLHEP /usr/local/lib/$clhep_version_string_c
+	fix_ownership install_manifest.txt
+	fix_permissions /usr/local/include/CLHEP /usr/local/lib/$clhep_version_string_c
 }
 
 function build_and_install_coin {
@@ -260,8 +283,9 @@ function build_and_install_coin {
 	else
 		echo "coin already installed"
 	fi
+	fix_ownership install_manifest.txt
 	sudo cp ../bin/coin-config /usr/local/bin/
-	sudo chmod -R o+rx /usr/local/lib/Coin /usr/local/lib/libCoin*
+	fix_permissions /usr/local/lib/Coin /usr/local/lib/libCoin*
 }
 
 deblist="$deblist dos2unix"
@@ -311,7 +335,9 @@ function build_and_install_coinStandard {
 	fi
 	sudo mkdir -p /usr/local/share/Coin/conf/
 	sudo cp coin-default.cfg /usr/local/share/Coin/conf/
-	sudo chmod -R o+rx /usr/local/share/Coin /usr/local/share/aclocal/coin.m4
+	fix_ownership .
+	#$src/libCoin.la src/navigation/SoScXMLNavigation.lo src/navigation/libnavigation.la src/navigation/.deps/SoScXMLNavigation.Plo src/navigation/.libs/SoScXMLNavigation.o src/navigation/.libs/libnavigation.a src/navigation/.libs/libnavigation.la src/.libs/libCoin.so.80.0.0 src/.libs/libCoin.so.80 src/.libs/libCoin.so src/.libs/libCoin.lai src/.libs/libCoin.la
+	fix_permissions /usr/local/share/Coin /usr/local/share/aclocal/coin.m4
 }
 
 deblist="$deblist libmotif-dev libxpm-dev"
@@ -339,7 +365,7 @@ function build_and_install_soxt {
 	else
 		echo "soxt already configured"
 	fi
-	if [ ! -e soxt-config ]; then
+	if [ ! -e soxt-config ] || [ ! -e src/Inventor/Xt/libSoXt.la ]; then
 		$MAKE
 	else
 		echo "soxt already built"
@@ -349,7 +375,8 @@ function build_and_install_soxt {
 	else
 		echo "soxt already installed"
 	fi
-	sudo chmod -R o+rx /usr/local/include/Inventor /usr/local/bin/soxt-config /usr/local/share/Coin/conf/soxt-default.cfg /usr/local/lib/libSoXt.* /usr/local/share/aclocal/soxt.m4
+	fix_ownership .
+	fix_permissions /usr/local/include/Inventor /usr/local/bin/soxt-config /usr/local/share/Coin/conf/soxt-default.cfg /usr/local/lib/libSoXt.* /usr/local/share/aclocal/soxt.m4
 }
 
 deblist="$deblist libexpat1-dev libxmu-dev"
@@ -376,7 +403,7 @@ function build_and_install_geant {
 	else
 		echo "geant4 already cmake'd"
 	fi
-	if [ ! -e source/physics_lists/CMakeFiles/G4physicslists.dir/lists/src/G4PhysListRegistry.cc.o ] || [ ! -e source/visualization/OpenInventor/CMakeFiles/G4OpenInventor.dir/src/G4OpenInventorXtExtended.cc.o ]; then
+	if [ ! -e source/physics_lists/CMakeFiles/G4physicslists.dir/lists/src/G4PhysListRegistry.cc.o ] || [ ! -e source/visualization/OpenInventor/CMakeFiles/G4OpenInventor.dir/src/G4OpenInventorXtExtended.cc.o ] || [ ! -e BuildProducts/lib64/libG4OpenGL.so ]; then
 		$MAKE
 	else
 		echo "geant4 already built"
@@ -386,11 +413,12 @@ function build_and_install_geant {
 	else
 		echo "geant4 already installed"
 	fi
-	sudo chmod -R o+rx /usr/local/share/$geant_version_string_b
+	fix_ownership .
+	fix_permissions /usr/local/share/$geant_version_string_b
 	if [ -e /usr/local/lib/$geant_version_string_b ]; then
-		sudo chmod -R o+rx /usr/local/lib/$geant_version_string_b
+		fix_permissions /usr/local/lib/$geant_version_string_b
 	elif [ -e /usr/local/lib64/$geant_version_string_b ]; then
-		sudo chmod -R o+rx /usr/local/lib64/$geant_version_string_b
+		fix_permissions /usr/local/lib64/$geant_version_string_b
 	fi
 }
 
@@ -436,6 +464,7 @@ function uninstall {
 	#echo "after regular uninstall:"
 	#show_all_installed_files
 	look_for_installed_files
+	echo "try \"$0 hard_uninstall\" if that didn't uninstall everything"
 }
 
 function hard_uninstall {
@@ -482,6 +511,8 @@ function install {
 	#geant4.sh
 	look_for_installed_files
 }
+
+mkdir -p $dir
 
 if [ $# -gt 0 ]; then
 	if [ "$1" = "install" ]; then
