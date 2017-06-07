@@ -6,14 +6,13 @@ declare dir="$HOME/build/geant4"
 declare tdir="$dir"
 if [ -e "/opt/shared/software/geant4" ]; then
 	tdir="/opt/shared/software/geant4"
-elif [ -e /opt/backup/active/mza/geant4 ]; then
-	tdir="/opt/backup/active/mza/geant4"
 fi
 declare deblist="build-essential mesa-utils mercurial"
 declare rpmlist="mercurial"
 	rpmlist="$rpmlist gcc gcc-c++ make automake autoconf"
 declare CMAKE="cmake"
-declare MAKE="make -j4"
+declare -i numcores=$(($(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk '{print $3}')+1))
+declare MAKE="make -j$numcores"
 
 # check http://geant4.cern.ch/support/download.shtml
 declare geant_version_string_a="geant4.10.03.p01" # latest as of 2017-06-02

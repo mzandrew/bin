@@ -132,3 +132,5 @@ function interactive {
 	fi
 }
 
+declare -xi numcores=$(($(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk '{print $3}')+1))
+
