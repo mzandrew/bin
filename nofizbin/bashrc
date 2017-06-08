@@ -132,3 +132,7 @@ function interactive {
 	fi
 }
 
+#git config --global user.email blah@org
+git config --global user.name mzandrew
+git config --global push.default simple
+
