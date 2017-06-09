@@ -138,3 +138,5 @@ declare -xi numcores=$(($(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk
 git config --global user.name mzandrew
 git config --global push.default simple
 
+export HISTTIMEFORMAT="%Y-%m-%d+%H:%M:%S "
+
