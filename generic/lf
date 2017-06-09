@@ -1,25 +1,71 @@
 #!/bin/bash -e
 
-REGULAR_FILE_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p\n'
-REGULAR_DIR_STRING=''
-SYMLINK_STRING=''
+# find -printf:
+# %u = user
+# %g = group
+# %M = rwxr-x---
+# %s = size
+# %p = name
+# %l = target of symlink
+# %TY-%Tm-%Td+%TH:%TM = modification datestamp
+
+declare DATESTAMP='%TY-%Tm-%Td+%TH:%TM'
+declare USERGROUP='%7u:%-7g'
+declare PERMISSIONS='%M'
+declare SIZE='%12s'
+
+#declare REGULAR_FILE_STRING=$DATESTAMP' '$USERGROUP' '$PERMISSIONS' '$SIZE' %p\n'
+declare BASE="$DATESTAMP $SIZE %p\n"
+declare REGULAR_FILE_STRING="$BASE"
+declare REGULAR_DIR_STRING=""
+declare SYMLINK_STRING=""
+
+# defaults:
+declare -i showdir=0
+declare -i showsymlink=0
+declare -i showusergroup=0
+declare -i showpermissions=0
 
 if [ $# -gt 0 ]; then
 	for each; do
-		if [ "$each" == "-d" ]; then
-			REGULAR_DIR_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p/\n'
-			shift
-		elif [ "$each" == "-l" ]; then
-			SYMLINK_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p -> %l\n'
-			shift
-		elif [ "$each" == "-ld" ] || [ "$each" == "-dl" ]; then
-			REGULAR_DIR_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p/\n'
-			SYMLINK_STRING='%TY-%Tm-%Td+%TH:%TM %12s %p -> %l\n'
+		if [ "${each:0:1}" == "-" ]; then
+			if [ "${each}" != "${each/d/}" ]; then
+				showdir=1
+			fi
+			if [ "${each}" != "${each/l/}" ]; then
+				showsymlink=1
+			fi
+			if [ "${each}" != "${each/u/}" ]; then
+				showusergroup=1
+			fi
+			if [ "${each}" != "${each/p/}" ]; then
+				showpermissions=1
+			fi
 			shift
 		else
 			break;
 		fi
 	done
+fi
+
+if [ $showusergroup -gt 0 ]; then
+	if [ $showpermissions -gt 0 ]; then
+		BASE="$DATESTAMP $USERGROUP $PERMISSIONS $SIZE %p"
+	else
+		BASE="$DATESTAMP $USERGROUP $SIZE %p"
+	fi
+elif [ $showpermissions -gt 0 ]; then
+	BASE="$DATESTAMP $PERMISSIONS $SIZE %p"
+fi
+
+REGULAR_FILE_STRING="$BASE\n"
+
+if [ $showdir -gt 0 ]; then
+	REGULAR_DIR_STRING="$BASE/\n"
+fi
+
+if [ $showsymlink -gt 0 ]; then
+	SYMLINK_STRING="$BASE -> %l\n"
 fi
 
 # page 421 of "bash Cookbook" is helpful here
