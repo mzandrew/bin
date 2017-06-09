@@ -1,6 +1,7 @@
 #!/bin/bash -ex
 # written 2016-01-04 by mza
 # updated 2016-01-05
+# updated 2017-06-08
 
 function watch_for_brute_force_ssh_attack {
 	sudo iptables -F SSHATTACK | /bin/true
@@ -24,12 +25,16 @@ function setup_basic_rules_and_watch_for_brute_force_ssh_attack {
 	# should that be "-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT" instead?
 }
 
-function ignore_isar_port7 {
-	sudo iptables -A INPUT -s 192.168.153.53 -p udp --dport 7    -j DROP # silently ignore the rather frequent requests from isar's laptop to port 7 (dpt:echo)
+function ignore_echo_port7 {
+	sudo iptables -A INPUT -s 192.168.153.53 -p udp --dport 7    -j DROP # silently ignore the frequent requests to port 7 (dpt:echo)
 }
 
-function ignore_isar_port2987 {
-	sudo iptables -A INPUT -s 192.168.153.53 -p tcp --dport 2987 -j DROP # silently ignore the rather frequent requests from isar's laptop to port 2987 (dpt:identify)
+function ignore_identify_port2987 {
+	sudo iptables -A INPUT -s 192.168.153.53 -p tcp --dport 2987 -j DROP # silently ignore the frequent requests to port 2987 (dpt:identify)
+}
+
+function ignore_mdns_port5353 {
+	sudo iptables -A INPUT -p udp --dport 5353 -j DROP # silently ignore these frequent requests to port 5353 (dpt:mdns)
 }
 
 function ignore_broadcast_traffic {
@@ -56,8 +61,9 @@ function save_rules {
 
 #show_rules
 setup_basic_rules_and_watch_for_brute_force_ssh_attack
-ignore_isar_port7
-ignore_isar_port2987
+ignore_echo_port7
+ignore_identify_port2987
+ignore_mdns_port5353
 ignore_broadcast_traffic
 log_all_denied_traffic 
 show_rules
