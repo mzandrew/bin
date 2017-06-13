@@ -15,8 +15,8 @@ declare PERMISSIONS='%M'
 declare SIZE='%12s'
 
 #declare REGULAR_FILE_STRING=$DATESTAMP' '$USERGROUP' '$PERMISSIONS' '$SIZE' %p\n'
-declare BASE="$DATESTAMP $SIZE %p\n"
-declare REGULAR_FILE_STRING="$BASE"
+declare BASE="$DATESTAMP $SIZE %p"
+declare REGULAR_FILE_STRING=""
 declare REGULAR_DIR_STRING=""
 declare SYMLINK_STRING=""
 
@@ -62,10 +62,14 @@ REGULAR_FILE_STRING="$BASE\n"
 
 if [ $showdir -gt 0 ]; then
 	REGULAR_DIR_STRING="$BASE/\n"
+else
+	REGULAR_DIR_STRING=""
 fi
 
 if [ $showsymlink -gt 0 ]; then
 	SYMLINK_STRING="$BASE -> %l\n"
+else
+	SYMLINK_STRING=""
 fi
 
 # page 421 of "bash Cookbook" is helpful here
