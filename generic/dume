@@ -1,4 +1,4 @@
 #!/bin/bash -e
 
-du --ma=1 | sort -n > du-ma1
+du --ma=1 --block-size=1000000 | sort -n > du-ma1
 
