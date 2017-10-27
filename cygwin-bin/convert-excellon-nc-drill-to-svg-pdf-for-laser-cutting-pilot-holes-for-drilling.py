@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # started 2015-09-08 by mza
-# last updated 2015-09-28
+# updated 2015-09-28
+# last updated 2017-10-27
 
 # todo:
 # generalize a bunch of hard-coded things (see "fixme" items in code below)
@@ -14,9 +15,11 @@
 # from http://stackoverflow.com/questions/3144089/expand-python-search-path-to-other-source :
 from os.path import dirname
 import sys
-sys.path.append(dirname(__file__) + "/lib")
+sys.path.append(dirname(__file__) + "/../lib")
 
-from DebugInfoWarningError import info, debug, debug2, warning, error
+from DebugInfoWarningError import info, debug, debug2, warning, error, verbosity
+#DebugInfoWarningError.verbosity = 4
+verbosity = 5
 import svgwrite # pip install svgwrite
 import re # used for search
 import math # used for sqrt, ceil, floor
@@ -24,16 +27,12 @@ import subprocess # call
 
 # input filenames:
 #bottom_pastemask_filename = "../assy/bottom-pastemask.GBP"
-top_pastemask_filename = "../assy/top-pastemask.GTP"
+top_pastemask_filename = "assembly/top-pastemask.GTP"
 #bottom_pastemask_filename = "bottom-pastemask.v2.GBP" # slightly reordered to find bug in this code
-board_outline_filename = "../fab/board-outline.gerber"
-#board_outline_filename = "../fab/top-copper.GTL"
-#board_outline_filename = "board-outline.carrier13.revB.gerber"
-#board_outline_filename = "board-outline.carrier02revD.gerber"
-#stencil_filename = "zelflex-stencil.QR_362x480.GBX"
-#stencil_filename = "zelflex-stencil.QR_362x480.GBX"
-drill_filename = "../fab/drill-through.DRL"
+board_outline_filename = "fab/board-outline.GKO"
 #board_outline_filename = "IDL_15_23_A.GM1" # altium board outline gerber
+#stencil_filename = "zelflex-stencil.QR_362x480.GBX"
+drill_filename = "fab/drill-through.DRL"
 #drill_filename = "IDL_15_23_A-Plated.TXT" # altium drill
 # output filenames:
 base_filename = "panelized"
@@ -49,9 +48,10 @@ stroke_length = 2 * laser_stroke_width
 #stroke_length = 0.2032 # 0.2032 mm = 8 mils; twice the line spacing of the laser in 250 dpi mode
 
 # user input:
-board_width = 57.66 # fixme (can get from outline gerber)
-board_height = 56.61 # fixme (can get from outline gerber)
-x_offset = 25.4 # have to know this from CAM file definitions
+board_width = 45 # fixme (can get from outline gerber)
+board_height = 56 # fixme (can get from outline gerber)
+#x_offset = 25.4 # have to know this from CAM file definitions
+x_offset = 0 # have to know this from CAM file definitions
 y_offset = 25.4 # have to know this from CAM file definitions
 number_of_horizontal_instances = 1
 number_of_vertical_instances = 1
@@ -63,9 +63,9 @@ x_gap_between_instances_of_boards = 5.0 # mm
 y_gap_between_instances_of_boards = 5.0 # mm
 #stencil_half_moon_location = "NorthSouth"
 stencil_half_moon_location = "EastWest"
-number_of_extra_half_moons_per_side = 1
+number_of_extra_half_moons_per_side = 0
 
-protoboard_width  = 151 # should measure this width so that the mirror-image ends up in the right place
+protoboard_width  = 151 # should measure this width each time so that the mirror-image ends up in the right place
 protoboard_height = 151
 if (fill_protoboard == 1):
 	number_of_horizontal_instances = int(math.floor(protoboard_width  / board_width))
@@ -151,13 +151,13 @@ def parse_drill_file(filename):
 	global tool
 	tool = {}
 	for line in lines:
-		match = re.search("T[0-9]+C([\.0-9]*)F.*", line)
+		#debug(line)
+		match = re.search("^T[0-9]+C([\.0-9]*)F.*$", line)
 		if match:
 			diameter = match.group(1)
 			tool[diameter] = []
 			#debug(diameter)
-			#debug(line)
-		match = re.search("X([0-9]*)Y([0-9]*)", line)
+		match = re.search("^X([0-9]*)Y([0-9]*)$", line)
 		if match:
 			x = match.group(1)
 			y = match.group(2)
@@ -257,7 +257,7 @@ def parse_gerber(filename):
 		match = re.search("^%FS([LTD])([AI])X([0-9][0-9])Y([0-9][0-9])\*%$", line)
 		if match:
 			matches = matches + 1
-			debug("set format: " + line)
+			debug2("set format: " + line)
 			if (match.group(1) == "L"):
 				zero_suppression_mode = "leading"
 			else:
@@ -274,6 +274,17 @@ def parse_gerber(filename):
 			#decimal_places = decimal_places + 1
 			debug("number of digits to use for coordinates = " + str(number_of_digits))
 			matched_format = 1
+		match = re.search("^%AM(.*)\*$", line) # AM = aperture macro definition
+		if match:
+			matches = matches + 1
+			warning("ignoring aperture macro \"" + match.group(1) + "\"")
+		match = re.search("^([$0-9]*),", line) # aperture macro definition continuation
+		if match:
+			matches = matches + 1
+		match = re.search("^%AD(.*)\*$", line) # AD = aperture macro instantiation
+		if match:
+			matches = matches + 1
+			error("aperture instantiation \"" + match.group(1) + "\" ignored - this part needs to be coded")
 		match = re.search("^%ADD([0-9]+)C,([.0-9]+)\*%$", line) # %ADD010C,0.0254*%
 		if match:
 			matches = matches + 1
@@ -281,7 +292,7 @@ def parse_gerber(filename):
 			ap = int(match.group(1))
 			apertures[ap] = ("C", float(match.group(2)), float(match.group(2)))
 			debug("aperture definition: " + line)
-		match = re.search("^%ADD([0-9]+)R,([.0-9]+)X([.0-9]+)\*%$", line) # %ADD028R,2.6X1.6*% or %ADD34R,0.0138X0.0472*%
+		match = re.search("^%ADD([0-9]+)R,([.0-9]+)X([.0-9]+)\*%$", line) # %ADD028R,2.6X1.6*% or %ADD34R,0.0138X0.0472*% or %ADD368R,0.01969X0.04331*% (means that aperture #368 is a rectangle 0.01969 * 0.04331)
 		if match:
 			matches = matches + 1
 			ap = int(match.group(1))
@@ -310,6 +321,7 @@ def parse_gerber(filename):
 			matches = matches + 1
 			#debug(line)
 			gerber_instructions.append(match.group(1))
+		#match = re.search("^(G54D)([0-9]+)\*$", line)
 		match = re.search("^(G54D)([0-9]+)\*$", line)
 		if match:
 			matches = matches + 1
@@ -354,21 +366,10 @@ def parse_gerber(filename):
 		match = re.search("^M02\*$", line) # M02* = end of job
 		if match:
 			matches = matches + 1
-		match = re.search("^%AM(.*)\*$", line) # AM = aperture macro definition
-		if match:
-			matches = matches + 1
-			warning("ignoring aperture macro \"" + match.group(1) + "\"")
-		match = re.search("^([$0-9]*),", line) # aperture macro definition continuation
-		if match:
-			matches = matches + 1
-		match = re.search("^%AD(.*)\*$", line) # AD = aperture macro instantiation
-		if match:
-			matches = matches + 1
-			error("aperture instantiation \"" + match.group(1) + "\" ignored - this part needs to be coded")
 		match = re.search("^%IN(.*)\*%$", line) # IN = image name
 		if match:
 			matches = matches + 1
-			debug("ignoring image name \"" + match.group(1) + "\"")
+			debug2("ignoring image name \"" + match.group(1) + "\"")
 		if (matches == 0):
 			warning("did not parse \"" + line + "\"")
 		if (set_ratio == 0) and (matched_units == 1) and (matched_format == 1):
@@ -413,17 +414,17 @@ def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color = "#
 	#global verbosity
 	#verbosity = 4
 	for instruction in gerber_instructions:
-		debug("instruction: " + instruction)
+		debug2("instruction: " + instruction)
 		match = re.search("^setratio([.0-9]*[e]*[-0-9]*)$", instruction)
 		if match:
 			ratio = float(match.group(1))
-			debug("found ratio: " + str(ratio))
+			debug2("found ratio: " + str(ratio))
 		match = re.search("^setlayer(.*)$", instruction)
 		if match:
 			layer_name = match.group(1)
 			layer = add_layer(overall_layer, layer_name)
 			group = add_group(layer, color=color, stroke_width=stroke_width)
-		match = re.search("^G54D([1-9][0-9])$", instruction) # "G54D22" means follow the goto X,Y instructions after this line, and flash the D22 aperture every time we get a D03 ("flash aperture") command
+		match = re.search("^G54D([0-9]+)$", instruction) # "G54D22" means follow the goto X,Y instructions after this line, and flash the D22 aperture every time we get a D03 ("flash aperture") command
 		if match:
 			debug("aperture selection: " + match.group(1))
 			aperture = int(match.group(1))
@@ -440,13 +441,13 @@ def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color = "#
 			#debug2("remaining instruction: " + instruction)
 			if (match.group(1) == "01"):
 				mode = "linear"
-				debug("mode = linear")
+				debug2("mode = linear")
 			elif (match.group(1) == "02"):
 				mode = "cc_arc"
-				debug("mode = cc arc")
+				debug2("mode = cc arc")
 			elif (match.group(1) == "03"):
 				mode = "cw_arc"
-				debug("mode = cw arc")
+				debug2("mode = cw arc")
 			else:
 				error("?", 3)
 		match = 1
@@ -472,7 +473,7 @@ def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color = "#
 		if match:
 			d_string = match.group(1)
 		if (d_string == "01"): # pen down
-			debug(" " + x_string + " " + y_string + " " + d_string)
+			debug2(" " + x_string + " " + y_string + " " + d_string)
 			if (mode == "linear"):
 				group.add(svg.line( (x_old,y_old), (x,y) ))
 				#debug("(" + str(x_old) + "," + str(y_old) + ") -> (" + str(x) + "," + str(y) + ") with pen down")
@@ -484,7 +485,7 @@ def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color = "#
 				delta_y = y - y_old
 				x_center = x_old + i
 				y_center = y_old + j
-				debug("old(" + str(x_old) + "," + str(y_old) + ") -> xy(" + str(x) + "," + str(y) + ") -> ij(" + str(i) + "," + str(j) + ") -> center(" + str(x_center) + "," + str(y_center) + ")")
+				debug2("old(" + str(x_old) + "," + str(y_old) + ") -> xy(" + str(x) + "," + str(y) + ") -> ij(" + str(i) + "," + str(j) + ") -> center(" + str(x_center) + "," + str(y_center) + ")")
 				#debug("(x,y,i,j) = (" + str(x) + "," + str(y) + "," + str(i) + "," + str(j) + ")")
 				if (mode == "cc_arc"):
 					#debug("cw arc here")
@@ -499,7 +500,7 @@ def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color = "#
 					error("?", 4)
 				#group.add(svg.circle( (x_center,y_center), radius, fill="none" ))
 				#group.add(svg.line( (x_old, y_old), (x, y) ))
-				debug(string)
+				debug2(string)
 				group.add(svg.path(d=string, fill="none"))
 		elif (d_string == "02"):
 			pass
@@ -723,7 +724,6 @@ def try_making_a_tiled_object():
 	blah = svg.use(tilly, insert=(10,10))
 	svg.add(blah)
 
-verbosity = 4
 parse_drill_file(drill_filename) # stores info in "tool"
 board_outline_instructions = parse_gerber(board_outline_filename)
 board_outline_apertures = apertures
