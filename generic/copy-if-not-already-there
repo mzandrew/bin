@@ -9,8 +9,8 @@ for source; do
 	dest="${accumulation_destination}/"$(echo "${source}" | sed -e "s,^\./,," | sed -e "s,^/,," | sed -e "s,/,-,g")
 	#echo "${source} - ${dest}"
 	if [ "${dest}" -ot "${source}" ]; then
-		echo "${source} -> ${dest}"
-		#cp -av "${source}" "${dest}"
+		#echo "${source} -> ${dest}"
+		cp -av "${source}" "${dest}"
 	fi
 done
 

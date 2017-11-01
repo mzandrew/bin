@@ -15,7 +15,8 @@ fi
 
 cd "${source}"
 date=$(date +"%Y-%m-%d")
-filename="${destination}/${date}.${name}.lf-r"
+filename_bare="${date}.${name}.lf-r"
+filename="${destination}/${filename_bare}"
 if [ ! -e "${destination}" ]; then
 	mkdir "${destination}"
 fi
@@ -31,5 +32,12 @@ script="$(dirname $0)/copy-if-not-already-there"
 find "${source}/" -type f -name "*.lf-r" -exec ${script} {} +
 
 cd "${destination}"
-find -maxdepth 1 -type f -iname "*${name}*" | sort
+#find -maxdepth 1 -type f -iname "*${name}*" | sort
+declare -i count=$(find -maxdepth 1 -type f -iname "*${name}.lf-r" | wc -l)
+if [ $count -gt 1 ]; then
+	find -maxdepth 1 -type f -iname "20*.${name}.lf-r" -exec mv {} old/ \;
+	mv "old/${filename_bare}" .
+fi
+#echo
+find -maxdepth 1 -type f -iname "20*.${name}.lf-r" | sort
 
