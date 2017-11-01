@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # started 2015-09-08 by mza
 # updated 2015-09-28
-# last updated 2017-10-27
+# last updated 2017-10-31
 
 # todo:
 # generalize a bunch of hard-coded things (see "fixme" items in code below)
@@ -17,9 +17,8 @@ from os.path import dirname
 import sys
 sys.path.append(dirname(__file__) + "/../lib")
 
-from DebugInfoWarningError import info, debug, debug2, warning, error, verbosity
-#DebugInfoWarningError.verbosity = 4
-verbosity = 5
+from DebugInfoWarningError import info, debug, debug2, warning, error, set_verbosity
+set_verbosity(3)
 import svgwrite # pip install svgwrite
 import re # used for search
 import math # used for sqrt, ceil, floor
@@ -424,8 +423,6 @@ def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color = "#
 	aperture = "00"
 	mode = "linear"
 	ratio = 5.0
-	#global verbosity
-	#verbosity = 4
 	for instruction in gerber_instructions:
 		debug2("instruction: " + instruction)
 		match = re.search("^setratio([.0-9]*[e]*[-0-9]*)$", instruction)
@@ -776,9 +773,7 @@ for horizontal_instance in range(0, number_of_horizontal_instances):
 		setup_board_layer()
 		#draw_board_outline_layer()
 		generate_drill_layers([3.81])
-		#verbosity = 4
 		draw_pastemask_layer()
-		#verbosity = 3
 if (fill_protoboard == 1):
 	draw_protoboard_outline_layer()
 #add_holes_to_panel_frame()
