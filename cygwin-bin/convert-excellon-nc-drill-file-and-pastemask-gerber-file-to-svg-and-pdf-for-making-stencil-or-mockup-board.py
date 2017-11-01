@@ -35,7 +35,7 @@ board_outline_filename = "fab/board-outline.GKO"
 drill_filename = "fab/drill-through.DRL"
 #drill_filename = "IDL_15_23_A-Plated.TXT" # altium drill
 # output filenames:
-base_filename = "panelized"
+base_filename = "stencil"
 svg_filename = base_filename + ".svg"
 pdf_filename = base_filename + ".pdf"
 eps_filename = base_filename + ".eps"
@@ -44,8 +44,7 @@ dxf_filename = base_filename + ".dxf"
 # parameters of our laser:
 laser_stroke_width = 0.0254 # 1000 dpi - parameter from laser cutter
 #laser_stroke_width = 0.1016 # 250 dpi - parameter from laser cutter
-#laser_stroke_width = laser_stroke_width * 25.4 / 16.0 # some weird scaling factor somewhere
-stroke_length = 2 * laser_stroke_width
+stroke_length = 2.0 * laser_stroke_width
 #stroke_length = 0.2032 # 0.2032 mm = 8 mils; twice the line spacing of the laser in 250 dpi mode
 
 # user input:
@@ -189,7 +188,8 @@ def add_holes_to_panel_frame():
 		#info(str(x1-panel_frame_thickness) + "," + str(y+panel_height/2.0) + " " + str(x2-panel_frame_thickness) + "," + str(y+panel_height/2.0))
 	panel_mounting_holes_layer.translate(0.0,+panel_height/2.0)
 
-def generate_drill_layers():
+epsilon = 0.001
+def generate_drill_layers(which_ones = "all"):
 	debug("creating svg from drill file info...")
 	layer_name_string = "drill holes"
 	layer_name_string = layer_name_string + "(" + str(horizontal_instance) + "," + str(vertical_instance) + ")"
@@ -198,17 +198,29 @@ def generate_drill_layers():
 	drill_extents = add_layer(drill_layer, "drill extents")
 	drill_centers = add_layer(drill_layer, "drill centers")
 	for diameter in tool:
-		drill_centers_layer = add_layer(drill_centers, str(diameter))
-		drill_extents_layer = add_layer(drill_extents, str(diameter))
-		drill_centers_group = add_group(drill_centers_layer, color="#ff0000")
-		drill_extents_group = add_group(drill_extents_layer)
-		#debug(diameter + ":")
-		for location in tool[diameter]:
-			radius = float(diameter) / 2.0
-			(x, y) = location
-			#debug("(" + str(x) + "," + str(y) + ") ",)
-			drill_centers_group.add(svg.line( (x-stroke_length/2.0, y), (x+stroke_length/2.0, y) ))
-			drill_extents_group.add(svg.circle( (x, y), radius, fill="none" ))
+		#info(str(tool[diameter]))
+		#info(str(diameter))
+		if which_ones == "all":
+			do_this_one = "yes"
+		else:
+			do_this_one = "no"
+			for size in which_ones:
+				if abs(float(size) - float(diameter)) < epsilon:
+					do_this_one = "yes"
+		if do_this_one == "yes":
+			drill_centers_layer = add_layer(drill_centers, str(diameter))
+			drill_extents_layer = add_layer(drill_extents, str(diameter))
+			drill_centers_group = add_group(drill_centers_layer, color="#ff0000")
+			drill_extents_group = add_group(drill_extents_layer)
+			#debug(diameter + ":")
+			for location in tool[diameter]:
+				special_diameter = 7.112
+				#radius = float(diameter) / 2.0
+				radius = float(special_diameter) / 2.0
+				(x, y) = location
+				#debug("(" + str(x) + "," + str(y) + ") ",)
+				drill_centers_group.add(svg.line( (x-stroke_length/2.0, y), (x+stroke_length/2.0, y) ))
+				drill_extents_group.add(svg.circle( (x, y), radius, fill="none" ))
 	#drill_layer.translate(-x_offset+horizontal_instance*board_width+horizontal_instance*x_gap_between_instances_of_boards, +y_offset+panel_height-vertical_instance*board_height-vertical_instance*y_gap_between_instances_of_boards)
 	drill_layer.translate(-x_offset,+y_offset)
 	drill_layer.translate(+horizontal_instance*board_width,+panel_height-vertical_instance*board_height)
@@ -763,7 +775,7 @@ for horizontal_instance in range(0, number_of_horizontal_instances):
 	for vertical_instance in range(0, number_of_vertical_instances):
 		setup_board_layer()
 		#draw_board_outline_layer()
-		#generate_drill_layers()
+		generate_drill_layers([3.81])
 		#verbosity = 4
 		draw_pastemask_layer()
 		#verbosity = 3
