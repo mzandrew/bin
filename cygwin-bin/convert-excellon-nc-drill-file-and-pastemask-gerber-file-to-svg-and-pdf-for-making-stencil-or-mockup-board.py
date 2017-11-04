@@ -25,9 +25,8 @@ import math # used for sqrt, ceil, floor
 import subprocess # call
 
 # input filenames:
-#bottom_pastemask_filename = "../assy/bottom-pastemask.GBP"
+bottom_pastemask_filename = "assembly/bottom-pastemask.GBP"
 top_pastemask_filename = "assembly/top-pastemask.GTP"
-#bottom_pastemask_filename = "bottom-pastemask.v2.GBP" # slightly reordered to find bug in this code
 board_outline_filename = "fab/board-outline.GKO"
 #board_outline_filename = "IDL_15_23_A.GM1" # altium board outline gerber
 #stencil_filename = "zelflex-stencil.QR_362x480.GBX"
@@ -47,11 +46,24 @@ stroke_length = 2.0 * laser_stroke_width
 #stroke_length = 0.2032 # 0.2032 mm = 8 mils; twice the line spacing of the laser in 250 dpi mode
 
 # user input:
-board_width = 45 # fixme (can get from outline gerber)
-board_height = 56 # fixme (can get from outline gerber)
-#x_offset = 25.4 # have to know this from CAM file definitions
-x_offset = 0 # have to know this from CAM file definitions
-y_offset = 25.4 # have to know this from CAM file definitions
+# SMA breakout board:
+#board_width = 45 # fixme (can get from outline gerber)
+#board_height = 56 # fixme (can get from outline gerber)
+# linear injector board:
+#board_width = 54.0 # fixme (can get from outline gerber)
+#board_height = 8.25 # fixme (can get from outline gerber)
+# interposer board:
+board_width = 110.0 # fixme (can get from outline gerber)
+board_height = 24.5 # fixme (can get from outline gerber)
+# SMA breakout board:
+#x_offset = 0 # have to know this from CAM file definitions
+#y_offset = 25.4 # have to know this from CAM file definitions
+# linear injector board:
+#x_offset = 100.0 # have to know this from CAM file definitions
+#y_offset = 100.0 # have to know this from CAM file definitions
+# interposer board:
+x_offset = 101.6 # have to know this from CAM file definitions
+y_offset = 101.6 # have to know this from CAM file definitions
 number_of_horizontal_instances = 1
 number_of_vertical_instances = 1
 fill_protoboard = 0 # this overrides the above if == 1
@@ -60,8 +72,8 @@ panel_frame_thickness = 10.0 # mm - overall border thickness
 #panel_tab_width = 2.0 # mm
 x_gap_between_instances_of_boards = 5.0 # mm
 y_gap_between_instances_of_boards = 5.0 # mm
-#stencil_half_moon_location = "NorthSouth"
-stencil_half_moon_location = "EastWest"
+#stencil_half_moon_location = "EastWest"
+stencil_half_moon_location = "NorthSouth"
 number_of_extra_half_moons_per_side = 0
 
 protoboard_width  = 151 # should measure this width each time so that the mirror-image ends up in the right place
@@ -670,7 +682,7 @@ def draw_bottom_pastemask_layer():
 
 def draw_pastemask_layer():
 	draw_top_pastemask_layer()
-	#draw_bottom_pastemask_layer()
+	draw_bottom_pastemask_layer()
 
 def setup_board_layer():
 	global board_layer
@@ -757,8 +769,8 @@ board_outline_instructions = parse_gerber(board_outline_filename)
 board_outline_apertures = apertures
 top_pastemask_instructions = parse_gerber(top_pastemask_filename)
 top_pastemask_apertures = apertures
-#bottom_pastemask_instructions = parse_gerber(bottom_pastemask_filename)
-#bottom_pastemask_apertures = apertures
+bottom_pastemask_instructions = parse_gerber(bottom_pastemask_filename)
+bottom_pastemask_apertures = apertures
 #svg = svgwrite.Drawing(svg_filename, profile='tiny')
 #svg = svgwrite.Drawing(size=(str(panel_width) + "mm", str(panel_height) + "mm"))
 svg = svgwrite.Drawing()
@@ -771,8 +783,9 @@ draw_stencil_layer()
 for horizontal_instance in range(0, number_of_horizontal_instances):
 	for vertical_instance in range(0, number_of_vertical_instances):
 		setup_board_layer()
-		#draw_board_outline_layer()
-		generate_drill_layers([3.81])
+		draw_board_outline_layer()
+		generate_drill_layers([3.81]) # 6-32 clearance hole
+		#generate_drill_layers([0.062*25.4]) # SMA vertical center hole
 		draw_pastemask_layer()
 if (fill_protoboard == 1):
 	draw_protoboard_outline_layer()
