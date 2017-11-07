@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # started 2015-09-08 by mza
 # updated 2015-09-28
-# last updated 2017-10-31
+# last updated 2017-11-07
 
 # todo:
 # generalize a bunch of hard-coded things (see "fixme" items in code below)
@@ -45,25 +45,14 @@ laser_stroke_width = 0.0254 # 1000 dpi - parameter from laser cutter
 stroke_length = 2.0 * laser_stroke_width
 #stroke_length = 0.2032 # 0.2032 mm = 8 mils; twice the line spacing of the laser in 250 dpi mode
 
+# variable definition:
+board_width = 777.7
+board_height = 666.6
+x_offset = 77.7
+y_offset = 66.6
+
 # user input:
-# SMA breakout board:
-#board_width = 45 # fixme (can get from outline gerber)
-#board_height = 56 # fixme (can get from outline gerber)
-# linear injector board:
-#board_width = 54.0 # fixme (can get from outline gerber)
-#board_height = 8.25 # fixme (can get from outline gerber)
-# interposer board:
-board_width = 110.0 # fixme (can get from outline gerber)
-board_height = 24.5 # fixme (can get from outline gerber)
-# SMA breakout board:
-#x_offset = 0 # have to know this from CAM file definitions
-#y_offset = 25.4 # have to know this from CAM file definitions
-# linear injector board:
-#x_offset = 100.0 # have to know this from CAM file definitions
-#y_offset = 100.0 # have to know this from CAM file definitions
-# interposer board:
-x_offset = 101.6 # have to know this from CAM file definitions
-y_offset = 101.6 # have to know this from CAM file definitions
+distance_between_board_edge_and_rows_of_half_moons = 5.0 # mm
 number_of_horizontal_instances = 1
 number_of_vertical_instances = 1
 fill_protoboard = 0 # this overrides the above if == 1
@@ -75,33 +64,6 @@ y_gap_between_instances_of_boards = 5.0 # mm
 #stencil_half_moon_location = "EastWest"
 stencil_half_moon_location = "NorthSouth"
 number_of_extra_half_moons_per_side = 0
-
-protoboard_width  = 151 # should measure this width each time so that the mirror-image ends up in the right place
-protoboard_height = 151
-if (fill_protoboard == 1):
-	number_of_horizontal_instances = int(math.floor(protoboard_width  / board_width))
-	number_of_vertical_instances   = int(math.floor(protoboard_height / board_height))
-	if (number_of_horizontal_instances < 1) or (number_of_vertical_instances < 1):
-		error("can't fit board on panel", 6)
-	panel_width = number_of_horizontal_instances * board_width
-	panel_height = number_of_vertical_instances * board_height
-	panel_width  = panel_width  + (number_of_horizontal_instances - 1) * x_gap_between_instances_of_boards 
-	panel_height = panel_height + (number_of_horizontal_instances - 1) * y_gap_between_instances_of_boards 
-	extra_x_offset = (protoboard_width  - panel_width ) / 2.0
-	extra_y_offset = (protoboard_height - panel_height) / 2.0
-	panel_width  = protoboard_width
-	panel_height = protoboard_height
-else:
-	#extra_x_offset = x_gap_between_instances_of_boards # or 0.0/whatever
-	#extra_y_offset = y_gap_between_instances_of_boards # or 0.0/whatever
-	extra_x_offset = panel_frame_thickness # + panel_tab_length
-	extra_y_offset = panel_frame_thickness
-	panel_width = number_of_horizontal_instances * board_width + 2.0 * extra_x_offset
-	panel_height = number_of_vertical_instances * board_height + 2.0 * extra_y_offset
-	panel_width  = panel_width  + (number_of_horizontal_instances - 1) * x_gap_between_instances_of_boards 
-	panel_height = panel_height + (number_of_vertical_instances   - 1) * y_gap_between_instances_of_boards 
-x_offset = x_offset - extra_x_offset
-y_offset = y_offset - extra_y_offset
 
 # make sure the laser cut line is not cut off of the pdf:
 #x_offset = x_offset - laser_stroke_width/2.0
@@ -121,6 +83,8 @@ height_of_half_moon             = radius_of_half_moon_arc_segment + height_of_st
 vertical_instance = 0
 horizontal_instance = 0
 id = 0
+panel_width = 680.6
+panel_height = 680.7
 
 #https://github.com/curtacircuitos/pcb-tools
 #import gerber
@@ -239,6 +203,10 @@ def generate_drill_layers(which_ones = "all"):
 
 def parse_gerber(filename):
 	info("parsing gerber file \"" + filename + "\"...")
+	#global layer_width
+	#global layer_height
+	#layer_width = 0.0
+	#layer_height = 0.0
 	#global units
 	#global zero_suppression_mode
 	#global coordinate_mode
@@ -413,6 +381,152 @@ def parse_gerber(filename):
 	debug("zero_suppression_mode: " + zero_suppression_mode)
 	debug("coordinate_mode: " + coordinate_mode)
 	return gerber_instructions
+
+def get_extents_of_gerber_instructions(gerber_instructions):
+	x_min = 799.1
+	y_min = 799.2
+	x_max = 799.3
+	y_max = 799.4
+	x_min_candidate = 799.5
+	y_min_candidate = 799.6
+	x_max_candidate = 799.7
+	y_max_candidate = 799.8
+	first_time_through_x = 1
+	first_time_through_y = 1
+	x_old = 0.0
+	y_old = 0.0
+	x_string = "0"
+	y_string = "0"
+	i_string = "0"
+	d_string = "02" # pen up
+	x = 0.0
+	y = 0.0
+	i = 0.0
+	j = 0.0
+	aperture = "00"
+	mode = "linear"
+	ratio = 5.0
+	for instruction in gerber_instructions:
+		debug2("instruction: " + instruction)
+		match = re.search("^setratio([.0-9]*[e]*[-0-9]*)$", instruction)
+		if match:
+			ratio = float(match.group(1))
+			debug2("found ratio: " + str(ratio))
+		match = re.search("^G54D([0-9]+)$", instruction) # "G54D22" means follow the goto X,Y instructions after this line, and flash the D22 aperture every time we get a D03 ("flash aperture") command
+		if match:
+			debug("aperture selection: " + match.group(1))
+			aperture = int(match.group(1))
+			if not aperture in apertures.keys():
+				error("can't find aperture #" + str(aperture), 4)
+			(CROP, w, h) = apertures[aperture]
+			w = 25.4 * w # fixme/todo:  magic number here
+			h = 25.4 * h # fixme/todo:  magic number here
+			debug("aperture[" + str(aperture) + "]: " + CROP + " " + str(w) + " " + str(h))
+			d_string = "04" # skip doing anything this pass through the following code
+		match = re.search("^G(0[0-3])(.*)$", instruction)
+		if match:
+			instruction = match.group(2)
+			#debug2("remaining instruction: " + instruction)
+			if (match.group(1) == "01"):
+				mode = "linear"
+				debug2("mode = linear")
+			elif (match.group(1) == "02"):
+				mode = "cc_arc"
+				debug2("mode = cc arc")
+			elif (match.group(1) == "03"):
+				mode = "cw_arc"
+				debug2("mode = cw arc")
+			else:
+				error("?", 3)
+		match = 1
+		while match:
+			match = re.search("^([XYIJ])([-0-9]{1,10})(.*)$", instruction)
+			if match:
+				instruction = match.group(3)
+				#debug2("remaining instruction: " + instruction)
+				if (match.group(1) == "X"):
+					x_string = match.group(2)
+					x = +int(x_string) * ratio
+					if first_time_through_x:
+						x_min = x
+						x_max = x
+						x_min_candidate = x
+						x_max_candidate = x
+						first_time_through_x = 0
+					if x < x_min_candidate:
+						x_min_candidate = x
+					if x_max_candidate < x:
+						x_max_candidate = x
+					#print (x, x_min, x_max)
+				elif (match.group(1) == "Y"):
+					y_string = match.group(2)
+					y = +int(y_string) * ratio
+					if first_time_through_y:
+						y_min = y
+						y_max = y
+						y_min_candidate = y
+						y_max_candidate = y
+						first_time_through_y = 0
+					if y < y_min_candidate:
+						y_min_candidate = y
+					if y_max_candidate < y:
+						y_max_candidate = y
+					#print (y, y_min, y_max)
+				elif (match.group(1) == "I"):
+					i_string = match.group(2)
+					i = +int(i_string) * ratio
+				elif (match.group(1) == "J"):
+					j_string = match.group(2)
+					j = +int(j_string) * ratio
+		match = re.search("^D(0[1-3])$", instruction)
+		if match:
+			d_string = match.group(1)
+		if (d_string == "01"): # pen down
+			debug2(" " + x_string + " " + y_string + " " + d_string)
+			if (mode == "linear"):
+				x_min = x_min_candidate
+				y_min = y_min_candidate
+				x_max = x_max_candidate
+				y_max = y_max_candidate
+				debug2("nothing")
+				#group.add(svg.line( (x_old,y_old), (x,y) ))
+			else:
+				radius = math.sqrt(i**2+j**2)
+				delta_x = x - x_old
+				delta_y = y - y_old
+				x_center = x_old + i
+				y_center = y_old + j
+				debug2("old(" + str(x_old) + "," + str(y_old) + ") -> xy(" + str(x) + "," + str(y) + ") -> ij(" + str(i) + "," + str(j) + ") -> center(" + str(x_center) + "," + str(y_center) + ")")
+				if (mode == "cc_arc"):
+					string = "M {0},{1} a {2},{2} 0 0,0 {3},{4}".format(x_old, y_old, radius, delta_x, delta_y)
+				elif (mode == "cw_arc"):
+					string = "M {0},{1} a {2},{2} 0 0,1 {3},{4}".format(x_old, y_old, radius, delta_x, delta_y)
+				else:
+					error("?", 4)
+				debug2(string)
+				debug2("nothing")
+				#group.add(svg.path(d=string, fill="none"))
+		elif (d_string == "02"):
+			pass
+		elif (d_string == "03"):
+			if (aperture == 0):
+				warning("unhandled D03 flash operation")
+			else:
+				t = laser_stroke_width / 2.0
+				#x = x / 1.5
+				#y = y / 1.5
+				debug("flashing aperture[" + str(aperture) + "]: " + CROP + " " + str(w) + " " + str(h) + " at (" + str(x) + "," + str(y) + ")")
+				if (CROP == "R"):
+					debug2("nothing")
+					#group.add(svg.rect( (x-w/2.0+t,y-h/2.0+t), (w-2*t,h-2*t) ))
+		elif (d_string == "04"):
+			pass # silently fall thorough, otherwise G54D commands trigger output the first pass through
+		else:
+			error("unknown d string", 5)
+		x_old = x
+		y_old = y
+	#print (x_min, y_min, x_max, y_max)
+	return (x_min, y_min, x_max-x_min, y_max-y_min) # x_offset, y_offset, width, height
 
 def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color = "#000000", stroke_width = laser_stroke_width):
 	layer = add_layer(parent_object, layer_name)
@@ -590,7 +704,6 @@ def generate_stencil_layer():
 	gerber_instructions = []
 	ratio = 1.0 / (10.0**int(decimal_places))
 	gerber_instructions.append("setratio" + str(ratio))
-	distance_between_board_edge_and_rows_of_half_moons = 13.0 # mm fixme
 	n = int(math.ceil(pw / pitch_of_half_moons))
 	n = n + number_of_extra_half_moons_per_side
 	n = 2*int(math.ceil(n/2.0)) # ensure it's even to center the stencil on the stencil holder
@@ -681,8 +794,14 @@ def draw_bottom_pastemask_layer():
 	bottom_pastemask_layer.translate(+horizontal_instance*x_gap_between_instances_of_boards,+vertical_instance*y_gap_between_instances_of_boards)
 
 def draw_pastemask_layer():
-	draw_top_pastemask_layer()
-	draw_bottom_pastemask_layer()
+	try:
+		draw_top_pastemask_layer()
+	except:
+		pass
+	try:
+		draw_bottom_pastemask_layer()
+	except:
+		pass
 
 def setup_board_layer():
 	global board_layer
@@ -767,10 +886,48 @@ def try_making_a_tiled_object():
 parse_drill_file(drill_filename) # stores info in "tool"
 board_outline_instructions = parse_gerber(board_outline_filename)
 board_outline_apertures = apertures
-top_pastemask_instructions = parse_gerber(top_pastemask_filename)
-top_pastemask_apertures = apertures
-bottom_pastemask_instructions = parse_gerber(bottom_pastemask_filename)
-bottom_pastemask_apertures = apertures
+(x_offset, y_offset, board_width, board_height) = get_extents_of_gerber_instructions(board_outline_instructions)
+#info((board_width, board_height))
+#info((x_offset, y_offset))
+try:
+	top_pastemask_instructions = parse_gerber(top_pastemask_filename)
+	top_pastemask_apertures = apertures
+except:
+	warning("can't find top pastemask file")
+try:
+	bottom_pastemask_instructions = parse_gerber(bottom_pastemask_filename)
+	bottom_pastemask_apertures = apertures
+except:
+	warning("can't find bottom pastemask file")
+
+protoboard_width  = 151 # should measure this width each time so that the mirror-image ends up in the right place
+protoboard_height = 151
+if (fill_protoboard == 1):
+	number_of_horizontal_instances = int(math.floor(protoboard_width  / board_width))
+	number_of_vertical_instances   = int(math.floor(protoboard_height / board_height))
+	if (number_of_horizontal_instances < 1) or (number_of_vertical_instances < 1):
+		error("can't fit board on panel", 6)
+	panel_width = number_of_horizontal_instances * board_width
+	panel_height = number_of_vertical_instances * board_height
+	panel_width  = panel_width  + (number_of_horizontal_instances - 1) * x_gap_between_instances_of_boards 
+	panel_height = panel_height + (number_of_horizontal_instances - 1) * y_gap_between_instances_of_boards 
+	extra_x_offset = (protoboard_width  - panel_width ) / 2.0
+	extra_y_offset = (protoboard_height - panel_height) / 2.0
+	panel_width  = protoboard_width
+	panel_height = protoboard_height
+else:
+	#extra_x_offset = x_gap_between_instances_of_boards # or 0.0/whatever
+	#extra_y_offset = y_gap_between_instances_of_boards # or 0.0/whatever
+	extra_x_offset = panel_frame_thickness # + panel_tab_length
+	extra_y_offset = panel_frame_thickness
+	panel_width = number_of_horizontal_instances * board_width + 2.0 * extra_x_offset
+	panel_height = number_of_vertical_instances * board_height + 2.0 * extra_y_offset
+	panel_width  = panel_width  + (number_of_horizontal_instances - 1) * x_gap_between_instances_of_boards 
+	panel_height = panel_height + (number_of_vertical_instances   - 1) * y_gap_between_instances_of_boards 
+x_offset = x_offset - extra_x_offset
+y_offset = y_offset - extra_y_offset
+#info((x_offset, y_offset))
+
 #svg = svgwrite.Drawing(svg_filename, profile='tiny')
 #svg = svgwrite.Drawing(size=(str(panel_width) + "mm", str(panel_height) + "mm"))
 svg = svgwrite.Drawing()
@@ -783,12 +940,16 @@ draw_stencil_layer()
 for horizontal_instance in range(0, number_of_horizontal_instances):
 	for vertical_instance in range(0, number_of_vertical_instances):
 		setup_board_layer()
-		draw_board_outline_layer()
+		#draw_board_outline_layer()
 		generate_drill_layers([3.81]) # 6-32 clearance hole
 		#generate_drill_layers([0.062*25.4]) # SMA vertical center hole
 		draw_pastemask_layer()
 if (fill_protoboard == 1):
 	draw_protoboard_outline_layer()
+string = "stencil will be "
+string += str(int(overall_border["width"]+0.5)/10.0) + " cm x "
+string += str(int(overall_border["height"]+0.5)/10.0) + " cm"
+info(string)
 #add_holes_to_panel_frame()
 save_svg_file()
 generate_pdf()
