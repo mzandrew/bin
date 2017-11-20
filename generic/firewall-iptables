@@ -1,15 +1,31 @@
 #!/bin/bash -ex
 # written 2016-01-04 by mza
 # updated 2016-01-05
-# updated 2017-06-08
+# updated 2017-06-14
+
+# dport 7 = echo
+# dport 22 = ssh
+# dport 111 = sunrpc/idmap
+# dport 2049 = nfsd
+# dport 2987 = identify
+# dport 5353 = mdns
+# dport 20048 = mountd
 
 function watch_for_brute_force_ssh_attack {
 	sudo iptables -F SSHATTACK | /bin/true
 	sudo iptables -N SSHATTACK | /bin/true
 	sudo iptables -A SSHATTACK -j LOG --log-prefix "SSH brute-force attack?: " --log-level 4
 	sudo iptables -A SSHATTACK -j DROP
-	sudo iptables -A INPUT -p tcp -m state --dport 22 --state NEW -m recent --set
-	sudo iptables -A INPUT -p tcp -m state --dport 22 --state NEW -m recent --update --seconds 120 --hitcount 4 -j SSHATTACK
+	sudo iptables -A INPUT -p tcp -m state --dport ssh --state NEW -m recent --set
+	sudo iptables -A INPUT -p tcp -m state --dport ssh --state NEW -m recent --update --seconds 120 --hitcount 4 -j SSHATTACK
+}
+
+function accept_nfs_mounts_from {
+	sudo iptables -A INPUT -s $1 -p tcp --dport sunrpc -j ACCEPT # accept incoming sunrpc/idmap (dport 111)
+	sudo iptables -A INPUT -s $1 -p udp --dport sunrpc -j ACCEPT # accept incoming sunrpc/idmap (dport 111)
+	sudo iptables -A INPUT -s $1 -p tcp --dport mountd -j ACCEPT # accept incoming mountd (dport 20048)
+	sudo iptables -A INPUT -s $1 -p udp --dport mountd -j ACCEPT # accept incoming mountd (dport 20048)
+	sudo iptables -A INPUT -s $1 -p tcp --dport nfsd -j ACCEPT # accept incoming nfsd (dport 2049)
 }
 
 function setup_basic_rules_and_watch_for_brute_force_ssh_attack {
@@ -20,17 +36,29 @@ function setup_basic_rules_and_watch_for_brute_force_ssh_attack {
 	sudo iptables -P OUTPUT ACCEPT # accept outgoing traffic by default
 	sudo iptables -A INPUT -i lo -j ACCEPT # allow localhost interface
 	watch_for_brute_force_ssh_attack # this must come before the tcp 22 ssh accept line below
-	sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT # accept incoming ssh
+	sudo iptables -A INPUT -p tcp --dport ssh -j ACCEPT # accept incoming ssh (dport 22)
+#	sudo iptables -A INPUT -i lo -p tcp --dport smtp -j ACCEPT # accept incoming mail/smtp (dport 25)
+#	sudo iptables -A INPUT -s 192.168.153.0/24 -p tcp --dport smtp -j ACCEPT # accept incoming mail/smtp (dport 25)
+	sudo iptables -A INPUT -s 192.168.153.0/24 -p tcp --dport http -j ACCEPT # accept incoming web/http (dport 80)
+#	sudo iptables -A INPUT -s 192.168.153.0/24 -p tcp --dport https -j ACCEPT # accept incoming web/https (dport 443)
 	sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT # keep track of state and allow traffic for connections related to existing traffic
 	# should that be "-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT" instead?
 }
 
 function ignore_echo_port7 {
-	sudo iptables -A INPUT -s 192.168.153.53 -p udp --dport 7    -j DROP # silently ignore the frequent requests to port 7 (dpt:echo)
+	local source=""
+	if [ ! -z "$1" ]; then
+		source="-s $1"
+	fi
+	sudo iptables -A INPUT $source -p udp --dport 7    -j DROP # silently ignore the frequent requests to port 7 (dpt:echo)
 }
 
 function ignore_identify_port2987 {
-	sudo iptables -A INPUT -s 192.168.153.53 -p tcp --dport 2987 -j DROP # silently ignore the frequent requests to port 2987 (dpt:identify)
+	local source=""
+	if [ ! -z "$1" ]; then
+		source="-s $1"
+	fi
+	sudo iptables -A INPUT $source -p tcp --dport 2987 -j DROP # silently ignore the frequent requests to port 2987 (dpt:identify)
 }
 
 function ignore_mdns_port5353 {
@@ -61,8 +89,9 @@ function save_rules {
 
 #show_rules
 setup_basic_rules_and_watch_for_brute_force_ssh_attack
-ignore_echo_port7
-ignore_identify_port2987
+accept_nfs_mounts_from 192.168.153.10
+ignore_echo_port7 192.168.153.53
+ignore_identify_port2987 192.168.153.53
 ignore_mdns_port5353
 ignore_broadcast_traffic
 log_all_denied_traffic 
