@@ -39,6 +39,7 @@ function setup_basic_rules_and_watch_for_brute_force_ssh_attack {
 	sudo iptables -A INPUT -p tcp --dport ssh -j ACCEPT # accept incoming ssh (dport 22)
 #	sudo iptables -A INPUT -i lo -p tcp --dport smtp -j ACCEPT # accept incoming mail/smtp (dport 25)
 #	sudo iptables -A INPUT -s 192.168.153.0/24 -p tcp --dport smtp -j ACCEPT # accept incoming mail/smtp (dport 25)
+	sudo iptables -A INPUT -s 192.168.153.0/24 -p icmp -m icmp --icmp-type 8 -j ACCEPT # respond to pings (icmp echo-reply)
 	sudo iptables -A INPUT -s 192.168.153.0/24 -p tcp --dport http -j ACCEPT # accept incoming web/http (dport 80)
 #	sudo iptables -A INPUT -s 192.168.153.0/24 -p tcp --dport https -j ACCEPT # accept incoming web/https (dport 443)
 	sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT # keep track of state and allow traffic for connections related to existing traffic
