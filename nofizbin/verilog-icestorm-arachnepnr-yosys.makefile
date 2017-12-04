@@ -1,7 +1,9 @@
 # icestorm/arachne-pnr/yosys makefile
 # written 2017-12-01 by mza
 # based on Makefile in rot.v example project
-# last updated 2017-12-01
+# last updated 2017-12-04
+
+list_of_all_verilog_files := $(wildcard src/*.v)
 
 work/%.blif : src/%.v
 	@if [ ! -e work ]; then mkdir work; fi
@@ -17,10 +19,17 @@ work/%.bin : work/%.txt
 	@ls -lart $@
 
 default:
-	$(MAKE) work/mza-test001.bin
+	@ls -lart $(list_of_all_verilog_files)
+	$(MAKE) $(list_of_all_verilog_files:src/%.v=work/%.bin)
+	@ls -lart $(list_of_all_verilog_files:src/%.v=work/%.bin)
+
+prog:
+	@echo "iceprog work/blah.bin"
 
 clean:
-	rm -f mza-test001.blif mza-test001.txt mza-test001.ex mza-test001.bin
+	rm -rf work
+
+.PRECIOUS : work/%.blif work/%.txt # keep intermediate files
 
 #amza-test001.bin: mza-test001.v mza-test001.pcf
 #	nice yosys -q -p "synth_ice40 -blif mza-test001.blif" mza-test001.v
