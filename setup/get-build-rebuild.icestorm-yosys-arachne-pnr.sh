@@ -15,6 +15,9 @@ fi
 if [ ! -e yosys ]; then
 	git clone https://github.com/cliffordwolf/yosys.git yosys
 fi
+if [ ! -e yosys-plugins ]; then
+	git clone https://github.com/cliffordwolf/yosys-plugins.git
+fi
 
 function fix_permissions {
 	sudo find ${@} -type d -exec chmod --changes 755 {} + -o -type f -exec chmod --changes 644 {} +
@@ -71,6 +74,18 @@ nice make
 sudo nice make install
 fix_permissions /usr/local/share/yosys/
 fix_script_permissions /usr/local/bin/yosys*
+#sudo chmod 755 /usr/local/bin/yosys*
+#sudo chmod 755 /usr/local/share/yosys/
+#sudo chmod 644 /usr/local/share/yosys/*
+#list_files /usr/local/bin/yosys* /usr/local/share/yosys
+
+cd $build/yosys-plugins
+git pull
+cd $build/yosys-plugins/vhdl
+#nice make # fails with "vhdl_frontend.cc:180:3: error: no matching function for call to 'log_header'"
+#sudo nice make install
+#fix_permissions /usr/local/share/yosys/
+#fix_script_permissions /usr/local/bin/yosys*
 #sudo chmod 755 /usr/local/bin/yosys*
 #sudo chmod 755 /usr/local/share/yosys/
 #sudo chmod 644 /usr/local/share/yosys/*
