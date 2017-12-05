@@ -45,40 +45,56 @@ function list_files {
 		| sort -k 1n,1
 		
 }
+	
+function install_prerequisites_apt {
+	sudo apt -y install build-essential clang bison flex libreadline-dev \
+		gawk tcl-dev libffi-dev git mercurial graphviz \
+		xdot pkg-config python python3 libftdi-dev
+}
 
+function install_prerequisites_yum {
+	sudo yum -y install make automake gcc gcc-c++ kernel-devel clang bison \
+		flex readline-devel gawk tcl-devel libffi-devel git mercurial \
+		graphviz python-xdot pkgconfig python python34 libftdi-devel
+}
+
+#install_prerequisites_apt
+#install_prerequisites_yum
+
+echo; echo "icestorm"
+# sudo yum -y install python34 libftdi-devel
 cd $build/icestorm
 git pull
 nice make
 sudo nice make install
 fix_permissions /usr/local/share/icebox
 fix_script_permissions /usr/local/bin/ice*
-#sudo chmod 755 /usr/local/bin/ice*
-#sudo chmod 755 /usr/local/share/icebox
-#sudo chmod 644 /usr/local/share/icebox/*
 #list_files /usr/local/bin/ice* /usr/local/share/icebox
 
+echo; echo "arachne-pnr"
 cd $build/arachne-pnr
 git pull
 nice make
 sudo nice make install
 fix_permissions /usr/local/share/arachne-pnr
 fix_script_permissions /usr/local/bin/arachne*
-#sudo chmod 755 /usr/local/bin/arachne*
-#sudo chmod 755 /usr/local/share/arachne-pnr/
-#sudo chmod 644 /usr/local/share/arachne-pnr/*
 #list_files /usr/local/bin/arachne* /usr/local/share/arachne-pnr
 
+echo; echo "yosys"
+# sudo yum -y install clang tcl-devel bison flex
 cd $build/yosys
 git pull
-nice make
+nice make -k
+# to work around a bison version problem, comment out 2 lines in:
+# ~/build/yosys/frontends/verilog/verilog_parser.y like so:
+#//%define parse.error verbose
+#//%define parse.lac full
 sudo nice make install
 fix_permissions /usr/local/share/yosys/
 fix_script_permissions /usr/local/bin/yosys*
-#sudo chmod 755 /usr/local/bin/yosys*
-#sudo chmod 755 /usr/local/share/yosys/
-#sudo chmod 644 /usr/local/share/yosys/*
 #list_files /usr/local/bin/yosys* /usr/local/share/yosys
 
+echo; echo "yosys-plugins"
 cd $build/yosys-plugins
 git pull
 cd $build/yosys-plugins/vhdl
@@ -86,9 +102,6 @@ cd $build/yosys-plugins/vhdl
 #sudo nice make install
 #fix_permissions /usr/local/share/yosys/
 #fix_script_permissions /usr/local/bin/yosys*
-#sudo chmod 755 /usr/local/bin/yosys*
-#sudo chmod 755 /usr/local/share/yosys/
-#sudo chmod 644 /usr/local/share/yosys/*
 #list_files /usr/local/bin/yosys* /usr/local/share/yosys
 
 echo; echo
@@ -100,4 +113,7 @@ list_files /usr/local/bin/ice* /usr/local/share/icebox /usr/local/bin/arachne* /
 # icepack rot.asc rot.bin
 # iceprog rot.bin
 # sudo iceprog rot.bin
+
+# or use makefile posted here:
+# https://raw.githubusercontent.com/mzandrew/bin/master/nofizbin/verilog-icestorm-arachnepnr-yosys.makefile
 
