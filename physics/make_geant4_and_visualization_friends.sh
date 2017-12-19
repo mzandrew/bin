@@ -7,6 +7,7 @@ declare tdir="$dir"
 if [ -e "/opt/shared/software/geant4" ]; then
 	tdir="/opt/shared/software/geant4"
 fi
+declare archlist="mesa glu mercurial dos2unix openmotif qt4"
 declare deblist="build-essential mesa-utils mercurial"
 declare rpmlist="mercurial"
 	rpmlist="$rpmlist gcc gcc-c++ make automake autoconf"
@@ -81,6 +82,8 @@ if [ -e /etc/redhat-release ]; then
 	set -e
 elif [ -e /etc/debian_version ]; then
 	deb=1
+elif [ -e /etc/arch-release ]; then
+	arch=1
 else
 	echo "what kind of linux is this?"
 	exit 1
@@ -200,6 +203,8 @@ function build_and_install_cmake {
 	fi
 	if [ $deb -gt 0 ]; then
 		sudo apt -y purge cmake cmake-data
+	elif [ $arch -gt 0 ]; then
+		:
 	else
 		sudo yum -y erase cmake cmake-data
 	fi
@@ -225,7 +230,7 @@ function build_and_install_clhep {
 	cd $dir
 	if [ ! -e $clhep_version_string_a ]; then
 		echo "extracting from $file..."
-		tar xzf $tdir/$file
+		tar xf $tdir/$file
 		mv $clhep_version_string_b $clhep_version_string_a
 	fi
 	cd $dir/$clhep_version_string_a
@@ -480,6 +485,8 @@ function hard_uninstall {
 function install_prerequisites {
 	if [ $deb -gt 0 ]; then
 		sudo apt -y install $deblist
+	elif [ $arch -gt 0 ]; then
+		sudo pacman --noconfirm -S $archlist
 	else
 		sudo yum -y install $rpmlist
 	fi
@@ -488,6 +495,8 @@ function install_prerequisites {
 function uninstall_prerequisites {
 	if [ $deb -gt 0 ]; then
 		sudo apt -y remove $deblist
+	elif [ $arch -gt 0 ]; then
+		:
 	else
 		sudo yum -y erase $rpmlist
 	fi

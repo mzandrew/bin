@@ -58,8 +58,15 @@ function install_prerequisites_yum {
 		graphviz python-xdot pkgconfig python python34 libftdi-devel
 }
 
+function install_prerequisites_pac {
+	sudo pacman --noconfirm -S make automake gcc clang bison \
+		flex readline gawk tcl git mercurial \
+		graphviz pkgconfig python python3 libftdi
+}
+
 #install_prerequisites_apt
 #install_prerequisites_yum
+#install_prerequisites_pac
 
 echo; echo "icestorm"
 # sudo yum -y install python34 libftdi-devel

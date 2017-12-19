@@ -32,3 +32,6 @@ if [ $? -eq 0 ]; then
 	#git config --global push.default simple
 fi
 
+#sudo pacman --noconfirm -Qyyu
+sudo pacman --noconfirm -S gvim firefox imagemagick git openssh rsync subversion wget zip mlocate gpm xterm
+
