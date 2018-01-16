@@ -24,6 +24,9 @@ mkdir -p bin
 
 cd ~/bin
 ln -s ../build/bin/generic
+ln -s ../build/bin/setup
+ln -s ../build/bin/repo
+ln -s ../build/bin/physics
 
 cat >> ~/.bashrc <<HERE
 if [ -e $HOME/build/bin/nofizbin/bashrc ]; then

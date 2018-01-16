@@ -64,9 +64,28 @@ function install_prerequisites_pac {
 		graphviz pkgconfig python python3 libftdi
 }
 
-#install_prerequisites_apt
-#install_prerequisites_yum
-#install_prerequisites_pac
+declare -i redhat=0 SL6=0 SL7=0 deb=0
+if [ -e /etc/redhat-release ]; then
+	redhat=1
+	set +e
+	SL6=$(grep -c "Scientific Linux release 6" /etc/redhat-release)
+	SL7=$(grep -c "Scientific Linux release 7" /etc/redhat-release)
+	set -e
+elif [ -e /etc/debian_version ]; then
+	deb=1
+elif [ -e /etc/arch-release ]; then
+	arch=1
+else
+	echo "what kind of linux is this?"
+	exit 1
+fi
+if [ $deb -gt 0 ]; then
+	install_prerequisites_apt
+elif [ $redhat -gt 0 ]; then
+	install_prerequisites_yum
+elif [ $arch -gt 0 ]; then
+	install_prerequisites_pac
+fi
 
 echo; echo "icestorm"
 # sudo yum -y install python34 libftdi-devel

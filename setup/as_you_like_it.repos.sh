@@ -24,4 +24,5 @@ interactive "git clone https://github.com/mzandrew/perl_motor_controller.git"
 
 #both:
 interactive "git clone https://github.com/mzandrew/bin.git"
+interactive "git clone https://github.com/mzandrew/hdl.git"
 
