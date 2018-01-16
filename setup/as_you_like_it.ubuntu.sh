@@ -1,21 +1,23 @@
 #!/bin/bash -e
 
-#sudo useradd mza
-#sudo usermod mza -a -G sudo
-
-sudo apt -y install vim vim-gtk
-sudo apt -y install mlocate git subversion rsync build-essential
+function install_packages {
+	sudo apt -y install vim vim-gtk firefox
+	sudo apt -y install mlocate git subversion rsync build-essential
+	sudo apt -y update
+	sudo apt -y upgrade
 # sudo apt -y install virtualbox-guest-utils virtualbox-guest-x11 virtualbox-guest-dkms
-sudo apt -y update
-sudo apt -y upgrade
+	sudo apt autoremove
+}
 
-sudo apt -y install firefox
+install_packages
 
 cd
 mkdir -p build
 
-#cd ~/build
-#git clone https://github.com/mzandrew/bin.git
+if [ ! -e ~/build/bin ];then
+	cd ~/build
+	git clone https://github.com/mzandrew/bin.git
+fi
 
 cd
 mkdir -p bin
