@@ -19,7 +19,14 @@ sys.path.append(dirname(__file__) + "/../lib")
 
 from DebugInfoWarningError import info, debug, debug2, warning, error, set_verbosity
 set_verbosity(3)
-import svgwrite # pip install svgwrite
+try:
+	import svgwrite # pip install svgwrite
+except:
+	import pip # python2 -m ensurepip
+	pip.main(['install', '--user', 'svgwrite'])
+	print "please try running this script again"
+	sys.exit(2)
+	#import svgwrite # pip install svgwrite
 import re # used for search
 import math # used for sqrt, ceil, floor
 import subprocess # call
@@ -864,7 +871,13 @@ def generate_pdf():
 	#/cygdrive/c/Program\ Files/Inkscape/inkscape.exe drill1.svg --export-pdf="blah.pdf"
 	#cd /usr/local/bin
 	#ln -s /cygdrive/c/Program\ Files/Inkscape/inkscape.exe
-	subprocess.call(["inkscape", svg_filename, "--export-pdf=" + pdf_filename])
+	try:
+		subprocess.call(["inkscape", svg_filename, "--export-pdf=" + pdf_filename])
+	except:
+		print "can't run inkscape:"
+		print "install apt-cyg - see https://github.com/ilatypov/apt-cyg"
+		print "apt-cyg install inkscape"
+		print "then please try running this script again"
 
 def generate_eps_and_dxf():
 # from https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/Other_2D_formats

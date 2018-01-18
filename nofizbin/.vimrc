@@ -14,7 +14,7 @@ set scrolloff=5	" keep at least 5 lines above/below
 set hlsearch	" highlight the search
 set dir=~/tmp
 set nobk	" do not make backups when overwriting files
-set guifont=Courier_New:h9:cANSI:qDRAFT
+set guifont=Courier_New:h10:cANSI:qDRAFT
 set formatoptions-=cro " don't automatically continue comments
 " for win32, make a file c:\\Users\\blah\\_vimrc and have it contain the (uncommented) line:
 " source c:\\\\blah\\build\\bin\\nofizbin\\.vimrc
