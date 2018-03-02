@@ -1,9 +1,13 @@
 #!/bin/bash -e
 
-#find -type f -exec chmod --changes 644 {} \;
-#find -type d -exec chmod --changes 755 {} \;
-
-#find -type f -exec chmod --changes 644 {} \; -o -type d -exec chmod --changes 755 {} \;
-#find -type f -exec chmod --changes 644 {} + -o -type d -exec chmod --changes 755 {} +
-find -type f -exec chmod --changes 640 {} + -o -type d -exec chmod --changes 750 {} +
+declare file="640" dir="750" # default modes
+if [ $# -gt 0 ]; then
+	if [ $# -eq 1 ]; then
+		file=$1
+	elif [ $# -eq 2 ]; then
+		file=$1
+		dir=$2
+	fi
+fi
+find -type f -exec chmod --changes $file {} + -o -type d -exec chmod --changes $dir {} +
 
