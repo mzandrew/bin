@@ -1,0 +1,21 @@
+#!/bin/bash -e
+# written 2018-03-02 by mza
+
+declare newdate olddate
+
+# based on https://superuser.com/questions/236601/how-do-i-execute-multiple-commands-when-using-find/1070947#1070947
+if [ $# -gt 0 ]; then
+	for each; do
+		if [ -d "$each" ]; then
+			olddate=$(stat "$each" --format="%y" | colrm 20)
+			newdate=$(find "$each" -type f -printf "%TY-%Tm-%Td %TH:%TM:%TS\n" | colrm 20 | sort -n | tail -n1)
+			if [ ! -z "$newdate" ] && [ ! "$olddate" = "$newdate" ]; then
+				echo "$olddate -> $newdate $each"
+				touch "$each" --date="$newdate"
+			fi
+		fi
+	done
+else
+	find . -type d -exec $0 {} +
+fi
+
