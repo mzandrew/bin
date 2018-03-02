@@ -7,11 +7,13 @@ declare newdate olddate
 if [ $# -gt 0 ]; then
 	for each; do
 		if [ -d "$each" ]; then
-			olddate=$(stat "$each" --format="%y" | colrm 20)
 			newdate=$(find "$each" -type f -printf "%TY-%Tm-%Td %TH:%TM:%TS\n" | colrm 20 | sort -n | tail -n1)
-			if [ ! -z "$newdate" ] && [ ! "$olddate" = "$newdate" ]; then
-				echo "$olddate -> $newdate $each"
-				touch "$each" --date="$newdate"
+			if [ ! -z "$newdate" ]; then
+				olddate=$(stat "$each" --format="%y" | colrm 20)
+				if [ ! "$olddate" = "$newdate" ]; then
+					echo "$olddate -> $newdate $each"
+					touch "$each" --date="$newdate"
+				fi
 			fi
 		fi
 	done
