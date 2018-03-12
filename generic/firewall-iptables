@@ -41,6 +41,10 @@ function ignore_broadcast_traffic {
 	sudo iptables -A INPUT -m pkttype --pkt-type broadcast -j DROP # ignore random broadcast traffic; this rule saves a ton of logfile space
 }
 
+function allow_sport61376 {
+	sudo iptables -A INPUT -s 128.171.30.203 -p tcp --sport 61376 -j ACCEPT # accept incoming traffic from source port 61376
+}
+
 function log_all_denied_traffic {
 	sudo iptables -F DROPLOG | /bin/true
 	sudo iptables -N DROPLOG | /bin/true
@@ -61,6 +65,7 @@ function save_rules {
 
 #show_rules
 setup_basic_rules_and_watch_for_brute_force_ssh_attack
+allow_sport61376
 ignore_echo_port7
 ignore_identify_port2987
 ignore_mdns_port5353
