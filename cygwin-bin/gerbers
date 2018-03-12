@@ -190,7 +190,7 @@ function fab {
 
 function assembly {
 	if [ ! -e "assembly" ]; then mkdir "assembly"; fi
-	for each in *.GTL *.GBL *.GTO *.GBO *.GTP *.GBP; do
+	for each in *.GTL *.GBL *.GTO *.GBO *.GTP *.GBP *.GTS wirebonds.gerber die.gerber board-outline.GKO; do
 		if [ -e "${each}" ]; then
 			cp -a "${each}" "assembly/"
 		fi

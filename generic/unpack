@@ -1,0 +1,51 @@
+#!/bin/bash -e
+# written 2018-03-09 by mza
+# script to recursively unpack zip/tar archives (zips within tars within tar-bzips, etc)
+# last updated 2018-03-09
+
+declare overwrite="--keep-newer-files"
+#declare overwrite="--keep-old-files"
+
+if [ $# -gt 0 ]; then
+	for each do
+		base=$(basename $each)
+		dir=$(dirname $each)
+		if [ -e "$dir" ] && [ -d "$dir" ]; then
+			cd "$dir"
+			if [ -e "$base" ]; then
+				nom=$(echo $base | sed -e "s,\(.*\)\(\.zip\|\.tar\|\.tgz\|\.tar\.gz\|\.tar\.bz\)$,\1,")
+				ext=$(echo $base | sed -e "s,\(.*\)\(\.zip\|\.tar\|\.tgz\|\.tar\.gz\|\.tar\.bz\)$,\2,")
+				echo "$(pwd)/$nom$ext"
+				if [ "$ext" == ".zip" ]; then
+					mkdir -p "$nom"
+					unzip "$base" -d "$nom"
+					find "$nom" \( -iname "*.zip" -o -iname "*.gz" \) -exec $0 {} \;
+					touch "$nom" --reference="$base"
+				elif [ "$ext" == ".tar.bz2" ]; then
+					mkdir -p "$nom"
+					tar $overwrite -xjf "$base" -C $nom
+					find "$nom" \( -iname "*.zip" -o -iname "*.gz" \) -exec $0 {} \;
+					touch "$nom" --reference="$base"
+				elif [ "$ext" == ".tar.gz" ] || [ "$ext" == ".tgz" ]; then
+					mkdir -p "$nom"
+					tar $overwrite -xzf "$base" -C $nom
+					find "$nom" \( -iname "*.zip" -o -iname "*.gz" \) -exec $0 {} \;
+					touch "$nom" --reference="$base"
+				elif [ "$ext" == ".tar" ]; then
+					mkdir -p "$nom"
+					tar $overwrite -xf "$base" -C $nom
+					find "$nom" \( -iname "*.zip" -o -iname "*.gz" \) -exec $0 {} \;
+					touch "$nom" --reference="$base"
+				else
+					echo "unknown file type for $each"
+				fi
+			else
+				echo "file $nom not found"
+			fi
+			cd - >/dev/null
+		fi
+	done
+else
+	find \( -iname "*.zip" -o -iname "*.gz" \) -exec $0 {} \;
+fi
+

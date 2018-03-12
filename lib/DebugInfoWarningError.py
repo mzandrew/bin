@@ -16,6 +16,11 @@ import sys
 
 verbosity = 3
 
+def set_verbosity(value):
+	global verbosity
+	verbosity = value
+	#info(str(verbosity))
+
 def debug2(message):
 	if (verbosity>=5):
 		print("DEBUG:  " + message)

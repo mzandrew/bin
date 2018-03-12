@@ -9,6 +9,7 @@ use File::Basename;
 #use Env qw{COLUMNS};
 my $width = 196; #print $ENV{"COLUMNS"} . "\n";
 
+# apt-cyg install make gcc gcc-g++ wget curl libcrypt
 # perl -MCPAN -e "install Spreadsheet::Read"
 # perl -MCPAN -e "install Spreadsheet::ParseExcel"
 
