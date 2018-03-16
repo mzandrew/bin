@@ -9,6 +9,9 @@
 # 2016-08-31: re-organized code to only explore an entire dirtree if no arguments are given
 #             also now auto-detects git or svn
 #             also now changes datestamps of dirs
+# 2018-03-16: noticed that the script doesn't work (anymore?) on a git repo, so found a one-liner to do it:
+# git ls-files | xargs -I{} bash -c 'touch "{}" --date=@$(git log -n1 --pretty=format:%ct -- "{}")'
+# reformulated basic flow of this script given this simpler/better method for git
 
 # format of svn info is:
 # Last Changed Date: 2015-01-16 20:56:54 -1000 (Fri, 16 Jan 2015)
@@ -26,19 +29,21 @@ function determine_git_or_svn {
 	# git log --max-count 1; echo $?
 	# or
 	# svn info; echo $?
-	svn info "$1" >/dev/null 2>&1 || /bin/true
+	set +e
+	svn info "$1" >/dev/null 2>&1
 	#svn info "$1" || /bin/true
 	if [ $? -eq 0 ]; then
 		#echo "changing GITORSVN to svn"
 		GITORSVN="svn"
 	else
-		git log --max-count 1 "$1" >/dev/null 2>&1 || /bin/true
+		git log --max-count 1 "$1" >/dev/null 2>&1
 		#git log --max-count 1 "$1" || /bin/true
 		if [ $? -eq 0 ]; then
 			GITORSVN="git"
 			#echo "changing GITORSVN to git"
 		fi
 	fi
+	set -e
 	export GITORSVN
 }
 
@@ -46,17 +51,13 @@ function do_dir_of_dirs {
 	find -type d \( -name '.svn' -o -name '.git' \) -prune -o -type d -exec $0 {} +
 }
 
-function do_dir {
+function do_dir__svn {
 	find -maxdepth 1 -type d \( -name '.svn' -o -name '.git' \) -prune -o -type f -exec $0 {} +
 }
 
-function do_file {
+function do_file__svn {
 	local date=""
-	if [ "$GITORSVN" == "svn" ]; then
-		date=$(svn info "$1@" 2>/dev/null | grep "Last Changed Date" | sed -e "s,^Last Changed Date: \(.*\),\1,")
-	elif [ "$GITORSVN" == "git" ]; then
-		date=$(git log --follow "$1" | grep '^Date' | sed -e "s,^Date:[[:space:]]*,," | sed -e "s, [+-][0-9]\{4\}$,," | head -n1)
-	fi
+	date=$(svn info "$1@" 2>/dev/null | grep "Last Changed Date" | sed -e "s,^Last Changed Date: \(.*\),\1,")
 	if [ ! -z "$date" ]; then
 		touch --date="$date" $temp
 		if [ "$1" -nt $temp ]; then
@@ -65,6 +66,44 @@ function do_file {
 		fi
 	fi
 }
+
+if [ -z "$GITORSVN" ]; then
+	#echo "setting initial value of GITORSVN to none"
+	declare GITORSVN="none"
+fi
+declare temp=$(mktemp)
+if [ $# -gt 0 ]; then
+	for each; do
+		if [ -e "$each" ]; then
+			determine_git_or_svn "."
+			if [ -d "$each" ]; then
+				if [ "$GITORSVN" == "git" ]; then
+					git ls-files "$each" | xargs -I{} bash -c 'touch "{}" --date=@$(git log -n1 --pretty=format:%ct -- "{}")'
+				elif [ "$GITORSVN" == "svn" ]; then
+					do_file__svn "$each"
+					do_dir__svn "$each"
+				fi
+			elif [ -f "$each" ]; then
+				if [ "$GITORSVN" == "git" ]; then
+					touch "${each}" --date=@$(git log -n1 --pretty=format:%ct -- "$each")
+				elif [ "$GITORSVN" == "svn" ]; then
+					do_file__svn "$each"
+				fi
+			fi
+		fi
+	done
+else
+	determine_git_or_svn "."
+	if [ "$GITORSVN" == "git" ]; then
+		git ls-files "." | xargs -I{} bash -c 'touch "{}" --date=@$(git log -n1 --pretty=format:%ct -- "{}")'
+	elif [ "$GITORSVN" == "svn" ]; then
+		do_dir_of_dirs
+	fi
+fi
+rm $temp
+
+exit 0
+# the previous version:
 
 if [ -z "$GITORSVN" ]; then
 	#echo "setting initial value of GITORSVN to none"
