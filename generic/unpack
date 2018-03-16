@@ -1,10 +1,15 @@
 #!/bin/bash -e
 # written 2018-03-09 by mza
 # script to recursively unpack zip/tar archives (zips within tars within tar-bzips, etc)
-# last updated 2018-03-09
+# last updated 2018-03-12
 
 declare overwrite="--keep-newer-files"
 #declare overwrite="--keep-old-files"
+declare find_format="%TY-%Tm-%Td+%TH:%TM %12s %p\n"
+
+function go {
+	find "$1" \( -iname "*.zip" -o -iname "*.tar" -o -iname "*.tgz" -o -iname "*.tar.gz" -o -iname "*.bz2" \) -exec $0 {} \;
+}
 
 if [ $# -gt 0 ]; then
 	for each do
@@ -13,29 +18,33 @@ if [ $# -gt 0 ]; then
 		if [ -e "$dir" ] && [ -d "$dir" ]; then
 			cd "$dir"
 			if [ -e "$base" ]; then
-				nom=$(echo $base | sed -e "s,\(.*\)\(\.zip\|\.tar\|\.tgz\|\.tar\.gz\|\.tar\.bz\)$,\1,")
-				ext=$(echo $base | sed -e "s,\(.*\)\(\.zip\|\.tar\|\.tgz\|\.tar\.gz\|\.tar\.bz\)$,\2,")
+				nom=$(echo $base | sed -e "s,\(.*\)\(\.zip\|\.tar\|\.tgz\|\.tar\.gz\|\.tar\.bz2\)$,\1,")
+				ext=$(echo $base | sed -e "s,\(.*\)\(\.zip\|\.tar\|\.tgz\|\.tar\.gz\|\.tar\.bz2\)$,\2,")
 				echo "$(pwd)/$nom$ext"
 				if [ "$ext" == ".zip" ]; then
 					mkdir -p "$nom"
 					unzip "$base" -d "$nom"
-					find "$nom" \( -iname "*.zip" -o -iname "*.gz" \) -exec $0 {} \;
-					touch "$nom" --reference="$base"
+					go "$nom"
+					find "$nom" -printf "${find_format}" | sort -n -k 1 > "$nom.lf-r"
+					touch "$nom" "$nom.lf-r" --reference="$base"
 				elif [ "$ext" == ".tar.bz2" ]; then
 					mkdir -p "$nom"
 					tar $overwrite -xjf "$base" -C $nom
-					find "$nom" \( -iname "*.zip" -o -iname "*.gz" \) -exec $0 {} \;
-					touch "$nom" --reference="$base"
+					go "$nom"
+					find "$nom" -printf "${find_format}" | sort -n -k 1 > "$nom.lf-r"
+					touch "$nom" "$nom.lf-r" --reference="$base"
 				elif [ "$ext" == ".tar.gz" ] || [ "$ext" == ".tgz" ]; then
 					mkdir -p "$nom"
 					tar $overwrite -xzf "$base" -C $nom
-					find "$nom" \( -iname "*.zip" -o -iname "*.gz" \) -exec $0 {} \;
-					touch "$nom" --reference="$base"
+					go "$nom"
+					find "$nom" -printf "${find_format}" | sort -n -k 1 > "$nom.lf-r"
+					touch "$nom" "$nom.lf-r" --reference="$base"
 				elif [ "$ext" == ".tar" ]; then
 					mkdir -p "$nom"
 					tar $overwrite -xf "$base" -C $nom
-					find "$nom" \( -iname "*.zip" -o -iname "*.gz" \) -exec $0 {} \;
-					touch "$nom" --reference="$base"
+					go "$nom"
+					find "$nom" -printf "${find_format}" | sort -n -k 1 > "$nom.lf-r"
+					touch "$nom" "$nom.lf-r" --reference="$base"
 				else
 					echo "unknown file type for $each"
 				fi
@@ -46,6 +55,6 @@ if [ $# -gt 0 ]; then
 		fi
 	done
 else
-	find \( -iname "*.zip" -o -iname "*.gz" \) -exec $0 {} \;
+	go .
 fi
 
