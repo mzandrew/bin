@@ -1,5 +1,6 @@
 # icestorm/arachne-pnr/yosys makefile
 # written 2017-12-01 by mza
+# https://github.com/mzandrew/bin/blob/master/nofizbin/verilog-icestorm-arachnepnr-yosys.makefile
 # based on Makefile in rot.v example project
 # last updated 2017-12-04
 
@@ -8,15 +9,15 @@ list_of_all_verilog_files := $(wildcard src/*.v)
 work/%.blif : src/%.v
 	@if [ ! -e work ]; then mkdir work; fi
 	nice yosys -q -p "synth_ice40 -blif $@" $<
-	@ls -lart $@
+	@#ls -lart $@
 
 work/%.txt : src/icestick.pcf work/%.blif
 	nice arachne-pnr -p $^ -o $@
-	@ls -lart $@
+	@#ls -lart $@
 
 work/%.bin : work/%.txt
 	nice icepack $< $@
-	@ls -lart $@
+	@#ls -lart $@
 
 default:
 	@ls -lart $(list_of_all_verilog_files)
