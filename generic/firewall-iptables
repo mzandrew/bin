@@ -8,6 +8,7 @@
 # dport 111 = sunrpc/idmap
 # dport 2049 = nfsd
 # dport 2987 = identify
+# dport 3943 = nut / network ups tools
 # dport 5353 = mdns
 # dport 20048 = mountd
 
@@ -23,8 +24,8 @@ function watch_for_brute_force_ssh_attack {
 function accept_nfs_mounts_from {
 	sudo iptables -A INPUT -s $1 -p tcp --dport sunrpc -j ACCEPT # accept incoming sunrpc/idmap (dport 111)
 	sudo iptables -A INPUT -s $1 -p udp --dport sunrpc -j ACCEPT # accept incoming sunrpc/idmap (dport 111)
-	sudo iptables -A INPUT -s $1 -p tcp --dport mountd -j ACCEPT # accept incoming mountd (dport 20048)
-	sudo iptables -A INPUT -s $1 -p udp --dport mountd -j ACCEPT # accept incoming mountd (dport 20048)
+	sudo iptables -A INPUT -s $1 -p tcp --dport 20048 -j ACCEPT # accept incoming mountd (dport 20048)
+	sudo iptables -A INPUT -s $1 -p udp --dport 20048 -j ACCEPT # accept incoming mountd (dport 20048)
 	sudo iptables -A INPUT -s $1 -p tcp --dport nfsd -j ACCEPT # accept incoming nfsd (dport 2049)
 }
 
@@ -42,6 +43,8 @@ function setup_basic_rules_and_watch_for_brute_force_ssh_attack {
 	sudo iptables -A INPUT -s 192.168.153.0/24 -p icmp -m icmp --icmp-type 8 -j ACCEPT # respond to pings (icmp echo-reply)
 	sudo iptables -A INPUT -s 192.168.153.0/24 -p tcp --dport http -j ACCEPT # accept incoming web/http (dport 80)
 #	sudo iptables -A INPUT -s 192.168.153.0/24 -p tcp --dport https -j ACCEPT # accept incoming web/https (dport 443)
+	sudo iptables -A INPUT -s 192.168.153.0/24 -p tcp --dport nut -j ACCEPT # accept UPS monitoring connections
+	#sudo iptables -A INPUT -s 192.168.153.0/24 -p udp --dport nut -j ACCEPT # accept UPS monitoring connections
 	sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT # keep track of state and allow traffic for connections related to existing traffic
 	# should that be "-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT" instead?
 }
