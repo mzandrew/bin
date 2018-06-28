@@ -8,6 +8,7 @@ fi
 declare localdir=$(cd $(dirname $(readlink -f $0)); pwd)
 
 declare date=$(date +"%Y-%m-%d")
+declare year=$(date +"%Y")
 declare hostname=$(hostname)
 declare configfile="/root/.backup-home-dirs"
 if [ ! -e "${configfile}" ]; then
@@ -31,10 +32,11 @@ function create_all_listing_files {
 	local name="$1"
 	local ddir="$destination/$name-backup"
 	cd $ddir
-	for each in *.tar; do
+	#for each in *.tar; do
+	find -type f -name "*.tar" | while read each; do
 		if [ ! -e "${each}.lf-r" ]; then
 			echo -n "generating listing file for "
-			$localdir/extract-lf-listing-from-tar-file $each
+			$localdir/extract-lf-listing-from-tar-file "$each"
 		fi
 	done
 }
@@ -43,7 +45,8 @@ function change_file_name_on_all_files {
 	local name="$1"
 	local ddir="$destination/$name-backup"
 	cd $ddir
-	for each in *.tar; do
+	#for each in *.tar; do
+	find -type f -name "*.tar" | while read each; do
 		date=$(tail -n1 "${each}.lf-r" | colrm 17)
 		#touch "$each" "$each.lf-r" --date="$(echo $date | sed -e "s,+, ,")"
 		shortdate=$(echo $date | colrm 11)
@@ -60,7 +63,8 @@ function change_date_stamp_on_all_files {
 	local name="$1"
 	local ddir="$destination/$name-backup"
 	cd $ddir
-	for each in *.tar; do
+	#for each in *.tar; do
+	find -type f -name "*.tar" | while read each; do
 		date=$(tail -n1 "${each}.lf-r" | colrm 17)
 		touch "$each" "$each.lf-r" --date="$(echo $date | sed -e "s,+, ,")"
 #		shortdate=$(echo $date | colrm 11)
@@ -103,8 +107,8 @@ function incremental_backup {
 	mkdir -p "$ddir"
 	cd $sdir
 	#du --ma=1 > du-ma1
-	#for each in *; do
-	for each in mza; do
+	for each in *; do
+	#for each in mza; do
 		if [ -d $each ]; then
 			local oldfile=$(find $destination -type f \
 				-name "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].$each.tar" \
@@ -113,16 +117,16 @@ function incremental_backup {
 				-o -name "[0-9][0-9][0-9]0s.$each.tar" \
 				| sort | tail -n1)
 			#echo $oldfile
-			local newfile="$ddir/$date.$each.tar"
+			local newfile="$ddir/$year/$date.$each.tar"
 			if [ -e $newfile ]; then
 				echo "file $newfile already exists; skipping"
 			else
 				if [ -e $oldfile ]; then
 					echo "creating file $newfile (as an incremental backup relative to $oldfile)..."
-					nice tar -c --newer=$oldfile -f $newfile $each
+					nice tar -c --newer="$oldfile" -f "$newfile" $each
 				else
 					echo "creating file $newfile..."
-					nice tar -c -f $newfile $each
+					nice tar -c -f "$newfile" $each
 				fi
 			fi
 		fi

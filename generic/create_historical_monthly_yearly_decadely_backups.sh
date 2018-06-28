@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 # written 2018-06-15 by mza
-# last updated 2018-06-18 by mza
+# last updated 2018-06-26 by mza
 
 declare destination source
 
@@ -74,7 +74,7 @@ function yearly {
 		nice grep "^$year" "$fulllistingfile" > "$temporarylistingfile" || /bin/true
 		num=$(wc "$temporarylistingfile" | awk '{print $1}')
 		if [ $num -gt 0 ]; then
-			tarfilename="${destination}/${year}.${user}.tar"
+			tarfilename="${destination}/$year/${year}.${user}.tar"
 			if [ ! -e "$tarfilename" ]; then
 				echo "$tarfilename $num"
 				listingfile="${tarfilename}.lf-r"
@@ -104,7 +104,7 @@ function monthly {
 			nice grep "^$yyyymm" "$fulllistingfile" > "$temporarylistingfile" || /bin/true
 			num=$(wc "$temporarylistingfile" | awk '{print $1}')
 			if [ $num -gt 0 ]; then
-				tarfilename="${destination}/${yyyymm}.${user}.tar"
+				tarfilename="${destination}/$year/${yyyymm}.${user}.tar"
 				if [ ! -e "$tarfilename" ]; then
 					echo "$tarfilename $num"
 					listingfile="${tarfilename}.lf-r"
@@ -128,7 +128,8 @@ function monthly {
 for user in $userlist; do
 	cd "$source/$user"
 	pwd
-	fulllistingfile="$destination/${user}.lf-r"
+	mkdir -p "$destination/files-lists"
+	fulllistingfile="$destination/files-lists/${user}.lf-r"
 	if [ ! -e "$fulllistingfile" ]; then
 		lf > "$fulllistingfile"
 	fi
