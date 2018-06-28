@@ -1,12 +1,15 @@
 #!/bin/bash -e
 
+declare irs="--installroot=/oldroot"
+
 dir="${HOME}/yum-history"
 mkdir -p "${dir}"
-max=$(sudo yum history list | head -n 4 | tail -n 1 | colrm 8)
-for i in $(seq 1 $max); do
+max=$(sudo yum $irs history list | head -n 4 | tail -n 1 | colrm 8)
+#for i in $(seq 1 $max); do
+for i in $(seq 72 $max); do
 	i=$(printf %02d $i)
 	filename="${dir}/yum-history-info-$i"
 	echo "$filename"
-	sudo yum history info $i > "$filename"
+	sudo yum $irs history info $i > "$filename"
 done
 
