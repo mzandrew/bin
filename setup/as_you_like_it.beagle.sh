@@ -1,5 +1,12 @@
 #!/bin/bash -e
 
+if [ ! -e /swap ]; then
+	sudo dd if=/dev/zero of=/swap bs=$((1024*1024)) count=1024
+	sudo mkswap /swap
+	sudo swapon /swap
+	sudo sed -ie '/swapon/{h;s/.*/swapon \/swap/};${x;/^$/{s/.*/swapon \/swap/;H};x}' /etc/rc.local
+fi
+
 #sudo useradd mza
 #sudo usermod mza -a -G sudo
 
