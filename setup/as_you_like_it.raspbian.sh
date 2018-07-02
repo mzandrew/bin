@@ -12,13 +12,15 @@ sudo raspi-config # enable sshd; change video memory to 16MB; change hostname; e
 sudo apt -y install mlocate git subversion rsync lm-sensors
 sudo apt -y update
 sudo apt -y upgrade
-
 sudo apt -y install vpnc firefox-esr
+sudo apt -y install nfs-common
 
 cd
 mkdir -p build
 cd build
-git clone https://github.com/mzandrew/bin.git
+if [ ! -e bin ]; then
+	git clone https://github.com/mzandrew/bin.git
+fi
 cd
 mkdir -p bin
 cd bin
