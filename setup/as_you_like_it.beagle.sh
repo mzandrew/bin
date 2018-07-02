@@ -8,6 +8,7 @@ sudo apt-get -y install mlocate git subversion rsync lm-sensors
 sudo apt-get -y update
 sudo apt-get -y upgrade
 sudo apt-get -y install vpnc firefox-esr
+sudo apt-get -y install nfs-common
 
 cd
 mkdir -p build
