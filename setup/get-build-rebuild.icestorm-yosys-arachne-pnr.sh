@@ -2,7 +2,7 @@
 
 # written 2017-11 by mza
 # based on instructions posted at http://www.clifford.at/icestorm/
-# last updated 2017-12-01
+# last updated 2018-07-03
 
 declare build="$HOME/build"
 cd $build
@@ -130,6 +130,10 @@ cd $build/yosys-plugins/vhdl
 #fix_script_permissions /usr/local/bin/yosys*
 #list_files /usr/local/bin/yosys* /usr/local/share/yosys
 
+declare udev_rulefile="/etc/udev/rules.d/53-lattice-ftdi.rules"
+if [ ! -e "$udev_rulefile" ]; then
+	echo 'ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", MODE="0666", GROUP="plugdev", TAG+="uaccess"' > "$udev_rulefile"
+fi
 echo; echo
 
 list_files /usr/local/bin/ice* /usr/local/share/icebox /usr/local/bin/arachne* /usr/local/share/arachne-pnr /usr/local/bin/yosys* /usr/local/share/yosys
