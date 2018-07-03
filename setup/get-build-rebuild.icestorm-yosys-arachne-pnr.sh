@@ -18,13 +18,16 @@ fi
 if [ ! -e yosys-plugins ]; then
 	git clone https://github.com/cliffordwolf/yosys-plugins.git
 fi
+if [ ! -e vhd2vl ]; then
+	git clone https://github.com/ldoolitt/vhd2vl.git
+fi
 
 function fix_permissions {
-	sudo find ${@} -type d -exec chmod --changes 755 {} + -o -type f -exec chmod --changes 644 {} +
+	sudo find ${@} -type d -exec chmod --changes 0755 {} + -o -type f -exec chmod --changes 0644 {} +
 }
 
 function fix_script_permissions {
-	sudo find "${@}" -exec chmod --changes 755 {} +
+	sudo find "${@}" -exec chmod --changes 0755 {} +
 }
 
 # adapted from https://github.com/mzandrew/bin/blob/master/generic/lf
@@ -87,56 +90,83 @@ elif [ $arch -gt 0 ]; then
 	install_prerequisites_pac
 fi
 
-echo; echo "icestorm"
-# sudo yum -y install python34 libftdi-devel
-cd $build/icestorm
-git pull
-nice make
-sudo nice make install
-fix_permissions /usr/local/share/icebox
-fix_script_permissions /usr/local/bin/ice*
-#list_files /usr/local/bin/ice* /usr/local/share/icebox
+function do_icestorm {
+	echo; echo "icestorm"
+	# sudo yum -y install python34 libftdi-devel
+	cd $build/icestorm
+	git pull
+	nice make
+	sudo nice make install
+	fix_permissions /usr/local/share/icebox
+	fix_script_permissions /usr/local/bin/ice*
+	#list_files /usr/local/bin/ice* /usr/local/share/icebox
+}
 
-echo; echo "arachne-pnr"
-cd $build/arachne-pnr
-git pull
-nice make
-sudo nice make install
-fix_permissions /usr/local/share/arachne-pnr
-fix_script_permissions /usr/local/bin/arachne*
-#list_files /usr/local/bin/arachne* /usr/local/share/arachne-pnr
+function do_arachne_pnr {
+	echo; echo "arachne-pnr"
+	cd $build/arachne-pnr
+	git pull
+	nice make
+	sudo nice make install
+	fix_permissions /usr/local/share/arachne-pnr
+	fix_script_permissions /usr/local/bin/arachne*
+	#list_files /usr/local/bin/arachne* /usr/local/share/arachne-pnr
+}
 
-echo; echo "yosys"
-# sudo yum -y install clang tcl-devel bison flex
-cd $build/yosys
-git pull
-nice make -k
-# to work around a bison version problem, comment out 2 lines in:
-# ~/build/yosys/frontends/verilog/verilog_parser.y like so:
-#//%define parse.error verbose
-#//%define parse.lac full
-sudo nice make install
-fix_permissions /usr/local/share/yosys/
-fix_script_permissions /usr/local/bin/yosys*
-#list_files /usr/local/bin/yosys* /usr/local/share/yosys
+function do_yosys {
+	echo; echo "yosys"
+	# sudo yum -y install clang tcl-devel bison flex
+	cd $build/yosys
+	git pull
+	nice make -k
+	# to work around a bison version problem, comment out 2 lines in:
+	# ~/build/yosys/frontends/verilog/verilog_parser.y like so:
+	#//%define parse.error verbose
+	#//%define parse.lac full
+	sudo nice make install
+	fix_permissions /usr/local/share/yosys/
+	fix_script_permissions /usr/local/bin/yosys*
+	#list_files /usr/local/bin/yosys* /usr/local/share/yosys
+}
 
-echo; echo "yosys-plugins"
-cd $build/yosys-plugins
-git pull
-cd $build/yosys-plugins/vhdl
-#nice make # fails with "vhdl_frontend.cc:180:3: error: no matching function for call to 'log_header'"
-#sudo nice make install
-#fix_permissions /usr/local/share/yosys/
-#fix_script_permissions /usr/local/bin/yosys*
-#list_files /usr/local/bin/yosys* /usr/local/share/yosys
+function do_yosys_plugins {
+	echo; echo "yosys-plugins"
+	cd $build/yosys-plugins
+	git pull
+	cd $build/yosys-plugins/vhdl
+	nice make
+	sudo nice make install
+	fix_permissions /usr/local/share/yosys/plugins/
+	list_files /usr/local/share/yosys/plugins
+}
+
+function do_vhdl2vl {
+	echo; echo "vhd2vl"
+	cd $build/vhd2vl
+	git pull
+	nice make
+	sudo cp src/vhd2vl /usr/local/bin/
+	#sudo chown root /usr/local/bin/vhd2vl 
+	fix_script_permissions /usr/local/bin/vhd2vl
+	list_files /usr/local/bin/vhd2vl 
+}
+
+do_icestorm
+do_arachne_pnr
+do_yosys
+do_yosys_plugins
+do_vhdl2vl
 
 declare udev_rulefile="/etc/udev/rules.d/53-lattice-ftdi.rules"
 if [ ! -e "$udev_rulefile" ]; then
-	echo 'ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", MODE="0666", GROUP="plugdev", TAG+="uaccess"' > "$udev_rulefile"
+	sudo sh -c 'echo ATTRS{idVendor}==\"0403\", ATTRS{idProduct}==\"6010\", MODE=\"0666\", GROUP=\"plugdev\", TAG+=\"uaccess\" > '"$udev_rulefile"
+	fix_permissions "$udev_rulefile"
 fi
+list_files "$udev_rulefile"
+
 echo; echo
 
-list_files /usr/local/bin/ice* /usr/local/share/icebox /usr/local/bin/arachne* /usr/local/share/arachne-pnr /usr/local/bin/yosys* /usr/local/share/yosys
+list_files /usr/local/bin/ice* /usr/local/share/icebox /usr/local/bin/arachne* /usr/local/share/arachne-pnr /usr/local/bin/yosys* /usr/local/share/yosys "$udev_rulefile" /usr/local/bin/vhd2vl /usr/local/share/yosys/plugins
 
 # yosys -p "synth_ice40 -blif rot.blif" rot.v
 # arachne-pnr -d 1k -p rot.pcf rot.blif -o rot.asc
