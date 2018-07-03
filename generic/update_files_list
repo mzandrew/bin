@@ -28,8 +28,8 @@ if [ ! -e "${accumulation_destination}" ]; then
 fi
 #cd "${accumulation_destination}"
 script="$(dirname $0)/copy-if-not-already-there"
-#find "${source}/" -wholename "${destination}" -prune -o -type f -name "*.lf-r" -exec ${script} {} +
-find "${source}/" -type f -name "*.lf-r" -exec ${script} {} +
+find "${source}/" -type d -wholename "${destination}" -prune -o -type f -name "*.lf-r" -exec ${script} {} +
+#find "${source}/" -type f -name "*.lf-r" -exec ${script} {} +
 
 cd "${destination}"
 #find -maxdepth 1 -type f -iname "*${name}*" | sort
