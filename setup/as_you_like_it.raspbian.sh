@@ -19,8 +19,9 @@ sudo raspi-config # enable sshd; change video memory to 16MB; change hostname; e
 sudo apt -y install mlocate git subversion rsync lm-sensors
 sudo apt -y update
 sudo apt -y upgrade
-sudo apt -y install vpnc firefox-esr
-sudo apt -y install nfs-common
+sudo apt -y install vpnc firefox-esr nfs-common
+sudo apt autoremove
+sudo apt clean
 
 cd
 mkdir -p build
@@ -31,12 +32,16 @@ fi
 cd
 mkdir -p bin
 cd bin
-ln -s ../build/bin/generic
+if [ ! -e generic ]; then
+	ln -s ../build/bin/generic
+fi
 #ln -s ../build/bin/rpi
 
 cat >> ~/.bashrc <<HERE
+
 if [ -e $HOME/build/bin/nofizbin/bashrc ]; then
 	. $HOME/build/bin/nofizbin/bashrc
 fi
+
 HERE
 
