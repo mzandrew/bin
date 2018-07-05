@@ -12,13 +12,17 @@ fi
 #sudo useradd mza
 #sudo usermod mza -a -G sudo
 
-sudo apt-get -y install vim
-sudo apt-get -y install mlocate git subversion rsync lm-sensors
-sudo apt-get -y update
-sudo apt-get -y upgrade
-sudo apt-get -y install vpnc firefox-esr nfs-common
-sudo apt-get autoremove
-sudo apt-get clean
+function install_packages {
+	sudo apt-get -y install vim
+	sudo apt-get -y install mlocate git subversion rsync lm-sensors
+	sudo apt-get -y update
+	sudo apt-get -y upgrade
+	sudo apt-get -y install vpnc firefox-esr nfs-common
+	sudo apt-get autoremove
+	sudo apt-get clean
+}
+
+install_packages
 
 cd
 mkdir -p build
@@ -29,13 +33,13 @@ fi
 cd
 mkdir -p bin
 cd bin
-if [ ! -e generic ]; then
-	ln -s ../build/bin/generic
-fi
+if [ ! -e generic ]; then ln -s ../build/bin/generic; fi
 
 cat >> ~/.bashrc <<HERE
+
 if [ -e $HOME/build/bin/nofizbin/bashrc ]; then
 	. $HOME/build/bin/nofizbin/bashrc
 fi
+
 HERE
 
