@@ -13,7 +13,7 @@ fi
 #sudo usermod mza -a -G sudo
 
 sudo apt-get -y install vim
-sudo apt-get -y install mlocate git subversion rsync lm-sensors
+sudo apt-get -y install mlocate git subversion rsync lm-sensors vim-gtk xauth
 sudo apt-get -y update
 sudo apt-get -y upgrade
 sudo apt-get -y install vpnc firefox-esr nfs-common
