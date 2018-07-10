@@ -37,7 +37,7 @@ if [ ! -e "$destination" ]; then
 fi
 
 declare -i total=0 converted_this_time=0 already_converted=0 unknown_type=0
-find "$source" -type f | while read sfile; do
+find "$source" -type d -name "@eaDir" -prune -o -type f | while read sfile; do
 	total=$((total+1))
 #echo $total
 	if [ -e "$sfile" ]; then
