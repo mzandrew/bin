@@ -20,7 +20,7 @@ filename="${destination}/${filename_bare}"
 if [ ! -e "${destination}" ]; then
 	mkdir "${destination}"
 fi
-lf > ${filename} 2>/dev/null
+#lf > ${filename} 2>/dev/null || /bin/true
 
 export accumulation_destination
 if [ ! -e "${accumulation_destination}" ]; then
@@ -28,13 +28,14 @@ if [ ! -e "${accumulation_destination}" ]; then
 fi
 #cd "${accumulation_destination}"
 script="$(dirname $0)/copy-if-not-already-there"
-find "${source}/" -type d -wholename "${destination}" -prune -o -type f -name "*.lf-r" -exec ${script} {} +
+find "${source}/" -type d -wholename "$destination" -prune -o -type f -name "*.lf-r" -exec ${script} {} + || /bin/true
 #find "${source}/" -type f -name "*.lf-r" -exec ${script} {} +
 
 cd "${destination}"
 #find -maxdepth 1 -type f -iname "*${name}*" | sort
 declare -i count=$(find -maxdepth 1 -type f -iname "*${name}.lf-r" | wc -l)
 if [ $count -gt 1 ]; then
+	mkdir -p old
 	find -maxdepth 1 -type f -iname "20*.${name}.lf-r" -exec mv {} old/ \;
 	mv "old/${filename_bare}" .
 fi

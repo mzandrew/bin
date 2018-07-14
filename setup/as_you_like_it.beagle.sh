@@ -14,10 +14,10 @@ fi
 
 function install_packages {
 	sudo apt-get -y install vim
-	sudo apt-get -y install mlocate git subversion rsync lm-sensors
+	sudo apt-get -y install mlocate git subversion rsync lm-sensors vim-gtk xauth man nfs-common vpnc
 	sudo apt-get -y update
 	sudo apt-get -y upgrade
-	sudo apt-get -y install vpnc firefox-esr nfs-common
+	sudo apt-get -y install firefox-esr
 	sudo apt-get autoremove
 	sudo apt-get clean
 }

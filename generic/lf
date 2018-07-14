@@ -74,7 +74,7 @@ fi
 
 # page 421 of "bash Cookbook" is helpful here
 find "${@}" \
-	-type d \( -name "proc" -o -name "dev" -o -name "\.svn" -o -name "\.git" \) -prune \
+	-type d \( -name "proc" -o -name "dev" -o -name "\.svn" -o -name "\.git" -o -name "\@eaDir" \) -prune \
 	-o -type d -printf "$REGULAR_DIR_STRING" \
 	-o -type l -printf "$SYMLINK_STRING" \
 	-o         -printf "$REGULAR_FILE_STRING" \
