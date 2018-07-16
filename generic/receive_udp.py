@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
-local_IP = "192.168.10.17"
-#local_port = 8192
-local_port = 54419
+# written 2018-07-13 by mza
+# basic udp client-server model lifted from example code on the python wiki: https://wiki.python.org/moin/UdpCommunication
+# last updated 2018-07-13 by mza
+
+local_IP = ""
+local_port = 8192
 import socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((local_IP, local_port))
