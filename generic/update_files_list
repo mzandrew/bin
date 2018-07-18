@@ -20,7 +20,7 @@ filename="${destination}/${filename_bare}"
 if [ ! -e "${destination}" ]; then
 	mkdir "${destination}"
 fi
-#lf > ${filename} 2>/dev/null || /bin/true
+lf > ${filename} 2>/dev/null || /bin/true
 
 export accumulation_destination
 if [ ! -e "${accumulation_destination}" ]; then
