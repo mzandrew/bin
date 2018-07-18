@@ -4,4 +4,6 @@ declare dir=$(cd $(dirname $(readlink -f $0)); pwd)
 cd $dir/..
 pwd
 git pull
+echo "current git status:"
+git status
 
