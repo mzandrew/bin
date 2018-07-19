@@ -8,3 +8,7 @@ cd $dir
 #echo "$host $dir/$me -> $destination"
 rsync -a --delete $dir/$me/ $destination
 
+# do "crontab -e" and then add a line for this script (and then uncomment it):
+# m  h   dom mon dow command
+#  0    5   *   *   *   backup_this_host_to_nas.sh
+
