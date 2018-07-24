@@ -4,7 +4,7 @@
 # last updated 2018-07-18 by mza
 
 # usage:
-# from DebugInfoWarningError import debug, info, warning, error, debug2, set_verbosity
+# from DebugInfoWarningError import debug, info, warning, error, debug2, debug3, set_verbosity
 # set_verbosity(4)
 # debug("some pedantic stuff here")
 # info("this is an informational message")
@@ -34,6 +34,10 @@ def prepare_message(*message):
 
 def print_message(*message):
 	print(prepare_message(*message))
+
+def debug3(*message):
+	if (verbosity>=6):
+		print_message(*((" DEBUG3:  ",) + message))
 
 def debug2(*message):
 	if (verbosity>=5):
