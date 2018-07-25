@@ -1,7 +1,7 @@
 #!/bin/env python
 
 # written 2018-07-19 by mza
-# last updated 2018-07-20 by mza
+# last updated 2018-07-25 by mza
 
 input_f = 127.216 # nominal; either 127.216 or 127.22225 or 127.21, not sure
 #input_f = 127.185 # definitely too low; resulting "125" will be too high
@@ -10,6 +10,7 @@ fractional_tolerance = 0.000050 # 50 ppm
 lowest_expected_input_f = 127.210
 highest_expected_input_f = 127.229
 desired_f = 125.000
+#desired_f = 12.5000
 ratio = desired_f / input_f
 
 #print ratio
@@ -30,32 +31,51 @@ cascade_clkout4 = 1 # disabled
 import sys # exit()
 import operator # itemgetter()
 
-count = 0
-should_print = False
-solutions = []
-# ug472 table 3-7 shows the allowed values
-for divclk_divide in range(1, 106+1): # 1 to 106
-	for clkout_mult_8 in range(8*2, 8*64+1): # 2.0 to 64.0 in eighths
-		for clkout_divide_8 in range(8*1, 8*128*cascade_clkout4+1): # 1.0 to 128.0 (or 1 to 16384) in eighths
-			pfd_f = input_f / divclk_divide
-			clkout_mult = clkout_mult_8 / 8.0
-			vco_f = pfd_f * clkout_mult
-			clkout_divide = clkout_divide_8 / 8.0
-			output_f = vco_f / clkout_divide
-			fractional_error = (output_f - desired_f) / desired_f
-#			if should_print:
-#				print divclk_divide, clkout_mult, clkout_divide, pfd_f, vco_f, output_f, fractional_error
-			if not (min_pfd_clock < pfd_f):
-				continue
-			if not (pfd_f < max_pfd_clock):
-				continue
-			if not (min_vco_clock < vco_f):
-				continue
-			if not (vco_f < max_vco_clock):
-				continue
-			if abs(fractional_error) < fractional_tolerance:
-				#print output_f, clkout_mult, clkout_divide, divclk_divide, fractional_error
-				solutions.append((fractional_error, output_f, divclk_divide, clkout_mult, clkout_divide, pfd_f, vco_f))
+def try_combination(divclk_divide, clkout_mult, clkout_divide):
+	global solutions
+	pfd_f = input_f / divclk_divide
+	vco_f = pfd_f * clkout_mult
+	output_f = vco_f / clkout_divide
+	fractional_error = (output_f - desired_f) / desired_f
+	if not (min_pfd_clock < pfd_f):
+		return
+	if not (pfd_f < max_pfd_clock):
+		return
+	if not (min_vco_clock < vco_f):
+		return
+	if not (vco_f < max_vco_clock):
+		return
+	if abs(fractional_error) < fractional_tolerance:
+		#print output_f, clkout_mult, clkout_divide, divclk_divide, fractional_error
+		solutions.append((fractional_error, output_f, divclk_divide, clkout_mult, clkout_divide, pfd_f, vco_f))
+
+def parameter_scan_3d():
+	global solutions
+	solutions = []
+	# ug472 table 3-7 shows the allowed values
+	for divclk_divide in range(1, 106+1): # 1 to 106
+		for clkout_mult_8 in range(8*2, 8*64+1): # 2.0 to 64.0 in eighths
+			for clkout_divide_8 in range(8*1, 8*128*cascade_clkout4+1): # 1.0 to 128.0 (or 1 to 16384) in eighths
+				clkout_mult = clkout_mult_8 / 8.0
+				clkout_divide = clkout_divide_8 / 8.0
+				try_combination(divclk_divide, clkout_mult, clkout_divide)
+
+def parameter_scan_clkout_divide(fixed_divclk_divide, fixed_clkout_mult):
+	global solutions
+	solutions = []
+	# ug472 table 3-7 shows the allowed values
+	if fixed_divclk_divide < 1 or 106 < fixed_divclk_divide:
+		print "out of range"
+		return
+	if fixed_clkout_mult < 2.0 or 64.0 < fixed_clkout_mult:
+		print "out of range"
+		return
+	for clkout_divide_8 in range(8*1, 8*128*cascade_clkout4+1): # 1.0 to 128.0 (or 1 to 16384) in eighths
+		clkout_divide = clkout_divide_8 / 8.0
+		try_combination(fixed_divclk_divide, fixed_clkout_mult, clkout_divide)
+
+#parameter_scan_clkout_divide(6, 49.375)
+parameter_scan_3d()
 
 for item in sorted(solutions, key=operator.itemgetter(0,6)):
 	fractional_error, output_f, divclk_divide, clkout_mult, clkout_divide, pfd_f, vco_f = item
@@ -83,8 +103,8 @@ for item in sorted(solutions, key=operator.itemgetter(0,6)):
 #124.983825  125.002493  125.002493   15.903625  781.265578    0.000020    8.000   49.125    6.250
 
 # should create a "125" that is too high:
-# 125.027475  125.002904  125.046150   21.197500 1062.524688    0.000023    6.000   50.125    8.500 <- choice; 00010049.bit
+# 125.027475  125.002904  125.046150   21.197500 1062.524688    0.000023    6.000   50.125    8.500 <- choice; 00010049.bit - arpings
 
 # should create a "125" that is too low:
-# 124.955646  124.998866  124.974309   25.450800 1234.363800   -0.000009    5.000   48.500    9.875 <- choice
+# 124.955646  124.998866  124.974309   25.450800 1234.363800   -0.000009    5.000   48.500    9.875 <- choice; 0001004b.bit
 
