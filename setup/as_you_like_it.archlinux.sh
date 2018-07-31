@@ -1,6 +1,9 @@
 #!/bin/bash -e
 
 cd
+rmdir Downloads/ Desktop/ Videos/ Templates/ Public/ Music/ Documents/ Pictures/
+
+cd
 mkdir -p build # for development
 
 cd
@@ -32,6 +35,6 @@ if [ $? -eq 0 ]; then
 	#git config --global push.default simple
 fi
 
-#sudo pacman --noconfirm -Qyyu
-sudo pacman --noconfirm -S gvim firefox imagemagick git openssh rsync subversion wget zip mlocate gpm xterm
+sudo pacman --needed --noconfirm -Syu
+sudo pacman --needed --noconfirm -S gvim firefox imagemagick git openssh rsync subversion wget zip mlocate gpm xterm
 
