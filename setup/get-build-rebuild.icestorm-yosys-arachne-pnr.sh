@@ -2,7 +2,7 @@
 
 # written 2017-11 by mza
 # based on instructions posted at http://www.clifford.at/icestorm/
-# last updated 2018-07-03
+# last updated 2018-08-01 by mza
 
 declare build="$HOME/build"
 cd $build
@@ -20,6 +20,17 @@ if [ ! -e yosys-plugins ]; then
 fi
 if [ ! -e vhd2vl ]; then
 	git clone https://github.com/ldoolitt/vhd2vl.git
+fi
+if [ ! -e netlistsvg ]; then
+	# needs npm
+	git clone https://github.com/nturley/netlistsvg
+fi
+if [ ! -e ice40_viewer ]; then
+	git clone https://github.com/knielsen/ice40_viewer.git
+fi
+if [ ! -e swapforth ]; then
+	# needs gforth
+	git clone https://github.com/jamesbowman/swapforth.git
 fi
 
 function fix_permissions {
@@ -52,19 +63,19 @@ function list_files {
 function install_prerequisites_apt {
 	sudo apt -y install build-essential clang bison flex libreadline-dev \
 		gawk tcl-dev libffi-dev git mercurial graphviz \
-		xdot pkg-config python python3 libftdi-dev
+		xdot pkg-config python python3 libftdi-dev npm gforth
 }
 
 function install_prerequisites_yum {
 	sudo yum -y install make automake gcc gcc-c++ kernel-devel clang bison \
 		flex readline-devel gawk tcl-devel libffi-devel git mercurial \
-		graphviz python-xdot pkgconfig python python34 libftdi-devel
+		graphviz python-xdot pkgconfig python python34 libftdi-devel npm
 }
 
 function install_prerequisites_pac {
 	sudo pacman --noconfirm -S make automake gcc clang bison \
 		flex readline gawk tcl git mercurial \
-		graphviz pkgconfig python python3 libftdi
+		graphviz pkgconfig python python3 libftdi npm
 }
 
 declare -i redhat=0 SL6=0 SL7=0 deb=0
@@ -151,11 +162,38 @@ function do_vhdl2vl {
 	list_files /usr/local/bin/vhd2vl 
 }
 
+function do_netlistsvg {
+	echo; echo "netlistsvg"
+	cd $build/netlistsvg
+	git pull
+	nice npm install
+	# not clear what the best way to install this is...
+}
+
+function do_ice40_viewer {
+	echo; echo "ice40_viewer"
+	cd $build/ice40_viewer
+	git pull
+	#./iceview_html.py -s firefox ../hdl/verilog/work/mza-test003.double-dabble.txt ../output.html
+	# not clear what the best way to install this is...
+}
+
+function do_swapforth {
+	echo; echo "swapforth"
+	cd $build/swapforth
+	git pull
+	cd j1a/icestorm
+	nice make
+}
+
 do_icestorm
 do_arachne_pnr
 do_yosys
 do_yosys_plugins
 do_vhdl2vl
+do_netlistsvg
+do_ice40_viewer
+do_swapforth
 
 declare udev_rulefile="/etc/udev/rules.d/53-lattice-ftdi.rules"
 if [ ! -e "$udev_rulefile" ]; then

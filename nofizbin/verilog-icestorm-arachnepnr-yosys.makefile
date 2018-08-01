@@ -23,6 +23,17 @@ work/%.blif : src/%.v work/%.d
 	@nice yosys -q -p "synth_ice40 -blif $@" $<
 	@#ls -lart $@
 
+work/%.json : src/%.v
+	@if [ ! -e work ]; then mkdir work; fi
+	@#nice yosys -q -p "prep -top top -flatten; write_json $@" $<
+	@nice yosys -q -p "prep -top top; write_json $@" $<
+	@#ls -lart $@
+
+work/%.svg : work/%.json
+	@if [ ! -e work ]; then mkdir work; fi
+	@nice node bin/netlistsvg.js $< -o $@
+	@#ls -lart $@
+
 work/%.txt : src/icestick.pcf work/%.blif
 	@if [ ! -e work ]; then mkdir work; fi
 	@nice arachne-pnr -p $^ -o $@
@@ -33,10 +44,17 @@ work/%.bin : work/%.txt
 	@nice icepack $< $@
 	@ls -lart $@
 
+work/%.timing-report : work/%.txt
+	@if [ ! -e work ]; then mkdir work; fi
+	@nice icetime -mt -p src/icestick.pcf -P tg144 -d hx1k $< > tmp
+	@mv tmp $@
+
 default:
 	@#ls -lart $(list_of_all_verilog_files)
 	@$(MAKE) $(list_of_all_verilog_files:src/%.v=work/%.d)
 	@$(MAKE) $(list_of_all_verilog_files:src/%.v=work/%.bin)
+	@#$(MAKE) $(list_of_all_verilog_files:src/%.v=work/%.timing-report)
+	@#$(MAKE) $(list_of_all_verilog_files:src/%.v=work/%.svg)
 	@ls -lart $(list_of_all_verilog_files:src/%.v=work/%.bin)
 
 prog:
@@ -45,7 +63,7 @@ prog:
 clean:
 	rm -rf work
 
-.PRECIOUS : work/%.blif work/%.txt work/%.d # keep intermediate files
+.PRECIOUS : work/%.d work/%.blif work/%.json work/%.txt work/%.bin work/%.timing-report # keep intermediate files
 
 MAKEFLAGS += --silent
 
@@ -57,4 +75,9 @@ include $(list_of_all_verilog_dependency_files)
 #	nice arachne-pnr -p mza-test001.pcf mza-test001.blif -o mza-test001.txt
 #	#icebox_explain mza-test001.txt > mza-test001.ex
 #	nice icepack mza-test001.txt mza-test001.bin
+#	icetime -mt -p src/icestick.pcf -P tg144 -d hx1k work/mza-test009.multi-segment-driver.txt 
+
+#	yosys -q -p "synth_ice40 -blif $PRJ.blif" $PRJ.v
+#	arachne-pnr $PRJ.blif -d 8k -P tq144:4k --post-place-blif $PRJ.post.blif
+#	yosys -q -o $PRJ.post.json $PRJ.post.blif
 
