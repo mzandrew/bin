@@ -143,6 +143,8 @@ function download_datasets {
 	echo; echo "downloading datasets..."
 	cd $dir
 	for each in G4NDL.4.5.tar.gz G4EMLOW.6.50.tar.gz G4PhotonEvaporation.4.3.2.tar.gz G4RadioactiveDecay.5.1.1.tar.gz G4NEUTRONXS.1.4.tar.gz G4PII.1.3.tar.gz RealSurface.1.0.tar.gz G4SAIDDATA.1.1.tar.gz G4ABLA.3.0.tar.gz G4ENSDFSTATE.2.1.tar.gz; do
+	#for each in G4NDL.4.5.tar.gz; do
+	#for each in G4ENSDFSTATE.2.1.tar.gz; do
 		if [ ! -e $each ]; then
 			wget http://geant4.cern.ch/support/source/$each
 		fi
@@ -419,6 +421,7 @@ function build_and_install_geant {
 	fi
 	fix_ownership .
 	fix_permissions /usr/local/share/$geant_version_string_b
+	fix_permissions /usr/local/lib64
 	if [ -e /usr/local/lib/$geant_version_string_b ]; then
 		fix_permissions /usr/local/lib/$geant_version_string_b
 	elif [ -e /usr/local/lib64/$geant_version_string_b ]; then
@@ -486,7 +489,7 @@ function install_prerequisites {
 	if [ $deb -gt 0 ]; then
 		sudo apt -y install $deblist
 	elif [ $arch -gt 0 ]; then
-		sudo pacman --noconfirm -S $archlist
+		sudo pacman --needed --noconfirm -S $archlist
 	else
 		sudo yum -y install $rpmlist
 	fi

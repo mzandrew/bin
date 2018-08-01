@@ -73,7 +73,7 @@ function install_prerequisites_yum {
 }
 
 function install_prerequisites_pac {
-	sudo pacman --noconfirm -S make automake gcc clang bison \
+	sudo pacman --needed --noconfirm -S make automake gcc clang bison \
 		flex readline gawk tcl git mercurial \
 		graphviz pkgconfig python python3 libftdi npm
 }
