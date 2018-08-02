@@ -63,7 +63,7 @@ function list_files {
 function install_prerequisites_apt {
 	sudo apt -y install build-essential clang bison flex libreadline-dev \
 		gawk tcl-dev libffi-dev git mercurial graphviz \
-		xdot pkg-config python python3 libftdi-dev npm gforth
+		xdot pkg-config python python3 libftdi-dev npm gforth iverilog gtkwave
 }
 
 function install_prerequisites_yum {

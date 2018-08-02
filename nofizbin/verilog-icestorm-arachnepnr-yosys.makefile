@@ -17,6 +17,13 @@ work/%.d : src/%.v
 	@if [ ! -e work ]; then mkdir work; fi
 	@./write_verilog_dependency_file.py $<
 
+work/%.out : src/%.v work/%.d
+	@iverilog -m testbench $< -o $@ -I src
+
+work/%.vcd : work/%.out
+	@vvp $<
+	@#gtkwave # (open new tab with waveform example002.vcd)
+
 work/%.blif : src/%.v work/%.d
 	@if [ ! -e work ]; then mkdir work; fi
 	@echo $<
