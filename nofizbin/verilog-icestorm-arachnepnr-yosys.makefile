@@ -22,7 +22,7 @@ work/%.out : src/%.v work/%.d
 
 work/%.vcd : work/%.out
 	@vvp $<
-	@#gtkwave # (open new tab with waveform example002.vcd)
+	@gtkwave $@
 
 work/%.blif : src/%.v work/%.d
 	@if [ ! -e work ]; then mkdir work; fi
