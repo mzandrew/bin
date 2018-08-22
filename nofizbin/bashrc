@@ -66,7 +66,7 @@ function GIDof {
 export -f GIDof
 #export GID=$(GIDof asic)
 
-alias df="df --block-size=1000000000"
+alias df="df --block-size=1000000000 | grep -v /dev/loop"
 
 export HISTSIZE=5000
 export HISTFILESIZE=
