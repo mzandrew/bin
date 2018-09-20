@@ -21,3 +21,8 @@ nice ./configure --enable-ftdi --enable-buspirate
 nice make
 sudo nice make install
 
+declare file="644" dir="755"
+sudo find /usr/local/share/openocd -type f -exec chmod --changes $file {} + -o -type d -exec chmod --changes $dir {} +
+
+ls -lart /usr/local/bin/openocd /usr/local/share/openocd 
+
