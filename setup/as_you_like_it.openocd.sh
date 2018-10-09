@@ -16,13 +16,17 @@ if [ ! -e ~/build/openocd ];then
 	nice ./bootstrap
 fi
 
+declare PREFIX="/usr"
+
 cd ~/build/openocd
-nice ./configure --enable-ftdi --enable-buspirate
+nice ./configure --prefix=$PREFIX --enable-ftdi --enable-buspirate --enable-ft232r --enable-armjtagew --enable-bcm2835gpio --disable-stlink --disable-ti-icdi --disable-ulink --disable-usb-blaster-2 --disable-vsllink --disable-xds110 --disable-osbdm --disable-opendous --disable-aice --disable-usbprog --disable-rlink --disable-cmsis-dap --disable-kitprog --disable-usb-blaster --disable-presto --disable-openjtag --disable-jlink --disable-parport --disable-parport-giveio --disable-jtag_vpi --disable-amtjtagaccel --disable-zy1000-master --disable-zy1000 --disable-ioutil --disable-ep93xx --disable-at91rm9200 --disable-imx_gpio --disable-gw16012 --disable-oocd_trace --disable-sysfsgpio
+
 nice make
 sudo nice make install
 
 declare file="644" dir="755"
-sudo find /usr/local/share/openocd -type f -exec chmod --changes $file {} + -o -type d -exec chmod --changes $dir {} +
+sudo find $PREFIX/share/openocd -type f -exec chmod --changes $file {} + -o -type d -exec chmod --changes $dir {} +
+sudo cp -a $PREFIX/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d/
 
-ls -lart /usr/local/bin/openocd /usr/local/share/openocd 
+ls -lart $PREFIX/bin/openocd $PREFIX/share/openocd /etc/udev/rules.d/60-openocd.rules
 
