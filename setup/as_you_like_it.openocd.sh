@@ -1,11 +1,15 @@
 #!/bin/bash -e
 
 function install_prerequisites_apt {
-	sudo nice apt -y install libtool autoconf automake libusb-1.0 libtcl8.5 tcl8.5 make gcc clang pkg-config texinfo
+	sudo nice apt -y install libtool autoconf automake libusb-1.0 libtcl8.5 tcl8.5 make gcc clang pkg-config texinfo libftdi
 }
 
 function install_prerequisites_yum {
-	sudo nice yum -y install libtool autoconf automake make gcc clang texinfo libusb tcl-devel tcl pkgconfig 
+	sudo nice yum -y install libtool autoconf automake make gcc clang texinfo libusb tcl-devel tcl pkgconfig libftdi
+	#sudo nice yum -y install openocd # version is Open On-Chip Debugger 0.5.0 (2011-12-19-21:28) in SL6.10
+	#sudo nice yum -y install openocd # version is Open On-Chip Debugger 0.8.0 (2014-04-29-12:22) in SL7.3 and SL7.5
+	# ~2018 git version needs automake>=1.14 and SL7.3 only has 1.13
+	# libusb-devel
 }
 
 function install_prerequisites_pac {
@@ -42,6 +46,7 @@ mkdir -p build
 if [ ! -e ~/build/openocd ];then
 	cd ~/build
 	git clone git://git.code.sf.net/p/openocd/code openocd
+	#tar cf openocd.tar openocd
 	cd openocd
 	nice ./bootstrap
 fi
