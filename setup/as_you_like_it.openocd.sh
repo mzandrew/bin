@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 function install_prerequisites_apt {
-	sudo nice apt -y install libtool autoconf automake libusb-1.0 libtcl8.5 tcl8.5 make gcc clang pkg-config texinfo libftdi
+	sudo nice apt -y install libtool autoconf automake libusb-1.0 libtcl8.5 tcl8.5 make gcc clang pkg-config texinfo libftdi1
 }
 
 function install_prerequisites_yum {
