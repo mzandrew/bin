@@ -1,10 +1,40 @@
 #!/bin/bash -e
 
-function install_packages {
+function install_prerequisites_apt {
 	sudo nice apt -y install libtool autoconf automake libusb-1.0 libtcl8.5 tcl8.5 make gcc clang pkg-config texinfo
 }
 
-install_packages
+function install_prerequisites_yum {
+	sudo nice yum -y install libtool autoconf automake make gcc clang texinfo libusb tcl-devel tcl pkgconfig 
+}
+
+function install_prerequisites_pac {
+	echo "archlinux version is not done yet"
+	exit 1
+}
+
+declare -i redhat=0 SL6=0 SL7=0 deb=0
+if [ -e /etc/redhat-release ]; then
+	redhat=1
+	set +e
+	SL6=$(grep -c "Scientific Linux release 6" /etc/redhat-release)
+	SL7=$(grep -c "Scientific Linux release 7" /etc/redhat-release)
+	set -e
+elif [ -e /etc/debian_version ]; then
+	deb=1
+elif [ -e /etc/arch-release ]; then
+	arch=1
+else
+	echo "what kind of linux is this?"
+	exit 1
+fi
+if [ $deb -gt 0 ]; then
+	install_prerequisites_apt
+elif [ $redhat -gt 0 ]; then
+	install_prerequisites_yum
+elif [ $arch -gt 0 ]; then
+	install_prerequisites_pac
+fi
 
 cd
 mkdir -p build
