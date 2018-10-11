@@ -32,6 +32,9 @@ if [ ! -e swapforth ]; then
 	# needs gforth
 	git clone https://github.com/jamesbowman/swapforth.git
 fi
+if [ ! -e myhdl ]; then
+	git clone https://github.com/myhdl/myhdl.git
+fi
 
 function fix_permissions {
 	sudo find ${@} -type d -exec chmod --changes 0755 {} + -o -type f -exec chmod --changes 0644 {} +
