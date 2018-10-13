@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # written 2018-10-10 by mza
-# last updated 2018-10-10 by mza
+# last updated 2018-10-12 by mza
 
 # usage:
 # wget https://www.xilinx.com/support/packagefiles/s6packages/6slx9tqg144pkg.txt
@@ -34,6 +34,9 @@ for line in lines:
 		match = re.search("^(PROGRAM_B|DONE|CMPCS|SUSPEND|VCCO)", name)
 		if match:
 			name = match.group(1) + "_"
+		match = re.search("^(PROGRAM_B|DONE|CMPCS|SUSPEND|TCK|TMS|TDI|TDO)", name)
+		if match:
+			bank = "4_"
 		extra2 = ""
 		match = re.search("^IO_L([0-9]+)([PN])_(.+)_$", name)
 		if match:
@@ -41,7 +44,7 @@ for line in lines:
 			pn = match.group(2)
 			extra1 = match.group(3)
 			name = "%02d%c_" % (pair, pn)
-			match = re.search("^([GV][^_]+)_([0-9]+)$", extra1)
+			match = re.search("^([A-Z].+)_([0-9]+)$", extra1)
 			if match:
 				extra2 = "_" + match.group(1)
 		new_pin_name = name + bank + bufio2 + pinname + extra2
@@ -62,6 +65,7 @@ for banked_pin in banked_pins:
 		print "Gate-D" + "," + str(pin) + "," + new_pin_name + "," + "Undefined" + "," + "0" + "," + ""
 	elif bank == "":
 		print "Gate-E" + "," + str(pin) + "," + new_pin_name + "," + "Undefined" + "," + "0" + "," + ""
-#	else:
-#		print "Gate-F" + "," + str(pin) + "," + new_pin_name + "," + "Undefined" + "," + "0" + "," + ""
+	elif bank == "4_":
+		print "Gate-F" + "," + str(pin) + "," + new_pin_name + "," + "Undefined" + "," + "0" + "," + ""
+	#else:
 
