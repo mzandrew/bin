@@ -1,7 +1,9 @@
 #!/bin/bash -e
 
+# last updated 2018-11-14 by mza
+
 function install_prerequisites_apt {
-	sudo nice apt -y install libtool autoconf automake libusb-1.0 libtcl8.5 tcl8.5 make gcc clang pkg-config texinfo libftdi1
+	sudo nice apt -y install libtool autoconf automake libusb-1.0 libusb-dev libtcl8.5 tcl8.5 make gcc clang pkg-config texinfo libftdi1
 }
 
 function install_prerequisites_yum {
@@ -40,20 +42,25 @@ elif [ $arch -gt 0 ]; then
 	install_prerequisites_pac
 fi
 
-cd
-mkdir -p build
+declare build="${HOME}/build"
+declare openocd="${HOME}/build/openocd"
 
-if [ ! -e ~/build/openocd ];then
-	cd ~/build
+mkdir -p $build
+
+if [ -e $openocd ];then
+	cd $openocd
+	git pull
+else
+	cd $build
 	git clone git://git.code.sf.net/p/openocd/code openocd
 	#tar cf openocd.tar openocd
-	cd openocd
+	cd $openocd
 	nice ./bootstrap
 fi
 
 declare PREFIX="/usr"
 
-cd ~/build/openocd
+cd $openocd
 nice ./configure --prefix=$PREFIX --enable-ftdi --enable-buspirate --enable-ft232r --enable-armjtagew --enable-bcm2835gpio --disable-stlink --disable-ti-icdi --disable-ulink --disable-usb-blaster-2 --disable-vsllink --disable-xds110 --disable-osbdm --disable-opendous --disable-aice --disable-usbprog --disable-rlink --disable-cmsis-dap --disable-kitprog --disable-usb-blaster --disable-presto --disable-openjtag --disable-jlink --disable-parport --disable-parport-giveio --disable-jtag_vpi --disable-amtjtagaccel --disable-zy1000-master --disable-zy1000 --disable-ioutil --disable-ep93xx --disable-at91rm9200 --disable-imx_gpio --disable-gw16012 --disable-oocd_trace --disable-sysfsgpio
 
 nice make
