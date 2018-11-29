@@ -50,7 +50,7 @@ mkdir -p $build
 
 if [ -e $openocd ];then
 	cd $openocd
-	git pull
+	git pull || /bin/true
 else
 	cd $build
 	if [ $redhat -gt 0 ]; then
