@@ -53,6 +53,7 @@ if [ -e $openocd ];then
 else
 	cd $build
 	git clone git://git.code.sf.net/p/openocd/code openocd
+	git revert 5be455a710c57bbbbd49c2d671b42098db7be5dc
 	#tar cf openocd.tar openocd
 	cd $openocd
 	nice ./bootstrap
