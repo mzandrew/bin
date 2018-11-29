@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-# last updated 2018-11-28 by mza
+# last updated 2018-11-29 by mza
 
 function install_prerequisites_apt {
 	sudo nice apt -y install libtool autoconf automake libusb-1.0 libusb-dev libtcl8.5 tcl8.5 make gcc clang pkg-config texinfo libftdi1
@@ -53,11 +53,16 @@ if [ -e $openocd ];then
 	git pull
 else
 	cd $build
-	git clone git://git.code.sf.net/p/openocd/code openocd
-	git revert 5be455a710c57bbbbd49c2d671b42098db7be5dc
-	#tar cf openocd.tar openocd
-	cd $openocd
-	nice ./bootstrap
+	if [ $redhat -gt 0 ]; then
+		wget https://superb-sea2.dl.sourceforge.net/project/openocd/openocd/0.10.0/openocd-0.10.0.tar.bz2
+		tar xjf openocd-0.10.0.tar.bz2
+		mv openocd-0.10.0 openocd
+	else
+		git clone git://git.code.sf.net/p/openocd/code openocd
+		#tar cf openocd.tar openocd
+		cd $openocd
+		nice ./bootstrap
+	fi
 fi
 
 declare PREFIX="/usr"
