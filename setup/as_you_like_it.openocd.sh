@@ -9,9 +9,13 @@ function install_prerequisites_apt {
 function install_prerequisites_yum {
 	sudo nice yum -y update
 	sudo nice yum -y upgrade
-	sudo nice yum -y install libtool autoconf automake make gcc clang texinfo libusbx libusbx-devel tcl-devel tcl pkgconfig libftdi wget
+	sudo nice yum -y install libtool autoconf automake make gcc clang texinfo libusb libusb-devel libusb1 libusb1-devel libusbx libusbx-devel tcl-devel tcl pkgconfig libftdi wget
 	#sudo nice yum -y install openocd # version is Open On-Chip Debugger 0.5.0 (2011-12-19-21:28) in SL6.10
 	#sudo nice yum -y install openocd # version is Open On-Chip Debugger 0.8.0 (2014-04-29-12:22) in SL7.3 and SL7.5
+	# for openocd-0.10.0 release tarball under redhat distros:
+	# libusb-devel 0.1 needed to build ARM-OLIMEX-JTAG driver
+	# libusb1-devel needed for SL6.10
+	# libusbx-devel needed for SL7.5
 	# ~2018 git version needs automake>=1.14 and SL7.3 only has 1.13 (SL7.5 has 1.13 also)
 }
 
@@ -54,7 +58,9 @@ if [ -e $openocd ];then
 else
 	cd $build
 	if [ $redhat -gt 0 ]; then
-		wget https://superb-sea2.dl.sourceforge.net/project/openocd/openocd/0.10.0/openocd-0.10.0.tar.bz2
+		if [ ! -e "openocd-0.10.0.tar.bz2" ]; then
+			wget https://superb-sea2.dl.sourceforge.net/project/openocd/openocd/0.10.0/openocd-0.10.0.tar.bz2
+		fi
 		tar xjf openocd-0.10.0.tar.bz2
 		mv openocd-0.10.0 openocd
 	else
@@ -68,7 +74,7 @@ fi
 declare PREFIX="/usr"
 
 cd $openocd
-nice ./configure --prefix=$PREFIX --enable-ftdi --enable-buspirate --enable-ft232r --enable-armjtagew --enable-bcm2835gpio --disable-stlink --disable-ti-icdi --disable-ulink --disable-usb-blaster-2 --disable-vsllink --disable-xds110 --disable-osbdm --disable-opendous --disable-aice --disable-usbprog --disable-rlink --disable-cmsis-dap --disable-kitprog --disable-usb-blaster --disable-presto --disable-openjtag --disable-jlink --disable-parport --disable-parport-giveio --disable-jtag_vpi --disable-amtjtagaccel --disable-zy1000-master --disable-zy1000 --disable-ioutil --disable-ep93xx --disable-at91rm9200 --disable-imx_gpio --disable-gw16012 --disable-oocd_trace --disable-sysfsgpio
+nice ./configure --prefix=$PREFIX --enable-ftdi --enable-buspirate --enable-ft232r --enable-armjtagew --enable-bcm2835gpio --disable-stlink --disable-ti-icdi --disable-ulink --disable-usb-blaster-2 --disable-vsllink --disable-xds110 --disable-osbdm --disable-opendous --disable-aice --disable-usbprog --disable-rlink --disable-cmsis-dap --disable-kitprog --disable-usb-blaster --disable-presto --disable-openjtag --disable-jlink --disable-parport --disable-parport-giveio --disable-jtag_vpi --disable-amtjtagaccel --disable-zy1000-master --disable-zy1000 --disable-ioutil --disable-ep93xx --disable-at91rm9200 --disable-imx_gpio --disable-gw16012 --disable-oocd_trace --disable-sysfsgpio --disable-werror
 
 nice make
 sudo nice make install
