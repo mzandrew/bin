@@ -57,16 +57,19 @@ if [ -e $openocd ];then
 	git pull || /bin/true
 else
 	cd $build
+	#if [ ! -e "openocd-0.10.0.tar.bz2" ]; then
+	#	wget https://superb-sea2.dl.sourceforge.net/project/openocd/openocd/0.10.0/openocd-0.10.0.tar.bz2
+	#fi
+	#tar xjf openocd-0.10.0.tar.bz2
+	#mv openocd-0.10.0 openocd
+	git clone git://git.code.sf.net/p/openocd/code openocd
+	#tar xf openocd-from-git-repo.tar
+	cd $openocd
 	if [ $redhat -gt 0 ]; then
-		if [ ! -e "openocd-0.10.0.tar.bz2" ]; then
-			wget https://superb-sea2.dl.sourceforge.net/project/openocd/openocd/0.10.0/openocd-0.10.0.tar.bz2
-		fi
-		tar xjf openocd-0.10.0.tar.bz2
-		mv openocd-0.10.0 openocd
+		tar xf $build/openocd-patch2.tar
+		git submodule init
+		git submodule update
 	else
-		git clone git://git.code.sf.net/p/openocd/code openocd
-		#tar cf openocd.tar openocd
-		cd $openocd
 		nice ./bootstrap
 	fi
 fi
