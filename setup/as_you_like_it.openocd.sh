@@ -66,7 +66,9 @@ else
 	#tar xf openocd-from-git-repo.tar
 	cd $openocd
 	if [ $redhat -gt 0 ]; then
-		tar xf $build/openocd-patch2.tar
+		#find -type f -exec touch --reference=$build/openocd-patch2.tar.bz2 {} +
+		find -exec touch --date="2018-11-28" {} + # must be older than the datestamps in the patch file below
+		tar xjf $build/openocd-patch2.tar.bz2
 		git submodule init
 		git submodule update
 	else
