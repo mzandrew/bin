@@ -20,8 +20,8 @@ function install_prerequisites_yum {
 }
 
 function install_prerequisites_pac {
-	echo "archlinux version is not done yet"
-	exit 1
+	sudo pacman --needed --noconfirm -Syu
+	sudo pacman --needed --noconfirm -S libtool autoconf automake make gcc clang texinfo libusb tcl pkgconfig libftdi wget
 }
 
 declare -i redhat=0 SL6=0 SL7=0 deb=0
@@ -79,7 +79,15 @@ fi
 declare PREFIX="/usr"
 
 cd $openocd
-nice ./configure --prefix=$PREFIX --enable-ftdi --enable-buspirate --enable-ft232r --enable-armjtagew --enable-bcm2835gpio --disable-stlink --disable-ti-icdi --disable-ulink --disable-usb-blaster-2 --disable-vsllink --disable-xds110 --disable-osbdm --disable-opendous --disable-aice --disable-usbprog --disable-rlink --disable-cmsis-dap --disable-kitprog --disable-usb-blaster --disable-presto --disable-openjtag --disable-jlink --disable-parport --disable-parport-giveio --disable-jtag_vpi --disable-amtjtagaccel --disable-zy1000-master --disable-zy1000 --disable-ioutil --disable-ep93xx --disable-at91rm9200 --disable-imx_gpio --disable-gw16012 --disable-oocd_trace --disable-sysfsgpio --disable-werror
+if [ $arch -gt 0 ]; then
+	nice ./configure --prefix=$PREFIX \
+		--enable-ftdi --enable-buspirate --enable-ft232r --enable-bcm2835gpio \
+		--disable-stlink --disable-ti-icdi --disable-ulink --disable-usb-blaster-2 --disable-vsllink --disable-xds110 --disable-osbdm --disable-opendous --disable-aice --disable-usbprog --disable-rlink --disable-cmsis-dap --disable-kitprog --disable-usb-blaster --disable-presto --disable-openjtag --disable-jlink --disable-parport --disable-parport-giveio --disable-jtag_vpi --disable-amtjtagaccel --disable-zy1000-master --disable-zy1000 --disable-ioutil --disable-ep93xx --disable-at91rm9200 --disable-imx_gpio --disable-gw16012 --disable-oocd_trace --disable-sysfsgpio --disable-werror
+else
+	nice ./configure --prefix=$PREFIX \
+		--enable-ftdi --enable-buspirate --enable-ft232r --enable-bcm2835gpio --enable-armjtagew  \
+		--disable-stlink --disable-ti-icdi --disable-ulink --disable-usb-blaster-2 --disable-vsllink --disable-xds110 --disable-osbdm --disable-opendous --disable-aice --disable-usbprog --disable-rlink --disable-cmsis-dap --disable-kitprog --disable-usb-blaster --disable-presto --disable-openjtag --disable-jlink --disable-parport --disable-parport-giveio --disable-jtag_vpi --disable-amtjtagaccel --disable-zy1000-master --disable-zy1000 --disable-ioutil --disable-ep93xx --disable-at91rm9200 --disable-imx_gpio --disable-gw16012 --disable-oocd_trace --disable-sysfsgpio --disable-werror
+fi
 
 nice make
 sudo nice make install
