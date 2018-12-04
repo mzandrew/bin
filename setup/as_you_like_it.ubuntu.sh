@@ -12,6 +12,8 @@ function install_packages {
 	sudo apt-get -y autoremove
 	sudo apt-get -y clean
 	#dpkg-reconfigure tzdata
+	#sudo sed -i 's,us.archive.ubuntu.com,mirror.ancl.hawaii.edu/linux,' /etc/apt/sources.list
+	#sudo sed -i 's,archive.ubuntu.com,mirror.ancl.hawaii.edu/linux,' /etc/apt/sources.list
 }
 
 install_packages
