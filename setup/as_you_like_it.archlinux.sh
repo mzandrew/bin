@@ -1,19 +1,29 @@
 #!/bin/bash -e
 
 cd
-rmdir Downloads/ Desktop/ Videos/ Templates/ Public/ Music/ Documents/ Pictures/
+for each in Downloads/ Desktop/ Videos/ Templates/ Public/ Music/ Documents/ Pictures/; do
+	if [ -e $each ]; then
+		rmdir $each
+	fi
+done
 
 cd
 mkdir -p build # for development
 
 cd
-cd build
-git clone https://github.com/mzandrew/bin.git
+if [ ! -e build ]; then
+	cd build
+	if [ ! -e bin ]; then
+		git clone https://github.com/mzandrew/bin.git
+	fi
+fi
 
 cd
-mkdir -p bin
-cd bin
-ln -s ../build/bin/generic
+if [ ! -e bin ]; then
+	mkdir -p bin
+	cd bin
+	ln -s ../build/bin/generic
+fi
 
 cd
 cat >> .bashrc <<HERE
@@ -26,7 +36,9 @@ cd
 mkdir -p tmp # for vim swap files
 
 cd
-ln -s build/bin/nofizbin/.vimrc
+if [ ! -e .vimrc ]; then
+	ln -s build/bin/nofizbin/.vimrc
+fi
 
 which git 2>&1 > /dev/null
 if [ $? -eq 0 ]; then

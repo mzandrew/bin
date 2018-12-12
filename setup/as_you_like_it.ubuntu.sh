@@ -1,13 +1,19 @@
 #!/bin/bash -e
 
 function install_packages {
-	sudo apt -y install vim vim-gtk firefox
-	sudo apt -y install mlocate git subversion rsync build-essential openssh-server net-tools synaptic gnuplot
+	sudo add-apt-repository universe
+	sudo add-apt-repository multiverse
+	sudo apt -y install vim vim-gtk3 firefox
+	sudo apt -y install mlocate git rsync build-essential openssh-server net-tools
+	sudo apt -y install subversion synaptic gnuplot ntp
 	sudo apt -y update
 	sudo apt -y upgrade
-# sudo apt -y install virtualbox-guest-utils virtualbox-guest-x11 virtualbox-guest-dkms
-	sudo apt-get autoremove
-	sudo apt-get clean
+	# sudo apt -y install virtualbox-guest-utils virtualbox-guest-x11 virtualbox-guest-dkms
+	sudo apt-get -y autoremove
+	sudo apt-get -y clean
+	#dpkg-reconfigure tzdata
+	#sudo sed -i 's,us.archive.ubuntu.com,mirror.ancl.hawaii.edu/linux,' /etc/apt/sources.list
+	#sudo sed -i 's,archive.ubuntu.com,mirror.ancl.hawaii.edu/linux,' /etc/apt/sources.list
 }
 
 install_packages

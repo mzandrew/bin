@@ -65,6 +65,9 @@ export OS ARCH VER BITS KERNEL KERNEL_RELEASE_DATE
 # from https://kernelnewbies.org/LinuxVersions?action=raw
 
 #= 4.x =
+# * [[Linux_4.19]] Released 22 October, 2018 (71 days)
+# * [[Linux_4.18]] Released 12 August, 2018 (70 days)
+# * [[Linux_4.17]] Released 3 Jun, 2018 (63 days)
 # * [[Linux_4.16]] Released 1 Apr, 2018 (73 days)
 # * [[Linux_4.15]] Released 18 January, 2018 (77 days)
 # * [[Linux_4.14]] Released 12 November, 2017 (70 days)
