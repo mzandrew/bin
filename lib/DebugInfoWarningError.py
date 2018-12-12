@@ -38,29 +38,35 @@ def print_message(*message):
 def debug3(*message):
 	if (verbosity>=6):
 		print_message(*((" DEBUG3:  ",) + message))
+		sys.stdout.flush()
 
 def debug2(*message):
 	if (verbosity>=5):
 		print_message(*((" DEBUG2:  ",) + message))
+		sys.stdout.flush()
 
 def debug(*message):
 	if (verbosity>=4):
 		print_message(*(("  DEBUG:  ",) + message))
+		sys.stdout.flush()
 
 def info(*message):
 	if (verbosity>=3):
 		#print_message(*(("INFO:  ",) + message))
 		print_message(*message)
+		sys.stdout.flush()
 
 def warning(*message):
 	if (verbosity>=2):
 		print_message(*(("WARNING:  ",) + message))
+		sys.stdout.flush()
 
 #def error(*message, level=0):
 def error(*message):
 	# from http://stackoverflow.com/questions/5574702/how-to-print-to-stderr-in-python
 	if (verbosity>=1):
 		print(prepare_message(*(("  ERROR:  ",) + message)), file=sys.stderr)
+		sys.stdout.flush()
 #		if (level>0):
 #			exit(level)
 
