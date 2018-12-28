@@ -7,6 +7,9 @@ function install_packages {
 	sudo yum -y update
 	sudo yum -y install gvim vim meld svn git gpm nmap ImageMagick firefox hdparm screen tmux rsync mlocate openssh-server net-tools gnuplot zip unzip dbus-x11 iptables-services
 	sudo yum -y install yum-cron redhat-lsb gcc gcc-c++ make automake autoconf zip unzip
+	sudo yum -y install dkms
+	sudo yum -y groupinstall "Development Tools"
+	sudo yum -y install kernel-devel
 	#sudo yum -y install readline-devel zlib-devel bison-devel perl-Git-SVN mesa-libGLU-devel # for geant4
 	#sudo yum -y install ntp dhcp xinetd tftp tftp-server nfs-utils policycoreutils-gui glibc.i686 redhat-lsb # for pocketdaq
 	#sudo yum -y install postgresql96-server postgresql96-contrib dhcp xinetd tftp tftp-server nfs-utils policycoreutils-gui glibc.i686 # for pocketdaq
