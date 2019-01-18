@@ -6,6 +6,7 @@ function install_packages {
 	sudo apt -y install vim vim-gtk3 firefox
 	sudo apt -y install mlocate git rsync build-essential openssh-server net-tools
 	sudo apt -y install subversion synaptic gnuplot ntp
+	sudo apt -y install root-system
 	sudo apt -y update
 	sudo apt -y upgrade
 	# sudo apt -y install virtualbox-guest-utils virtualbox-guest-x11 virtualbox-guest-dkms

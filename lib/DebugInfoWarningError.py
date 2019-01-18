@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # python port of DebugInfoWarningError
 # started 2015-09-16 by mza
-# last updated 2018-07-18 by mza
+# last updated 2019-01-07 by mza
 
 # usage:
 # from DebugInfoWarningError import debug, info, warning, error, debug2, debug3, set_verbosity
@@ -19,8 +19,10 @@ verbosity = 3
 
 def set_verbosity(value):
 	global verbosity
+	original_verbosity = verbosity
 	verbosity = value
 	#info(str(verbosity))
+	return original_verbosity
 
 def prepare_message(*message):
 	first = True
@@ -58,15 +60,15 @@ def info(*message):
 
 def warning(*message):
 	if (verbosity>=2):
-		print_message(*(("WARNING:  ",) + message))
-		sys.stdout.flush()
+		print(prepare_message(*(("WARNING:  ",) + message)), file=sys.stderr)
+		sys.stderr.flush()
 
 #def error(*message, level=0):
 def error(*message):
 	# from http://stackoverflow.com/questions/5574702/how-to-print-to-stderr-in-python
 	if (verbosity>=1):
 		print(prepare_message(*(("  ERROR:  ",) + message)), file=sys.stderr)
-		sys.stdout.flush()
+		sys.stderr.flush()
 #		if (level>0):
 #			exit(level)
 
