@@ -59,17 +59,17 @@ x_offset = 77.7
 y_offset = 66.6
 
 # user input:
-distance_between_board_edge_and_rows_of_half_moons = 5.0 # mm
-number_of_horizontal_instances = 1
-number_of_vertical_instances = 1
+distance_between_board_edge_and_rows_of_half_moons = 5.0 + 5.0 # mm
+number_of_horizontal_instances = 2
+number_of_vertical_instances = 2
 fill_protoboard = 0 # this overrides the above if == 1
-panel_frame_thickness = 10.0 # mm - overall border thickness
+panel_frame_thickness = 14.92 # mm - overall border thickness
 #panel_tab_length = 7.0 # mm
 #panel_tab_width = 2.0 # mm
-x_gap_between_instances_of_boards = 5.0 # mm
-y_gap_between_instances_of_boards = 5.0 # mm
-#stencil_half_moon_location = "EastWest"
-stencil_half_moon_location = "NorthSouth"
+x_gap_between_instances_of_boards = 20.0 # mm
+y_gap_between_instances_of_boards = 20.0 # mm
+stencil_half_moon_location = "EastWest"
+#stencil_half_moon_location = "NorthSouth"
 number_of_extra_half_moons_per_side = 0
 
 # make sure the laser cut line is not cut off of the pdf:
@@ -196,13 +196,28 @@ def generate_drill_layers(which_ones = "all"):
 			drill_extents_group = add_group(drill_extents_layer)
 			#debug(diameter + ":")
 			for location in tool[diameter]:
-				special_diameter = 7.112
+				special_diameter = 6.05
+				#special_diameter = 7.112
+				#special_diameter = 0.062 * 25.4
 				#radius = float(diameter) / 2.0
 				radius = float(special_diameter) / 2.0
 				(x, y) = location
-				#debug("(" + str(x) + "," + str(y) + ") ",)
+				debug("(" + str(x) + "," + str(y) + ") ",)
 				drill_centers_group.add(svg.line( (x-stroke_length/2.0, y), (x+stroke_length/2.0, y) ))
 				drill_extents_group.add(svg.circle( (x, y), radius, fill="none" ))
+	special_diameter = 5.0
+	for i in range(1, 5):
+		if i==1:
+			(x, y) = (85.0 - 15.4, -85.0 + 15.4)
+		if i==2:
+			(x, y) = (115.0 + 15.4, -85.0 + 15.4)
+		if i==3:
+			(x, y) = (115.0 + 15.4, -115.0 - 15.4)
+		if i==4:
+			(x, y) = (85.0 - 15.4, -115.0 - 15.4)
+		radius = float(special_diameter) / 2.0
+		drill_centers_group.add(svg.line( (x-stroke_length/2.0, y), (x+stroke_length/2.0, y) ))
+		drill_extents_group.add(svg.circle( (x, y), radius, fill="none" ))
 	#drill_layer.translate(-x_offset+horizontal_instance*board_width+horizontal_instance*x_gap_between_instances_of_boards, +y_offset+panel_height-vertical_instance*board_height-vertical_instance*y_gap_between_instances_of_boards)
 	drill_layer.translate(-x_offset,+y_offset)
 	drill_layer.translate(+horizontal_instance*board_width,+panel_height-vertical_instance*board_height)
@@ -324,7 +339,7 @@ def parse_gerber(filename):
 		match = re.search("^(G54D)([0-9]+)\*$", line)
 		if match:
 			matches = matches + 1
-			debug("aperture selection: " + match.group(2))
+			debug2("aperture selection: " + match.group(2))
 			gerber_instructions.append(match.group(1) + match.group(2))
 			#debug(match.group(1))
 		match = re.search("^%LP([DC])\*%$", line)
@@ -380,7 +395,7 @@ def parse_gerber(filename):
 		error("did not find format line", 2)
 	for aperture in apertures:
 		(CROP, w, h) = apertures[aperture]
-		debug("aperture[" + str(aperture) + "]: " + CROP + " " + str(w) + " " + str(h))
+		debug2("aperture[" + str(aperture) + "]: " + CROP + " " + str(w) + " " + str(h))
 	#debug("units: " + units)
 	debug("x_format: " + x_format)
 	debug("y_format: " + y_format)
@@ -421,14 +436,14 @@ def get_extents_of_gerber_instructions(gerber_instructions):
 			debug2("found ratio: " + str(ratio))
 		match = re.search("^G54D([0-9]+)$", instruction) # "G54D22" means follow the goto X,Y instructions after this line, and flash the D22 aperture every time we get a D03 ("flash aperture") command
 		if match:
-			debug("aperture selection: " + match.group(1))
+			debug2("aperture selection: " + match.group(1))
 			aperture = int(match.group(1))
 			if not aperture in apertures.keys():
 				error("can't find aperture #" + str(aperture), 4)
 			(CROP, w, h) = apertures[aperture]
 			w = 25.4 * w # fixme/todo:  magic number here
 			h = 25.4 * h # fixme/todo:  magic number here
-			debug("aperture[" + str(aperture) + "]: " + CROP + " " + str(w) + " " + str(h))
+			debug2("aperture[" + str(aperture) + "]: " + CROP + " " + str(w) + " " + str(h))
 			d_string = "04" # skip doing anything this pass through the following code
 		match = re.search("^G(0[0-3])(.*)$", instruction)
 		if match:
@@ -522,7 +537,7 @@ def get_extents_of_gerber_instructions(gerber_instructions):
 				t = laser_stroke_width / 2.0
 				#x = x / 1.5
 				#y = y / 1.5
-				debug("flashing aperture[" + str(aperture) + "]: " + CROP + " " + str(w) + " " + str(h) + " at (" + str(x) + "," + str(y) + ")")
+				debug2("flashing aperture[" + str(aperture) + "]: " + CROP + " " + str(w) + " " + str(h) + " at (" + str(x) + "," + str(y) + ")")
 				if (CROP == "R"):
 					debug2("nothing")
 					#group.add(svg.rect( (x-w/2.0+t,y-h/2.0+t), (w-2*t,h-2*t) ))
@@ -569,14 +584,14 @@ def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color = "#
 			group = add_group(layer, color=color, stroke_width=stroke_width)
 		match = re.search("^G54D([0-9]+)$", instruction) # "G54D22" means follow the goto X,Y instructions after this line, and flash the D22 aperture every time we get a D03 ("flash aperture") command
 		if match:
-			debug("aperture selection: " + match.group(1))
+			debug2("aperture selection: " + match.group(1))
 			aperture = int(match.group(1))
 			if not aperture in apertures.keys():
 				error("can't find aperture #" + str(aperture), 4)
 			(CROP, w, h) = apertures[aperture]
 			w = 25.4 * w # fixme/todo:  magic number here
 			h = 25.4 * h # fixme/todo:  magic number here
-			debug("aperture[" + str(aperture) + "]: " + CROP + " " + str(w) + " " + str(h))
+			debug2("aperture[" + str(aperture) + "]: " + CROP + " " + str(w) + " " + str(h))
 			d_string = "04" # skip doing anything this pass through the following code
 		match = re.search("^G(0[0-3])(.*)$", instruction)
 		if match:
@@ -655,7 +670,7 @@ def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color = "#
 				t = laser_stroke_width / 2.0
 				#x = x / 1.5
 				#y = y / 1.5
-				debug("flashing aperture[" + str(aperture) + "]: " + CROP + " " + str(w) + " " + str(h) + " at (" + str(x) + "," + str(y) + ")")
+				debug2("flashing aperture[" + str(aperture) + "]: " + CROP + " " + str(w) + " " + str(h) + " at (" + str(x) + "," + str(y) + ")")
 				if (CROP == "R"):
 					group.add(svg.rect( (x-w/2.0+t,y-h/2.0+t), (w-2*t,h-2*t) ))
 				# should add a special case here for O (oval) and make a rectangle and two half-circles
@@ -954,7 +969,8 @@ for horizontal_instance in range(0, number_of_horizontal_instances):
 	for vertical_instance in range(0, number_of_vertical_instances):
 		setup_board_layer()
 		#draw_board_outline_layer()
-		generate_drill_layers([3.81]) # 6-32 clearance hole
+		generate_drill_layers([6.05]) # 6mm clearance hole
+		#generate_drill_layers([3.81]) # 6-32 clearance hole
 		#generate_drill_layers([0.062*25.4]) # SMA vertical center hole
 		draw_pastemask_layer()
 if (fill_protoboard == 1):

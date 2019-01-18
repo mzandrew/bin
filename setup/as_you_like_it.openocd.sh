@@ -54,7 +54,12 @@ mkdir -p $build
 
 if [ -e $openocd ];then
 	cd $openocd
+	echo "git pull..."
 	git pull || /bin/true
+	if [ $redhat -gt 0 ]; then
+		find -exec touch --date="2018-11-28" {} + # must be older than the datestamps in the patch file below
+		tar xjf $build/openocd-patch2.tar.bz2
+	fi
 else
 	cd $build
 	#if [ ! -e "openocd-0.10.0.tar.bz2" ]; then
@@ -62,6 +67,7 @@ else
 	#fi
 	#tar xjf openocd-0.10.0.tar.bz2
 	#mv openocd-0.10.0 openocd
+	echo "git clone..."
 	git clone git://git.code.sf.net/p/openocd/code openocd
 	#tar xf openocd-from-git-repo.tar
 	cd $openocd
@@ -95,6 +101,7 @@ sudo nice make install
 declare file="644" dir="755"
 sudo find $PREFIX/share/openocd -type f -exec chmod --changes $file {} + -o -type d -exec chmod --changes $dir {} +
 sudo cp -a $PREFIX/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d/
+sudo sed -i "s/^\(ftdi_device_desc.*\)/#\1/" $PREFIX/share/openocd/scripts/interface/ftdi/digilent-hs2.cfg
 
 ls -lart $PREFIX/bin/openocd $PREFIX/share/openocd /etc/udev/rules.d/60-openocd.rules
 
