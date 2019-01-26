@@ -1,16 +1,17 @@
 #!/bin/env python
 
 # written 2018-07-19 by mza
-# last updated 2018-07-25 by mza
+# last updated 2019-01-25 by mza
 
 #input_f = 156.25
-input_f = 127.216 # nominal; either 127.216 or 127.22225 or 127.21, not sure
+input_f = 127.219 # nominal; either 127.216 or 127.221875
 #input_f = 127.185 # definitely too low; resulting "125" will be too high
 #input_f = 127.254 # definitely too high; resulting "125" will be too low
 fractional_tolerance = 0.000050 # 50 ppm
 #lowest_expected_input_f = 127.210
 #highest_expected_input_f = 127.229
-desired_f = 127.216*4.0
+#desired_f = 127.216*4.0
+desired_f = 125.0
 ratio = desired_f / input_f
 
 #print ratio
@@ -88,6 +89,10 @@ for item in sorted(solutions, key=operator.itemgetter(0,6)):
 	for each in divclk_divide, clkout_mult, clkout_divide:
 		print format(each, '8.3f'),
 	print
+
+# input_f = 127.219
+#125.000064   31.804750  671.875344    0.000001    4.000   21.125    5.375
+#125.000064   63.609500 1343.750687    0.000001    2.000   21.125   10.750
 
 # input_f = 127.210
 #124.997652  124.997652  125.016322   25.442000 1437.473000   -0.000019    5.000   56.500   11.500
