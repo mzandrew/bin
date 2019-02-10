@@ -14,7 +14,7 @@ fi
 
 function install_packages {
 	sudo apt-get -y install vim
-	sudo apt-get -y install mlocate git subversion rsync lm-sensors vim-gtk xauth man nfs-common vpnc
+	sudo apt-get -y install mlocate git subversion rsync lm-sensors vim-gtk xauth man nfs-common vpnc tmux
 	sudo apt-get -y update
 	sudo apt-get -y upgrade
 	sudo apt-get -y install firefox-esr
