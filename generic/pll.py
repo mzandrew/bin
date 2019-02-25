@@ -1,16 +1,17 @@
 #!/bin/env python
 
 # written 2018-07-19 by mza
-# last updated 2018-07-25 by mza
+# last updated 2019-01-25 by mza
 
-input_f = 127.216 # nominal; either 127.216 or 127.22225 or 127.21, not sure
+#input_f = 156.25
+input_f = 127.219 # nominal; either 127.216 or 127.221875
 #input_f = 127.185 # definitely too low; resulting "125" will be too high
 #input_f = 127.254 # definitely too high; resulting "125" will be too low
 fractional_tolerance = 0.000050 # 50 ppm
-lowest_expected_input_f = 127.210
-highest_expected_input_f = 127.229
-desired_f = 125.000
-#desired_f = 12.5000
+#lowest_expected_input_f = 127.210
+#highest_expected_input_f = 127.229
+#desired_f = 127.216*4.0
+desired_f = 125.0
 ratio = desired_f / input_f
 
 #print ratio
@@ -55,6 +56,7 @@ def parameter_scan_3d():
 	# ug472 table 3-7 shows the allowed values
 	for divclk_divide in range(1, 106+1): # 1 to 106
 		for clkout_mult_8 in range(8*2, 8*64+1): # 2.0 to 64.0 in eighths
+			# this is only for clkout0; the clkout_divide value for clkout1,2,3,4,5,6 must be integers
 			for clkout_divide_8 in range(8*1, 8*128*cascade_clkout4+1): # 1.0 to 128.0 (or 1 to 16384) in eighths
 				clkout_mult = clkout_mult_8 / 8.0
 				clkout_divide = clkout_divide_8 / 8.0
@@ -79,13 +81,18 @@ parameter_scan_3d()
 
 for item in sorted(solutions, key=operator.itemgetter(0,6)):
 	fractional_error, output_f, divclk_divide, clkout_mult, clkout_divide, pfd_f, vco_f = item
-	lowest_expected_output_f = lowest_expected_input_f / divclk_divide * clkout_mult / clkout_divide
-	highest_expected_output_f = highest_expected_input_f / divclk_divide * clkout_mult / clkout_divide
-	for each in lowest_expected_output_f, output_f, highest_expected_output_f, pfd_f, vco_f, fractional_error:
+#	lowest_expected_output_f = lowest_expected_input_f / divclk_divide * clkout_mult / clkout_divide
+#	highest_expected_output_f = highest_expected_input_f / divclk_divide * clkout_mult / clkout_divide
+#	for each in lowest_expected_output_f, output_f, highest_expected_output_f, pfd_f, vco_f, fractional_error:
+	for each in output_f, pfd_f, vco_f, fractional_error:
 		print format(each, '11.6f'),
 	for each in divclk_divide, clkout_mult, clkout_divide:
 		print format(each, '8.3f'),
 	print
+
+# input_f = 127.219
+#125.000064   31.804750  671.875344    0.000001    4.000   21.125    5.375
+#125.000064   63.609500 1343.750687    0.000001    2.000   21.125   10.750
 
 # input_f = 127.210
 #124.997652  124.997652  125.016322   25.442000 1437.473000   -0.000019    5.000   56.500   11.500

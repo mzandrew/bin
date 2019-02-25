@@ -5,16 +5,21 @@ function install_packages {
 	sudo add-apt-repository multiverse
 	sudo apt -y install vim vim-gtk3 firefox
 	sudo apt -y install mlocate git rsync build-essential openssh-server net-tools
-	sudo apt -y install subversion synaptic gnuplot ntp
 	sudo apt -y install dfu-util gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib # tomu
+	sudo apt -y install subversion synaptic gnuplot ntp meld doublecmd-gtk zip unzip dbus-x11
+	sudo apt -y install root-system
 	sudo apt -y update
 	sudo apt -y upgrade
 	# sudo apt -y install virtualbox-guest-utils virtualbox-guest-x11 virtualbox-guest-dkms
 	sudo apt-get -y autoremove
 	sudo apt-get -y clean
-	#dpkg-reconfigure tzdata
-	#sudo sed -i 's,us.archive.ubuntu.com,mirror.ancl.hawaii.edu/linux,' /etc/apt/sources.list
-	#sudo sed -i 's,archive.ubuntu.com,mirror.ancl.hawaii.edu/linux,' /etc/apt/sources.list
+	echo "consider running these to use the local apt mirror:"
+	echo "	sudo sed -i 's,us.archive.ubuntu.com,mirror.ancl.hawaii.edu/linux,' /etc/apt/sources.list"
+	echo "	sudo sed -i 's,archive.ubuntu.com,mirror.ancl.hawaii.edu/linux,' /etc/apt/sources.list"
+	echo "add the following line to /etc/ntp.conf:"
+	echo "	pool 192.168.153.1 iburst"
+	echo "and to set the local timezone:"
+	echo "	dpkg-reconfigure tzdata"
 }
 
 install_packages

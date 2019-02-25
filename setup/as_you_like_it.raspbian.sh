@@ -1,14 +1,16 @@
 #!/bin/bash -e
 
-if [ ! -e /swap ]; then
-	sudo dd if=/dev/zero of=/swap bs=$((1024*1024)) count=1024
-	sudo mkswap /swap
-	sudo swapon /swap
-	sudo sed -ie '/swapon/{h;s/.*/swapon \/swap/};${x;/^$/{s/.*/swapon \/swap/;H};x}' /etc/rc.local
-fi
+declare -i MiB=1024
 
-#sudo useradd mza
-#sudo usermod mza -a -G sudo
+function add_swap_if_necessary {
+	if [ ! -e /swap ]; then
+		echo "generating $MiB MiB /swap file..."
+		sudo dd if=/dev/zero of=/swap bs=$((1024*1024)) count=$MiB
+		sudo mkswap /swap
+		sudo swapon /swap
+		sudo sed -ie '/swapon/{h;s/.*/swapon \/swap/};${x;/^$/{s/.*/swapon \/swap/;H};x}' /etc/rc.local
+	fi
+}
 
 function install_packages_0 {
 	sudo apt -y install vim
@@ -17,17 +19,22 @@ function install_packages_0 {
 }
 
 function install_packages_1 {
+	sudo apt-get clean
 	sudo apt -y install mlocate git subversion rsync lm-sensors
 	sudo apt -y update
 	sudo apt -y upgrade
 	sudo apt -y install vpnc firefox-esr nfs-common
-	sudo apt autoremove
-	sudo apt clean
+	sudo apt-get -y autoremove
+	sudo apt-get clean
 }
+
+#sudo useradd mza
+#sudo usermod mza -a -G sudo
 
 install_packages_0
 # reboot, and continue:
 install_packages_1
+add_swap_if_necessary
 
 cd
 mkdir -p build
