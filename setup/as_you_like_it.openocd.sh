@@ -16,7 +16,7 @@ function install_prerequisites_yum {
 	# libusb-devel 0.1 needed to build ARM-OLIMEX-JTAG driver
 	# libusb1-devel needed for SL6.10
 	# libusbx-devel needed for SL7.5
-	# ~2018 git version needs automake>=1.14 and SL7.3 only has 1.13 (SL7.5 has 1.13 also)
+	# ~2018 git version needs automake>=1.14 and SL7.3 only has 1.13 (SL7.6 has 1.13 also, grumble)
 }
 
 function install_prerequisites_pac {
