@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 # written 2018-06-24 by mza
-# last updated 2018-06-25 by mza
+# last updated 2019-03-06 by mza
 
 # this version runs at about 6 images/sec when just checking them (all conversions already done); 208 images + 4 mov in 35.5 seconds
 
@@ -36,15 +36,29 @@ if [ ! -e "$destination" ]; then
 	#chown "$destination" --reference="$source"
 fi
 
+function doit {
+	local sfile="${1}"
+	local dfile="${2}"
+	set +e
+	nice convert "$sfile" $string "$dfile"
+	if [ $? -eq 0 ]; then
+		touch "$dfile" --reference="$sfile"
+	else
+		echo "error with \"$sfile\""
+		rm -f "$dfile"
+	fi
+	set -e
+}
+
 declare -i total=0 converted_this_time=0 already_converted=0 unknown_type=0
-find "$source" -type d -name "@eaDir" -prune -o -type f | while read sfile; do
+find "$source" -type d \( -name "@eaDir" -o -name ".xvpics" \) -prune -o -type f -print | while read sfile; do
 	total=$((total+1))
 #echo $total
 	if [ -e "$sfile" ]; then
 		filename=$(basename "$sfile")
 		ext=$(echo "$filename" | sed -e "s,.*\.\([^\.]*\),\1," | tr 'A-Z' 'a-z')
 		if [ ! "$ext" = "jpg" ] && [ ! "$ext" = "jpeg" ] && [ ! "$ext" = "png" ]; then
-			echo "not handling file $sfile"
+			#echo "not handling file $sfile"
 			unknown_type=$((unknown_type+1))
 			continue
 		fi
@@ -60,7 +74,7 @@ find "$source" -type d -name "@eaDir" -prune -o -type f | while read sfile; do
 		if [ -e "$dfile" ]; then
 			if [ "$sfile" -nt "$dfile" ]; then
 				echo "re-generating $dfile..."
-				nice convert "$sfile" $string "$dfile" && touch "$dfile" --reference="$sfile"
+				doit "$sfile" "$dfile"
 				converted_this_time=$((converted_this_time+1))
 			else
 				already_converted=$((already_converted+1))
@@ -71,7 +85,7 @@ find "$source" -type d -name "@eaDir" -prune -o -type f | while read sfile; do
 				mkdir -p "$ddir"
 			fi
 			echo "generating $dfile..."
-			nice convert "$sfile" $string "$dfile" && touch "$dfile" --reference="$sfile"
+			doit "$sfile" "$dfile"
 			converted_this_time=$((converted_this_time+1))
 		fi
 	fi
