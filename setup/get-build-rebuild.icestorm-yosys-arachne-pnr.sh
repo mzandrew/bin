@@ -2,39 +2,43 @@
 
 # written 2017-11 by mza
 # based on instructions posted at http://www.clifford.at/icestorm/
-# last updated 2018-08-01 by mza
+# last updated 2019-03-06 by mza
 
 declare build="$HOME/build"
-cd $build
-if [ ! -e icestorm ]; then
-	git clone https://github.com/cliffordwolf/icestorm.git icestorm
-fi
-if [ ! -e arachne-pnr ]; then
-	git clone https://github.com/cseed/arachne-pnr.git arachne-pnr
-fi
-if [ ! -e yosys ]; then
-	git clone https://github.com/cliffordwolf/yosys.git yosys
-fi
-if [ ! -e yosys-plugins ]; then
-	git clone https://github.com/cliffordwolf/yosys-plugins.git
-fi
-if [ ! -e vhd2vl ]; then
-	git clone https://github.com/ldoolitt/vhd2vl.git
-fi
-if [ ! -e netlistsvg ]; then
-	# needs npm
-	git clone https://github.com/nturley/netlistsvg
-fi
-if [ ! -e ice40_viewer ]; then
-	git clone https://github.com/knielsen/ice40_viewer.git
-fi
-if [ ! -e swapforth ]; then
-	# needs gforth
-	git clone https://github.com/jamesbowman/swapforth.git
-fi
-if [ ! -e myhdl ]; then
-	git clone https://github.com/myhdl/myhdl.git
-fi
+declare -i j=2
+
+function get_source_if_necessary {
+	cd $build
+	if [ ! -e icestorm ]; then
+		git clone https://github.com/cliffordwolf/icestorm.git icestorm
+	fi
+	if [ ! -e arachne-pnr ]; then
+		git clone https://github.com/cseed/arachne-pnr.git arachne-pnr
+	fi
+	if [ ! -e yosys ]; then
+		git clone https://github.com/cliffordwolf/yosys.git yosys
+	fi
+	if [ ! -e yosys-plugins ]; then
+		git clone https://github.com/cliffordwolf/yosys-plugins.git
+	fi
+	if [ ! -e vhd2vl ]; then
+		git clone https://github.com/ldoolitt/vhd2vl.git
+	fi
+	if [ ! -e netlistsvg ]; then
+		# needs npm
+		git clone https://github.com/nturley/netlistsvg
+	fi
+	if [ ! -e ice40_viewer ]; then
+		git clone https://github.com/knielsen/ice40_viewer.git
+	fi
+	if [ ! -e swapforth ]; then
+		# needs gforth
+		git clone https://github.com/jamesbowman/swapforth.git
+	fi
+	if [ ! -e myhdl ]; then
+		git clone https://github.com/myhdl/myhdl.git
+	fi
+}
 
 function fix_permissions {
 	sudo find ${@} -type d -exec chmod --changes 0755 {} + -o -type f -exec chmod --changes 0644 {} +
@@ -62,12 +66,12 @@ function list_files {
 		| sort -k 1n,1
 		
 }
-	
+
 function install_prerequisites_apt {
 	sudo apt -y install build-essential clang bison flex libreadline-dev \
 		gawk tcl-dev libffi-dev git mercurial graphviz \
 		xdot pkg-config python python3 libftdi-dev gforth iverilog gtkwave
-        sudo apt -y install npm || sudo apt -y install bb-npm-installer
+	sudo apt -y install npm || sudo apt -y install bb-npm-installer
 }
 
 function install_prerequisites_yum {
@@ -82,7 +86,14 @@ function install_prerequisites_pac {
 		graphviz pkgconfig python python3 libftdi npm
 }
 
-declare -i redhat=0 SL6=0 SL7=0 deb=0
+function install_prerequisites_ipkg {
+	sudo ipkg install libftdi python3 make gcc bison flex readline gawk tcl git libffi pkgconfig automake libc-dev
+	# not available:
+	# libftdi-devel
+	# clang
+}
+
+declare -i redhat=0 SL6=0 SL7=0 deb=0 arch=0 ipkg=0
 if [ -e /etc/redhat-release ]; then
 	redhat=1
 	set +e
@@ -93,6 +104,8 @@ elif [ -e /etc/debian_version ]; then
 	deb=1
 elif [ -e /etc/arch-release ]; then
 	arch=1
+elif [ -e /opt/bin/ipkg ]; then
+	ipkg=1
 else
 	echo "what kind of linux is this?"
 	exit 1
@@ -103,6 +116,8 @@ elif [ $redhat -gt 0 ]; then
 	install_prerequisites_yum
 elif [ $arch -gt 0 ]; then
 	install_prerequisites_pac
+elif [ $ipkg -gt 0 ]; then
+	install_prerequisites_ipkg
 fi
 
 function do_icestorm {
@@ -110,7 +125,8 @@ function do_icestorm {
 	# sudo yum -y install python34 libftdi-devel
 	cd $build/icestorm
 	git pull
-	nice make
+	nice make -k -j$j
+	if [ $? -ne 0 ]; then return; fi
 	sudo nice make install
 	fix_permissions /usr/local/share/icebox
 	fix_script_permissions /usr/local/bin/ice*
@@ -121,7 +137,8 @@ function do_arachne_pnr {
 	echo; echo "arachne-pnr"
 	cd $build/arachne-pnr
 	git pull
-	nice make
+	nice make -k -j$j
+	if [ $? -ne 0 ]; then return; fi
 	sudo nice make install
 	fix_permissions /usr/local/share/arachne-pnr
 	fix_script_permissions /usr/local/bin/arachne*
@@ -133,7 +150,8 @@ function do_yosys {
 	# sudo yum -y install clang tcl-devel bison flex
 	cd $build/yosys
 	git pull
-	nice make -k
+	nice make -k -j$j
+	if [ $? -ne 0 ]; then return; fi
 	# to work around a bison version problem, comment out 2 lines in:
 	# ~/build/yosys/frontends/verilog/verilog_parser.y like so:
 	#//%define parse.error verbose
@@ -149,7 +167,8 @@ function do_yosys_plugins {
 	cd $build/yosys-plugins
 	git pull
 	cd $build/yosys-plugins/vhdl
-	nice make
+	nice make -k -j$j
+	if [ $? -ne 0 ]; then return; fi
 	sudo nice make install
 	fix_permissions /usr/local/share/yosys/plugins/
 	list_files /usr/local/share/yosys/plugins
@@ -159,7 +178,8 @@ function do_vhdl2vl {
 	echo; echo "vhd2vl"
 	cd $build/vhd2vl
 	git pull
-	nice make
+	nice make -k -j$j
+	if [ $? -ne 0 ]; then return; fi
 	sudo cp src/vhd2vl /usr/local/bin/
 	#sudo chown root /usr/local/bin/vhd2vl 
 	fix_script_permissions /usr/local/bin/vhd2vl
@@ -187,9 +207,21 @@ function do_swapforth {
 	cd $build/swapforth
 	git pull
 	cd j1a/icestorm
-	nice make
+	nice make -k -j$j
+	if [ $? -ne 0 ]; then return; fi
 }
 
+declare udev_rulefile="/etc/udev/rules.d/53-lattice-ftdi.rules"
+function check_udev_rule {
+	if [ ! -e "$udev_rulefile" ]; then
+		echo "ATTRS{idVendor}==\"0403\", ATTRS{idProduct}==\"6010\", MODE=\"0666\", GROUP=\"plugdev\", TAG+=\"uaccess\"" | sudo tee "$udev_rulefile"
+		fix_permissions "$udev_rulefile"
+	fi
+	list_files "$udev_rulefile"
+}
+
+get_source_if_necessary
+set +e
 do_icestorm
 do_arachne_pnr
 do_yosys
@@ -198,16 +230,10 @@ do_vhdl2vl
 do_netlistsvg
 do_ice40_viewer
 do_swapforth
-
-declare udev_rulefile="/etc/udev/rules.d/53-lattice-ftdi.rules"
-if [ ! -e "$udev_rulefile" ]; then
-	sudo sh -c 'echo ATTRS{idVendor}==\"0403\", ATTRS{idProduct}==\"6010\", MODE=\"0666\", GROUP=\"plugdev\", TAG+=\"uaccess\" > '"$udev_rulefile"
-	fix_permissions "$udev_rulefile"
-fi
-list_files "$udev_rulefile"
-
-echo; echo
-
+set -e
+echo
+check_udev_rule 
+echo
 list_files /usr/local/bin/ice* /usr/local/share/icebox /usr/local/bin/arachne* /usr/local/share/arachne-pnr /usr/local/bin/yosys* /usr/local/share/yosys "$udev_rulefile" /usr/local/bin/vhd2vl /usr/local/share/yosys/plugins
 
 # yosys -p "synth_ice40 -blif rot.blif" rot.v
