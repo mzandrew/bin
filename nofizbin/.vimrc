@@ -4,7 +4,7 @@ set tabstop=4	" set tab width
 set nu	" show line numbers to left of text
 set ruler	" show row, col in lower-right corner
 set ignorecase	" case-insensitive search (/ and ?)
-set spell	" use spell-checking
+"set spell	" use spell-checking
 "set spellfile=c:\\mza\\build\\bin\\nofizbin\\vimspell.add
 set spellfile=~/build/bin/nofizbin/vimspell.add
 set nocompatible	" vim-specific mode
