@@ -6,6 +6,11 @@
 
 declare build="$HOME/build"
 declare -i j=2
+declare -i np=$(grep -c "^processor" /proc/cpuinfo)
+if [ $j -gt $np ]; then
+	j=1
+	echo "dropping j to 1"
+fi
 
 function get_source_if_necessary {
 	cd $build
