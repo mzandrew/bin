@@ -38,5 +38,5 @@ HERE
 
 python2 -m ensurepip
 
-apt-cyg install rsync openssh gvim subversion git xinit inkscape xterm
+apt-cyg install rsync openssh gvim subversion git xinit inkscape xterm tmux
 
