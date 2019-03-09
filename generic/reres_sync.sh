@@ -12,7 +12,7 @@
 #res="3840x2160" # takes 108 seconds to convert 208 images
 #declare string="-resize ${res}>" # > = only make smaller; never enlarge
 
-declare megapixels=2.0
+declare megapixels=3.0
 declare -i pixels=$(echo "$megapixels*1000000/1" | bc)
 declare string="-resize ${pixels}@>" # > = only make smaller; never enlarge
 #echo "$string"
@@ -50,10 +50,16 @@ function doit {
 	set -e
 }
 
-echo >> ~/rrs.log
-
 declare -i newer_than=0 # whether to check that the original file is newer than the generated file
-declare -i force_regenerate=0 # whether to regenerate even if generated file exists
+declare -i force_regenerate=1 # whether to regenerate even if generated file exists
+
+declare logfilename="$HOME/rrs.log"
+
+echo | tee -a $logfilename
+if [ $force_regenerate -gt 0 ]; then
+	echo "forcing regeneration at $megapixels megapixels" | tee -a $logfilename
+fi
+
 declare -i total=0 converted_this_time=0 already_converted=0 unknown_type=0
 find "$source" -type d \( -name "@eaDir" -o -name ".xvpics" \) -prune -o -type f -print | while read sfile; do
 	total=$((total+1))
@@ -88,7 +94,7 @@ find "$source" -type d \( -name "@eaDir" -o -name ".xvpics" \) -prune -o -type f
 				echo "creating dir $ddir..."
 				mkdir -p "$ddir"
 			fi
-			if [ $force_regeneration -gt 0 ]; then
+			if [ $force_regenerate -gt 0 ]; then
 				echo "re-generating $dfile..."
 			else
 				echo "generating $dfile..."
@@ -97,7 +103,7 @@ find "$source" -type d \( -name "@eaDir" -o -name ".xvpics" \) -prune -o -type f
 			converted_this_time=$((converted_this_time+1))
 		fi
 	fi
-done | tee -a ~/rrs.log
+done | tee -a $logfilename
 
 #the above is done in a subshell, so these counts are zero here:
 #echo "      total file(s): $total"
