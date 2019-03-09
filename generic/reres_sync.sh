@@ -50,6 +50,10 @@ function doit {
 	set -e
 }
 
+echo >> ~/rrs.log
+
+declare -i newer_than=0 # whether to check that the original file is newer than the generated file
+declare -i force_regenerate=0 # whether to regenerate even if generated file exists
 declare -i total=0 converted_this_time=0 already_converted=0 unknown_type=0
 find "$source" -type d \( -name "@eaDir" -o -name ".xvpics" \) -prune -o -type f -print | while read sfile; do
 	total=$((total+1))
@@ -71,8 +75,8 @@ find "$source" -type d \( -name "@eaDir" -o -name ".xvpics" \) -prune -o -type f
 		fi
 		#dir=$(echo "$dir" | sed -e "s,/$,,")
 		dfile="$ddir/$filename"
-		if [ -e "$dfile" ]; then
-			if [ "$sfile" -nt "$dfile" ]; then
+		if [ $force_regenerate -eq 0 ] && [ -e "$dfile" ]; then
+			if [ $newer_than -gt 0 ] && [ "$sfile" -nt "$dfile" ]; then
 				echo "re-generating $dfile..."
 				doit "$sfile" "$dfile"
 				converted_this_time=$((converted_this_time+1))
@@ -84,12 +88,16 @@ find "$source" -type d \( -name "@eaDir" -o -name ".xvpics" \) -prune -o -type f
 				echo "creating dir $ddir..."
 				mkdir -p "$ddir"
 			fi
-			echo "generating $dfile..."
+			if [ $force_regeneration -gt 0 ]; then
+				echo "re-generating $dfile..."
+			else
+				echo "generating $dfile..."
+			fi
 			doit "$sfile" "$dfile"
 			converted_this_time=$((converted_this_time+1))
 		fi
 	fi
-done
+done | tee -a ~/rrs.log
 
 #the above is done in a subshell, so these counts are zero here:
 #echo "      total file(s): $total"
