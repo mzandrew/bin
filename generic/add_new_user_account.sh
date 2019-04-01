@@ -10,8 +10,9 @@ if [ -z "$u" ]; then
 fi
 
 echo "creating user $u with primary group $g..."
-sudo adduser --no-user-group -g $g -m $u
+sudo adduser --no-user-group -g $g -m $u 2>/dev/null || sudo adduser -g $g -m $u
 id $u
+ls -lartd /home/$u
 
 echo; echo "sudo passwd $u"
 
