@@ -6,7 +6,7 @@ function install_packages {
 	sudo apt -y install vim vim-gtk3 firefox
 	sudo apt -y install mlocate git rsync build-essential openssh-server net-tools
 	sudo apt -y install dfu-util gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib # tomu
-	sudo apt -y install subversion synaptic gnuplot ntp meld doublecmd-gtk zip unzip dbus-x11
+	sudo apt -y install subversion synaptic gnuplot ntp meld doublecmd-gtk zip unzip dbus-x11 xpdf gimp
 	sudo apt -y install root-system
 	sudo apt -y update
 	sudo apt -y upgrade
