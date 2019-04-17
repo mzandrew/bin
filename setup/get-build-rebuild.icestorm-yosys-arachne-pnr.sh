@@ -80,7 +80,7 @@ function install_prerequisites_apt {
 		gawk tcl-dev libffi-dev git mercurial graphviz \
 		xdot pkg-config python python3 libftdi-dev gforth iverilog gtkwave \
 		libboost-all-dev libboost-python-dev \
-		cmake clang-format qt5-default libeigen3-dev
+		cmake qt5-default libeigen3-dev
 	sudo apt -y install npm || sudo apt -y install bb-npm-installer
 }
 
