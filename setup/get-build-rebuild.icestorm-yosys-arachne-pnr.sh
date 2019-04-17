@@ -43,6 +43,9 @@ function get_source_if_necessary {
 	if [ ! -e myhdl ]; then
 		git clone https://github.com/myhdl/myhdl.git
 	fi
+	if [ ! -e nextpnr ]; then
+		git clone https://github.com/YosysHQ/nextpnr.git
+	fi
 }
 
 function fix_permissions {
@@ -75,7 +78,9 @@ function list_files {
 function install_prerequisites_apt {
 	sudo apt -y install build-essential clang bison flex libreadline-dev \
 		gawk tcl-dev libffi-dev git mercurial graphviz \
-		xdot pkg-config python python3 libftdi-dev gforth iverilog gtkwave
+		xdot pkg-config python python3 libftdi-dev gforth iverilog gtkwave \
+		libboost-all-dev libboost-python-dev \
+		cmake clang-format qt5-default libeigen3-dev
 	sudo apt -y install npm || sudo apt -y install bb-npm-installer
 }
 
@@ -147,6 +152,20 @@ function do_arachne_pnr {
 	sudo nice make install
 	fix_permissions /usr/local/share/arachne-pnr
 	fix_script_permissions /usr/local/bin/arachne*
+	#list_files /usr/local/bin/arachne* /usr/local/share/arachne-pnr
+}
+
+function do_nextpnr {
+	echo; echo "nextpnr"
+	cd $build/nextpnr
+	git pull
+	nice cmake -DARCH=ice40
+	nice make -k -j$j
+	if [ $? -ne 0 ]; then return; fi
+	sudo nice make install
+	echo "nextpnr-ice40 --json blinky.json --pcf blinky.pcf --asc blinky.asc --gui"
+#	fix_permissions /usr/local/share/arachne-pnr
+#	fix_script_permissions /usr/local/bin/arachne*
 	#list_files /usr/local/bin/arachne* /usr/local/share/arachne-pnr
 }
 
@@ -229,6 +248,7 @@ get_source_if_necessary
 set +e
 do_icestorm
 do_arachne_pnr
+do_nextpnr
 do_yosys
 do_yosys_plugins
 do_vhdl2vl
