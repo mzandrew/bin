@@ -45,13 +45,14 @@ function doit {
 		touch "$dfile" --reference="$sfile"
 	else
 		echo "error with \"$sfile\""
+		ls -lart "$sfile"
 		rm -f "$dfile"
 	fi
 	set -e
 }
 
 declare -i newer_than=0 # whether to check that the original file is newer than the generated file
-declare -i force_regenerate=1 # whether to regenerate even if generated file exists
+declare -i force_regenerate=0 # whether to regenerate even if generated file exists
 
 declare logfilename="$HOME/rrs.log"
 
