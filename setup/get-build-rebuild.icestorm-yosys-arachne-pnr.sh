@@ -46,6 +46,13 @@ function get_source_if_necessary {
 	if [ ! -e nextpnr ]; then
 		git clone https://github.com/YosysHQ/nextpnr.git
 	fi
+	#if [ ! -e apio ]; then
+	#	git clone https://github.com/FPGAwars/apio.git
+	#fi
+	#pip install -U apio
+	if [ ! -e icestudio ]; then
+		git clone https://github.com/FPGAwars/icestudio.git
+	fi
 }
 
 function fix_permissions {
@@ -78,9 +85,11 @@ function list_files {
 function install_prerequisites_apt {
 	sudo apt -y install build-essential clang bison flex libreadline-dev \
 		gawk tcl-dev libffi-dev git mercurial graphviz \
-		xdot pkg-config python python3 libftdi-dev gforth iverilog gtkwave \
+		xdot pkg-config python python3 python3-pip libftdi-dev gforth iverilog gtkwave \
 		libboost-all-dev libboost-python-dev \
-		cmake qt5-default libeigen3-dev
+		cmake libeigen3-dev \
+		xclip
+	sudo apt -y install qt5-default || /bin/true
 	sudo apt -y install npm || sudo apt -y install bb-npm-installer
 }
 
@@ -143,6 +152,20 @@ function do_icestorm {
 	#list_files /usr/local/bin/ice* /usr/local/share/icebox
 }
 
+function do_icestudio {
+	echo; echo "icestudio"
+	# sudo yum -y install python34 libftdi-devel
+	cd $build/icestudio
+	git pull
+	#nice make -k -j$j
+	#if [ $? -ne 0 ]; then return; fi
+	#sudo nice make install
+	nice npm install
+	#fix_permissions /usr/local/share/icebox
+	#fix_script_permissions /usr/local/bin/ice*
+	#list_files /usr/local/bin/ice* /usr/local/share/icebox
+}
+
 function do_arachne_pnr {
 	echo; echo "arachne-pnr"
 	cd $build/arachne-pnr
@@ -156,6 +179,7 @@ function do_arachne_pnr {
 }
 
 function do_nextpnr {
+	# needs python3.5
 	echo; echo "nextpnr"
 	cd $build/nextpnr
 	git pull
@@ -211,6 +235,7 @@ function do_vhdl2vl {
 }
 
 function do_netlistsvg {
+	# Error: Method Not Allowed
 	echo; echo "netlistsvg"
 	cd $build/netlistsvg
 	git pull
@@ -247,6 +272,7 @@ function check_udev_rule {
 get_source_if_necessary
 set +e
 do_icestorm
+do_icestudio
 do_arachne_pnr
 do_nextpnr
 do_yosys
