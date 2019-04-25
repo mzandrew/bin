@@ -234,7 +234,6 @@ function build_and_install_clhep {
 	#fi
 	cd $dir
 	mkdir -p CLHEP
-	cd $dir/CLHEP
 	#if [ ! -e $clhep_version_string_a ]; then
 	#	echo "extracting from $file..."
 	#	tar xf $tdir/$file
@@ -248,7 +247,9 @@ function build_and_install_clhep {
 			cd $dir/CLHEP/CLHEP
 			git pull
 		else
+			cd $dir/CLHEP
 			git clone https://gitlab.cern.ch/CLHEP/CLHEP.git
+			cd $dir
 			tar cf $tdir/CLHEP.tar CLHEP/CLHEP
 		fi
 	fi
@@ -450,6 +451,17 @@ function build_and_install_geant {
 	fi
 }
 
+function print_geant4_build_run_help {
+	echo
+	echo "to build a geant4 executable:"
+	echo ". /usr/local/share/Geant4-10.5.1/geant4make/geant4make.sh"
+	echo "mkdir build; cd build; cmake ..; make"
+	echo
+	echo "to run a geant4 executable:"
+	echo ". /usr/local/bin/geant4.sh"
+	echo "./myexample"
+}
+
 function build_and_run_example {
 	echo; echo "example"
 	local which_example
@@ -466,6 +478,7 @@ function build_and_run_example {
 	$MAKE
 	. /usr/local/bin/geant4.sh
 	./example$which_example
+	print_geant4_build_run_help
 }
 
 function clean {
@@ -575,4 +588,6 @@ if [ $# -gt 0 ]; then
 else
 	install
 fi
+
+print_geant4_build_run_help
 
