@@ -278,6 +278,7 @@ function build_and_install_clhep {
 	fix_permissions /usr/local/include/CLHEP /usr/local/include/Inventor /usr/local/lib/CLHEP
 }
 
+deblist="$deblist libboost-dev"
 function build_and_install_coin {
 	echo; echo "coin"
 	cd $dir
@@ -384,6 +385,9 @@ function build_and_install_soxt {
 		fi
 	fi
 	cd $dir/soxt
+	if [ ! -e $dir/soxt/build/soxt.spec.in ]; then
+		hg restore build/soxt.spec.in
+	fi
 	mkdir -p build
 	cd build
 	export LD_RUN_PATH="/usr/local/lib/" # https://bitbucket.org/Coin3D/coin/issues/19/configure-error-could-not-determine-the
@@ -411,13 +415,13 @@ rpmlist="$rpmlist expat-devel libXmu-devel"
 function build_and_install_geant {
 	echo; echo "geant4"
 	file="${geant_version_string_a}.tar.gz"
-	if [ ! -e $tdir/$file ]; then
-		cd $tdir
-		wget http://geant4.web.cern.ch/geant4/support/source/$file
-		#wget https://github.com/Geant4/geant4/archive/v10.5.1.tar.gz
-	fi
 	cd $dir
 	if [ ! -e $geant_version_string_a ]; then
+		if [ ! -e $tdir/$file ]; then
+			cd $tdir
+			wget http://geant4.web.cern.ch/geant4/support/source/$file
+			#wget https://github.com/Geant4/geant4/archive/v10.5.1.tar.gz
+		fi
 		echo "extracting from $file..."
 		tar xzf $tdir/$file
 	fi
