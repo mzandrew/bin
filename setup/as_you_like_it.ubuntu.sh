@@ -7,6 +7,7 @@ function install_packages {
 	sudo apt -y install mlocate git rsync build-essential openssh-server net-tools nfs-common
 	sudo apt -y install dfu-util gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib # tomu
 	sudo apt -y install subversion synaptic gnuplot ntp meld doublecmd-gtk zip unzip dbus-x11 xpdf gimp inkscape sane
+	sudo apt -y install texlive-science
 	#sudo apt -y install root-system # taken out of ubuntu 2018.04 (since 2016.04)
 	sudo apt -y update
 	sudo apt -y upgrade
