@@ -30,8 +30,23 @@ else
 	git pull
 fi
 
+sudo apt install -y ffmpeg gnuplot
+
 # recommended for high radiation environments:
 sudo apt install -y watchdog
 sudo systemctl enable watchdog
 sudo systemctl start watchdog
+
+cat <<here
+
+# change the following in system.conf:
+
+CrashReboot=yes
+RuntimeWatchdogSec=15
+ShutdownWatchdogSec=15
+
+here
+sleep 3
+sudo vim /etc/systemd/system.conf
+echo "now reboot for the systemd configuration to take effect"
 
