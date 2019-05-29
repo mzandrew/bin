@@ -6,6 +6,7 @@ function add_swap_if_necessary {
 	if [ ! -e /swap ]; then
 		echo "generating $MiB MiB /swap file..."
 		sudo dd if=/dev/zero of=/swap bs=$((1024*1024)) count=$MiB
+		sudo chmod 600 /swap
 		sudo mkswap /swap
 		sudo swapon /swap
 		sudo sed -ie '/swapon/{h;s/.*/swapon \/swap/};${x;/^$/{s/.*/swapon \/swap/;H};x}' /etc/rc.local
