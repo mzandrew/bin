@@ -9,7 +9,9 @@ function add_swap_if_necessary {
 		sudo chmod 600 /swap
 		sudo mkswap /swap
 		sudo swapon /swap
-		sudo sed -ie '/swapon/{h;s/.*/swapon \/swap/};${x;/^$/{s/.*/swapon \/swap/;H};x}' /etc/rc.local
+		# this happens after the "exit 0" line, so is useless:
+		#sudo sed -ie '/swapon/{h;s/.*/swapon \/swap/};${x;/^$/{s/.*/swapon \/swap/;H};x}' /etc/rc.local
+		echo "fix /etc/rc.local to do \"swapon /swap\" before the exit 0!"
 	fi
 }
 
@@ -35,7 +37,6 @@ function install_packages_1 {
 install_packages_0
 # reboot, and continue:
 install_packages_1
-add_swap_if_necessary
 
 cd
 mkdir -p build
@@ -58,4 +59,6 @@ if [ -e $HOME/build/bin/nofizbin/bashrc ]; then
 fi
 
 HERE
+
+add_swap_if_necessary
 
