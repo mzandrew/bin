@@ -4,7 +4,7 @@ cd
 mkdir -p build
 cd ${HOME}/build
 
-sudo apt install -y python3-dev python3-rpi.gpio python3-spidev python3-w1thermsensor
+sudo apt install -y python3-dev python3-rpi.gpio python3-spidev python3-w1thermsensor i2c-tools
 
 if [ ! -e "RPi-Hat-Thermocouple" ]; then
 	#git clone git@github.com:mikelawrence/RPi-Hat-Thermocouple.git
