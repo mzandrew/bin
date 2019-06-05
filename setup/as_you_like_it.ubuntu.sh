@@ -10,6 +10,8 @@ function install_packages {
 	sudo apt -y install texlive-science
 	sudo apt -y install libgsl-dev # root
 	sudo apt -y install ffmpeg mplayer
+	sudo apt -y install network-manager-openconnect-gnome # for VPN
+	sudo apt -y install libcanberra-gtk-module libcanberra-gtk3-module # to avoid annoying messages
 	#sudo apt -y install root-system # taken out of ubuntu 2018.04 (since 2016.04)
 	sudo apt -y update
 	sudo apt -y upgrade

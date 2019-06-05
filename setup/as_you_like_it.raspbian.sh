@@ -26,7 +26,9 @@ function install_packages_1 {
 	sudo apt -y install mlocate git subversion rsync lm-sensors
 	sudo apt -y update
 	sudo apt -y upgrade
-	sudo apt -y install vpnc firefox-esr nfs-common
+	sudo apt -y install firefox-esr nfs-common
+	sudo apt -y install network-manager-openconnect-gnome # for VPN
+	sudo apt -y install libcanberra-gtk-module libcanberra-gtk3-module # to avoid annoying messages
 	sudo apt-get -y autoremove
 	sudo apt-get clean
 }

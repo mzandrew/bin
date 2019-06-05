@@ -32,6 +32,9 @@ fi
 
 sudo apt install -y ffmpeg gnuplot
 
+# for plotting temperatures:
+sudo apt install -y eog imagemagick
+
 # recommended for high radiation environments:
 sudo apt install -y watchdog
 sudo systemctl enable watchdog
