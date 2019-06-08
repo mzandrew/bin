@@ -23,12 +23,13 @@ function install_packages_0 {
 
 function install_packages_1 {
 	sudo apt-get clean
-	sudo apt -y install mlocate git subversion rsync lm-sensors
+	sudo apt -y install mlocate git subversion rsync lm-sensors ntp
 	sudo apt -y update
 	sudo apt -y upgrade
 	sudo apt -y install firefox-esr nfs-common
 	sudo apt -y install network-manager-openconnect-gnome # for VPN
 	sudo apt -y install libcanberra-gtk-module libcanberra-gtk3-module # to avoid annoying messages
+	sudo apt -y install vim-gtk cmake
 	sudo apt-get -y autoremove
 	sudo apt-get clean
 }
