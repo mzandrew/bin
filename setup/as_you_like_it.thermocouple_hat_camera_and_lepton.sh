@@ -16,12 +16,9 @@ fi
 
 sudo apt install -y python3-picamera python-picamera
 
-#raspistill -rot 180 --nopreview -o pic.jpg
-
 sudo apt install -y python-opencv python-numpy python3-numpy
 
 cd ${HOME}/build
-
 if [ ! -e "pylepton" ]; then
 	#git clone git@github.com:groupgets/pylepton.git
 	git clone https://github.com/groupgets/pylepton.git
@@ -56,9 +53,28 @@ sudo apt install -y ffmpeg gnuplot
 #qmake ..
 #make
 
+# usb video class (uvc) cameras:
+sudo apt install -y luvcview
+
+# circuitpython:
+cd ${HOME}/build
+sudo apt install -y python-serial python3-serial
+if [ ! -e circuitpython ]; then
+	git clone https://github.com/adafruit/circuitpython.git
+else
+	cd circuitpython
+	git pull
+fi
+cd ${HOME}/build
+dir="4.0.1"
+filename="adafruit-circuitpython-circuitplayground_express-en_US-4.0.1.uf2"
+if [ ! -e $filename ]; then
+	wget https://github.com/adafruit/circuitpython/releases/download/$dir/$filename
+fi
+
 # adafruit max31856 thermocouple board:
 sudo apt install -y build-essential python-dev python-smbus python3-venv python3-pip
-cd ~/build
+cd ${HOME}/build
 if [ ! -e Adafruit_Python_MAX31856 ]; then
 	git clone https://github.com/johnrbnsn/Adafruit_Python_MAX31856
 	cd Adafruit_Python_MAX31856
@@ -70,8 +86,8 @@ fi
 #source env_py3/bin/activate
 #pip install -r requirements.txt
 #pip install ./.
-pip3 install rpi.gpio
-pip3 install Adafruit_GPIO
+#sudo pip3 install rpi.gpio
+sudo pip3 install Adafruit_GPIO
 
 # for plotting temperatures:
 sudo apt install -y eog imagemagick
@@ -93,4 +109,6 @@ here
 sleep 3
 sudo vim /etc/systemd/system.conf
 echo "now reboot for the systemd configuration to take effect"
+
+#echo "raspistill -rot 180 --nopreview -o pic.jpg"
 
