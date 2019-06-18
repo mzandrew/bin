@@ -72,11 +72,20 @@ else
 	git pull
 fi
 cd ${HOME}/build
+dir="v3.6.0"
+filename="update-bootloader-circuitplay_m0-v3.6.0.uf2"
+if [ ! -e $filename ]; then
+	wget -q https://github.com/adafruit/uf2-samdx1/releases/download/$dir/$filename
+fi
+sudo mount /dev/sda /media && sudo cp $filename /media/ && sudo umount /media
+#to unbrick:
+#while /bin/true; do sudo mount /dev/sda /media && sudo cp update-bootloader-circuitplay_m0-v3.6.0.uf2 /media/ && sudo umount /media && break; done
 dir="4.0.1"
 filename="adafruit-circuitpython-circuitplayground_express-en_US-4.0.1.uf2"
 if [ ! -e $filename ]; then
-	wget https://github.com/adafruit/circuitpython/releases/download/$dir/$filename
+	wget -q https://github.com/adafruit/circuitpython/releases/download/$dir/$filename
 fi
+sudo mount /dev/sda /media && sudo cp $filename /media/ && sudo umount /media
 
 # adafruit max31856 thermocouple board:
 sudo apt install -y build-essential python-dev python-smbus python3-venv python3-pip
