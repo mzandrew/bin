@@ -103,6 +103,7 @@ fi
 #pip3 install ./.
 #pip3 install rpi.gpio
 pip3 install Adafruit_GPIO
+#sudo pip3 install Adafruit_GPIO
 
 # for plotting temperatures:
 sudo apt install -y eog imagemagick
