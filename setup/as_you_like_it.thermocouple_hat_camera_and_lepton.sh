@@ -15,6 +15,12 @@ else
 fi
 
 sudo apt install -y python3-picamera python-picamera
+#sudo apt install -y python-pip exuberant-ctags
+#cd ${HOME}/build
+#git clone https://github.com/waveform80/picamera.git
+#cd picamera
+#make develop || /bin/true
+#sudo make develop
 
 sudo apt install -y python-opencv python-numpy python3-numpy
 
