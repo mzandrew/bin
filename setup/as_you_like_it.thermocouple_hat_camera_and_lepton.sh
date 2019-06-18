@@ -99,10 +99,10 @@ else
 fi
 #python3 -m venv env_py3
 #source env_py3/bin/activate
-#pip install -r requirements.txt
-#pip install ./.
-#sudo pip3 install rpi.gpio
-sudo pip3 install Adafruit_GPIO
+#pip3 install -r requirements.txt
+#pip3 install ./.
+#pip3 install rpi.gpio
+pip3 install Adafruit_GPIO
 
 # for plotting temperatures:
 sudo apt install -y eog imagemagick
