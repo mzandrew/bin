@@ -1,6 +1,12 @@
 #!/bin/bash -e
 
 # instructions taken/modified from an email from Kurtis N. dated 2016-12-16
+# last updated 2019-04-25 by mza
+
+# update for ubuntu18.04 (sufficient cmake now in package manager)
+# update for clhep from git
+# update for geant4 10.05: new prerequisites: zlib; new dataset versions
+# other associated changes
 
 declare dir="$HOME/build/geant4"
 declare tdir="$dir"
@@ -8,7 +14,7 @@ if [ -e "/opt/shared/software/geant4" ]; then
 	tdir="/opt/shared/software/geant4"
 fi
 declare archlist="mesa glu mercurial dos2unix openmotif qt4"
-declare deblist="build-essential mesa-utils mercurial"
+declare deblist="build-essential mesa-utils mercurial zlib1g cmake"
 declare rpmlist="mercurial"
 	rpmlist="$rpmlist gcc gcc-c++ make automake autoconf"
 declare CMAKE="cmake"
@@ -16,28 +22,30 @@ declare -i numcores=$(($(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk 
 declare MAKE="make -j$numcores"
 
 # check http://geant4.cern.ch/support/download.shtml
-declare geant_version_string_a="geant4.10.03.p01" # latest as of 2017-06-02
-declare geant_version_string_b="Geant4-10.3.1" # install subdir name
+#declare geant_version_string_a="geant4.10.03.p01" # latest as of 2017-06-02
+#declare geant_version_string_b="Geant4-10.3.1" # install subdir name
+declare geant_version_string_a="geant4.10.05.p01" # latest as of 2019-04-25
+declare geant_version_string_b="Geant4-10.5.1" # install subdir name
 
 # check https://cmake.org/files/v3.7/
-declare cmake_version_string_a="cmake-3.8.2" # latest as of 2017-06-02
-declare cmake_version_string_b="cmake-3.8" # install subdir name
-declare cmake_version_string_c="v3.8" # download subdir name
+#declare cmake_version_string_a="cmake-3.8.2" # latest as of 2017-06-02
+#declare cmake_version_string_b="cmake-3.8" # install subdir name
+#declare cmake_version_string_c="v3.8" # download subdir name
 
 # check proj-clhep.web.cern.ch/proj-clhep/clhep23.html
-declare clhep_version_string_a="clhep-2.3.4.4" # latest as of 2017-06-02
-declare clhep_version_string_b="2.3.4.4" # untar subdir name
-declare clhep_version_string_c="CLHEP-2.3.4.4" # install subdir name
+#declare clhep_version_string_a="clhep-2.3.4.4" # latest as of 2017-06-02
+#declare clhep_version_string_b="2.3.4.4" # untar subdir name
+#declare clhep_version_string_c="CLHEP-2.3.4.4" # install subdir name
+
+datasets_list="G4NDL.4.5.tar.gz G4EMLOW.7.7.tar.gz G4PhotonEvaporation.5.3.tar.gz G4RadioactiveDecay.5.3.tar.gz G4PARTICLEXS.1.1.tar.gz G4PII.1.3.tar.gz G4RealSurface.2.1.1.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4ENSDFSTATE.2.2.tar.gz"
 
 declare list_of_things_that_should_be_there_after_complete_installation="
 	/usr/local/include/Geant4
 	/usr/local/include/Inventor
 	/usr/local/include/CLHEP
-	/usr/local/share/aclocal/cmake.m4
 	/usr/local/share/aclocal/coin.m4
 	/usr/local/share/aclocal/soxt.m4
 	/usr/local/share/$geant_version_string_b
-	/usr/local/share/$cmake_version_string_b
 	/usr/local/share/Coin
 	/usr/local/share/man/man1/coin-config.1
 	/usr/local/share/man/man1/soxt-config.1
@@ -45,12 +53,11 @@ declare list_of_things_that_should_be_there_after_complete_installation="
 	/usr/local/lib/libCoin*
 	/usr/local/lib/libCLHEP*
 	/usr/local/lib/Coin
-	/usr/local/lib/$clhep_version_string_c
+	/usr/local/lib/CLHEP
 	/usr/local/lib/libG4*
 	/usr/local/lib/$geant_version_string_b 
 	/usr/local/lib64/$geant_version_string_b 
 	/usr/local/lib64/libG4*
-	/usr/local/doc/$cmake_version_string_b
 	/usr/local/bin/soxt-config
 	/usr/local/bin/clhep-config
 	/usr/local/bin/Vector-config
@@ -68,10 +75,7 @@ declare list_of_things_that_should_be_there_after_complete_installation="
 	/usr/local/bin/geant4.sh
 	/usr/local/bin/geant4.csh
 	/usr/local/bin/geant4-config
-	/usr/local/bin/coin-config
-	/usr/local/bin/cmake
-	/usr/local/bin/ctest
-	/usr/local/bin/cpack"
+	/usr/local/bin/coin-config"
 
 declare -i redhat=0 SL6=0 SL7=0 deb=0
 if [ -e /etc/redhat-release ]; then
@@ -141,22 +145,22 @@ function look_for_installed_files {
 
 function download_datasets {
 	echo; echo "downloading datasets..."
-	cd $dir
-	for each in G4NDL.4.5.tar.gz G4EMLOW.6.50.tar.gz G4PhotonEvaporation.4.3.2.tar.gz G4RadioactiveDecay.5.1.1.tar.gz G4NEUTRONXS.1.4.tar.gz G4PII.1.3.tar.gz RealSurface.1.0.tar.gz G4SAIDDATA.1.1.tar.gz G4ABLA.3.0.tar.gz G4ENSDFSTATE.2.1.tar.gz; do
-	#for each in G4NDL.4.5.tar.gz; do
-	#for each in G4ENSDFSTATE.2.1.tar.gz; do
+	cd $tdir
+	mkdir -p datasets
+	cd datasets
+	for each in $datasets_list; do
 		if [ ! -e $each ]; then
-			wget http://geant4.cern.ch/support/source/$each
+			wget https://cern.ch/geant4-data/datasets/$each
 		fi
 	done
 }
 
 function install_dataset {
 	cd /usr/local/share/$geant_version_string_b/data
-	if [ ! -e "$1" ] && [ -e "$tdir/$2" ]; then
+	if [ ! -e "$1" ] && [ -e "$tdir/datasets/$2" ]; then
 		echo "installing $1..."
 		#sudo tar xzf "$tdir/$2"
-		cat "$tdir/$2" | sudo tar xz
+		cat "$tdir/datasets/$2" | sudo tar xz
 		sudo chown -R root:root "$1"
 	fi
 }
@@ -165,17 +169,16 @@ function install_datasets {
 	echo; echo "installing datasets..."
 	sudo mkdir -p /usr/local/share/$geant_version_string_b/data
 	fix_permissions /usr/local/share/$geant_version_string_b
-	#for each in G4NDL.4.5.tar.gz G4EMLOW.6.50.tar.gz G4PhotonEvaporation.4.3.2.tar.gz G4RadioactiveDecay.5.1.1.tar.gz G4NEUTRONXS.1.4.tar.gz G4PII.1.3.tar.gz RealSurface.1.0.tar.gz G4SAIDDATA.1.1.tar.gz G4ABLA.3.0.tar.gz G4ENSDFSTATE.2.1.tar.gz; do
-	install_dataset G4ABLA3.0 G4ABLA.3.0.tar.gz
-	install_dataset G4EMLOW6.50 G4EMLOW.6.50.tar.gz
-	install_dataset G4ENSDFSTATE2.1 G4ENSDFSTATE.2.1.tar.gz
-	install_dataset G4NDL4.5 G4NDL.4.5.tar.gz
-	install_dataset G4NEUTRONXS1.4 G4NEUTRONXS.1.4.tar.gz
-	install_dataset G4PII1.3 G4PII.1.3.tar.gz
-	install_dataset G4SAIDDATA1.1 G4SAIDDATA.1.1.tar.gz
-	install_dataset PhotonEvaporation4.3.2 G4PhotonEvaporation.4.3.2.tar.gz
-	install_dataset RadioactiveDecay5.1.1 G4RadioactiveDecay.5.1.1.tar.gz
-	install_dataset RealSurface1.0 RealSurface.1.0.tar.gz
+	for each in $datasets_list; do
+		name=$(echo $each | sed -e "s,\([^.]*\)\.\([0-9][.0-9]\+\)\.tar\.gz,\1,")
+		if [ "$name" == "G4PhotonEvaporation" ]; then name="PhotonEvaporation"; fi
+		if [ "$name" == "G4RadioactiveDecay" ]; then name="RadioactiveDecay"; fi
+		if [ "$name" == "G4RealSurface" ]; then name="RealSurface"; fi
+		version=$(echo $each | sed -e "s,\([^.]*\)\.\([0-9][.0-9]\+\)\.tar\.gz,\2,")
+		dirname="${name}${version}"
+		#echo "$dirname"
+		install_dataset $dirname $each
+	done
 	fix_permissions /usr/local/share/$geant_version_string_b/data
 	ls -lart /usr/local/share/$geant_version_string_b/data
 }
@@ -224,39 +227,58 @@ deblist="$deblist qtdeclarative5-dev"
 rpmlist="$rpmlist qt5-qtdeclarative-devel"
 function build_and_install_clhep {
 	echo; echo "clhep"
-	file="${clhep_version_string_a}.tgz"
-	if [ ! -e $tdir/$file ]; then
-		cd $tdir
-		wget http://proj-clhep.web.cern.ch/proj-clhep/DISTRIBUTION/tarFiles/$file
-	fi
+	#file="${clhep_version_string_a}.tgz"
+	#if [ ! -e $tdir/$file ]; then
+	#	cd $tdir
+	#	wget http://proj-clhep.web.cern.ch/proj-clhep/DISTRIBUTION/tarFiles/$file
+	#fi
 	cd $dir
-	if [ ! -e $clhep_version_string_a ]; then
-		echo "extracting from $file..."
-		tar xf $tdir/$file
-		mv $clhep_version_string_b $clhep_version_string_a
+	mkdir -p CLHEP
+	#if [ ! -e $clhep_version_string_a ]; then
+	#	echo "extracting from $file..."
+	#	tar xf $tdir/$file
+	#	mv $clhep_version_string_b $clhep_version_string_a
+	#fi
+	#cd $dir/$clhep_version_string_a
+	if [ ! -e $dir/CLHEP/CLHEP ]; then
+		if [ -e $tdir/CLHEP.tar ]; then
+			echo "extracting from CLHEP.tar..."
+			tar xf $tdir/CLHEP.tar
+			cd $dir/CLHEP/CLHEP
+			git pull
+		else
+			cd $dir/CLHEP
+			git clone https://gitlab.cern.ch/CLHEP/CLHEP.git
+			cd $dir
+			tar cf $tdir/CLHEP.tar CLHEP/CLHEP
+		fi
 	fi
-	cd $dir/$clhep_version_string_a
+	cd $dir/CLHEP
 	mkdir -p build
 	cd build
 	if [ ! -e Makefile ]; then
 		$CMAKE ../CLHEP
+		$CMAKE --build . --config RelWithDebInfo
+		ctest
 	else
 		echo "clhep already cmake'd"
 	fi
-	if [ ! -e lib/lib${clhep_version_string_c}.so ] || [ ! -e Random/test/testInstanceRestore ]; then
-		$MAKE
-	else
-		echo "clhep already built"
-	fi
+#	if [ ! -e lib/libCLHEP.so ] || [ ! -e Random/test/testInstanceRestore ]; then
+#		$MAKE
+#	else
+#		echo "clhep already built"
+#	fi
 	if [ ! -e /usr/local/lib/libCLHEP.so ]; then
-		sudo make install --quiet --no-print-directory
+		sudo $CMAKE --build . --target install
+		#sudo make install --quiet --no-print-directory
 	else
 		echo "clhep already installed"
 	fi
 	fix_ownership install_manifest.txt
-	fix_permissions /usr/local/include/CLHEP /usr/local/lib/$clhep_version_string_c
+	fix_permissions /usr/local/include/CLHEP /usr/local/include/Inventor /usr/local/lib/CLHEP
 }
 
+deblist="$deblist libboost-dev"
 function build_and_install_coin {
 	echo; echo "coin"
 	cd $dir
@@ -363,6 +385,9 @@ function build_and_install_soxt {
 		fi
 	fi
 	cd $dir/soxt
+	if [ ! -e $dir/soxt/build/soxt.spec.in ]; then
+		hg restore build/soxt.spec.in
+	fi
 	mkdir -p build
 	cd build
 	export LD_RUN_PATH="/usr/local/lib/" # https://bitbucket.org/Coin3D/coin/issues/19/configure-error-could-not-determine-the
@@ -390,12 +415,13 @@ rpmlist="$rpmlist expat-devel libXmu-devel"
 function build_and_install_geant {
 	echo; echo "geant4"
 	file="${geant_version_string_a}.tar.gz"
-	if [ ! -e $tdir/$file ]; then
-		cd $tdir
-		wget http://geant4.web.cern.ch/geant4/support/source/$file
-	fi
 	cd $dir
 	if [ ! -e $geant_version_string_a ]; then
+		if [ ! -e $tdir/$file ]; then
+			cd $tdir
+			wget http://geant4.web.cern.ch/geant4/support/source/$file
+			#wget https://github.com/Geant4/geant4/archive/v10.5.1.tar.gz
+		fi
 		echo "extracting from $file..."
 		tar xzf $tdir/$file
 	fi
@@ -414,7 +440,7 @@ function build_and_install_geant {
 	else
 		echo "geant4 already built"
 	fi
-	if [ ! -e /usr/local/bin/geant4.sh ] || [ ! -e /usr/local/bin/geant4-config ]; then
+	if [ ! -e /usr/local/bin/geant4.sh ] || [ ! -e /usr/local/bin/geant4-config ] || [ ! -e /usr/local/share/$geant_version_string_b/geant4make ]; then
 		sudo make install --quiet --no-print-directory
 	else
 		echo "geant4 already installed"
@@ -429,36 +455,51 @@ function build_and_install_geant {
 	fi
 }
 
+function print_geant4_build_run_help {
+	echo
+	echo "to build a geant4 executable:"
+	echo ". /usr/local/share/Geant4-10.5.1/geant4make/geant4make.sh"
+	echo "mkdir build; cd build; cmake ..; make"
+	echo
+	echo "to run a geant4 executable:"
+	echo ". /usr/local/bin/geant4.sh"
+	echo "./myexample"
+}
+
 function build_and_run_example {
 	echo; echo "example"
+	local which_example
+	which_example="B1"
 	cd $dir
 	. /usr/local/share/$geant_version_string_b/geant4make/geant4make.sh
-	if [ ! -e B1 ]; then
-		cp -r /usr/local/share/$geant_version_string_b/examples/basic/B1 .
+	if [ ! -e $which_example ]; then
+		cp -r /usr/local/share/$geant_version_string_b/examples/basic/$which_example .
 	fi
-	cd B1
+	cd $which_example
 	mkdir -p build
 	cd build
 	$CMAKE ..
 	$MAKE
-	./exampleB1
+	. /usr/local/bin/geant4.sh
+	./example$which_example
+	print_geant4_build_run_help
 }
 
 function clean {
 	cd $dir
-	rm -rf $clhep_version_string_a/build coin/build coinStandard/build soxt/build $geant_version_string_a/build
+	rm -rf CLHEP/build coin/build coinStandard/build soxt/build $geant_version_string_a/build
 }
 
 function realclean {
 	cd $dir
-	rm -rf $clhep_version_string_a coin coinStandard soxt $geant_version_string_a B1 $cmake_version_string_a
+	rm -rf CLHEP coin coinStandard soxt $geant_version_string_a B1
 }
 
 function uninstall {
 	echo; echo "uninstalling..."
 	#echo "before:"
 	#show_all_installed_files
-	for each in $clhep_version_string_a/build coin/build coinStandard/build soxt/build $geant_version_string_a/build $cmake_version_string_a; do
+	for each in CLHEP/build coin/build coinStandard/build soxt/build $geant_version_string_a/build; do
 		echo "uninstalling $each..."
 		if [ -e $dir/$each ]; then
 			cd $dir/$each
@@ -506,11 +547,11 @@ function uninstall_prerequisites {
 }
 
 function install {
-	build_and_install_cmake
-	if [ ! -e /usr/local/bin/cmake ]; then
-		deblist="$deblist $CMAKE"
-		rpmlist="$rpmlist $CMAKE"
-	fi
+	#build_and_install_cmake
+#	if [ ! -e /usr/local/bin/cmake ]; then
+#		deblist="$deblist $CMAKE"
+#		rpmlist="$rpmlist $CMAKE"
+#	fi
 	install_prerequisites
 	#download_datasets # do this just once and save the files
 	install_datasets
@@ -551,4 +592,6 @@ if [ $# -gt 0 ]; then
 else
 	install
 fi
+
+print_geant4_build_run_help
 

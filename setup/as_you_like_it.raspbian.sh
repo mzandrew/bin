@@ -6,9 +6,12 @@ function add_swap_if_necessary {
 	if [ ! -e /swap ]; then
 		echo "generating $MiB MiB /swap file..."
 		sudo dd if=/dev/zero of=/swap bs=$((1024*1024)) count=$MiB
+		sudo chmod 600 /swap
 		sudo mkswap /swap
 		sudo swapon /swap
-		sudo sed -ie '/swapon/{h;s/.*/swapon \/swap/};${x;/^$/{s/.*/swapon \/swap/;H};x}' /etc/rc.local
+		# this happens after the "exit 0" line, so is useless:
+		#sudo sed -ie '/swapon/{h;s/.*/swapon \/swap/};${x;/^$/{s/.*/swapon \/swap/;H};x}' /etc/rc.local
+		echo "fix /etc/rc.local to do \"swapon /swap\" before the exit 0!"
 	fi
 }
 
@@ -20,10 +23,13 @@ function install_packages_0 {
 
 function install_packages_1 {
 	sudo apt-get clean
-	sudo apt -y install mlocate git subversion rsync lm-sensors
+	sudo apt -y install mlocate git subversion rsync lm-sensors ntp
 	sudo apt -y update
 	sudo apt -y upgrade
-	sudo apt -y install vpnc firefox-esr nfs-common
+	sudo apt -y install firefox-esr nfs-common
+	sudo apt -y install network-manager-openconnect-gnome # for VPN
+	sudo apt -y install libcanberra-gtk-module libcanberra-gtk3-module # to avoid annoying messages
+	sudo apt -y install vim-gtk cmake
 	sudo apt-get -y autoremove
 	sudo apt-get clean
 }
@@ -34,7 +40,6 @@ function install_packages_1 {
 install_packages_0
 # reboot, and continue:
 install_packages_1
-add_swap_if_necessary
 
 cd
 mkdir -p build
@@ -57,4 +62,6 @@ if [ -e $HOME/build/bin/nofizbin/bashrc ]; then
 fi
 
 HERE
+
+add_swap_if_necessary
 

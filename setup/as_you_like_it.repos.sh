@@ -21,6 +21,7 @@ interactive "git clone https://github.com/mzandrew/idlab-daq.git"
 interactive "git clone https://github.com/mzandrew/idlab-general.git"
 interactive "git clone https://github.com/mzandrew/idlab-hardware.git"
 interactive "git clone https://github.com/mzandrew/perl_motor_controller.git"
+interactive "git clone https://github.com/mzandrew/XRM.git"
 
 #both:
 interactive "git clone https://github.com/mzandrew/bin.git"
