@@ -30,7 +30,8 @@ function add_swap_if_necessary {
 }
 
 function install_prerequisites_apt {
-	sudo nice apt -y install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev python-dev gfortran cmake libfftw3-dev libjpeg-dev libgif-dev libtiff-dev libcfitsio-dev libxml2-dev uuid-dev davix-dev libpythia8-dev libgfal2-dev libgl2ps-dev libpcre2-dev liblz4-dev libgsl-dev libssl-dev libgfal2-dev libtbb-dev libcblas-dev libcblas3
+	sudo nice apt -y install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev python-dev gfortran cmake libfftw3-dev libjpeg-dev libgif-dev libtiff-dev libcfitsio-dev libxml2-dev uuid-dev davix-dev libpythia8-dev libgfal2-dev libgl2ps-dev libpcre2-dev liblz4-dev libgsl-dev libssl-dev libgfal2-dev libtbb-dev gsl-bin libpython-dev
+	# libcblas-dev libcblas3
 	# Enabled support for:  asimage astiff builtin_afterimage builtin_clang builtin_ftgl builtin_glew builtin_llvm builtin_tbb builtin_vdt builtin_xxhash clad cling cxx11 davix exceptions explicitlink fftw3 fitsio gdml http imt mathmore opengl pch pythia8 python roofit shared ssl thread tmva tmva-cpu tmva-pymva vdt x11 xft xml
 }
 
