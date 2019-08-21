@@ -12,7 +12,7 @@ if [ -z "$name" ]; then
 fi
 
 echo "creating user $name with primary group $group and uid=$uid..."
-sudo adduser --no-user-group --gid $group --create-home $name --uid $uid
+sudo adduser --gid $group --create-home $name --uid $uid
 # 2>/dev/null || sudo adduser -g $g -m $u
 id $name
 ls -lartd /home/$name
