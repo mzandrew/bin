@@ -1,18 +1,21 @@
 #!/bin/bash -e
 
-declare u=$1
-declare g=${2:-idlab}
+declare name=$1
+declare group=$2
+#declare group=${2:-idlab}
+declare uid=$3
 
-if [ -z "$u" ]; then
+if [ -z "$name" ]; then
 	echo "usage:"
-	echo "$0 user [group]"
+	echo "$0 user group uid"
 	exit 1
 fi
 
-echo "creating user $u with primary group $g..."
-sudo adduser --no-user-group -g $g -m $u 2>/dev/null || sudo adduser -g $g -m $u
-id $u
-ls -lartd /home/$u
+echo "creating user $name with primary group $group and uid=$uid..."
+sudo adduser --no-user-group --gid $group --create-home $name --uid $uid
+# 2>/dev/null || sudo adduser -g $g -m $u
+id $name
+ls -lartd /home/$name
 
-echo; echo "sudo passwd $u"
+echo; echo "sudo passwd $name"
 
