@@ -18,6 +18,7 @@ set guifont="Monospace 10":h10:cANSI:qDRAFT
 set formatoptions-=cro " don't automatically continue comments
 " for win32, make a file c:\\Users\\blah\\_vimrc and have it contain the (uncommented) line:
 " source c:\\\\blah\\build\\bin\\nofizbin\\.vimrc
+set clipboard=exclude:.*
 
 autocmd BufReadPost *
 	\ if line("'\"") > 1 && line("'\"") <= line("$") |
