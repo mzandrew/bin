@@ -1,44 +1,45 @@
 #!/bin/bash -e
 
-name=$(hostname)
-configfile="${HOME}/.update-files-lists-rc"
+# last updated 2019-10-16
+
+declare name=$(hostname)
+declare configfile="${HOME}/.update-files-lists-rc"
+declare date=$(date +"%Y-%m-%d")
+
+#	export accumulation_destination
+#	if [ ! -e "${accumulation_destination}" ]; then
+#		mkdir "${accumulation_destination}"
+#	fi
+#	#cd "${accumulation_destination}"
+
+function generate_the_files_list {
+	mkdir -p "${destination}/old"
+	cd "${source}"
+	local filename_bare="${date}.${name}.lf-r"
+	local filename="${destination}/${filename_bare}"
+	lf > ${filename} 2>/dev/null || /bin/true
+	script="$(dirname $0)/copy-if-not-already-there"
+	find "${source}/" -type d -wholename "$destination" -prune -o -type f -name "*.lf-r" -exec ${script} {} + || /bin/true
+	cd "${destination}"
+	declare -i count=$(find -maxdepth 1 -type f -iname "*${name}.lf-r" | wc -l)
+	if [ $count -gt 1 ]; then
+		find -maxdepth 1 -type f -iname "20*.${name}.lf-r" -exec mv {} old/ \;
+		mv "old/${filename_bare}" .
+	fi
+	find -maxdepth 1 -type f -iname "20*.${name}.lf-r" | sort
+}
+
 if [ ! -e "${configfile}" ]; then
 	echo "
 source=\"${HOME}\"
 name=\"${name}\"
 destination=\"${HOME}/files-lists\"
 accumulation_destination=\"${HOME}/files-lists/accumulated\"
+generate_the_files_list
 " >"${configfile}"
+elif [ "$(grep -c "generate_the_files_list" "${configfile}")" -lt 1 ]; then
+	echo "generate_the_files_list" >> "${configfile}"
 fi
 
 . "${configfile}"
-
-cd "${source}"
-date=$(date +"%Y-%m-%d")
-filename_bare="${date}.${name}.lf-r"
-filename="${destination}/${filename_bare}"
-if [ ! -e "${destination}" ]; then
-	mkdir "${destination}"
-fi
-lf > ${filename} 2>/dev/null || /bin/true
-
-export accumulation_destination
-if [ ! -e "${accumulation_destination}" ]; then
-	mkdir "${accumulation_destination}"
-fi
-#cd "${accumulation_destination}"
-script="$(dirname $0)/copy-if-not-already-there"
-find "${source}/" -type d -wholename "$destination" -prune -o -type f -name "*.lf-r" -exec ${script} {} + || /bin/true
-#find "${source}/" -type f -name "*.lf-r" -exec ${script} {} +
-
-cd "${destination}"
-#find -maxdepth 1 -type f -iname "*${name}*" | sort
-declare -i count=$(find -maxdepth 1 -type f -iname "*${name}.lf-r" | wc -l)
-if [ $count -gt 1 ]; then
-	mkdir -p old
-	find -maxdepth 1 -type f -iname "20*.${name}.lf-r" -exec mv {} old/ \;
-	mv "old/${filename_bare}" .
-fi
-#echo
-find -maxdepth 1 -type f -iname "20*.${name}.lf-r" | sort
 
