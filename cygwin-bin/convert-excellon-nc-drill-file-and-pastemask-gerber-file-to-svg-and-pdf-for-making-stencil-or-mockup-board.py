@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # started 2015-09-08 by mza
 # updated 2015-09-28
-# last updated 2017-11-07
+# updated 2017-11-07
+# last updated 2019-12-03
 
 # todo:
 # generalize a bunch of hard-coded things (see "fixme" items in code below)
@@ -47,8 +48,12 @@ eps_filename = base_filename + ".eps"
 dxf_filename = base_filename + ".dxf"
 
 # parameters of our laser:
-laser_stroke_width = 0.0254 # 1000 dpi - parameter from laser cutter
-#laser_stroke_width = 0.1016 # 250 dpi - parameter from laser cutter
+#dpi = 1000
+dpi = 500
+#dpi = 333
+#dpi = 250
+laser_stroke_width = 25.4/dpi
+#info(str(laser_stroke_width))
 stroke_length = 2.0 * laser_stroke_width
 #stroke_length = 0.2032 # 0.2032 mm = 8 mils; twice the line spacing of the laser in 250 dpi mode
 
@@ -60,8 +65,8 @@ y_offset = 66.6
 
 # user input:
 distance_between_board_edge_and_rows_of_half_moons = 5.0 + 5.0 # mm
-number_of_horizontal_instances = 2
-number_of_vertical_instances = 2
+number_of_horizontal_instances = 1
+number_of_vertical_instances = 1
 fill_protoboard = 0 # this overrides the above if == 1
 panel_frame_thickness = 14.92 # mm - overall border thickness
 #panel_tab_length = 7.0 # mm
@@ -190,6 +195,7 @@ def generate_drill_layers(which_ones = "all"):
 				if abs(float(size) - float(diameter)) < epsilon:
 					do_this_one = "yes"
 		if do_this_one == "yes":
+			#info("doing this one")
 			drill_centers_layer = add_layer(drill_centers, str(diameter))
 			drill_extents_layer = add_layer(drill_extents, str(diameter))
 			drill_centers_group = add_group(drill_centers_layer, color="#ff0000")
@@ -205,19 +211,19 @@ def generate_drill_layers(which_ones = "all"):
 				debug("(" + str(x) + "," + str(y) + ") ",)
 				drill_centers_group.add(svg.line( (x-stroke_length/2.0, y), (x+stroke_length/2.0, y) ))
 				drill_extents_group.add(svg.circle( (x, y), radius, fill="none" ))
-	special_diameter = 5.0
-	for i in range(1, 5):
-		if i==1:
-			(x, y) = (85.0 - 15.4, -85.0 + 15.4)
-		if i==2:
-			(x, y) = (115.0 + 15.4, -85.0 + 15.4)
-		if i==3:
-			(x, y) = (115.0 + 15.4, -115.0 - 15.4)
-		if i==4:
-			(x, y) = (85.0 - 15.4, -115.0 - 15.4)
-		radius = float(special_diameter) / 2.0
-		drill_centers_group.add(svg.line( (x-stroke_length/2.0, y), (x+stroke_length/2.0, y) ))
-		drill_extents_group.add(svg.circle( (x, y), radius, fill="none" ))
+#	special_diameter = 5.0
+#	for i in range(1, 5):
+#		if i==1:
+#			(x, y) = (85.0 - 15.4, -85.0 + 15.4)
+#		if i==2:
+#			(x, y) = (115.0 + 15.4, -85.0 + 15.4)
+#		if i==3:
+#			(x, y) = (115.0 + 15.4, -115.0 - 15.4)
+#		if i==4:
+#			(x, y) = (85.0 - 15.4, -115.0 - 15.4)
+#		radius = float(special_diameter) / 2.0
+#		drill_centers_group.add(svg.line( (x-stroke_length/2.0, y), (x+stroke_length/2.0, y) ))
+#		drill_extents_group.add(svg.circle( (x, y), radius, fill="none" ))
 	#drill_layer.translate(-x_offset+horizontal_instance*board_width+horizontal_instance*x_gap_between_instances_of_boards, +y_offset+panel_height-vertical_instance*board_height-vertical_instance*y_gap_between_instances_of_boards)
 	drill_layer.translate(-x_offset,+y_offset)
 	drill_layer.translate(+horizontal_instance*board_width,+panel_height-vertical_instance*board_height)
@@ -969,16 +975,19 @@ for horizontal_instance in range(0, number_of_horizontal_instances):
 	for vertical_instance in range(0, number_of_vertical_instances):
 		setup_board_layer()
 		#draw_board_outline_layer()
-		generate_drill_layers([6.05]) # 6mm clearance hole
-		#generate_drill_layers([3.81]) # 6-32 clearance hole
+		#generate_drill_layers([6.05]) # 6mm clearance hole
+		generate_drill_layers([3.81]) # 6-32 clearance hole
 		#generate_drill_layers([0.062*25.4]) # SMA vertical center hole
 		draw_pastemask_layer()
 if (fill_protoboard == 1):
 	draw_protoboard_outline_layer()
+info("")
 string = "stencil will be "
 string += str(int(overall_border["width"]+0.5)/10.0) + " cm x "
 string += str(int(overall_border["height"]+0.5)/10.0) + " cm"
+string += " and should be printed at " + str(dpi) + " dpi"
 info(string)
+info("")
 #add_holes_to_panel_frame()
 save_svg_file()
 generate_pdf()
