@@ -6,7 +6,7 @@
 function install_prerequisites_apt {
 	#sudo nice apt -y update
 	#sudo nice apt -y upgrade
-	sudo nice apt -y install python-pip
+	sudo nice apt -y install python-pip snmp libsmi2-common erlang-snmp bc
 }
 
 function install_prerequisites_yum {
