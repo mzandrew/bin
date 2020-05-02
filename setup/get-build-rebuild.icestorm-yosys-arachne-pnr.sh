@@ -2,7 +2,7 @@
 
 # written 2017-11 by mza
 # based on instructions posted at http://www.clifford.at/icestorm/
-# last updated 2019-03-06 by mza
+# last updated 2020-05-02 by mza
 
 declare build="$HOME/build"
 declare -i j=2
@@ -17,42 +17,42 @@ function get_source_if_necessary {
 	if [ ! -e icestorm ]; then
 		git clone https://github.com/cliffordwolf/icestorm.git icestorm
 	fi
-	if [ ! -e arachne-pnr ]; then
-		git clone https://github.com/cseed/arachne-pnr.git arachne-pnr
+	#if [ ! -e arachne-pnr ]; then
+	#	git clone https://github.com/cseed/arachne-pnr.git arachne-pnr
+	#fi
+	if [ ! -e nextpnr ]; then
+		git clone https://github.com/YosysHQ/nextpnr.git
 	fi
 	if [ ! -e yosys ]; then
 		git clone https://github.com/cliffordwolf/yosys.git yosys
 	fi
-	if [ ! -e yosys-plugins ]; then
-		git clone https://github.com/cliffordwolf/yosys-plugins.git
-	fi
-	if [ ! -e vhd2vl ]; then
-		git clone https://github.com/ldoolitt/vhd2vl.git
-	fi
-	if [ ! -e netlistsvg ]; then
-		# needs npm
-		git clone https://github.com/nturley/netlistsvg
-	fi
-	if [ ! -e ice40_viewer ]; then
-		git clone https://github.com/knielsen/ice40_viewer.git
-	fi
-	if [ ! -e swapforth ]; then
-		# needs gforth
-		git clone https://github.com/jamesbowman/swapforth.git
-	fi
-	if [ ! -e myhdl ]; then
-		git clone https://github.com/myhdl/myhdl.git
-	fi
-	if [ ! -e nextpnr ]; then
-		git clone https://github.com/YosysHQ/nextpnr.git
-	fi
+	#if [ ! -e yosys-plugins ]; then
+	#	git clone https://github.com/cliffordwolf/yosys-plugins.git
+	#fi
+	#if [ ! -e vhd2vl ]; then
+	#	git clone https://github.com/ldoolitt/vhd2vl.git
+	#fi
+	#if [ ! -e netlistsvg ]; then
+	#	# needs npm
+	#	git clone https://github.com/nturley/netlistsvg
+	#fi
+	#if [ ! -e ice40_viewer ]; then
+	#	git clone https://github.com/knielsen/ice40_viewer.git
+	#fi
+	#if [ ! -e swapforth ]; then
+	#	# needs gforth
+	#	git clone https://github.com/jamesbowman/swapforth.git
+	#fi
+	#if [ ! -e myhdl ]; then
+	#	git clone https://github.com/myhdl/myhdl.git
+	#fi
 	#if [ ! -e apio ]; then
 	#	git clone https://github.com/FPGAwars/apio.git
 	#fi
 	#pip install -U apio
-	if [ ! -e icestudio ]; then
-		git clone https://github.com/FPGAwars/icestudio.git
-	fi
+	#if [ ! -e icestudio ]; then
+	#	git clone https://github.com/FPGAwars/icestudio.git
+	#fi
 }
 
 function fix_permissions {
@@ -272,15 +272,15 @@ function check_udev_rule {
 get_source_if_necessary
 set +e
 do_icestorm
-do_icestudio
-do_arachne_pnr
 do_nextpnr
 do_yosys
-do_yosys_plugins
-do_vhdl2vl
-do_netlistsvg
-do_ice40_viewer
-do_swapforth
+#do_icestudio
+#do_arachne_pnr
+#do_yosys_plugins
+#do_vhdl2vl
+#do_netlistsvg
+#do_ice40_viewer
+#do_swapforth
 set -e
 echo
 check_udev_rule 
