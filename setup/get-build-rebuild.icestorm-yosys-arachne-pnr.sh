@@ -17,12 +17,12 @@ function get_source_if_necessary {
 	if [ ! -e icestorm ]; then
 		git clone https://github.com/cliffordwolf/icestorm.git icestorm
 	fi
-	#if [ ! -e arachne-pnr ]; then
-	#	git clone https://github.com/cseed/arachne-pnr.git arachne-pnr
-	#fi
-	if [ ! -e nextpnr ]; then
-		git clone https://github.com/YosysHQ/nextpnr.git
+	if [ ! -e arachne-pnr ]; then
+		git clone https://github.com/cseed/arachne-pnr.git arachne-pnr
 	fi
+	#if [ ! -e nextpnr ]; then
+	#	git clone https://github.com/YosysHQ/nextpnr.git
+	#fi
 	if [ ! -e yosys ]; then
 		git clone https://github.com/cliffordwolf/yosys.git yosys
 	fi
@@ -83,10 +83,10 @@ function list_files {
 }
 
 function install_prerequisites_apt {
-	sudo apt -y install build-essential clang bison flex libreadline-dev \
+	sudo apt -y install build-essential clang clang-format bison flex libreadline-dev \
 		gawk tcl-dev libffi-dev git mercurial graphviz \
-		xdot pkg-config python python3 python3-pip libftdi-dev gforth iverilog gtkwave \
-		libboost-all-dev libboost-python-dev \
+		xdot pkg-config python python3 python3-dev python3-pip libftdi-dev gforth iverilog gtkwave \
+		libboost-all-dev libboost-python-dev zlib1g-dev \
 		cmake libeigen3-dev \
 		xclip
 	sudo apt -y install qt5-default || /bin/true
@@ -183,7 +183,7 @@ function do_nextpnr {
 	echo; echo "nextpnr"
 	cd $build/nextpnr
 	git pull
-	nice cmake -DARCH=ice40
+	nice cmake -DARCH=ice40 .
 	nice make -k -j$j
 	if [ $? -ne 0 ]; then return; fi
 	sudo nice make install
@@ -198,6 +198,7 @@ function do_yosys {
 	# sudo yum -y install clang tcl-devel bison flex
 	cd $build/yosys
 	git pull
+	nice make config-gcc
 	nice make -k -j$j
 	if [ $? -ne 0 ]; then return; fi
 	# to work around a bison version problem, comment out 2 lines in:
@@ -272,10 +273,10 @@ function check_udev_rule {
 get_source_if_necessary
 set +e
 do_icestorm
-do_nextpnr
+do_arachne_pnr
+#do_nextpnr
 do_yosys
 #do_icestudio
-#do_arachne_pnr
 #do_yosys_plugins
 #do_vhdl2vl
 #do_netlistsvg
