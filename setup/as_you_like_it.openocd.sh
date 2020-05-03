@@ -1,9 +1,9 @@
 #!/bin/bash -e
 
-# last updated 2018-11-29 by mza
+# last updated 2019-10-07 by mza
 
 function install_prerequisites_apt {
-	sudo nice apt -y install libtool autoconf automake libusb-1.0 libusb-dev libtcl8.5 tcl8.5 make gcc clang pkg-config texinfo libftdi1
+	sudo nice apt -y install build-essential libtool autoconf automake libusb-1.0 libusb-1.0-0-dev libtcl8.5 tcl8.5 make gcc clang pkg-config texinfo libftdi1 git
 }
 
 function install_prerequisites_yum {
@@ -85,13 +85,16 @@ fi
 declare PREFIX="/usr"
 
 cd $openocd
+#export USB_LIBS="-L/usr/lib/x86_64-linux-gnu -lusb-1.0"
+#nice make distclean
 if [ $arch -gt 0 ]; then
 	nice ./configure --prefix=$PREFIX \
 		--enable-ftdi --enable-buspirate --enable-ft232r --enable-bcm2835gpio \
 		--disable-stlink --disable-ti-icdi --disable-ulink --disable-usb-blaster-2 --disable-vsllink --disable-xds110 --disable-osbdm --disable-opendous --disable-aice --disable-usbprog --disable-rlink --disable-cmsis-dap --disable-kitprog --disable-usb-blaster --disable-presto --disable-openjtag --disable-jlink --disable-parport --disable-parport-giveio --disable-jtag_vpi --disable-amtjtagaccel --disable-zy1000-master --disable-zy1000 --disable-ioutil --disable-ep93xx --disable-at91rm9200 --disable-imx_gpio --disable-gw16012 --disable-oocd_trace --disable-sysfsgpio --disable-werror
 else
+	# --enable-armjtagew (needs libusb-0.1)
 	nice ./configure --prefix=$PREFIX \
-		--enable-ftdi --enable-buspirate --enable-ft232r --enable-bcm2835gpio --enable-armjtagew  \
+		--enable-ftdi --enable-buspirate --enable-ft232r --enable-bcm2835gpio \
 		--disable-stlink --disable-ti-icdi --disable-ulink --disable-usb-blaster-2 --disable-vsllink --disable-xds110 --disable-osbdm --disable-opendous --disable-aice --disable-usbprog --disable-rlink --disable-cmsis-dap --disable-kitprog --disable-usb-blaster --disable-presto --disable-openjtag --disable-jlink --disable-parport --disable-parport-giveio --disable-jtag_vpi --disable-amtjtagaccel --disable-zy1000-master --disable-zy1000 --disable-ioutil --disable-ep93xx --disable-at91rm9200 --disable-imx_gpio --disable-gw16012 --disable-oocd_trace --disable-sysfsgpio --disable-werror
 fi
 
