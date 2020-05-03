@@ -8,7 +8,9 @@
 # goes nicely with https://raw.githubusercontent.com/mzandrew/hdl/master/verilog/write_verilog_dependency_file.py
 
 #list_of_all_verilog_files := $(wildcard src/*.v)
-list_of_all_verilog_files := $(shell grep -l icestick src/*.v)
+#list_of_all_verilog_files := $(shell grep -l icestick src/*.v)
+#list_of_all_verilog_files := $(shell grep -l 'icestick\|icezero' src/*.v)
+list_of_all_verilog_files := $(shell grep -l icezero src/*.v)
 list_of_all_verilog_dependency_files := $(wildcard work/*.d)
 
 #bash dependency builder :
@@ -42,9 +44,10 @@ work/%.svg : work/%.json
 	@nice node bin/netlistsvg.js $< -o $@
 	@#ls -lart $@
 
-work/%.txt : src/icestick.pcf work/%.blif
+#work/%.txt : src/icestick.pcf work/%.blif
+work/%.txt : src/icezero.pcf work/%.blif
 	@if [ ! -e work ]; then mkdir work; fi
-	@nice arachne-pnr -p $^ -o $@
+	@nice arachne-pnr -p $^ -o $@ -d 8k -P tq144:4k
 	@#ls -lart $@
 
 work/%.bin : work/%.txt
@@ -54,7 +57,8 @@ work/%.bin : work/%.txt
 
 work/%.timing-report : work/%.txt
 	@if [ ! -e work ]; then mkdir work; fi
-	@nice icetime -mt -p src/icestick.pcf -P tg144 -d hx1k $< > tmp
+	@#nice icetime -mt -p src/icestick.pcf -P tg144 -d hx1k $< > tmp
+	@nice icetime -mt -p src/icezero.pcf -P tg144:4k -d hx4k $< > tmp
 	@mv tmp $@
 
 default:
