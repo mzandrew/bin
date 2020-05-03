@@ -87,16 +87,16 @@ declare PREFIX="/usr"
 cd $openocd
 #export USB_LIBS="-L/usr/lib/x86_64-linux-gnu -lusb-1.0"
 #nice make distclean
-if [ $arch -gt 0 ]; then
-	nice ./configure --prefix=$PREFIX \
-		--enable-ftdi --enable-buspirate --enable-ft232r --enable-bcm2835gpio \
-		--disable-stlink --disable-ti-icdi --disable-ulink --disable-usb-blaster-2 --disable-vsllink --disable-xds110 --disable-osbdm --disable-opendous --disable-aice --disable-usbprog --disable-rlink --disable-cmsis-dap --disable-kitprog --disable-usb-blaster --disable-presto --disable-openjtag --disable-jlink --disable-parport --disable-parport-giveio --disable-jtag_vpi --disable-amtjtagaccel --disable-zy1000-master --disable-zy1000 --disable-ioutil --disable-ep93xx --disable-at91rm9200 --disable-imx_gpio --disable-gw16012 --disable-oocd_trace --disable-sysfsgpio --disable-werror
-else
-	# --enable-armjtagew (needs libusb-0.1)
-	nice ./configure --prefix=$PREFIX \
-		--enable-ftdi --enable-buspirate --enable-ft232r --enable-bcm2835gpio \
-		--disable-stlink --disable-ti-icdi --disable-ulink --disable-usb-blaster-2 --disable-vsllink --disable-xds110 --disable-osbdm --disable-opendous --disable-aice --disable-usbprog --disable-rlink --disable-cmsis-dap --disable-kitprog --disable-usb-blaster --disable-presto --disable-openjtag --disable-jlink --disable-parport --disable-parport-giveio --disable-jtag_vpi --disable-amtjtagaccel --disable-zy1000-master --disable-zy1000 --disable-ioutil --disable-ep93xx --disable-at91rm9200 --disable-imx_gpio --disable-gw16012 --disable-oocd_trace --disable-sysfsgpio --disable-werror
-fi
+declare options="--enable-ftdi --enable-ft232r"
+options="$options --enable-buspirate --enable-bcm2835gpio --enable-sysfsgpio"
+options="$options --disable-armjtagew"
+options="$options --disable-dummy --disable-stlink --disable-ti-icdi --disable-ulink --disable-usb-blaster-2 --disable-vsllink --disable-xds110 --disable-osbdm --disable-opendous --disable-aice --disable-usbprog --disable-rlink --disable-cmsis-dap --disable-kitprog --disable-usb-blaster --disable-presto --disable-openjtag --disable-jlink --disable-parport --disable-parport-ppdev --disable-parport-giveio --disable-jtag_vpi --disable-amtjtagaccel --disable-zy1000-master --disable-zy1000 --disable-ioutil --disable-imx_gpio --disable-ep93xx --disable-at91rm9200 --disable-gw16012 --disable-oocd_trace --disable-xlnx-pcie-xvc --disable-minidriver-dummy"
+options="$options --disable-werror"
+# --enable-armjtagew (needs libusb-0.1)
+#if [ $arch -gt 0 ]; then
+#else
+#fi
+nice ./configure --prefix=$PREFIX $options
 
 nice make
 sudo nice make install
