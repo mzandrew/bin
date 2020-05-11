@@ -30,7 +30,7 @@ work/%.vcd : work/%.out
 work/%.blif : src/%.v work/%.d
 	@if [ ! -e work ]; then mkdir work; fi
 	@echo $<
-	@nice yosys -q -p "synth_ice40 -blif $@" $<
+	@nice yosys -q -p "synth_ice40 -top top -blif $@" $<
 	@#ls -lart $@
 
 work/%.json : src/%.v
