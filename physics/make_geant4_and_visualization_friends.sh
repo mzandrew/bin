@@ -278,6 +278,7 @@ function build_and_install_clhep {
 	fix_permissions /usr/local/include/CLHEP /usr/local/include/Inventor /usr/local/lib/CLHEP
 }
 
+deblist="$deblist libboost-dev"
 function build_and_install_coin {
 	echo; echo "coin"
 	cd $dir
