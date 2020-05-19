@@ -3,11 +3,14 @@
 # https://github.com/mzandrew/bin/blob/master/nofizbin/verilog-icestorm-arachnepnr-yosys.makefile
 # originally based on Makefile in rot.v example project
 # with help from http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
-# last updated 2018-07-31 by mza
+# last updated 2020-05-03 by mza
 
 # goes nicely with https://raw.githubusercontent.com/mzandrew/hdl/master/verilog/write_verilog_dependency_file.py
 
-list_of_all_verilog_files := $(wildcard src/*.v)
+#list_of_all_verilog_files := $(wildcard src/*.v)
+#list_of_all_verilog_files := $(shell grep -l icestick src/*.v)
+#list_of_all_verilog_files := $(shell grep -l 'icestick\|icezero' src/*.v)
+list_of_all_verilog_files := $(shell grep -l icezero src/*.v)
 list_of_all_verilog_dependency_files := $(wildcard work/*.d)
 
 #bash dependency builder :
@@ -27,7 +30,7 @@ work/%.vcd : work/%.out
 work/%.blif : src/%.v work/%.d
 	@if [ ! -e work ]; then mkdir work; fi
 	@echo $<
-	@nice yosys -q -p "synth_ice40 -blif $@" $<
+	@nice yosys -q -p "synth_ice40 -top top -blif $@" $<
 	@#ls -lart $@
 
 work/%.json : src/%.v
@@ -41,9 +44,10 @@ work/%.svg : work/%.json
 	@nice node bin/netlistsvg.js $< -o $@
 	@#ls -lart $@
 
-work/%.txt : src/icestick.pcf work/%.blif
+#work/%.txt : src/icestick.pcf work/%.blif
+work/%.txt : src/icezero.pcf work/%.blif
 	@if [ ! -e work ]; then mkdir work; fi
-	@nice arachne-pnr -p $^ -o $@
+	@nice arachne-pnr -p $^ -o $@ -d 8k -P tq144:4k
 	@#ls -lart $@
 
 work/%.bin : work/%.txt
@@ -53,7 +57,8 @@ work/%.bin : work/%.txt
 
 work/%.timing-report : work/%.txt
 	@if [ ! -e work ]; then mkdir work; fi
-	@nice icetime -mt -p src/icestick.pcf -P tg144 -d hx1k $< > tmp
+	@#nice icetime -mt -p src/icestick.pcf -P tg144 -d hx1k $< > tmp
+	@nice icetime -mt -p src/icezero.pcf -P tg144:4k -d hx4k $< > tmp
 	@mv tmp $@
 
 default:

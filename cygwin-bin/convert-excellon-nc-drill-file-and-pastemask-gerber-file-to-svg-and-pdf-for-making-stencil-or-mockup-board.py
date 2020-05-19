@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # started 2015-09-08 by mza
 # updated 2015-09-28
-# last updated 2017-11-07
+# updated 2017-11-07
+# last updated 2019-12-03
 
 # todo:
 # generalize a bunch of hard-coded things (see "fixme" items in code below)
@@ -47,8 +48,12 @@ eps_filename = base_filename + ".eps"
 dxf_filename = base_filename + ".dxf"
 
 # parameters of our laser:
-laser_stroke_width = 0.0254 # 1000 dpi - parameter from laser cutter
-#laser_stroke_width = 0.1016 # 250 dpi - parameter from laser cutter
+#dpi = 1000
+#dpi = 500
+#dpi = 333
+dpi = 250
+laser_stroke_width = 25.4/dpi
+#info(str(laser_stroke_width))
 stroke_length = 2.0 * laser_stroke_width
 #stroke_length = 0.2032 # 0.2032 mm = 8 mils; twice the line spacing of the laser in 250 dpi mode
 
@@ -60,17 +65,18 @@ y_offset = 66.6
 
 # user input:
 distance_between_board_edge_and_rows_of_half_moons = 5.0 + 5.0 # mm
-number_of_horizontal_instances = 2
-number_of_vertical_instances = 2
+number_of_horizontal_instances = 1
+number_of_vertical_instances = 1
 fill_protoboard = 0 # this overrides the above if == 1
 panel_frame_thickness = 14.92 # mm - overall border thickness
 #panel_tab_length = 7.0 # mm
 #panel_tab_width = 2.0 # mm
 x_gap_between_instances_of_boards = 20.0 # mm
 y_gap_between_instances_of_boards = 20.0 # mm
-stencil_half_moon_location = "EastWest"
-#stencil_half_moon_location = "NorthSouth"
+#stencil_half_moon_location = "EastWest"
+stencil_half_moon_location = "NorthSouth"
 number_of_extra_half_moons_per_side = 0
+colors = [ "#000000", "#ff0000", "#0000ff", "#336699", "#00ffff", "#00ff00", "#009933", "#006633", "#ffff00" ]
 
 # make sure the laser cut line is not cut off of the pdf:
 #x_offset = x_offset - laser_stroke_width/2.0
@@ -155,7 +161,7 @@ def add_hole(drill_centers_group, drill_extents_group, x, y, radius):
 def add_holes_to_panel_frame():
 	panel_mounting_holes_layer = add_layer(svg, "panel mounting holes")
 	drill_extents_group = add_group(panel_mounting_holes_layer)
-	drill_centers_group = add_group(panel_mounting_holes_layer, color="#ff0000")
+	drill_centers_group = add_group(panel_mounting_holes_layer, color=colors[7])
 	radius = 25.4 * 0.150 / 2.0 # hole for a #6-32 machine screw
 	# (0,0) here corresponds to the (left,middle) of the panel
 	x0 = 0
@@ -190,9 +196,10 @@ def generate_drill_layers(which_ones = "all"):
 				if abs(float(size) - float(diameter)) < epsilon:
 					do_this_one = "yes"
 		if do_this_one == "yes":
+			#info("doing this one")
 			drill_centers_layer = add_layer(drill_centers, str(diameter))
 			drill_extents_layer = add_layer(drill_extents, str(diameter))
-			drill_centers_group = add_group(drill_centers_layer, color="#ff0000")
+			drill_centers_group = add_group(drill_centers_layer, color=colors[6])
 			drill_extents_group = add_group(drill_extents_layer)
 			#debug(diameter + ":")
 			for location in tool[diameter]:
@@ -205,19 +212,19 @@ def generate_drill_layers(which_ones = "all"):
 				debug("(" + str(x) + "," + str(y) + ") ",)
 				drill_centers_group.add(svg.line( (x-stroke_length/2.0, y), (x+stroke_length/2.0, y) ))
 				drill_extents_group.add(svg.circle( (x, y), radius, fill="none" ))
-	special_diameter = 5.0
-	for i in range(1, 5):
-		if i==1:
-			(x, y) = (85.0 - 15.4, -85.0 + 15.4)
-		if i==2:
-			(x, y) = (115.0 + 15.4, -85.0 + 15.4)
-		if i==3:
-			(x, y) = (115.0 + 15.4, -115.0 - 15.4)
-		if i==4:
-			(x, y) = (85.0 - 15.4, -115.0 - 15.4)
-		radius = float(special_diameter) / 2.0
-		drill_centers_group.add(svg.line( (x-stroke_length/2.0, y), (x+stroke_length/2.0, y) ))
-		drill_extents_group.add(svg.circle( (x, y), radius, fill="none" ))
+#	special_diameter = 5.0
+#	for i in range(1, 5):
+#		if i==1:
+#			(x, y) = (85.0 - 15.4, -85.0 + 15.4)
+#		if i==2:
+#			(x, y) = (115.0 + 15.4, -85.0 + 15.4)
+#		if i==3:
+#			(x, y) = (115.0 + 15.4, -115.0 - 15.4)
+#		if i==4:
+#			(x, y) = (85.0 - 15.4, -115.0 - 15.4)
+#		radius = float(special_diameter) / 2.0
+#		drill_centers_group.add(svg.line( (x-stroke_length/2.0, y), (x+stroke_length/2.0, y) ))
+#		drill_extents_group.add(svg.circle( (x, y), radius, fill="none" ))
 	#drill_layer.translate(-x_offset+horizontal_instance*board_width+horizontal_instance*x_gap_between_instances_of_boards, +y_offset+panel_height-vertical_instance*board_height-vertical_instance*y_gap_between_instances_of_boards)
 	drill_layer.translate(-x_offset,+y_offset)
 	drill_layer.translate(+horizontal_instance*board_width,+panel_height-vertical_instance*board_height)
@@ -550,7 +557,7 @@ def get_extents_of_gerber_instructions(gerber_instructions):
 	#print (x_min, y_min, x_max, y_max)
 	return (x_min, y_min, x_max-x_min, y_max-y_min) # x_offset, y_offset, width, height
 
-def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color = "#000000", stroke_width = laser_stroke_width):
+def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color="#000000", stroke_width = laser_stroke_width):
 	layer = add_layer(parent_object, layer_name)
 	overall_layer = layer
 	group = add_group(layer, color=color, stroke_width=stroke_width)
@@ -760,9 +767,9 @@ def generate_stencil_layer():
 
 def draw_stencil_layer():
 	global stencil_layer
-	stencil_layer = draw_gerber_layer(svg, stencil_instructions, "stencil", "#ff0000")
+	stencil_layer = draw_gerber_layer(svg, stencil_instructions, "stencil", colors[5])
 	# border to cut out stencil:
-	group = add_group(stencil_layer, color="#ff0000")
+	group = add_group(stencil_layer, color=colors[7])
 	if (stencil_half_moon_location == "NorthSouth"):
 		x = stencil_border_x
 		y = stencil_border_y
@@ -796,7 +803,7 @@ def draw_top_pastemask_layer():
 	apertures = top_pastemask_apertures
 	layer_name_string = "top pastemask"
 	layer_name_string = layer_name_string + "(" + str(horizontal_instance) + "," + str(vertical_instance) + ")"
-	top_pastemask_layer = draw_gerber_layer(stencil_layer, top_pastemask_instructions, layer_name_string, "#ff0000")
+	top_pastemask_layer = draw_gerber_layer(stencil_layer, top_pastemask_instructions, layer_name_string, colors[1])
 	top_pastemask_layer.scale(1, -1)
 	#top_pastemask_layer.translate(-x_offset+horizontal_instance*board_width+horizontal_instance*x_gap_between_instances_of_boards, -y_offset-panel_height+vertical_instance*board_height+vertical_instance*y_gap_between_instances_of_boards)
 	top_pastemask_layer.translate(-x_offset,-y_offset-panel_height)
@@ -808,7 +815,7 @@ def draw_bottom_pastemask_layer():
 	apertures = bottom_pastemask_apertures
 	layer_name_string = "bottom pastemask"
 	layer_name_string = layer_name_string + "(" + str(horizontal_instance) + "," + str(vertical_instance) + ")"
-	bottom_pastemask_layer = draw_gerber_layer(stencil_layer, bottom_pastemask_instructions, layer_name_string, "#ff0000")
+	bottom_pastemask_layer = draw_gerber_layer(stencil_layer, bottom_pastemask_instructions, layer_name_string, colors[2])
 	bottom_pastemask_layer.scale(1, -1)
 	#bottom_pastemask_layer.translate(-x_offset+horizontal_instance*board_width+horizontal_instance*x_gap_between_instances_of_boards, -y_offset-panel_height+vertical_instance*board_height+vertical_instance*y_gap_between_instances_of_boards)
 	bottom_pastemask_layer.translate(-x_offset,-y_offset-panel_height)
@@ -837,7 +844,7 @@ def draw_board_outline_layer():
 	#info("drawing board outline gerber layer...")
 	global apertures
 	apertures = board_outline_apertures
-	outline_layer = draw_gerber_layer(board_layer, board_outline_instructions, layer_name_string, "#ff0000")
+	outline_layer = draw_gerber_layer(board_layer, board_outline_instructions, layer_name_string, colors[8])
 	#outline_layer.translate(-x_offset, -y_offset)
 	outline_layer.scale(1, -1)
 	#outline_layer.translate(-x_offset+horizontal_instance*board_width+horizontal_instance*x_gap_between_instances_of_boards, -y_offset-panel_height+vertical_instance*board_height+vertical_instance*y_gap_between_instances_of_boards)
@@ -969,16 +976,19 @@ for horizontal_instance in range(0, number_of_horizontal_instances):
 	for vertical_instance in range(0, number_of_vertical_instances):
 		setup_board_layer()
 		#draw_board_outline_layer()
-		generate_drill_layers([6.05]) # 6mm clearance hole
-		#generate_drill_layers([3.81]) # 6-32 clearance hole
+		#generate_drill_layers([6.05]) # 6mm clearance hole
+		generate_drill_layers([3.81]) # 6-32 clearance hole
 		#generate_drill_layers([0.062*25.4]) # SMA vertical center hole
 		draw_pastemask_layer()
 if (fill_protoboard == 1):
 	draw_protoboard_outline_layer()
+info("")
 string = "stencil will be "
 string += str(int(overall_border["width"]+0.5)/10.0) + " cm x "
 string += str(int(overall_border["height"]+0.5)/10.0) + " cm"
+string += " and should be printed at " + str(dpi) + " dpi"
 info(string)
+info("")
 #add_holes_to_panel_frame()
 save_svg_file()
 generate_pdf()
