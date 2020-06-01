@@ -8,9 +8,8 @@
 # goes nicely with https://raw.githubusercontent.com/mzandrew/hdl/master/verilog/write_verilog_dependency_file.py
 
 #list_of_all_verilog_files := $(wildcard src/*.v)
-list_of_all_verilog_files := $(shell grep -l icestick src/*.v)
-#list_of_all_verilog_files := $(shell grep -l 'icestick\|icezero' src/*.v)
-#list_of_all_verilog_files := $(shell grep -l icezero src/*.v)
+list_of_all_icestick_verilog_files := $(shell grep -l icestick src/*.v)
+list_of_all_icezero_verilog_files := $(shell grep -l icezero src/*.v)
 list_of_all_verilog_dependency_files := $(wildcard work/*.d)
 
 #bash dependency builder :
@@ -27,10 +26,15 @@ work/%.vcd : work/%.out
 	@vvp $<
 	@gtkwave $@
 
-work/%.blif : src/%.v work/%.d
+work/%.icezero.blif : src/%.v work/%.d
 	@if [ ! -e work ]; then mkdir work; fi
-	@echo
-	@echo $<
+	@echo; echo $<
+	@nice yosys -q -p "synth_ice40 -top top -blif $@" $<
+	@#ls -lart $@
+
+work/%.icestick.blif : src/%.v work/%.d
+	@if [ ! -e work ]; then mkdir work; fi
+	@echo; echo $<
 	@nice yosys -q -p "synth_ice40 -top top -blif $@" $<
 	@#ls -lart $@
 
@@ -45,11 +49,14 @@ work/%.svg : work/%.json
 	@nice node bin/netlistsvg.js $< -o $@
 	@#ls -lart $@
 
-work/%.txt : src/icestick.pcf work/%.blif
-#work/%.txt : src/icezero.pcf work/%.blif
+work/%.icestick.txt : src/icestick.pcf work/%.icestick.blif
 	@if [ ! -e work ]; then mkdir work; fi
 	@nice arachne-pnr -p $^ -o $@ -d 1k -P tq144
-	@#nice arachne-pnr -p $^ -o $@ -d 8k -P tq144:4k
+	@#ls -lart $@
+
+work/%.icezero.txt : src/icezero.pcf work/%.icezero.blif
+	@if [ ! -e work ]; then mkdir work; fi
+	@nice arachne-pnr -p $^ -o $@ -d 8k -P tq144:4k
 	@#ls -lart $@
 
 work/%.bin : work/%.txt
@@ -57,19 +64,29 @@ work/%.bin : work/%.txt
 	@nice icepack $< $@
 	@ls -lart $@
 
-work/%.timing-report : work/%.txt
+work/%.timing-report : work/%.icestick.txt
 	@if [ ! -e work ]; then mkdir work; fi
 	@nice icetime -mt -p src/icestick.pcf -P tg144 -d hx1k $< > tmp
-	@#nice icetime -mt -p src/icezero.pcf -P tg144:4k -d hx4k $< > tmp
+	@mv tmp $@
+
+work/%.timing-report : work/%.icezero.txt
+	@if [ ! -e work ]; then mkdir work; fi
+	@nice icetime -mt -p src/icezero.pcf -P tg144:4k -d hx4k $< > tmp
 	@mv tmp $@
 
 default:
 	@#ls -lart $(list_of_all_verilog_files)
-	@$(MAKE) $(list_of_all_verilog_files:src/%.v=work/%.d)
-	@$(MAKE) $(list_of_all_verilog_files:src/%.v=work/%.bin)
+	@echo "updating dependency files..."
+	@$(MAKE) $(list_of_all_icestick_verilog_files:src/%.v=work/%.d)
+	@$(MAKE) $(list_of_all_icezero_verilog_files:src/%.v=work/%.d)
+	@echo "building firmware..."
+	@$(MAKE) $(list_of_all_icestick_verilog_files:src/%.v=work/%.icestick.bin)
+	@$(MAKE) $(list_of_all_icezero_verilog_files:src/%.v=work/%.icezero.bin)
 	@#$(MAKE) $(list_of_all_verilog_files:src/%.v=work/%.timing-report)
 	@#$(MAKE) $(list_of_all_verilog_files:src/%.v=work/%.svg)
-	@ls -lart $(list_of_all_verilog_files:src/%.v=work/%.bin)
+	@echo "done"
+	@ls -lart $(list_of_all_icestick_verilog_files:src/%.v=work/%.icestick.bin)
+	@ls -lart $(list_of_all_icezero_verilog_files:src/%.v=work/%.icezero.bin)
 
 prog:
 	@echo "iceprog work/blah.bin"
@@ -77,7 +94,7 @@ prog:
 clean:
 	rm -rf work
 
-.PRECIOUS : work/%.d work/%.blif work/%.json work/%.txt work/%.bin work/%.timing-report # keep intermediate files
+.PRECIOUS : work/%.d work/%.json work/%.timing-report work/%.icestick.txt work/%.icestick.blif work/%.icezero.txt work/%.icezero.blif # keep intermediate files
 
 MAKEFLAGS += --silent
 
