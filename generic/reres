@@ -2,6 +2,7 @@
 
 # done properly 2014-07-07 by mza
 # 2015-01-25 updated
+# 2019-10-17 updated
 
 declare res
 #res="640x480"
@@ -9,41 +10,57 @@ res="1024x768"
 #res="1280x1024"
 
 function run {
-	local -i count_of_valid_source_files=0
-	for each in *.jpg *.jpeg *.JPG *.png; do
-		#echo "${each}" | grep -v '*' | xargs -i convert {} -geometry ${res} "lowres/${each}"
-		#echo "${each}"
-		name="$(echo "${each}" | grep -v '*')"
-		if [ -e "${name}" ]; then
-			count_of_valid_source_files=$((count_of_valid_source_files+1))
-			if [ ${count_of_valid_source_files} -eq 1 ]; then
-				if [ ! -e "lowres" ]; then mkdir "lowres"; fi
-				if [ ! -d "lowres" ]; then echo "cannot create directory lowres"; exit 7; fi
-				if [ ! -w "lowres" ]; then echo "cannot write to directory lowres"; exit 8; fi
+	local dir="${@}"
+	if [ -e "${dir}" ] && [ -d "${dir}" ]; then
+		echo "$dir"
+		# find files and create a lowres version of each in lowres/
+		find "${dir}" -maxdepth 1 -type f -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" | while read each; do
+			mkdir -p "lowres"
+			if [ "${each}" -nt "lowres/${each}" ]; then
+				echo "converting ${each} to ${res}"
+				convert "${each}" -geometry ${res} "lowres/${each}"
+				touch "lowres/${each}" --reference="${each}"
 			fi
-			if [ "${name}" -nt "lowres/${name}" ]; then
-				echo "converting ${name} to ${res}"
-				convert "${name}" -geometry ${res} "lowres/${name}"
-				touch "lowres/${name}" --reference="${name}"
-			fi
+		done
+		# if it didn't make a lowres/ subdir, then there's no source files and we're done
+		if [ ! -e "${dir}/lowres" ]; then
+			return
 		fi
-	done
-	if [ ${count_of_valid_source_files} -lt 1 ]; then
-		if [ -e "lowres" ]; then
+		# delete files in lowres/ that don't have a match:
+		for each in "${dir}/lowres"/*; do
+			if [ "${each}" == "${dir}/lowres/*" ]; then
+				continue
+			fi
+			if [ -e "$each" ]; then
+				local name=$(echo "$each" | sed -e "s,\(.\+\)/lowres\(/.\+\),\1\2,")
+				#echo "$each $name"
+				if [ ! -e "${name}" ]; then
+					rm "${each}"
+				fi
+			fi
+		done
+		local -i count_of_valid_source_files=0
+		for each in "${dir}/lowres"/*; do
+			if [ "${each}" == "${dir}/lowres/*" ]; then
+				continue
+			fi
+			count_of_valid_source_files=$((count_of_valid_source_files+1))
+		done
+		#echo "$count_of_valid_source_files"
+		if [ ${count_of_valid_source_files} -lt 1 ]; then
 			echo "removing unneeded lowres subdir..."
-			rm -rf "lowres"
+			rm -rf "${dir}/lowres"
 		fi
 	fi
 }
 
-if [ -z "${@}" ]; then
-	run
-else
+# https://superuser.com/a/1070947/539022
+if [ $# -gt 0 ]; then
 	for each; do
-		if [ -e "${each}" ] && [ -d "${each}" ]; then
-			cd "${each}"
-			run
-		fi
+		run "$each"
 	done
+else
+	#find . -type d -name "lowres" -prune -o -type d -exec $0 "{}" \;
+	find . -type d -name "lowres" -prune -o -type d -print
 fi
 
