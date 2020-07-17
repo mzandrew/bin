@@ -10,6 +10,7 @@
 #list_of_all_verilog_files := $(wildcard src/*.v)
 list_of_all_icestick_verilog_files := $(shell grep -l icestick src/*.v)
 list_of_all_icezero_verilog_files := $(shell grep -l icezero src/*.v)
+#list_of_all_unknown_verilog_files := $(shell grep -l '(icezero\|icestick)' src/*.v)
 list_of_all_verilog_dependency_files := $(wildcard work/*.d)
 
 #bash dependency builder :
@@ -17,6 +18,7 @@ list_of_all_verilog_dependency_files := $(wildcard work/*.d)
 
 work/%.d : src/%.v
 	@if [ ! -e work ]; then mkdir work; fi
+	@#echo $<
 	@./write_verilog_dependency_file.py $<
 
 work/%.out : src/%.v work/%.d
