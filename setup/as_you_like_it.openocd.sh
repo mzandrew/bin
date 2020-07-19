@@ -1,9 +1,14 @@
 #!/bin/bash -e
 
-# last updated 2019-10-07 by mza
+# last updated 2020-07-19 by mza
+
+# when trying it on ubuntu 20.04:
+# E: Unable to locate package libusb-1.0
+# E: Unable to locate package libtcl8.5
+# E: Package 'tcl8.5' has no installation candidate
 
 function install_prerequisites_apt {
-	sudo nice apt -y install build-essential libtool autoconf automake libusb-1.0 libusb-1.0-0-dev libtcl8.5 tcl8.5 make gcc clang pkg-config texinfo libftdi1 git
+	sudo nice apt -y install build-essential libtool autoconf automake libusb-1.0-0 libusb-1.0-0-dev libtcl8.6 tcl8.6 make gcc clang pkg-config texinfo libftdi1 git
 }
 
 function install_prerequisites_yum {

@@ -1,7 +1,10 @@
 #!/bin/bash -e
 
 # written 2020-01-15 by mza
-# last updated 2020-01-15 by mza
+# last updated 2020-07-19 by mza
+
+# when trying it on ubuntu 20.04:
+# E: Unable to locate package python-pip
 
 function install_prerequisites_apt {
 	#sudo nice apt -y update

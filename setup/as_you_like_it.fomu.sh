@@ -1,6 +1,9 @@
 #!/bin/bash -e
 
-# last updated 2019-08-21 by mza
+# last updated 2020-07-19 by mza
+
+# when trying it on ubuntu 20.04:
+# E: Package 'libcurl3' has no installation candidate
 
 function install_prerequisites_apt {
 	sudo nice apt -y install ruby ruby-dev make gcc libcurl3 autoconf libz-dev ruby-bundler
