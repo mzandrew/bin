@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 # written 2020-01-15 by mza
-# last updated 2020-07-19 by mza
+# last updated 2020-07-23 by mza
 
 # when trying it on ubuntu 20.04:
 # E: Unable to locate package python-pip
@@ -9,7 +9,8 @@
 function install_prerequisites_apt {
 	#sudo nice apt -y update
 	#sudo nice apt -y upgrade
-	sudo nice apt -y install python-pip snmp libsmi2-common erlang-snmp bc
+	sudo nice apt -y install python2 python-pip-whl snmp libsmi2-common erlang-snmp bc python-tk
+	# python-imaging-tk
 }
 
 function install_prerequisites_yum {
@@ -57,10 +58,17 @@ declare build="${HOME}/build"
 
 mkdir -p $build
 
-pip install pytz
-pip install matplotlib
-sudo apt install -y python-tk
-sudo apt install -y python-imaging-tk
+declare string=$(which pip)
+if [ -z "$string" ]; then
+	cd $build
+	# from https://linuxize.com/post/how-to-install-pip-on-ubuntu-20.04/
+	if [ ! -e "get-pip.py" ]; then
+		wget https://bootstrap.pypa.io/get-pip.py --output-document=get-pip.py
+	fi
+	sudo python2 get-pip.py
+	pip2 install pytz
+	pip2 install matplotlib # sudo apt install python3-matplotlib
+fi
 
 #  File "./xrm.py", line 2585, in xrm_run
 #    for carrier in carriers_to_dejuice:
