@@ -49,10 +49,12 @@ declare myPS1='[\u@\h \w]\$ '
 # prepend some stuff to get the xterm titlebar to be the same:
 case $TERM in
 	xterm*)
-		PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ ';;
+		#PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ ';;
+		PS1="\[\e]0;\u@\h:\w\a\]\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ ";;
 	linux*)
 		#PS1='\[\033]0;'${myPS1}'\007\]'${myPS1}
-		PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ ';;
+		#PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ ';;
+		PS1="\[\e]0;\u@\h:\w\a\]\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ ";;
 #	*)
 #		:
 esac
@@ -137,4 +139,8 @@ function interactive {
 declare -xi numcores=$(($(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk '{print $3}')+1))
 
 export HISTTIMEFORMAT="%Y-%m-%d+%H:%M:%S "
+
+if [ -z "$SSH_AGENT_PID" ]; then
+	eval `ssh-agent -s` # add "AddKeysToAgent yes" to ~/.ssh/config for this to be most useful
+fi
 

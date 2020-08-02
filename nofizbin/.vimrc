@@ -18,11 +18,49 @@ set guifont="Monospace 10":h10:cANSI:qDRAFT
 set formatoptions-=cro " don't automatically continue comments
 " for win32, make a file c:\\Users\\blah\\_vimrc and have it contain the (uncommented) line:
 " source c:\\\\blah\\build\\bin\\nofizbin\\.vimrc
+set clipboard=exclude:.*
 
 autocmd BufReadPost *
 	\ if line("'\"") > 1 && line("'\"") <= line("$") |
 	\   exe "normal! g`\"" |
 	\ endif
+
+" the following are from https://github.com/waveform80/dotfiles/blob/master/vimrc
+"set rnu                 " display relative line numbers
+"set nowrap              " do not wrap long lines in display
+set nojoinspaces        " do not use double-spaces after .!? when joining
+"set textwidth=0         " turn off wordwrap while editing
+"set incsearch           " incrementally search during / command
+set noerrorbells        " switch off annoying error beeps
+set novisualbell        " disable the visual bell too
+"set colorcolumn=+1,100   " display a bar just after "textwidth" and at 80
+" Pretty print options
+set printfont=courier:h9
+set printoptions=paper:a4,formfeed:y,number:y,left:36pt,right:36pt,top:36pt,bottom:36pt
+" Set up filetype syntax highlighting, indenting and folding
+if has("syntax")
+	syntax sync fromstart " use slow-but-accurate syntax syncing
+endif
+if has("persistent_undo")
+	if glob($HOME . "/.vim/undo") == ""
+		if exists("*mkdir")
+			call mkdir($HOME . "/.vim/undo", "p", 0700)
+		endif
+	endif
+	if glob($HOME . "/.vim/undo") != ""
+		set undodir=$HOME/.vim/undo
+		set undofile
+		set undolevels=1000
+		set undoreload=10000
+	endif
+endif
+if &term =~ "xterm" || &term =~ "screen"
+"	if &termencoding == "utf-8"
+		set list listchars=tab:»\ ,trail:·,extends:…
+"	else
+"		set list listchars=tab:>\ ,trail:.,extends:>
+"	endif
+endif
 
 " vim: set ts=17:
 

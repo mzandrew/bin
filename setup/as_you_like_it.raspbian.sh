@@ -23,15 +23,23 @@ function install_packages_0 {
 
 function install_packages_1 {
 	sudo apt-get clean
-	sudo apt -y install mlocate git subversion rsync lm-sensors ntp
+	sudo apt -y install mlocate git subversion rsync ntp
 	sudo apt -y update
 	sudo apt -y upgrade
-	sudo apt -y install firefox-esr nfs-common
+	sudo apt -y install firefox-esr nfs-common tmux
 	sudo apt -y install network-manager-openconnect-gnome # for VPN
 	sudo apt -y install libcanberra-gtk-module libcanberra-gtk3-module # to avoid annoying messages
 	sudo apt -y install vim-gtk cmake
 	sudo apt-get -y autoremove
 	sudo apt-get clean
+}
+
+function install_packages_2 {
+	sudo apt install raspinfo rpi.gpio-common raspi-gpio python-rpi.gpio python3-rpi.gpio python3-gpiozero python-gpiozero python3-spidev python-spidev i2c-tools spi-tools python3-picamera python-picamera u-boot-rpi rpiboot lm-sensors lshw wiringpi libpigpio-dev pigpio-tools python-pigpio python3-pigpio # rpi-specific
+	# rpi-chromium-mods # includes flash player
+	#sudo apt install mpd mpc easytag audacious # audio stuff
+	# python3-pychrome mkchromecast castpulseaudio-dlna
+	#sudo apt install lightdm raspberrypi-ui-mods # gui on top of rasbpian lite
 }
 
 #sudo useradd mza
@@ -40,6 +48,7 @@ function install_packages_1 {
 install_packages_0
 # reboot, and continue:
 install_packages_1
+install_packages_2
 
 cd
 mkdir -p build
