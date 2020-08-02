@@ -1,6 +1,7 @@
-#!/bin/bash -e
+#!/bin/bash
 
-# last updated 2018-12-31 by mza
+# written 2014-2018 by mza
+# last updated 2020-08-02 by mza
 
 function install_prerequisites_apt {
 	# from list posted at https://support.cadence.com/apex/ArticleAttachmentPortal?id=a1O0V000007MpXKUA0&pageName=ArticleContent&sq=005d0000001T5YzAAK_2017899185859
@@ -13,8 +14,8 @@ function install_prerequisites_yum {
 	sudo nice yum -y upgrade
 	sudo nice yum -y install java nfs-utils xauth vim-enhanced gvim firefox
 	sudo yum -y install ksh glibc.i686 glibc-devel.i686 libXext.i686 libXtst.i686 libXt.i686 mesa-libGL.i686 mesa-libGL.i686 libXft.so.2 libXp.so.6 libXp.x86_64 xorg-x11-fonts-100dpi xorg-x11-fonts-75dpi xorg-x11-fonts-misc libXScrnSaver
-	if [ $CENT7 -gt 0 ]; then
-		sudo yum -y install elfutils-libelf.i686 redhat-lsb redhat-lsb.i686 mesa-libGLU.i686 motif motif.i686 libpng.i686 libjpeg-turbo.i686 glibc-devel
+	if [ $CENT7 -gt 0 ] || [ $CENT8 -gt 0 ]; then
+		sudo yum -y install elfutils-libelf.i686 redhat-lsb redhat-lsb-core.i686 mesa-libGLU.i686 motif motif.i686 libpng.i686 libjpeg-turbo.i686 glibc-devel
 	fi
 }
 
@@ -23,12 +24,14 @@ function install_prerequisites_pac {
 	#sudo pacman --needed --noconfirm -S 
 }
 
+#echo "attempting to identify which type of linux this is..."
 declare -i redhat=0 CENT6=0 CENT7=0 SL5=0 SL6=0 SL7=0 deb=0
 if [ -e /etc/redhat-release ]; then
 	redhat=1
 	#set +e
 	CENT6=$(grep -c "CentOS release 6" /etc/redhat-release)
 	CENT7=$(grep -c "CentOS Linux release 7" /etc/redhat-release)
+	CENT8=$(grep -c "CentOS Linux release 8" /etc/redhat-release)
 	SL5=$(grep -c "Scientific Linux release 5" /etc/redhat-release)
 	SL6=$(grep -c "Scientific Linux release 6" /etc/redhat-release)
 	SL7=$(grep -c "Scientific Linux release 7" /etc/redhat-release)
@@ -49,15 +52,17 @@ elif [ $arch -gt 0 ]; then
 	install_prerequisites_pac
 fi
 
-sudo systemctl enable sshd
-sudo systemctl start sshd
-sudo chkconfig wpa_supplicant off
-sudo chkconfig bluetooth off
-sudo chkconfig autofs off
-sudo useradd -m asic --user-group
+#sudo systemctl enable sshd
+#sudo systemctl start sshd
+#sudo chkconfig wpa_supplicant off
+#sudo chkconfig bluetooth off
+#sudo chkconfig autofs off
 
 #declare PREFIX="/opt/cadence"
+declare uidgid=555
 
+echo
+echo "sudo useradd -m asic --user-group --uid $uidgid --gid $uidgid"
 echo
 echo "for each new user, do:"
 echo "usermod --append --groups asic USERNAME"
