@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # written 2014-2018 by mza
-# last updated 2020-08-02 by mza
+# last updated 2020-08-09 by mza
 
 function install_prerequisites_apt {
 	# from list posted at https://support.cadence.com/apex/ArticleAttachmentPortal?id=a1O0V000007MpXKUA0&pageName=ArticleContent&sq=005d0000001T5YzAAK_2017899185859
@@ -13,9 +13,12 @@ function install_prerequisites_yum {
 	sudo nice yum -y update
 	sudo nice yum -y upgrade
 	sudo nice yum -y install java nfs-utils xauth vim-enhanced gvim firefox
-	sudo yum -y install ksh glibc.i686 glibc-devel.i686 libXext.i686 libXtst.i686 libXt.i686 mesa-libGL.i686 mesa-libGL.i686 libXft.so.2 libXp.so.6 libXp.x86_64 xorg-x11-fonts-100dpi xorg-x11-fonts-75dpi xorg-x11-fonts-misc libXScrnSaver
+	sudo yum -y install ksh csh glibc.i686 glibc-devel.i686 libXext.i686 libXtst.i686 libXt.i686 mesa-libGL.i686 mesa-libGL.i686 libXft.so.2 libXp.so.6 libXp.x86_64 xorg-x11-fonts-100dpi xorg-x11-fonts-75dpi xorg-x11-fonts-misc libXScrnSaver
 	if [ $CENT7 -gt 0 ] || [ $CENT8 -gt 0 ]; then
-		sudo yum -y install elfutils-libelf.i686 redhat-lsb redhat-lsb-core.i686 mesa-libGLU.i686 motif motif.i686 libpng.i686 libjpeg-turbo.i686 glibc-devel
+		sudo yum -y install elfutils-libelf.i686 redhat-lsb redhat-lsb.i686 mesa-libGLU.i686 motif motif.i686 libpng.i686 libjpeg-turbo.i686 glibc-devel
+	fi
+	if [ $CENT8 -gt 0 ]; then
+		sudo yum -y install redhat-lsb-core.i686
 	fi
 }
 
