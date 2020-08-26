@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 # written 2019-06-27 by mza
-# last updated 2019-06-28 by mza
+# last updated 2019-12-10 by mza
 # the build dir is about 3GB after the build
 
 declare filename="root_v6.16.00.source.tar.gz"
@@ -29,6 +29,8 @@ function add_swap_if_necessary {
 	sudo swapon /swap || /bin/true
 }
 
+# https://root.cern.ch/build-prerequisites
+
 function install_prerequisites_apt {
 	sudo nice apt -y install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev python-dev gfortran cmake libfftw3-dev libjpeg-dev libgif-dev libtiff-dev libcfitsio-dev libxml2-dev uuid-dev davix-dev libpythia8-dev libgfal2-dev libgl2ps-dev libpcre2-dev liblz4-dev libgsl-dev libssl-dev libgfal2-dev libtbb-dev gsl-bin libpython-dev
 	# libcblas-dev libcblas3
@@ -38,7 +40,8 @@ function install_prerequisites_apt {
 function install_prerequisites_yum {
 	sudo nice yum -y update
 	sudo nice yum -y upgrade
-#	sudo nice yum -y install
+	sudo nice yum -y install git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel gcc-gfortran openssl-devel pcre-devel mesa-libGL-devel mesa-libGLU-devel glew-devel ftgl-devel mysql-devel fftw-devel cfitsio-devel graphviz-devel avahi-compat-libdns_sd-devel python-devel libxml2-devel
+	# libldap-dev gsl-static
 }
 
 function install_prerequisites_pac {
