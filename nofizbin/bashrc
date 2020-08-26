@@ -140,3 +140,7 @@ declare -xi numcores=$(($(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk
 
 export HISTTIMEFORMAT="%Y-%m-%d+%H:%M:%S "
 
+if [ -z "$SSH_AGENT_PID" ]; then
+	eval `ssh-agent -s` # add "AddKeysToAgent yes" to ~/.ssh/config for this to be most useful
+fi
+

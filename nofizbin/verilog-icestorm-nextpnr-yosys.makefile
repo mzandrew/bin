@@ -3,11 +3,12 @@
 # https://github.com/mzandrew/bin/blob/master/nofizbin/verilog-icestorm-arachnepnr-yosys.makefile
 # originally based on Makefile in rot.v example project
 # with help from http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
-# last updated 2019-04-16 by mza
+# last updated 2020-05-03 by mza
 
 # goes nicely with https://raw.githubusercontent.com/mzandrew/hdl/master/verilog/write_verilog_dependency_file.py
 
-list_of_all_verilog_files := $(wildcard src/*.v)
+#list_of_all_verilog_files := $(wildcard src/*.v)
+list_of_all_verilog_files := $(shell grep -l icestick src/*.v)
 list_of_all_verilog_dependency_files := $(wildcard work/*.d)
 
 #bash dependency builder :

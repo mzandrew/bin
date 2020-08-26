@@ -142,7 +142,7 @@ function gerbv_assy_file {
 		current_layer_number=$((${current_layer_number}-1))
 	fi
 	if [ ${drill_file_exists} -ne 0 ]; then
-		echo "(define-layer! ${current_layer_number} (cons 'filename \"drill.DRL\")(cons 'visible #t)(cons 'color #(65535 65535 65535))(cons 'attribs (list (list 'autodetect 'Boolean 0) (list 'zero_supression 'Enum 1) (list 'units 'Enum 0) (list 'digits 'Integer 4))))"
+		echo "(define-layer! ${current_layer_number} (cons 'filename \"drill-through.DRL\")(cons 'visible #t)(cons 'color #(65535 65535 65535))(cons 'attribs (list (list 'autodetect 'Boolean 0) (list 'zero_supression 'Enum 1) (list 'units 'Enum 0) (list 'digits 'Integer 4))))"
 		current_layer_number=$((${current_layer_number}-1))
 	fi
 	if [ ${board_outline_exists} -ne 0 ]; then
@@ -236,7 +236,7 @@ function old_style_gerber_filenames {
 	for each in *.GBM; do if [ -e "${each}" ]; then cp "${each}" old-style-gerber-filenames/bottom-soldermask.GBS; fi; done
 	for each in *.GBS; do if [ -e "${each}" ]; then cp "${each}" old-style-gerber-filenames/bottom-silkscreen.GBO; fi; done
 	for each in *.GC[2-9]; do if [ -e "${each}" ]; n=$(echo "${each}" | sed -e "s,.*GC\([2-9]\{1\}\)$,\1,"); then cp "${each}" old-style-gerber-filenames/${n}-copper.G${n}L; fi; done
-	for each in *.DRL; do if [ -e "${each}" ]; then cp "${each}" old-style-gerber-filenames/drill.DRL; fi; done
+	for each in *.DRL; do if [ -e "${each}" ]; then cp "${each}" old-style-gerber-filenames/drill-through.DRL; fi; done
 }
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
