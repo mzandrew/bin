@@ -2,7 +2,7 @@
 
 # written 2017-11 by mza
 # based on instructions posted at http://www.clifford.at/icestorm/
-# last updated 2019-03-06 by mza
+# last updated 2020-05-02 by mza
 
 declare build="$HOME/build"
 declare -i j=2
@@ -20,39 +20,39 @@ function get_source_if_necessary {
 	if [ ! -e arachne-pnr ]; then
 		git clone https://github.com/cseed/arachne-pnr.git arachne-pnr
 	fi
+	#if [ ! -e nextpnr ]; then
+	#	git clone https://github.com/YosysHQ/nextpnr.git
+	#fi
 	if [ ! -e yosys ]; then
 		git clone https://github.com/cliffordwolf/yosys.git yosys
 	fi
-	if [ ! -e yosys-plugins ]; then
-		git clone https://github.com/cliffordwolf/yosys-plugins.git
-	fi
-	if [ ! -e vhd2vl ]; then
-		git clone https://github.com/ldoolitt/vhd2vl.git
-	fi
-	if [ ! -e netlistsvg ]; then
-		# needs npm
-		git clone https://github.com/nturley/netlistsvg
-	fi
-	if [ ! -e ice40_viewer ]; then
-		git clone https://github.com/knielsen/ice40_viewer.git
-	fi
-	if [ ! -e swapforth ]; then
-		# needs gforth
-		git clone https://github.com/jamesbowman/swapforth.git
-	fi
-	if [ ! -e myhdl ]; then
-		git clone https://github.com/myhdl/myhdl.git
-	fi
-	if [ ! -e nextpnr ]; then
-		git clone https://github.com/YosysHQ/nextpnr.git
-	fi
+	#if [ ! -e yosys-plugins ]; then
+	#	git clone https://github.com/cliffordwolf/yosys-plugins.git
+	#fi
+	#if [ ! -e vhd2vl ]; then
+	#	git clone https://github.com/ldoolitt/vhd2vl.git
+	#fi
+	#if [ ! -e netlistsvg ]; then
+	#	# needs npm
+	#	git clone https://github.com/nturley/netlistsvg
+	#fi
+	#if [ ! -e ice40_viewer ]; then
+	#	git clone https://github.com/knielsen/ice40_viewer.git
+	#fi
+	#if [ ! -e swapforth ]; then
+	#	# needs gforth
+	#	git clone https://github.com/jamesbowman/swapforth.git
+	#fi
+	#if [ ! -e myhdl ]; then
+	#	git clone https://github.com/myhdl/myhdl.git
+	#fi
 	#if [ ! -e apio ]; then
 	#	git clone https://github.com/FPGAwars/apio.git
 	#fi
 	#pip install -U apio
-	if [ ! -e icestudio ]; then
-		git clone https://github.com/FPGAwars/icestudio.git
-	fi
+	#if [ ! -e icestudio ]; then
+	#	git clone https://github.com/FPGAwars/icestudio.git
+	#fi
 }
 
 function fix_permissions {
@@ -83,10 +83,10 @@ function list_files {
 }
 
 function install_prerequisites_apt {
-	sudo apt -y install build-essential clang bison flex libreadline-dev \
+	sudo apt -y install build-essential clang clang-format bison flex libreadline-dev \
 		gawk tcl-dev libffi-dev git mercurial graphviz \
-		xdot pkg-config python python3 python3-pip libftdi-dev gforth iverilog gtkwave \
-		libboost-all-dev libboost-python-dev \
+		xdot pkg-config python python3 python3-dev python3-pip libftdi-dev gforth iverilog gtkwave \
+		libboost-all-dev libboost-python-dev zlib1g-dev \
 		cmake libeigen3-dev \
 		xclip
 	sudo apt -y install qt5-default || /bin/true
@@ -183,7 +183,7 @@ function do_nextpnr {
 	echo; echo "nextpnr"
 	cd $build/nextpnr
 	git pull
-	nice cmake -DARCH=ice40
+	nice cmake -DARCH=ice40 .
 	nice make -k -j$j
 	if [ $? -ne 0 ]; then return; fi
 	sudo nice make install
@@ -198,6 +198,7 @@ function do_yosys {
 	# sudo yum -y install clang tcl-devel bison flex
 	cd $build/yosys
 	git pull
+	nice make config-gcc
 	nice make -k -j$j
 	if [ $? -ne 0 ]; then return; fi
 	# to work around a bison version problem, comment out 2 lines in:
@@ -272,15 +273,15 @@ function check_udev_rule {
 get_source_if_necessary
 set +e
 do_icestorm
-do_icestudio
 do_arachne_pnr
-do_nextpnr
+#do_nextpnr
 do_yosys
-do_yosys_plugins
-do_vhdl2vl
-do_netlistsvg
-do_ice40_viewer
-do_swapforth
+#do_icestudio
+#do_yosys_plugins
+#do_vhdl2vl
+#do_netlistsvg
+#do_ice40_viewer
+#do_swapforth
 set -e
 echo
 check_udev_rule 
