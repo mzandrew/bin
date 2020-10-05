@@ -30,7 +30,8 @@ function add_swap_if_necessary {
 }
 
 function install_prerequisites_apt {
-	sudo nice apt -y install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev python-dev gfortran cmake libfftw3-dev libjpeg-dev libgif-dev libtiff-dev libcfitsio-dev libxml2-dev uuid-dev davix-dev libpythia8-dev libgfal2-dev libgl2ps-dev libpcre2-dev liblz4-dev libgsl-dev libssl-dev libgfal2-dev libtbb-dev gsl-bin libpython-dev
+	sudo nice apt -y install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev python-dev gfortran libfftw3-dev libjpeg-dev libgif-dev libtiff-dev libcfitsio-dev libxml2-dev uuid-dev davix-dev libpythia8-dev libgfal2-dev libgl2ps-dev libpcre2-dev liblz4-dev libgsl-dev libssl-dev libgfal2-dev libtbb-dev gsl-bin libpython-dev
+	#sudo nice apt -y install "cmake>=3.6"
 	# libcblas-dev libcblas3
 	# Enabled support for:  asimage astiff builtin_afterimage builtin_clang builtin_ftgl builtin_glew builtin_llvm builtin_tbb builtin_vdt builtin_xxhash clad cling cxx11 davix exceptions explicitlink fftw3 fitsio gdml http imt mathmore opengl pch pythia8 python roofit shared ssl thread tmva tmva-cpu tmva-pymva vdt x11 xft xml
 }
@@ -74,6 +75,22 @@ declare build="${HOME}/build"
 cd
 mkdir -p $build
 cd $build
+
+function build_and_install_cmake_from_source {
+	sudo apt -y remove cmake cmake-data
+	if [ ! -d "cmake" ]; then
+		if [ ! -e "cmake-3.15.5.tar.gz" ]; then
+			wget https://github.com/Kitware/CMake/releases/download/v3.15.5/cmake-3.15.5.tar.gz
+		fi
+		tar -xzf "cmake-3.15.5.tar.gz"
+	fi
+	cd "cmake-3.15.5"
+	nice ./configure
+	nice gmake
+	sudo make install
+	sudo chmod o+rx /usr/local/share/cmake-3.15
+}
+
 if [ ! -e $build/$dirname ]; then
 	if [ ! -e $filename ]; then
 		declare url="https://root.cern/download/$filename"
