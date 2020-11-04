@@ -30,6 +30,15 @@ sudo cp -a $wpa_supplicant /media/root/etc/wpa_supplicant/wpa_supplicant.conf ||
 
 echo "$hostname" | sudo tee /media/root/etc/hostname
 
+sudo mkdir -p /etc/NetworkManager/conf.d
+echo "[connection]
+wifi.mac-address-randomization=1
+[device]
+wifi.scan-rand-mac-address=no
+" | sudo tee /etc/NetworkManager/conf.d/100-disable-wifi-mac-randomization.conf
+
+sync
+
 sudo umount /media/boot
 sudo umount /media/root
 

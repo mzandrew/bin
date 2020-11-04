@@ -35,7 +35,7 @@ function install_packages_1 {
 }
 
 function install_packages_2 {
-	sudo apt install raspinfo rpi.gpio-common raspi-gpio python-rpi.gpio python3-rpi.gpio python3-gpiozero python-gpiozero python3-spidev python-spidev i2c-tools spi-tools python3-picamera python-picamera u-boot-rpi rpiboot lm-sensors lshw wiringpi libpigpio-dev pigpio-tools python-pigpio python3-pigpio # rpi-specific
+	sudo apt install -y raspinfo rpi.gpio-common raspi-gpio python-rpi.gpio python3-rpi.gpio python3-gpiozero python-gpiozero python3-spidev python-spidev i2c-tools spi-tools python3-picamera python-picamera u-boot-rpi rpiboot lm-sensors lshw wiringpi libpigpio-dev pigpio-tools python-pigpio python3-pigpio # rpi-specific
 	# rpi-chromium-mods # includes flash player
 	#sudo apt install mpd mpc easytag audacious # audio stuff
 	# python3-pychrome mkchromecast castpulseaudio-dlna
@@ -72,5 +72,5 @@ fi
 
 HERE
 
-add_swap_if_necessary
+#add_swap_if_necessary
 
