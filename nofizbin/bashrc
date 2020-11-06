@@ -59,7 +59,7 @@ case $TERM in
 #		:
 esac
 
-umask 0027
+#umask 0027
 
 function GIDof {
 	group=$1
