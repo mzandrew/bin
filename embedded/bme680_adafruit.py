@@ -26,10 +26,10 @@ def print_verbose():
 	print("Altitude = %0.2f meters" % bme680.altitude)
 
 def print_header():
-	print("#temperature (C), gas (Ohm), humidity (%RH), pressure (hPa), altitude (m)")
+	print("#time, temperature (C), humidity (%RH), pressure (hPa), altitude (m), gas (Ohm)")
 
 def print_compact():
-	print("%0.1f,%d,%0.1f,%0.3f,%0.2f" % (float(bme680.temperature + temperature_offset), bme680.gas, bme680.humidity, bme680.pressure, bme680.altitude))
+	print("%s, %0.1f, %0.1f, %0.3f, %0.2f, %d" % (time.strftime("%Y-%m-%d+%X"),float(bme680.temperature + temperature_offset), bme680.humidity, bme680.pressure, bme680.altitude, bme680.gas))
 
 print_header()
 while True:
