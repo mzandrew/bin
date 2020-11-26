@@ -69,7 +69,7 @@ export -f GIDof
 #export GID=$(GIDof asic)
 
 #alias df="df --block-size=1000000000 | grep -v ^tmpfs"
-alias df="df --block-size=1000000000 --type=nfs --type=ext4 --type==vfat"
+alias df="df --block-size=1000000000 --type=nfs --type=ext4 --type=vfat"
 
 export HISTSIZE=5000
 export HISTFILESIZE=
