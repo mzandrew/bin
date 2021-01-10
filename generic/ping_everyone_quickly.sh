@@ -5,7 +5,7 @@
 # last updated 2020-12-11 by mza
 
 #declare baseip="192.168.10"
-declare baseip=$(ifconfig | grep inet | grep 192.168 | awk '{ print $2 }' | sed -e "s,\.[0-9]\+$,,")
+declare baseip=$(ifconfig | grep inet | grep 192.168 | awk '{ print $2 }' | sed -e "s,addr:,," | sed -e "s,\.[0-9]\+$,,")
 #echo $baseip
 declare dir=$(mktemp -d)
 
