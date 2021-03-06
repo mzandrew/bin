@@ -5,8 +5,8 @@
 # last updated 2020-12-11 by mza
 
 #declare baseip="192.168.10"
-declare baseip=$(ifconfig | grep inet | grep 192.168 | awk '{ print $2 }' | sed -e "s,addr:,," | sed -e "s,\.[0-9]\+$,,")
-#echo $baseip
+declare baseip=$(ifconfig | grep inet | grep 192.168 | awk '{ print $2 }' | sed -e "s,addr:,," | sed -e "s,\.[0-9]\+$,," | head -n1)
+echo "using $baseip"
 declare dir=$(mktemp -d)
 
 function go {
@@ -26,6 +26,7 @@ for i in $(seq $first $last); do
 	go "$baseip.$i" &
 done
 sleep 2
-ls -lart "$dir/$baseip"*
+#ls -la "$dir/$baseip"* | sort -k9n
+ls -la "$dir/$baseip"*
 rm -rf "$dir"
 
