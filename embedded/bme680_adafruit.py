@@ -14,7 +14,7 @@ import adafruit_bme680 # sudo pip3 install adafruit-circuitpython-bme680
 # You will usually have to add an offset to account for the temperature of
 # the sensor. This is usually around 5 degrees but varies by use. Use a
 # separate temperature sensor to calibrate this one.
-temperature_offset = -5.0
+temperature_offset = 0.0
 
 def setup():
 	i2c = busio.I2C(board.SCL, board.SDA)
