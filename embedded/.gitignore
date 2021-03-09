@@ -4,4 +4,5 @@ contrib/rpi-rgb-led-matrix.tar
 contrib/rpi-rgb-led-matrix
 logfile
 oldlogfile
+logs
 
