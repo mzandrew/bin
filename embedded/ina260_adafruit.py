@@ -11,6 +11,7 @@ import sys
 import board
 import busio
 import adafruit_ina260 # sudo pip3 install adafruit-circuitpython-ina260
+from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string
 
 def setup(address=0x40):
 	i2c = busio.I2C(board.SCL, board.SDA)
@@ -20,7 +21,7 @@ def setup(address=0x40):
 header_string = ", current (mA), voltage (V), power (mW)"
 
 def print_header():
-	print("#time" + header_string)
+	info("#time" + header_string)
 
 def measure():
 	I = ina260.current
@@ -35,7 +36,7 @@ def measure_string():
 def print_compact():
 	date = time.strftime("%Y-%m-%d+%X")
 	string = measure_string()
-	print("%s, %s" % (date, string))
+	info("%s, %s" % (date, string))
 
 def test_if_present():
 	try:
@@ -53,8 +54,9 @@ if __name__ == "__main__":
 	try:
 		setup(address)
 	except:
-		print("ina260 not present at address 0x" + hex(address))
+		error("ina260 not present at address 0x" + hex(address))
 		sys.exit(1)
+	create_new_logfile_with_string("ina260")
 	print_header()
 	while test_if_present():
 		print_compact()

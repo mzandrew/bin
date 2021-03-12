@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 # written 2020-11-25 by mza
-# last updated 2020-11-25 by mza
+# last updated 2020-12-18 by mza
 
 import time
 import sys
 import bme680_adafruit  # humidity, pressure, temperature
 import pct2075_adafruit # temperature
 import ina260_adafruit  # current, voltage, power
+from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string
 
 bme680_present  = False
 pct2075_present = False
@@ -32,7 +33,8 @@ if __name__ == "__main__":
 		header_string += ina260_adafruit.header_string
 	except:
 		pass
-	print(header_string)
+	create_new_logfile_with_string("sensor-readout")
+	info(header_string)
 	while True:
 		try:
 			date = time.strftime("%Y-%m-%d+%X")
@@ -43,7 +45,7 @@ if __name__ == "__main__":
 				string += ", " + pct2075_adafruit.measure_string()
 			if ina260_present:
 				string += ", " + ina260_adafruit.measure_string()
-			print(string)
+			info(string)
 			sys.stdout.flush()
 			time.sleep(1)
 		except:
