@@ -2,13 +2,15 @@
 
 # written 2020-05-14 by mza
 # merged content from other, similar script "create-tar-file-with-linux-configuration-stuff-in-etc"
-# last updated 2020-08-09 by mza
+# updated 2020-08-09 by mza
+# last updated 2021-02-12 by mza
 
 configfile="${HOME}/.collect_linux_customizations"
 if [ ! -e "${configfile}" ]; then
 	declare hostname=$(hostname)
 	echo "
 name=\"${hostname}-server-config-files\"
+source=\"/\"
 destination=\"/root\"
 " >"${configfile}"
 fi
@@ -43,7 +45,7 @@ list="$list etc/rsyslog.conf"
 list="$list etc/logrotate.conf"
 
 declare final_list=""
-cd /
+cd "${source}"
 for each in $list; do
 	if [ -e "$each" ]; then
 		final_list="$final_list $each"
