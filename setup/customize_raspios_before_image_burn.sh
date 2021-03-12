@@ -42,32 +42,37 @@ declare modified_image=$(echo $original_image | sed -e "s,\.img$,.$hostname.img,
 #echo "$modified_image"
 declare -i GID=$(getent passwd $USER | sed -e "s,$USER:x:\([0-9]\+\):\([0-9]\+\):.*,\2,")
 
+set -x
+declare -i wholeimagesize_intended=4000000000
+declare -i partition2size_intended=3500000000
 unmount_unloop
 if [ ! -e $modified_image ]; then
 	echo "copying original..."
-	cp -a $original_image $modified_image
+	cp $original_image $modified_image
 fi
 #ls -lart $modified_image
 declare -i imagesize=$(du --bytes $modified_image | awk '{ print $1 }')
-if [ $imagesize -lt 3000000000 ]; then
+if [ $imagesize -lt $wholeimagesize_intended ]; then
 	echo "expanding image..."
-	sudo dd bs=1M seek=3000 of=$modified_image </dev/null
+	sudo dd bs=1M seek=$((wholeimagesize_intended/1000000)) of=$modified_image </dev/null
 fi
 #ls -lart $modified_image
 sudo losetup --partscan /dev/loop0 $modified_image
-#lsblk /dev/loop0
+lsblk /dev/loop0
 declare -i partitioncount=$(lsblk /dev/loop0 | grep -c loop0p)
 if [ $partitioncount -lt 3 ]; then
-	declare -i partition2size=$(lsblk /dev/loop0 --bytes | grep loop0p2 | awk '{ print $4 }')
-	if [ $partition2size -lt 2500000000 ]; then
+	declare -i partition1size_current=$(lsblk /dev/loop0 --bytes | grep loop0p1 | awk '{ print $4 }')
+	declare -i partition2size_current=$(lsblk /dev/loop0 --bytes | grep loop0p2 | awk '{ print $4 }')
+	if [ $partition2size_current -lt $((partition2size_intended)) ]; then
 		echo "resizing partition..."
-		sudo parted /dev/loop0 resizepart 2 2900
+		declare -i partition2end=$(( (partition2size_intended+partition1size_current)/1000000))
+		sudo parted /dev/loop0 resizepart 2 $partition2end
 		sudo e2fsck -f /dev/loop0p2
 		sudo resize2fs /dev/loop0p2
 	fi
 	echo "adding home partition..."
-	sudo parted /dev/loop0 mkpart primary 2900 100%
-	#lsblk /dev/loop0
+	sudo parted /dev/loop0 mkpart primary $partition2end 100%
+	lsblk /dev/loop0
 	echo "creating ext4 filesystem for /home partition..."
 	sudo mkfs.ext4 /dev/loop0p3
 fi
