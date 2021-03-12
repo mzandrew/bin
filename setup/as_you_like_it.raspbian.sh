@@ -40,6 +40,9 @@ function install_packages_2 {
 	#sudo apt install mpd mpc easytag audacious # audio stuff
 	# python3-pychrome mkchromecast castpulseaudio-dlna
 	#sudo apt install lightdm raspberrypi-ui-mods # gui on top of rasbpian lite
+	sudo apt install -y python3-pip
+	#sudo pip3 install numpy
+	#sudo pip3 install opencv-python
 }
 
 function install_packages_3 {
