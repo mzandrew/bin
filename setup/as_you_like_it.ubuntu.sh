@@ -45,6 +45,7 @@ function install_packages {
 	list="$list ffmpeg mplayer" # making/playing videos
 	list="$list network-manager-openconnect-gnome" # for VPN
 	list="$list tmux"
+	list="$list tigervnc-standalone-server tigervnc-viewer"
 	#sudo apt -y install root-system # taken out of ubuntu 2018.04 (since 2016.04)
 	install_packages_if_necessary $list
 	sudo apt -y update

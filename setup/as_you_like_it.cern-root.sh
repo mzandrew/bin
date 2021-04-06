@@ -7,8 +7,8 @@
 # when trying it on ubuntu 20.04:
 # E: Package 'libpython-dev' has no installation candidate
 
-declare filename="root_v6.16.00.source.tar.gz"
-declare dirname="root-6.16.00"
+declare filename="root_v6.22.00.source.tar.gz"
+declare dirname="root-6.22.00"
 
 declare -i j=2
 declare -i np=$(grep -c "^processor" /proc/cpuinfo)
