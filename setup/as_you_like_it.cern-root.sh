@@ -98,6 +98,33 @@ function build_and_install_cmake_from_source {
 	sudo chmod o+rx /usr/local/share/cmake-3.15
 }
 
+# this mostly uninstalls any old versions of cern root:
+if [ -e /usr/local/bin/thisroot.sh ]; then
+	echo "existing install of CERN ROOT found.  removing..."
+	cd /usr/local/bin
+	sudo mkdir -p junk
+	for each in root* thisroot* setxrd* proofserv* memprobe rmkdepend genreflex xpdtest hadd hist2workspace; do
+		if [ -e "$each" ]; then
+			sudo mv $each junk/
+		fi
+	done
+	sudo rm -rf junk
+	#ls -lart
+#fi
+#sudo touch /usr/local/lib/ROOT.py
+#if [ -e /usr/local/lib/ROOT.py ]; then
+	cd /usr/local/lib
+	sudo mkdir -p junk
+	for each in ROOT.py* libROOT* libPyROOT* libVMC* libPyMVA* _pythonization* cppyy.py* cmdLineUtils* libCore* libThread* libRint* libJupyROOT* libImt* *.pcm *.rootmap cppyy_backend cppyy ROOT JupyROOT JsMVA libXrd* libFTGL* libCore* libCling* libNew* libcppyy_backend* libJupyROOT* libRint.so libcomplexDict.so libmap2Dict.so libforward_listDict.so libvectorDict.so libdequeDict.so libvalarrayDict.so libmultimap2Dict.so libmultimapDict.so liblistDict.so libsetDict.so libmultisetDict.so libunordered* libmapDict.so libThread.so libcppyy* libImt.so libRIO.so libNet.so libXMLParser.so libMathCore.so libROOTVecOps.so libXMLIO.so libROOTTPython.so libSrvAuth.so libMultiProc.so libFFTW.so libRootAuth.so libSQLIO.so libNetx.so libRDAVIX.so libNetxNG.so libGX11.so libMatrix.so libRCsg.so libMathMore.so libGenVector.so libTree.so libSmatrix.so libPhysics.so libQuadp.so libROOTPythonizations* libProof.so libHist.so libFoam.so libGraf.so libSpectrum.so libUnfold.so libGeom.so libPostscript.so libGX11TTF.so libRHTTP.so libASImage.so libGdml.so libHtml.so libMinuit.so libFumili.so libGpad.so libGraf3d.so libGui.so libHistPainter.so libSpectrumPainter.so libRHTTPSniff.so libFITSIO.so libASImageGui.so libX3d.so libEG.so libGuiBld.so libGuiHtml.so libRecorder.so libSessionViewer.so libGeomPainter.so libRooFitCore.so libEGPythia8.so libTreePlayer.so libGed.so libMLP.so libSPlot.so libRooFit.so libFitPanel.so libROOTDataFrame.so libProofPlayer.so libTreeViewer.so libRooFitMore.so libGeomBuilder.so libRooStats.so libRGL.so libProofDraw.so libProofBench.so libHistFactory.so libGviz3d.so libTMVA.so libGenetic.so libEve.so libTMVAGui.so; do
+		if [ -e "$each" ]; then
+			sudo mv $each junk/
+		fi
+	done
+	sudo rm -rf junk
+	#ls -lart
+	echo "...done"
+fi
+
 if [ ! -e $build/$dirname ]; then
 	if [ ! -e $filename ]; then
 		declare url="https://root.cern/download/$filename"
@@ -119,4 +146,21 @@ fi
 time nice make -j$j
 sudo nice make install
 sudo find /usr/local/etc -type d -exec chmod --changes 755 {} \; -o -type f -exec chmod --changes 644 {} \;
+
+cat <<DOC
+
+to test your installation:
+
+. /usr/local/bin/thisroot.sh
+root
+.q
+
+python2
+import ROOT
+ctrl-d
+
+python3
+import ROOT
+ctrl-d
+DOC
 

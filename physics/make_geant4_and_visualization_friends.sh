@@ -1,12 +1,13 @@
 #!/bin/bash -e
 
 # instructions taken/modified from an email from Kurtis N. dated 2016-12-16
-# last updated 2019-04-25 by mza
+# last updated 2021-04-06 by mza
 
 # update for ubuntu18.04 (sufficient cmake now in package manager)
 # update for clhep from git
 # update for geant4 10.05: new prerequisites: zlib; new dataset versions
 # other associated changes
+# update for geant 4.10.07 and ubuntu20.04
 
 declare dir="$HOME/build/geant4"
 declare tdir="$dir"
@@ -24,8 +25,10 @@ declare MAKE="make -j$numcores"
 # check http://geant4.cern.ch/support/download.shtml
 #declare geant_version_string_a="geant4.10.03.p01" # latest as of 2017-06-02
 #declare geant_version_string_b="Geant4-10.3.1" # install subdir name
-declare geant_version_string_a="geant4.10.05.p01" # latest as of 2019-04-25
-declare geant_version_string_b="Geant4-10.5.1" # install subdir name
+#declare geant_version_string_a="geant4.10.05.p01" # latest as of 2019-04-25
+#declare geant_version_string_b="Geant4-10.5.1" # install subdir name
+declare geant_version_string_a="geant4.10.07.p01" # latest as of 2021-04-06
+declare geant_version_string_b="Geant4-10.7.1" # install subdir name
 
 # check https://cmake.org/files/v3.7/
 #declare cmake_version_string_a="cmake-3.8.2" # latest as of 2017-06-02
@@ -37,7 +40,7 @@ declare geant_version_string_b="Geant4-10.5.1" # install subdir name
 #declare clhep_version_string_b="2.3.4.4" # untar subdir name
 #declare clhep_version_string_c="CLHEP-2.3.4.4" # install subdir name
 
-datasets_list="G4NDL.4.5.tar.gz G4EMLOW.7.7.tar.gz G4PhotonEvaporation.5.3.tar.gz G4RadioactiveDecay.5.3.tar.gz G4PARTICLEXS.1.1.tar.gz G4PII.1.3.tar.gz G4RealSurface.2.1.1.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4ENSDFSTATE.2.2.tar.gz"
+datasets_list="G4NDL.4.6.tar.gz G4EMLOW.7.13.tar.gz G4PhotonEvaporation.5.7.tar.gz G4RadioactiveDecay.5.6.tar.gz G4PARTICLEXS.3.1.tar.gz G4PII.1.3.tar.gz G4RealSurface.2.2.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4ENSDFSTATE.2.3.tar.gz"
 
 declare list_of_things_that_should_be_there_after_complete_installation="
 	/usr/local/include/Geant4
@@ -287,9 +290,11 @@ function build_and_install_coin {
 			echo "extracting from coin..."
 			tar xf $tdir/coin.tar
 			cd $dir/coin
-			hg pull
+			#hg pull
+			git pull
 		else
-			hg clone https://bitbucket.org/Coin3D/coin -r CMake
+			#hg clone https://bitbucket.org/Coin3D/coin -r CMake
+			git clone https://github.com/coin3d/coin
 			tar cf $tdir/coin.tar coin
 		fi
 	fi
@@ -378,16 +383,16 @@ function build_and_install_soxt {
 			echo "extracting from soxt.tar..."
 			tar xf $tdir/soxt.tar
 			cd $dir/soxt
-			hg pull
+			git pull
 		else
-			hg clone https://bitbucket.org/Coin3D/soxt
+			git clone --recurse-submodules https://github.com/coin3d/soxt
 			tar cf $tdir/soxt.tar soxt
 		fi
 	fi
 	cd $dir/soxt
-	if [ ! -e $dir/soxt/build/soxt.spec.in ]; then
-		hg restore build/soxt.spec.in
-	fi
+#	if [ ! -e $dir/soxt/build/soxt.spec.in ]; then
+#		hg restore build/soxt.spec.in
+#	fi
 	mkdir -p build
 	cd build
 	export LD_RUN_PATH="/usr/local/lib/" # https://bitbucket.org/Coin3D/coin/issues/19/configure-error-could-not-determine-the
@@ -419,8 +424,7 @@ function build_and_install_geant {
 	if [ ! -e $geant_version_string_a ]; then
 		if [ ! -e $tdir/$file ]; then
 			cd $tdir
-			wget http://geant4.web.cern.ch/geant4/support/source/$file
-			#wget https://github.com/Geant4/geant4/archive/v10.5.1.tar.gz
+			wget "https://geant4-data.web.cern.ch/releases/$file"
 		fi
 		echo "extracting from $file..."
 		tar xzf $tdir/$file
@@ -552,16 +556,17 @@ function install {
 #		deblist="$deblist $CMAKE"
 #		rpmlist="$rpmlist $CMAKE"
 #	fi
-	install_prerequisites
+	#install_prerequisites
 	#download_datasets # do this just once and save the files
-	install_datasets
-	build_and_install_clhep
+	#install_datasets
+	#build_and_install_clhep
 	build_and_install_coin
-	build_and_install_coinStandard
+	#build_and_install_coinStandard
 	build_and_install_soxt
-	build_and_install_geant
+	#sudo apt install -y libcoin-dev libsoqt520-dev libclhep-dev
+	#build_and_install_geant
 	#geant4.sh
-	look_for_installed_files
+	#look_for_installed_files
 }
 
 mkdir -p $dir
