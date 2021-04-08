@@ -5,7 +5,7 @@
 # update for clhep from git
 # update for geant4 10.05: new prerequisites: zlib; new dataset versions; other associated changes
 # update for geant 4.10.07; ubuntu20.04; new dataset versions
-# last updated 2021-04-07 by mza
+# last updated 2021-04-08 by mza
 
 declare dir="$HOME/build/geant4"
 declare tdir="$dir"
@@ -406,6 +406,11 @@ function build_and_install_geant {
 	elif [ -e /usr/local/lib64/$geant_version_string_b ]; then
 		fix_permissions /usr/local/lib64/$geant_version_string_b
 	fi
+	cd /usr/local/share
+	if [ -e Geant4 ]; then
+		sudo rm Geant4
+	fi
+	sudo ln -s $geant_version_string_b Geant4
 }
 
 function print_geant4_build_run_help {
