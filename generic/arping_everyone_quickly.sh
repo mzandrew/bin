@@ -3,7 +3,7 @@
 #for i in $(seq 2 253); do sleep 1; ping -c1 -w1 192.168.10.$i >/dev/null; echo "$i $?"; done
 
 declare baseip="192.168.10"
-declare device="${1:-eth6}"
+declare device="${1:-eth0}"
 declare self=$(ifconfig $device | grep 'inet addr' | sed -e "s,[ ]\+inet addr:$baseip.\([0-9]\+\) .*,\1,")
 
 function go {
