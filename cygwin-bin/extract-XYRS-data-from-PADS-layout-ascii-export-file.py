@@ -1,5 +1,5 @@
-#!/cygdrive/c/Python27/python.exe
 #!/usr/bin/env python
+#!/cygdrive/c/Python27/python.exe
 # started 2014-12-09 by mza, based upon "move-components-around-in-PADS-layout-ascii-exported-file.carrier-revE.py"
 # modified 2014-12-10 (to export directly to an openoffice spreadsheet)
 # modified 2015-10-20 (to match RESISTOR@2010 as a part type)

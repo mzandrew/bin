@@ -15,7 +15,15 @@ function install_packages {
 	sudo yum -y install texlive
 	sudo yum -y install postfix telnet
 	sudo yum -y install java vsftpd ftp
-	sudo yum -y install python3 python34
+	sudo yum -y install python2 python2-pip
+	sudo pip install --upgrade pip
+	#sudo pip install requests
+	#sudo yum -y install python3
+	#sudo yum -y install python34 python34-pip
+	#sudo pip3.4 install --upgrade pip
+	sudo yum -y install python36 python36-pip
+	#sudo pip3.6 install --upgrade pip
+	#sudo /usr/local/bin/pip3 install requests
 	sudo yum -y install libftdi-devel libusb-devel
 	sudo yum -y install clangp bison flex readline-devel
 	sudo yum -y install tcl-devel

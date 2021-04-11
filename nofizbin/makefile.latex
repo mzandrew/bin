@@ -1,0 +1,69 @@
+# use pdflatex for png, jpeg directly and eps (converted to pdf first)
+# use latex for eps directly
+
+raw_tex_list := $(wildcard src/*.tex)
+tex_list := $(raw_tex_list:src/%.tex=%)
+#raw_gnuplot_list := $(wildcard src/*.gnuplot)
+#gnuplot_list := $(raw_gnuplot_list:src/%.gnuplot=%)
+
+# bug:  need to find includes and depend on them (perl tex-includes or something)
+
+# bug:  this rule doesn't work:
+#%.tex : % ;
+#	mylatex $< > $@
+
+# build in work/ subdir
+# leave pdfs in pdf/ subdir
+
+all : ;
+	$(MAKE) default
+
+default: ;
+	if [ ! -d "src"  ]; then mkdir "src" ; fi
+	if [ ! -d "work" ]; then mkdir "work"; fi
+	if [ ! -d "pdf"  ]; then mkdir "pdf" ; fi
+	#$(foreach each,$(gnuplot_list),$(MAKE) $(each:%=work/%.eps);)
+	$(foreach each,$(tex_list),$(MAKE) $(each:%=pdf/%.pdf);)
+
+#work/%.eps : src/%.gnuplot ;
+#	gnuplot $<
+
+#work/%.landscape.ps : work/%.dvi ;
+#	dvips -t landscape $< -o $@
+
+#pdf/%.landscape.pdf : work/%.landscape.ps ;
+#	ps2pdf $< $@
+
+#work/%.dvi work/%.aux work/%.log : src/%.tex ;
+# not this, because then the relative dirs don't work:
+#	cp $< work/$<
+#	cd work; latex $<; latex $<
+#	latex $< -output-directory=work/ -aux-directory=work/ # this does nothing
+#	latex $< -output-directory=work/ -aux-directory=work/
+#	latex $<
+#	latex $<
+#	mv $(<:src/%.tex=%.aux) $(<:src/%.tex=%.log) $(<:src/%.tex=%.dvi) work/
+
+#pdf/%.pdf : work/%.dvi ;
+#	dvipdf $< $@
+
+pdf/%.pdf : src/%.tex ;
+	#@echo 1
+	pdflatex $<
+	#@echo 2
+	#bibtex $<
+	#@echo 3
+	pdflatex $<
+	#@echo 4
+	#pdflatex $<
+	#@echo 5
+	mv $(<:src/%.tex=%.aux) $(<:src/%.tex=%.log) work/
+	mv $(<:src/%.tex=%.pdf) pdf/
+	touch -r $< $(<:src/%.tex=work/%.aux) $(<:src/%.tex=work/%.log)  $(<:src/%.tex=pdf/%.pdf)
+	#mv $(<:src/%.tex=%.out) work/
+
+clean : ;
+	rm -f work/*.aux work/*.dvi work/*.log work/*.out work/*.ps
+#	rm -f $(list) $(list:%.pdf=%.aux) $(list:%.pdf=%.log) $(list:%.pdf=%.dvi) $(list:%.pdf=%.landscape.dvi) $(list:%.pdf=%.landscape.ps)
+# to clean, just remove all files in work subdir
+

@@ -1,17 +1,19 @@
 #!/bin/bash -e
 
+# last updated 2020-08-09 by mza
+
 function install_packages {
 	#doublecmd-gtk
 	#sudo yum -y install yum-conf-virtualbox
-	sudo yum --enablerepo=extras install epel-release
+	sudo yum -y --enablerepo=extras install epel-release
 	sudo yum -y update
 	sudo yum -y install gvim vim meld svn git gpm nmap ImageMagick firefox hdparm screen tmux rsync mlocate openssh-server net-tools gnuplot zip unzip dbus-x11 iptables-services
-	sudo yum -y install yum-cron redhat-lsb gcc gcc-c++ make automake autoconf zip unzip
+	sudo yum -y install yum-cron redhat-lsb gcc gcc-c++ make automake autoconf zip unzip ntp nfs-utils ntfs-3g
 	sudo yum -y install dkms
 	sudo yum -y groupinstall "Development Tools"
 	sudo yum -y install kernel-devel
 	#sudo yum -y install readline-devel zlib-devel bison-devel perl-Git-SVN mesa-libGLU-devel # for geant4
-	#sudo yum -y install ntp dhcp xinetd tftp tftp-server nfs-utils policycoreutils-gui glibc.i686 redhat-lsb # for pocketdaq
+	#sudo yum -y install dhcp xinetd tftp tftp-server policycoreutils-gui glibc.i686 redhat-lsb # for pocketdaq
 	#sudo yum -y install postgresql96-server postgresql96-contrib dhcp xinetd tftp tftp-server nfs-utils policycoreutils-gui glibc.i686 # for pocketdaq
 	#sudo yum -y install root pyserial hexedit # root - for cmake3 expat-devel
 	#sudo yum -y install mercurial qt5-qtdeclarative-devel dos2unix motif motif-static motif-devel libXpm-devel expat-devel libXmu-devel php-xml php-intl php-xcache php-mysql mariadb mariadb-server mediawiki123 mediawiki123-doc # for mediawiki
@@ -33,8 +35,8 @@ function install_packages {
 	#echo "	sudo sed -i 's,archive.ubuntu.com,mirror.ancl.hawaii.edu/linux,' /etc/apt/sources.list"
 	echo "add the following line to /etc/ntp.conf:"
 	echo "	pool 192.168.153.1 iburst"
-	echo "and to set the local timezone:"
-	echo "	dpkg-reconfigure tzdata"
+	#echo "and to set the local timezone:"
+	#echo "	dpkg-reconfigure tzdata"
 }
 
 install_packages

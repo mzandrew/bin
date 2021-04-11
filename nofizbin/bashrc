@@ -59,7 +59,7 @@ case $TERM in
 #		:
 esac
 
-umask 0027
+#umask 0027
 
 function GIDof {
 	group=$1
@@ -68,7 +68,8 @@ function GIDof {
 export -f GIDof
 #export GID=$(GIDof asic)
 
-alias df="df --block-size=1000000000 | grep -v /dev/loop"
+#alias df="df --block-size=1000000000 | grep -v ^tmpfs"
+alias df="df --block-size=1000000000 --type=nfs --type=ext4 --type=vfat --type=fuseblk --type=ntfs"
 
 export HISTSIZE=5000
 export HISTFILESIZE=
@@ -139,4 +140,28 @@ function interactive {
 declare -xi numcores=$(($(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk '{print $3}')+1))
 
 export HISTTIMEFORMAT="%Y-%m-%d+%H:%M:%S "
+
+#if [ -z "$SSH_AGENT_PID" ]; then
+#	eval `ssh-agent -s` # add "AddKeysToAgent yes" to ~/.ssh/config for this to be most useful
+#fi
+
+# from https://stackoverflow.com/a/18915067/5728815
+SSH_ENV="$HOME/.ssh/agent-environment"
+function start_agent {
+	#echo "Initialising new SSH agent..."
+	/usr/bin/ssh-agent | sed 's/^echo/#echo/' > "${SSH_ENV}"
+	#echo succeeded
+	chmod 600 "${SSH_ENV}"
+	. "${SSH_ENV}" > /dev/null
+	/usr/bin/ssh-add > /dev/null
+}
+if [ -f "${SSH_ENV}" ]; then
+	. "${SSH_ENV}" > /dev/null
+	#ps ${SSH_AGENT_PID} doesn't work under cywgin
+	ps -ef | grep ${SSH_AGENT_PID} | grep ssh-agent$ > /dev/null || {
+		start_agent;
+	}
+else
+	start_agent;
+fi
 

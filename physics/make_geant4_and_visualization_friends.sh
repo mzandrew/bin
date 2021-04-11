@@ -1,43 +1,44 @@
 #!/bin/bash -e
 
 # instructions taken/modified from an email from Kurtis N. dated 2016-12-16
-# last updated 2019-04-25 by mza
-
 # update for ubuntu18.04 (sufficient cmake now in package manager)
 # update for clhep from git
-# update for geant4 10.05: new prerequisites: zlib; new dataset versions
-# other associated changes
+# update for geant4 10.05: new prerequisites: zlib; new dataset versions; other associated changes
+# update for geant 4.10.07; ubuntu20.04; new dataset versions
+# last updated 2021-04-08 by mza
 
 declare dir="$HOME/build/geant4"
 declare tdir="$dir"
 if [ -e "/opt/shared/software/geant4" ]; then
 	tdir="/opt/shared/software/geant4"
 fi
-declare archlist="mesa glu mercurial dos2unix openmotif qt4"
-declare deblist="build-essential mesa-utils mercurial zlib1g cmake"
-declare rpmlist="mercurial"
-	rpmlist="$rpmlist gcc gcc-c++ make automake autoconf"
 declare CMAKE="cmake"
+declare archlist="" # mesa glu openmotif dos2unix qt4
+declare deblist="build-essential libexpat1-dev zlib1g zlib1g-dev cmake" # mesa-utils
+declare rpmlist="gcc gcc-c++ make automake autoconf cmake expat-devel"
+#deblist="$deblist libclhep-dev" # as of 2021-04-07, the version installed will be 2.1.4 (from 2014); geant4.10.7 requires clhep>=2.4.4.0, so we build/install from source
+#libcoin-dev libsoqt520-dev # for Open Inventor visualization
+deblist="$deblist libqt53dcore5 libqt5gui5 libqt5widgets5 libqt5opengl5 libqt5printsupport5 libqt53dcore5 libqt53dextras5 libqt53drender5" # for QT5 visualization
+deblist="$deblist libfreetype-dev" # to render fonts
+deblist="$deblist python2-dev python3-dev libboost-python-dev" # for python bindings
+#deblist="$deblist libxerces-c-dev curl libcurl4 libcurl4-openssl-dev" # for "GDML XML Geometry Support"
+#deblist="$deblist qtdeclarative5-dev"
+#rpmlist="$rpmlist qt5-qtdeclarative-devel"
+#deblist="$deblist libboost-dev"
+#deblist="$deblist dos2unix"
+#rpmlist="$rpmlist dos2unix"
+#deblist="$deblist libmotif-dev libxpm-dev"
+#rpmlist="$rpmlist motif-devel libXpm-devel"
+#deblist="$deblist libxmu-dev"
+#rpmlist="$rpmlist libXmu-devel"
 declare -i numcores=$(($(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk '{print $3}')+1))
 declare MAKE="make -j$numcores"
 
 # check http://geant4.cern.ch/support/download.shtml
-#declare geant_version_string_a="geant4.10.03.p01" # latest as of 2017-06-02
-#declare geant_version_string_b="Geant4-10.3.1" # install subdir name
-declare geant_version_string_a="geant4.10.05.p01" # latest as of 2019-04-25
-declare geant_version_string_b="Geant4-10.5.1" # install subdir name
+declare geant_version_string_a="geant4.10.07.p01" # latest as of 2021-04-06
+declare geant_version_string_b="Geant4-10.7.1" # install subdir name
 
-# check https://cmake.org/files/v3.7/
-#declare cmake_version_string_a="cmake-3.8.2" # latest as of 2017-06-02
-#declare cmake_version_string_b="cmake-3.8" # install subdir name
-#declare cmake_version_string_c="v3.8" # download subdir name
-
-# check proj-clhep.web.cern.ch/proj-clhep/clhep23.html
-#declare clhep_version_string_a="clhep-2.3.4.4" # latest as of 2017-06-02
-#declare clhep_version_string_b="2.3.4.4" # untar subdir name
-#declare clhep_version_string_c="CLHEP-2.3.4.4" # install subdir name
-
-datasets_list="G4NDL.4.5.tar.gz G4EMLOW.7.7.tar.gz G4PhotonEvaporation.5.3.tar.gz G4RadioactiveDecay.5.3.tar.gz G4PARTICLEXS.1.1.tar.gz G4PII.1.3.tar.gz G4RealSurface.2.1.1.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4ENSDFSTATE.2.2.tar.gz"
+datasets_list="G4NDL.4.6.tar.gz G4EMLOW.7.13.tar.gz G4PhotonEvaporation.5.7.tar.gz G4RadioactiveDecay.5.6.tar.gz G4PARTICLEXS.3.1.tar.gz G4PII.1.3.tar.gz G4RealSurface.2.2.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4ENSDFSTATE.2.3.tar.gz G4PARTICLEXS.3.1.1.tar.gz"
 
 declare list_of_things_that_should_be_there_after_complete_installation="
 	/usr/local/include/Geant4
@@ -183,48 +184,6 @@ function install_datasets {
 	ls -lart /usr/local/share/$geant_version_string_b/data
 }
 
-function build_and_install_cmake {
-	echo; echo "cmake"
-	cd $dir
-	file="${cmake_version_string_a}.tar.gz"
-	if [ ! -e $tdir/$file ]; then
-		cd $tdir
-		wget https://cmake.org/files/$cmake_version_string_c/$file
-	fi
-	if [ ! -e $cmake_version_string_a ]; then
-		echo "extracting from $file..."
-		tar xzf $tdir/$file
-	fi
-	cd $cmake_version_string_a
-	if [ ! -e Makefile ]; then
-		./configure
-	else
-		echo "cmake already configured"
-	fi
-	if [ ! -e Source/libCMakeLib.a ] || [ ! -e bin/cmake ] || [ ! -e bin/ctest ]; then
-		$MAKE
-	else
-		echo "cmake already built"
-	fi
-	if [ $deb -gt 0 ]; then
-		sudo apt -y purge cmake cmake-data
-	elif [ $arch -gt 0 ]; then
-		:
-	else
-		sudo yum -y erase cmake cmake-data
-	fi
-	if [ ! -e /usr/local/bin/cmake ]; then
-		sudo make install --quiet --no-print-directory
-	else
-		echo "cmake already installed"
-	fi
-	fix_ownership install_manifest.txt CMakeFiles/uninstall.dir/depend.make CMakeFiles/uninstall.dir/depend.internal
-	fix_permissions /usr/local/doc/$cmake_version_string_b /usr/local/share/$cmake_version_string_b /usr/local/bin/cmake /usr/local/bin/ctest /usr/local/bin/cpack /usr/local/doc/ /usr/local/share/aclocal /usr/local/share/aclocal/cmake.m4
-	# "/opt/cmake/bin/cmake: cannot execute binary file: Exec format error" means you have the wrong binary downloaded; just do it from source (above)
-}
-
-deblist="$deblist qtdeclarative5-dev"
-rpmlist="$rpmlist qt5-qtdeclarative-devel"
 function build_and_install_clhep {
 	echo; echo "clhep"
 	#file="${clhep_version_string_a}.tgz"
@@ -278,7 +237,6 @@ function build_and_install_clhep {
 	fix_permissions /usr/local/include/CLHEP /usr/local/include/Inventor /usr/local/lib/CLHEP
 }
 
-deblist="$deblist libboost-dev"
 function build_and_install_coin {
 	echo; echo "coin"
 	cd $dir
@@ -287,9 +245,9 @@ function build_and_install_coin {
 			echo "extracting from coin..."
 			tar xf $tdir/coin.tar
 			cd $dir/coin
-			hg pull
+			git pull
 		else
-			hg clone https://bitbucket.org/Coin3D/coin -r CMake
+			git clone https://github.com/coin3d/coin
 			tar cf $tdir/coin.tar coin
 		fi
 	fi
@@ -316,8 +274,6 @@ function build_and_install_coin {
 	fix_permissions /usr/local/lib/Coin /usr/local/lib/libCoin*
 }
 
-deblist="$deblist dos2unix"
-rpmlist="$rpmlist dos2unix"
 function build_and_install_coinStandard {
 	echo; echo "coinStandard"
 	cd $dir
@@ -326,9 +282,9 @@ function build_and_install_coinStandard {
 			echo "extracting from coinStandard..."
 			tar xf $tdir/coinStandard.tar
 			cd $dir/coinStandard
-			hg pull
+			git pull
 		else
-			hg clone https://bitbucket.org/Coin3D/coin coinStandard
+			git clone https://github.com/coin3d/coin coinStandard
 			tar cf $tdir/coinStandard.tar coinStandard
 		fi
 	fi
@@ -368,8 +324,6 @@ function build_and_install_coinStandard {
 	fix_permissions /usr/local/share/Coin /usr/local/share/aclocal/coin.m4
 }
 
-deblist="$deblist libmotif-dev libxpm-dev"
-rpmlist="$rpmlist motif-devel libXpm-devel"
 function build_and_install_soxt {
 	echo; echo "soxt"
 	cd $dir
@@ -378,16 +332,16 @@ function build_and_install_soxt {
 			echo "extracting from soxt.tar..."
 			tar xf $tdir/soxt.tar
 			cd $dir/soxt
-			hg pull
+			git pull
 		else
-			hg clone https://bitbucket.org/Coin3D/soxt
+			git clone --recurse-submodules https://github.com/coin3d/soxt
 			tar cf $tdir/soxt.tar soxt
 		fi
 	fi
 	cd $dir/soxt
-	if [ ! -e $dir/soxt/build/soxt.spec.in ]; then
-		hg restore build/soxt.spec.in
-	fi
+#	if [ ! -e $dir/soxt/build/soxt.spec.in ]; then
+#		hg restore build/soxt.spec.in
+#	fi
 	mkdir -p build
 	cd build
 	export LD_RUN_PATH="/usr/local/lib/" # https://bitbucket.org/Coin3D/coin/issues/19/configure-error-could-not-determine-the
@@ -401,8 +355,9 @@ function build_and_install_soxt {
 	else
 		echo "soxt already built"
 	fi
-	if [ ! -e /usr/local/bin/soxt-config ]; then
-		sudo make install --quiet --no-print-directory
+	if [ ! -e /usr/local/bin/soxt-config ] || [ ! -e /usr/local/include/Inventor/Xt/SoXt.h ] || [ ! -e /usr/local/lib/libSoXt.so ]; then
+		#sudo make install --quiet --no-print-directory
+		sudo make install
 	else
 		echo "soxt already installed"
 	fi
@@ -410,8 +365,6 @@ function build_and_install_soxt {
 	fix_permissions /usr/local/include/Inventor /usr/local/bin/soxt-config /usr/local/share/Coin/conf/soxt-default.cfg /usr/local/lib/libSoXt.* /usr/local/share/aclocal/soxt.m4
 }
 
-deblist="$deblist libexpat1-dev libxmu-dev"
-rpmlist="$rpmlist expat-devel libXmu-devel"
 function build_and_install_geant {
 	echo; echo "geant4"
 	file="${geant_version_string_a}.tar.gz"
@@ -419,8 +372,7 @@ function build_and_install_geant {
 	if [ ! -e $geant_version_string_a ]; then
 		if [ ! -e $tdir/$file ]; then
 			cd $tdir
-			wget http://geant4.web.cern.ch/geant4/support/source/$file
-			#wget https://github.com/Geant4/geant4/archive/v10.5.1.tar.gz
+			wget "https://geant4-data.web.cern.ch/releases/$file"
 		fi
 		echo "extracting from $file..."
 		tar xzf $tdir/$file
@@ -431,7 +383,8 @@ function build_and_install_geant {
 	#export INVENTOR_SOXT_LIBRARY="/usr/local/lib/libSoXt.so"
 	#$CMAKE .. -DGEANT4_USE_QT=ON -DGEANT4_USE_INVENTOR=ON -DGEANT4_BUILD_EXAMPLES=ON -DGEANT4_INSTALL_EXAMPLES=ON
 	if [ ! -e Makefile ]; then
-		$CMAKE .. -DGEANT4_USE_QT=ON -DGEANT4_USE_INVENTOR=ON
+		#$CMAKE .. -DGEANT4_USE_QT=ON -DGEANT4_USE_INVENTOR=ON
+		$CMAKE .. -DGEANT4_USE_QT=ON -DGEANT4_INSTALL_DATA=OFF -DGEANT4_INSTALL_DATADIR="/usr/local/share/$geant_version_string_b/data"
 	else
 		echo "geant4 already cmake'd"
 	fi
@@ -453,12 +406,17 @@ function build_and_install_geant {
 	elif [ -e /usr/local/lib64/$geant_version_string_b ]; then
 		fix_permissions /usr/local/lib64/$geant_version_string_b
 	fi
+	cd /usr/local/share
+	if [ -e Geant4 ]; then
+		sudo rm Geant4
+	fi
+	sudo ln -s $geant_version_string_b Geant4
 }
 
 function print_geant4_build_run_help {
 	echo
 	echo "to build a geant4 executable:"
-	echo ". /usr/local/share/Geant4-10.5.1/geant4make/geant4make.sh"
+	echo ". /usr/local/share/${geant_version_string_b}/geant4make/geant4make.sh"
 	echo "mkdir build; cd build; cmake ..; make"
 	echo
 	echo "to run a geant4 executable:"
@@ -547,21 +505,16 @@ function uninstall_prerequisites {
 }
 
 function install {
-	#build_and_install_cmake
-#	if [ ! -e /usr/local/bin/cmake ]; then
-#		deblist="$deblist $CMAKE"
-#		rpmlist="$rpmlist $CMAKE"
-#	fi
 	install_prerequisites
-	#download_datasets # do this just once and save the files
+	download_datasets # do this just once and save the files
 	install_datasets
 	build_and_install_clhep
-	build_and_install_coin
-	build_and_install_coinStandard
-	build_and_install_soxt
+	#build_and_install_coin
+	#build_and_install_coinStandard
+	#build_and_install_soxt
 	build_and_install_geant
 	#geant4.sh
-	look_for_installed_files
+	#look_for_installed_files
 }
 
 mkdir -p $dir
