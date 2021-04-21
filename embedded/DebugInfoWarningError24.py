@@ -5,7 +5,10 @@
 import sys # stderr.write()
 import time # strftime
 import os # os.path.isfile() os.path.isdir() os.path.mkdir()
-import atexit
+try:
+	import atexit
+except:
+	pass
 
 verbosity = 3
 logfile_is_open = 0
@@ -36,7 +39,10 @@ def create_new_logfile_with_string(string):
 		error("ERROR opening logfile %s, exiting" % logfilename)
 		sys.exit(2)
 	logfile_is_open = 1
-	atexit.register(cleanup)
+	try:
+		atexit.register(cleanup)
+	except:
+		pass
 	info("Writing output from %s to logfile: %s" % (sys.argv[0], logfilename))
 
 def print_string_stdout(string, should_flush=1):
@@ -47,7 +53,10 @@ def print_string_stdout(string, should_flush=1):
 def print_string_stderr(string, should_flush=1):
 	sys.stderr.write(string + "\n")
 	if should_flush:
-		sys.stderr.flush()
+		try:
+			sys.stderr.flush()
+		except:
+			pass
 
 def print_string_logfile(string, should_flush=1):
 	if (logfile_is_open):
