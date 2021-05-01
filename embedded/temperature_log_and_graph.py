@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 # written 2021-04-21 by mza
-# last updated 2021-04-30 by mza
+# last updated 2021-05-01 by mza
 
 import time
 import sys
 import board
 import busio
 import displayio
+import digitalio
 import neopixel
 import adafruit_pct2075 # sudo pip3 install adafruit-circuitpython-pct2075
 import adafruit_ssd1327 # sudo pip3 install adafruit-circuitpython-ssd1327
@@ -15,9 +16,16 @@ import adafruit_dotstar as dotstar
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded
 
 intensity = 8 # brightness of plotted data on dotstar display
-offset_t = 25.0 # min temp we care to plot
-max_t = 65.0 # max temp we care to plot
-N = 5*60 # number of seconds to average over
+if 1:
+	offset_t = 45.0 # min temp we care to plot
+	max_t = 65.0 # max temp we care to plot
+	N = 5*60 # number of seconds to average over
+else:
+	offset_t = 26.0 # min temp we care to plot
+	max_t = 28.0 # max temp we care to plot
+	N = 1*60 # number of seconds to average over
+should_use_airlift = True
+should_use_dotstar_matrix = False
 
 temperature_sensors = []
 header_string = "heater"
@@ -92,14 +100,22 @@ def setup_neopixel():
 	pixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=0.01, auto_write=True)
 
 def setup_dotstar_matrix(auto_write = True):
+	if not should_use_dotstar_matrix:
+		return False
 	global dots
 	#dots.deinit()
-	dots = dotstar.DotStar(board.D13, board.D11, 72, brightness=0.1)
-	dots.auto_write = False
-	dots.show()
-	dots.auto_write = auto_write
+	try:
+		dots = dotstar.DotStar(board.D13, board.D11, 72, brightness=0.1)
+		dots.auto_write = False
+		dots.show()
+		dots.auto_write = auto_write
+	except:
+		return False
+	return True
 
 def update_temperature_display_on_dotstar_matrix():
+	if not dotstar_matrix_is_available:
+		return
 	dots.auto_write = False
 	rows = 6
 	columns = 12
@@ -124,6 +140,62 @@ def update_temperature_display_on_dotstar_matrix():
 
 temperatures_to_plot = [ -40.0 for a in range(12) ]
 
+from adafruit_esp32spi import adafruit_esp32spi
+from adafruit_esp32spi import adafruit_esp32spi_wifimanager
+import adafruit_requests as requests
+import adafruit_esp32spi.adafruit_esp32spi_socket as socket
+
+def setup_airlift():
+	global wifi
+	global secrets
+	if not should_use_airlift:
+		return False
+	# from https://github.com/ladyada/Adafruit_CircuitPython_ESP32SPI/blob/master/examples/esp32spi_localtime.py
+	# and https://learn.adafruit.com/adafruit-airlift-featherwing-esp32-wifi-co-processor-featherwing?view=all
+	try:
+		from secrets import secrets
+	except ImportError:
+		print("WiFi secrets are kept in secrets.py, please add them there!")
+		return False
+	try:
+		esp32_cs = digitalio.DigitalInOut(board.D13)
+		esp32_ready = digitalio.DigitalInOut(board.D11)
+		esp32_reset = digitalio.DigitalInOut(board.D12)
+		spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
+		esp = adafruit_esp32spi.ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
+		print("Connecting to " + secrets["ssid"] + " ...")
+		while not esp.is_connected:
+			try:
+				esp.connect_AP(secrets["ssid"], secrets["password"])
+			except RuntimeError as e:
+				print("could not connect to AP, retrying: ", e)
+				continue
+		print("My IP address is", esp.pretty_ip(esp.ip_address))
+		import adafruit_rgbled
+		from adafruit_esp32spi import PWMOut
+		RED_LED = PWMOut.PWMOut(esp, 26)
+		GREEN_LED = PWMOut.PWMOut(esp, 25)
+		BLUE_LED = PWMOut.PWMOut(esp, 27)
+		status_light = adafruit_rgbled.RGBLED(RED_LED, BLUE_LED, GREEN_LED)
+		wifi = adafruit_esp32spi_wifimanager.ESPSPI_WiFiManager(esp, secrets, status_light)
+	except:
+		return False
+	return True
+
+def post_data(data):
+	if not airlift_is_available:
+		return
+	try:
+		feed = "heater"
+		#feed = "test"
+		payload = {"value": data}
+		url = "https://io.adafruit.com/api/v2/" + secrets["aio_username"] + "/feeds/" + feed + "/data"
+		response = wifi.post(url, json=payload, headers={"X-AIO-KEY": secrets["aio_key"]})
+		#print(response.json())
+		response.close()
+	except:
+		error("couldn't perform POST operation")
+
 if __name__ == "__main__":
 	try:
 		displayio.release_displays()
@@ -134,9 +206,10 @@ if __name__ == "__main__":
 	except:
 		error("error setting up neopixel")
 	try:
-		setup_dotstar_matrix(False)
+		dotstar_matrix_is_available = setup_dotstar_matrix(False)
 	except:
 		error("error setting up dotstar matrix")
+		dotstar_matrix_is_available = False
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
 	except:
@@ -149,6 +222,11 @@ if __name__ == "__main__":
 		setup_i2c_oled_display(0x3d)
 	except:
 		error("can't initialize ssd1327 display over i2c (address 0x3d)")
+	try:
+		airlift_is_available = setup_airlift()
+	except:
+		error("can't initialize airlift wifi")
+		airlift_is_available = False
 	create_new_logfile_with_string_embedded("pct2075")
 	print_header()
 	while test_if_present():
@@ -162,8 +240,11 @@ if __name__ == "__main__":
 				sys.stdout.flush()
 			except:
 				pass
+			#time.sleep(54/60)
 			time.sleep(1)
-		temperatures_to_plot.append(temperature_accumulator/N)
+		average_temperature = temperature_accumulator/N
+		post_data(average_temperature)
+		temperatures_to_plot.append(average_temperature)
 		temperatures_to_plot.pop(0)
 		update_temperature_display_on_dotstar_matrix()
 

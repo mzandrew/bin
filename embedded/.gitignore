@@ -6,4 +6,6 @@ logfile
 oldlogfile
 logs
 *.log
+secrets.py
+notes
 
