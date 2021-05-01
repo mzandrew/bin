@@ -5,4 +5,5 @@ contrib/rpi-rgb-led-matrix
 logfile
 oldlogfile
 logs
+*.log
 
