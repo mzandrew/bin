@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-04-21 by mza
-# last updated 2021-05-01 by mza
+# last updated 2021-05-03 by mza
 
 import time
 import sys
@@ -13,6 +13,8 @@ import neopixel
 import adafruit_pct2075 # sudo pip3 install adafruit-circuitpython-pct2075
 import adafruit_ssd1327 # sudo pip3 install adafruit-circuitpython-ssd1327
 import adafruit_dotstar as dotstar
+import adafruit_ht16k33.matrix
+import adafruit_register
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded
 
 intensity = 8 # brightness of plotted data on dotstar display
@@ -22,7 +24,7 @@ if 0:
 	N = 5*60 # number of seconds to average over
 	feed = "heater"
 else:
-	offset_t = 26.0 # min temp we care to plot
+	offset_t = 26.5 # min temp we care to plot
 	max_t = 28.0 # max temp we care to plot
 	N = 1*60 # number of seconds to average over
 	feed = "test"
@@ -42,7 +44,8 @@ def setup_temperature_sensor(address):
 def setup_temperature_sensors():
 	global header_string
 	count = 0
-	for address in [0x37, 0x36, 0x35, 0x2, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28, 0x77, 0x76, 0x75, 0x74, 0x73, 0x72, 0x71, 0x70, 0x4f, 0x4e, 0x4d, 0x4c, 0x4b, 0x4a, 0x49, 0x48]:
+	#for address in [0x37, 0x36, 0x35, 0x2, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28, 0x77, 0x76, 0x75, 0x74, 0x73, 0x72, 0x71, 0x70, 0x4f, 0x4e, 0x4d, 0x4c, 0x4b, 0x4a, 0x49, 0x48]:
+	for address in [0x37, 0x36, 0x35, 0x2, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28, 0x77, 0x76, 0x75, 0x74, 0x73, 0x72, 0x71, 0x4f, 0x4e, 0x4d, 0x4c, 0x4b, 0x4a, 0x49, 0x48]: # omit 0x70
 		try:
 			count += setup_temperature_sensor(address)
 			if 1!=count:
@@ -148,7 +151,8 @@ def update_temperature_display_on_dotstar_matrix():
 			dots[index] = (red, green, blue)
 	dots.show()
 
-temperatures_to_plot = [ -40.0 for a in range(12) ]
+max_columns_to_plot = 16
+temperatures_to_plot = [ -40.0 for a in range(max_columns_to_plot) ]
 
 from adafruit_esp32spi import adafruit_esp32spi
 from adafruit_esp32spi import adafruit_esp32spi_wifimanager
@@ -204,6 +208,39 @@ def post_data(data):
 	except:
 		error("couldn't perform POST operation")
 
+def setup_matrix_backpack():
+	global matrix_backpack
+	try:
+		matrix_backpack = adafruit_ht16k33.matrix.Matrix16x8(i2c)
+		matrix_backpack.auto_write = False
+		#matrix_backpack.brightness = 15
+		#matrix_backpack.blink_rate = 0
+	except:
+		return False
+	return True
+
+def update_temperature_display_on_matrix_backpack():
+	if not matrix_backpack_available:
+		return
+	matrix_backpack.auto_write = False
+	rows = 8
+	columns = 16
+	gain_t = (max_t - offset_t) / (rows - 1)
+	matrix_backpack.fill(0)
+#	for y in range(rows):
+#		for x in range(columns):
+#			matrix_backpack[x, y] = 0
+	for x in range(columns):
+		if 0.0<temperatures_to_plot[x]:
+			y = int((temperatures_to_plot[x] - offset_t) / gain_t)
+			if y<0:
+				y = 0
+			if rows<y:
+				y = rows - 1
+			matrix_backpack[x, y] = 1
+			#info("matrix_backpack[" + str(x) + ", " + str(y) + "]")
+	matrix_backpack.show()
+
 if __name__ == "__main__":
 	try:
 		displayio.release_displays()
@@ -237,6 +274,11 @@ if __name__ == "__main__":
 	except:
 		error("can't initialize airlift wifi")
 		airlift_is_available = False
+	try:
+		matrix_backpack_available = setup_matrix_backpack()
+	except:
+		error("can't find matrix backpack (i2c address 0x70)")
+		matrix_backpack_available = False
 	create_new_logfile_with_string_embedded("pct2075")
 	print_header()
 	while test_if_present():
@@ -265,4 +307,5 @@ if __name__ == "__main__":
 		temperatures_to_plot.append(average_temperature)
 		temperatures_to_plot.pop(0)
 		update_temperature_display_on_dotstar_matrix()
+		update_temperature_display_on_matrix_backpack()
 

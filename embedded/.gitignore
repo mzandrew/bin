@@ -8,4 +8,5 @@ logs
 *.log
 secrets.py
 notes
+contrib/feathers2
 
