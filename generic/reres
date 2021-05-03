@@ -8,6 +8,7 @@ declare res
 #res="640x480"
 res="1024x768"
 #res="1280x1024"
+#res="1600x1200"
 
 function run {
 	local dir="${@}"

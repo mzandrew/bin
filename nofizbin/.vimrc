@@ -5,6 +5,8 @@
 " 	:so ~/.vimrc
 syn on	" turn on syntax highlighting
 set tabstop=4	" set tab width
+"set noexpandtab	" don't cast tabs to spaces
+filetype plugin indent off
 set nu	" show line numbers to left of text
 set ruler	" show row, col in lower-right corner
 set ignorecase	" case-insensitive search (/ and ?)
