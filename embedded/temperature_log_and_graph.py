@@ -16,14 +16,16 @@ import adafruit_dotstar as dotstar
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded
 
 intensity = 8 # brightness of plotted data on dotstar display
-if 1:
+if 0:
 	offset_t = 45.0 # min temp we care to plot
 	max_t = 65.0 # max temp we care to plot
 	N = 5*60 # number of seconds to average over
+	feed = "heater"
 else:
 	offset_t = 26.0 # min temp we care to plot
 	max_t = 28.0 # max temp we care to plot
 	N = 1*60 # number of seconds to average over
+	feed = "test"
 should_use_airlift = True
 should_use_dotstar_matrix = False
 
@@ -91,13 +93,21 @@ def test_if_present():
 	return True
 
 def setup_i2c_oled_display(address):
-	display_bus = displayio.I2CDisplay(i2c, device_address=address)
 	global display
-	display = adafruit_ssd1327.SSD1327(display_bus, width=128, height=128)
+	try:
+		display_bus = displayio.I2CDisplay(i2c, device_address=address)
+		display = adafruit_ssd1327.SSD1327(display_bus, width=128, height=128)
+	except:
+		return False
+	return True
 
 def setup_neopixel():
 	global pixel
-	pixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=0.01, auto_write=True)
+	try:
+		pixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=0.01, auto_write=True)
+	except:
+		return False
+	return True
 
 def setup_dotstar_matrix(auto_write = True):
 	if not should_use_dotstar_matrix:
@@ -186,8 +196,6 @@ def post_data(data):
 	if not airlift_is_available:
 		return
 	try:
-		feed = "heater"
-		#feed = "test"
 		payload = {"value": data}
 		url = "https://io.adafruit.com/api/v2/" + secrets["aio_username"] + "/feeds/" + feed + "/data"
 		response = wifi.post(url, json=payload, headers={"X-AIO-KEY": secrets["aio_key"]})
@@ -202,9 +210,10 @@ if __name__ == "__main__":
 	except:
 		pass
 	try:
-		setup_neopixel()
+		neopixel_is_available = setup_neopixel()
 	except:
 		error("error setting up neopixel")
+		neopixel_is_available = False
 	try:
 		dotstar_matrix_is_available = setup_dotstar_matrix(False)
 	except:
@@ -219,9 +228,10 @@ if __name__ == "__main__":
 	except:
 		error("can't find any temperature sensors on i2c bus")
 	try:
-		setup_i2c_oled_display(0x3d)
+		oled_display_is_available = setup_i2c_oled_display(0x3d)
 	except:
 		error("can't initialize ssd1327 display over i2c (address 0x3d)")
+		oled_display_is_available = False
 	try:
 		airlift_is_available = setup_airlift()
 	except:
@@ -232,10 +242,18 @@ if __name__ == "__main__":
 	while test_if_present():
 		temperature_accumulator = 0.0
 		for i in range(N):
-			pixel.fill((255, 0, 0))
+			if neopixel_is_available:
+				try:
+					pixel.fill((255, 0, 0))
+				except:
+					pass
 			print_compact()
 			temperature_accumulator += temperature
-			pixel.fill((0, 255, 0))
+			if neopixel_is_available:
+				try:
+					pixel.fill((0, 255, 0))
+				except:
+					pass
 			try:
 				sys.stdout.flush()
 			except:
