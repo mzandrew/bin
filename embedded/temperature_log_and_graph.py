@@ -14,6 +14,7 @@ import adafruit_pct2075 # sudo pip3 install adafruit-circuitpython-pct2075
 import adafruit_ssd1327 # sudo pip3 install adafruit-circuitpython-ssd1327
 import adafruit_dotstar as dotstar
 import adafruit_ht16k33.matrix
+import adafruit_ht16k33.segments
 import adafruit_register
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded
 
@@ -24,12 +25,14 @@ if 0:
 	N = 5*60 # number of seconds to average over
 	feed = "heater"
 else:
-	offset_t = 26.5 # min temp we care to plot
+	offset_t = 26.1 # min temp we care to plot
 	max_t = 28.0 # max temp we care to plot
 	N = 1*60 # number of seconds to average over
 	feed = "test"
 should_use_airlift = True
 should_use_dotstar_matrix = False
+should_use_matrix_backpack = True
+should_use_alphanumeric_backpack = True
 
 temperature_sensors = []
 header_string = "heater"
@@ -45,7 +48,7 @@ def setup_temperature_sensors():
 	global header_string
 	count = 0
 	#for address in [0x37, 0x36, 0x35, 0x2, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28, 0x77, 0x76, 0x75, 0x74, 0x73, 0x72, 0x71, 0x70, 0x4f, 0x4e, 0x4d, 0x4c, 0x4b, 0x4a, 0x49, 0x48]:
-	for address in [0x37, 0x36, 0x35, 0x2, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28, 0x77, 0x76, 0x75, 0x74, 0x73, 0x72, 0x71, 0x4f, 0x4e, 0x4d, 0x4c, 0x4b, 0x4a, 0x49, 0x48]: # omit 0x70
+	for address in [0x37, 0x36, 0x35, 0x2, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28, 0x77, 0x76, 0x75, 0x74, 0x73, 0x72, 0x4f, 0x4e, 0x4d, 0x4c, 0x4b, 0x4a, 0x49, 0x48]: # omit 0x70 and 0x71
 		try:
 			count += setup_temperature_sensor(address)
 			if 1!=count:
@@ -193,6 +196,7 @@ def setup_airlift():
 		status_light = adafruit_rgbled.RGBLED(RED_LED, BLUE_LED, GREEN_LED)
 		wifi = adafruit_esp32spi_wifimanager.ESPSPI_WiFiManager(esp, secrets, status_light)
 	except:
+		error("can't initialize airlift wifi")
 		return False
 	return True
 
@@ -209,13 +213,29 @@ def post_data(data):
 		error("couldn't perform POST operation")
 
 def setup_matrix_backpack():
+	if not should_use_matrix_backpack:
+		return False
 	global matrix_backpack
 	try:
-		matrix_backpack = adafruit_ht16k33.matrix.Matrix16x8(i2c)
+		matrix_backpack = adafruit_ht16k33.matrix.Matrix16x8(i2c, address=0x70)
 		matrix_backpack.auto_write = False
-		#matrix_backpack.brightness = 15
+		#matrix_backpack.brightness = 0.5
 		#matrix_backpack.blink_rate = 0
 	except:
+		return False
+	return True
+
+def setup_alphanumeric_backpack():
+	if not should_use_alphanumeric_backpack:
+		return False
+	global alphanumeric_backpack
+	try:
+		alphanumeric_backpack = adafruit_ht16k33.segments.Seg14x4(i2c, address=0x71)
+		alphanumeric_backpack.auto_write = False
+		#alphanumeric_backpack.brightness = 0.5
+		#alphanumeric_backpack.blink_rate = 0
+	except:
+		error("can't find alphanumeric backpack (i2c address 0x71)")
 		return False
 	return True
 
@@ -240,6 +260,22 @@ def update_temperature_display_on_matrix_backpack():
 			matrix_backpack[x, y] = 1
 			#info("matrix_backpack[" + str(x) + ", " + str(y) + "]")
 	matrix_backpack.show()
+
+def update_temperature_display_on_alphanumeric_backpack(temperature):
+	if not alphanumeric_backpack_available:
+		return
+	alphanumeric_backpack.auto_write = False
+	alphanumeric_backpack.fill(0)
+	value = int(10.0*temperature)//10
+	#info(str(value))
+	alphanumeric_backpack.print(str(value))
+	#alphanumeric_backpack[0] = '0'
+	#alphanumeric_backpack[1] = '1'
+	#alphanumeric_backpack[2] = '2'
+	#alphanumeric_backpack[3] = '3'
+	#DIGIT_2 = 0b000011111011
+	#alphanumeric_backpack.set_digit_raw(0, DIGIT_2)
+	alphanumeric_backpack.show()
 
 if __name__ == "__main__":
 	try:
@@ -269,16 +305,13 @@ if __name__ == "__main__":
 	except:
 		error("can't initialize ssd1327 display over i2c (address 0x3d)")
 		oled_display_is_available = False
-	try:
-		airlift_is_available = setup_airlift()
-	except:
-		error("can't initialize airlift wifi")
-		airlift_is_available = False
+	airlift_is_available = setup_airlift()
 	try:
 		matrix_backpack_available = setup_matrix_backpack()
 	except:
 		error("can't find matrix backpack (i2c address 0x70)")
 		matrix_backpack_available = False
+	#alphanumeric_backpack_available = setup_alphanumeric_backpack()
 	create_new_logfile_with_string_embedded("pct2075")
 	print_header()
 	while test_if_present():
@@ -302,6 +335,7 @@ if __name__ == "__main__":
 				pass
 			#time.sleep(54/60)
 			time.sleep(1)
+			#update_temperature_display_on_alphanumeric_backpack(temperature)
 		average_temperature = temperature_accumulator/N
 		post_data(average_temperature)
 		temperatures_to_plot.append(average_temperature)
