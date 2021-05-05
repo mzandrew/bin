@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-04-21 by mza
-# last updated 2021-05-03 by mza
+# last updated 2021-05-05 by mza
 
 import time
 import sys
@@ -12,6 +12,7 @@ import digitalio
 import neopixel
 import adafruit_pct2075 # sudo pip3 install adafruit-circuitpython-pct2075
 import adafruit_ssd1327 # sudo pip3 install adafruit-circuitpython-ssd1327
+import adafruit_displayio_sh1107
 import adafruit_dotstar as dotstar
 import adafruit_ht16k33.matrix
 import adafruit_ht16k33.segments
@@ -22,12 +23,14 @@ intensity = 8 # brightness of plotted data on dotstar display
 if 0:
 	offset_t = 45.0 # min temp we care to plot
 	max_t = 65.0 # max temp we care to plot
-	N = 5*60 # number of seconds to average over
+	N = 5*60 # number of samples to average over
+	delay = 1.0 # number of seconds between samples
 	feed = "heater"
 else:
 	offset_t = 26.1 # min temp we care to plot
 	max_t = 28.0 # max temp we care to plot
-	N = 1*60 # number of seconds to average over
+	N = 1*30 # number of samples to average over
+	delay = 1.0 # number of seconds between samples
 	feed = "test"
 should_use_airlift = True
 should_use_dotstar_matrix = False
@@ -37,6 +40,9 @@ should_use_alphanumeric_backpack = True
 temperature_sensors = []
 header_string = "heater"
 temperature = 0
+
+max_columns_to_plot = 128
+temperatures_to_plot = [ -40.0 for a in range(max_columns_to_plot) ]
 
 def setup_temperature_sensor(address):
 	#i2c.deinit()
@@ -98,14 +104,61 @@ def test_if_present():
 		return False
 	return True
 
-def setup_i2c_oled_display(address):
+def setup_i2c_oled_display_ssd1327(address):
 	global display
 	try:
 		display_bus = displayio.I2CDisplay(i2c, device_address=address)
 		display = adafruit_ssd1327.SSD1327(display_bus, width=128, height=128)
 	except:
+		error("can't initialize ssd1327 display over i2c (address " + hex(address) + ")")
 		return False
 	return True
+
+def setup_i2c_oled_display_sh1107(address):
+	#oled_reset = board.D9
+	global display
+	try:
+		display_bus = displayio.I2CDisplay(i2c, device_address=address)
+		display = adafruit_displayio_sh1107.SH1107(display_bus, width=128, height=64)
+		display.auto_refresh = False
+	except:
+		error("can't initialize sh1107 display over i2c (address " + hex(address) + ")")
+		return False
+	return True
+
+def clear_display_on_oled_sh1107():
+	global bitmap
+	bitmap = displayio.Bitmap(128, 64, 2)
+	palette = displayio.Palette(2)
+	palette[0] = 0x000000
+	palette[1] = 0xffffff
+	tile_grid = displayio.TileGrid(bitmap, pixel_shader = palette)
+	group = displayio.Group()
+	group.append(tile_grid)
+	for x in range(128):
+		for y in range(64):
+			bitmap[x,y] = 0
+	display.show(group)
+	display.refresh()
+
+def update_temperature_display_on_oled_sh1107():
+	global bitmap
+	display.auto_refresh = False
+	rows = 64
+	columns = 128
+	gain_t = (max_t - offset_t) / (rows - 1)
+	for y in range(rows):
+		for x in range(columns):
+			bitmap[x, y] = 0
+	for x in range(columns):
+		if 0.0<temperatures_to_plot[x]:
+			y = rows - 1 - int((temperatures_to_plot[x] - offset_t) / gain_t)
+			if y<0.0:
+				y = 0
+			if rows<=y:
+				y = rows - 1
+			bitmap[x, y] = 1
+	display.refresh()
 
 def setup_neopixel():
 	global pixel
@@ -143,9 +196,9 @@ def update_temperature_display_on_dotstar_matrix():
 	for x in range(columns):
 		if 0.0<temperatures_to_plot[x]:
 			y = (temperatures_to_plot[x] - offset_t) / gain_t
-			if y<0:
+			if y<0.0:
 				y = 0
-			if rows<y:
+			if rows<=y:
 				y = rows - 1
 			index = int(y) * columns + x
 			red = intensity * y
@@ -153,9 +206,6 @@ def update_temperature_display_on_dotstar_matrix():
 			blue = intensity * (rows-1) - red
 			dots[index] = (red, green, blue)
 	dots.show()
-
-max_columns_to_plot = 16
-temperatures_to_plot = [ -40.0 for a in range(max_columns_to_plot) ]
 
 from adafruit_esp32spi import adafruit_esp32spi
 from adafruit_esp32spi import adafruit_esp32spi_wifimanager
@@ -300,11 +350,8 @@ if __name__ == "__main__":
 		setup_temperature_sensors()
 	except:
 		error("can't find any temperature sensors on i2c bus")
-	try:
-		oled_display_is_available = setup_i2c_oled_display(0x3d)
-	except:
-		error("can't initialize ssd1327 display over i2c (address 0x3d)")
-		oled_display_is_available = False
+	#oled_display_is_available = setup_i2c_oled_display_ssd1327(0x3d)
+	oled_display_is_available = setup_i2c_oled_display_sh1107(0x3c)
 	airlift_is_available = setup_airlift()
 	try:
 		matrix_backpack_available = setup_matrix_backpack()
@@ -314,6 +361,7 @@ if __name__ == "__main__":
 	#alphanumeric_backpack_available = setup_alphanumeric_backpack()
 	create_new_logfile_with_string_embedded("pct2075")
 	print_header()
+	clear_display_on_oled_sh1107()
 	while test_if_present():
 		temperature_accumulator = 0.0
 		for i in range(N):
@@ -333,8 +381,7 @@ if __name__ == "__main__":
 				sys.stdout.flush()
 			except:
 				pass
-			#time.sleep(54/60)
-			time.sleep(1)
+			time.sleep(delay)
 			#update_temperature_display_on_alphanumeric_backpack(temperature)
 		average_temperature = temperature_accumulator/N
 		post_data(average_temperature)
@@ -342,4 +389,5 @@ if __name__ == "__main__":
 		temperatures_to_plot.pop(0)
 		update_temperature_display_on_dotstar_matrix()
 		update_temperature_display_on_matrix_backpack()
+		update_temperature_display_on_oled_sh1107()
 
