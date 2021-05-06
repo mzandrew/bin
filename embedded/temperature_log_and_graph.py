@@ -20,6 +20,7 @@ import adafruit_register
 import adafruit_sdcard
 import storage
 import adafruit_bus_device
+import adafruit_pcf8523
 from adafruit_esp32spi import adafruit_esp32spi
 from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 import adafruit_requests as requests
@@ -113,7 +114,10 @@ def print_compact():
 	try:
 		date = time.strftime("%Y-%m-%d+%X, ")
 	except:
-		date = ""
+		try:
+			date = get_timestring1() + ", "
+		except:
+			date = ""
 	string = measure_string()
 	info("%s%s" % (date, string))
 
@@ -406,6 +410,32 @@ def setup_sdcard_for_logging_data():
 		return False
 	return True
 
+def setup_RTC():
+	global rtc
+	if not should_use_RTC:
+		return False
+	try:
+		rtc = adafruit_pcf8523.PCF8523(i2c)
+		#info(get_timestring1())
+		if False:
+			t = time.struct_time((2021, 5, 5, 17, 39, 6, 0, -1, -1))
+			#info("setting time to " + str(t))
+			rtc.datetime = t
+			t = rtc.datetime
+			info("%04d-%02d-%02d" % (t.tm_year, t.tm_mon, t.tm_mday))
+	except:
+		error("unable to set up RTC")
+		return False
+	return True
+
+def get_timestring1():
+	t = rtc.datetime
+	return "%04d-%02d-%02d+%02d:%02d:%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
+
+def get_timestring2():
+	t = rtc.datetime
+	return "%04d-%02d-%02d.%02d%02d%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
+
 if __name__ == "__main__":
 	try:
 		displayio.release_displays()
@@ -419,8 +449,10 @@ if __name__ == "__main__":
 	dotstar_matrix_is_available = setup_dotstar_matrix(False)
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
+		#info("using I2C1")
 	except:
 		i2c = busio.I2C(board.SCL, board.SDA)
+		#info("using I2C0")
 	try:
 		setup_temperature_sensors()
 	except:
@@ -438,8 +470,12 @@ if __name__ == "__main__":
 		error("can't find matrix backpack (i2c address 0x70)")
 		matrix_backpack_available = False
 	#alphanumeric_backpack_available = setup_alphanumeric_backpack()
+	RTC_is_available = setup_RTC()
 	sdcard_is_available = setup_sdcard_for_logging_data()
-	create_new_logfile_with_string_embedded(dir + "/pct2075")
+	if RTC_is_available:
+		create_new_logfile_with_string_embedded(dir, "pct2075", get_timestring2())
+	else:
+		create_new_logfile_with_string_embedded(dir, "pct2075")
 	print_header()
 	while test_if_present():
 		temperature_accumulator = 0.0

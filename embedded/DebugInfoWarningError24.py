@@ -62,13 +62,18 @@ def create_new_logfile_with_string(string):
 	except:
 		error("Unable to open logfile")
 
-def create_new_logfile_with_string_embedded(string):
+def create_new_logfile_with_string_embedded(dirname, basename, timestring=""):
 	global logfile_is_open
 	logfile_is_open = 0
 	global logfile
 	try:
-		logfile = open(string + ".log", "a")
+		if ""==timestring:
+			filename = dirname + "/" + basename + ".log"
+		else:
+			filename = dirname + "/" + timestring + "." + basename + ".log"
+		logfile = open(filename, "a")
 		logfile_is_open = 1
+		info("Writing output to logfile: %s" % filename)
 	except:
 		error("Unable to open logfile")
 
