@@ -17,6 +17,9 @@ import adafruit_dotstar as dotstar
 import adafruit_ht16k33.matrix
 import adafruit_ht16k33.segments
 import adafruit_register
+import adafruit_sdcard
+import storage
+import adafruit_bus_device
 from adafruit_esp32spi import adafruit_esp32spi
 from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 import adafruit_requests as requests
@@ -36,6 +39,8 @@ if 0:
 	should_use_alphanumeric_backpack = False
 	should_use_sh1107_oled_display = True
 	should_use_ssd1327_oled_display = False
+	should_use_sdcard = False
+	should_use_RTC = False
 else:
 	feed = "test"
 	offset_t = 25.4 # min temp we care to plot
@@ -48,10 +53,13 @@ else:
 	should_use_alphanumeric_backpack = False
 	should_use_sh1107_oled_display = False
 	should_use_ssd1327_oled_display = True
+	should_use_sdcard = True
+	should_use_RTC = True
 
 temperature_sensors = []
 header_string = "heater"
 temperature = 0
+dir = "/" # will be replaced by /logs if/when sd card is detected/mounted
 
 max_columns_to_plot = 128
 temperatures_to_plot = [ -40.0 for a in range(max_columns_to_plot) ]
@@ -380,6 +388,24 @@ def update_temperature_display_on_alphanumeric_backpack(temperature):
 	#alphanumeric_backpack.set_digit_raw(0, DIGIT_2)
 	alphanumeric_backpack.show()
 
+def setup_sdcard_for_logging_data():
+	if not should_use_sdcard:
+		return False
+	global dir
+	try:
+		spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+		cs = digitalio.DigitalInOut(board.D6)
+		sdcard = adafruit_sdcard.SDCard(spi, cs)
+		vfs = storage.VfsFat(sdcard)
+		storage.mount(vfs, "/logs") # this does NOT need an empty dir to mount on
+		#with open("/logs/test.txt", "w") as f:
+		#	f.write("Hello, World!\r\n")
+		dir = "/logs"
+	except:
+		error("unable to find/mount sdcard")
+		return False
+	return True
+
 if __name__ == "__main__":
 	try:
 		displayio.release_displays()
@@ -412,7 +438,8 @@ if __name__ == "__main__":
 		error("can't find matrix backpack (i2c address 0x70)")
 		matrix_backpack_available = False
 	#alphanumeric_backpack_available = setup_alphanumeric_backpack()
-	create_new_logfile_with_string_embedded("pct2075")
+	sdcard_is_available = setup_sdcard_for_logging_data()
+	create_new_logfile_with_string_embedded(dir + "/pct2075")
 	print_header()
 	while test_if_present():
 		temperature_accumulator = 0.0
