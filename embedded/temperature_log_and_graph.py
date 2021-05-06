@@ -17,25 +17,37 @@ import adafruit_dotstar as dotstar
 import adafruit_ht16k33.matrix
 import adafruit_ht16k33.segments
 import adafruit_register
+from adafruit_esp32spi import adafruit_esp32spi
+from adafruit_esp32spi import adafruit_esp32spi_wifimanager
+import adafruit_requests as requests
+import adafruit_esp32spi.adafruit_esp32spi_socket as socket
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded
 
 intensity = 8 # brightness of plotted data on dotstar display
 if 0:
+	feed = "heater"
 	offset_t = 45.0 # min temp we care to plot
 	max_t = 65.0 # max temp we care to plot
 	N = 5*60 # number of samples to average over
 	delay = 1.0 # number of seconds between samples
-	feed = "heater"
+	should_use_airlift = True
+	should_use_dotstar_matrix = False
+	should_use_matrix_backpack = False
+	should_use_alphanumeric_backpack = False
+	should_use_sh1107_oled_display = True
+	should_use_ssd1327_oled_display = False
 else:
-	offset_t = 26.1 # min temp we care to plot
-	max_t = 28.0 # max temp we care to plot
-	N = 1*30 # number of samples to average over
-	delay = 1.0 # number of seconds between samples
 	feed = "test"
-should_use_airlift = True
-should_use_dotstar_matrix = False
-should_use_matrix_backpack = True
-should_use_alphanumeric_backpack = True
+	offset_t = 25.4 # min temp we care to plot
+	max_t = 28.0 # max temp we care to plot
+	N = 1*28 # number of samples to average over
+	delay = 1.0 # number of seconds between samples
+	should_use_airlift = False
+	should_use_dotstar_matrix = False
+	should_use_matrix_backpack = True
+	should_use_alphanumeric_backpack = False
+	should_use_sh1107_oled_display = False
+	should_use_ssd1327_oled_display = True
 
 temperature_sensors = []
 header_string = "heater"
@@ -64,7 +76,7 @@ def setup_temperature_sensors():
 	if 0==count:
 		error("pct2075 not present (any i2c address)")
 	else:
-		info("found " + str(count) + " temperature sensors")
+		info("found " + str(count) + " temperature sensor(s)")
 	return count
 
 def print_header():
@@ -105,6 +117,8 @@ def test_if_present():
 	return True
 
 def setup_i2c_oled_display_ssd1327(address):
+	if not should_use_ssd1327_oled_display:
+		return False
 	global display
 	try:
 		display_bus = displayio.I2CDisplay(i2c, device_address=address)
@@ -115,6 +129,8 @@ def setup_i2c_oled_display_ssd1327(address):
 	return True
 
 def setup_i2c_oled_display_sh1107(address):
+	if not should_use_sh1107_oled_display:
+		return False
 	#oled_reset = board.D9
 	global display
 	try:
@@ -126,7 +142,26 @@ def setup_i2c_oled_display_sh1107(address):
 		return False
 	return True
 
+def clear_display_on_oled_ssd1327():
+	if not oled_display_is_available:
+		return
+	global bitmap
+	bitmap = displayio.Bitmap(128, 128, 2)
+	palette = displayio.Palette(2)
+	palette[0] = 0x000000
+	palette[1] = 0xffffff
+	tile_grid = displayio.TileGrid(bitmap, pixel_shader = palette)
+	group = displayio.Group()
+	group.append(tile_grid)
+	for x in range(128):
+		for y in range(128):
+			bitmap[x,y] = 0
+	display.show(group)
+	display.refresh()
+
 def clear_display_on_oled_sh1107():
+	if not oled_display_is_available:
+		return
 	global bitmap
 	bitmap = displayio.Bitmap(128, 64, 2)
 	palette = displayio.Palette(2)
@@ -141,7 +176,30 @@ def clear_display_on_oled_sh1107():
 	display.show(group)
 	display.refresh()
 
+def update_temperature_display_on_oled_ssd1327():
+	if not oled_display_is_available:
+		return
+	global bitmap
+	display.auto_refresh = False
+	rows = 128
+	columns = 128
+	gain_t = (max_t - offset_t) / (rows - 1)
+	for y in range(rows):
+		for x in range(columns):
+			bitmap[x, y] = 0
+	for x in range(columns):
+		if 0.0<temperatures_to_plot[x]:
+			y = rows - 1 - int((temperatures_to_plot[x] - offset_t) / gain_t)
+			if y<0.0:
+				y = 0
+			if rows<=y:
+				y = rows - 1
+			bitmap[columns - 1 - x, y] = 1
+	display.refresh()
+
 def update_temperature_display_on_oled_sh1107():
+	if not oled_display_is_available:
+		return
 	global bitmap
 	display.auto_refresh = False
 	rows = 64
@@ -157,7 +215,7 @@ def update_temperature_display_on_oled_sh1107():
 				y = 0
 			if rows<=y:
 				y = rows - 1
-			bitmap[x, y] = 1
+			bitmap[columns - 1 - x, y] = 1
 	display.refresh()
 
 def setup_neopixel():
@@ -179,6 +237,7 @@ def setup_dotstar_matrix(auto_write = True):
 		dots.show()
 		dots.auto_write = auto_write
 	except:
+		error("error setting up dotstar matrix")
 		return False
 	return True
 
@@ -200,17 +259,12 @@ def update_temperature_display_on_dotstar_matrix():
 				y = 0
 			if rows<=y:
 				y = rows - 1
-			index = int(y) * columns + x
+			index = int(y) * columns + columns - 1 - x
 			red = intensity * y
 			green = 0
 			blue = intensity * (rows-1) - red
 			dots[index] = (red, green, blue)
 	dots.show()
-
-from adafruit_esp32spi import adafruit_esp32spi
-from adafruit_esp32spi import adafruit_esp32spi_wifimanager
-import adafruit_requests as requests
-import adafruit_esp32spi.adafruit_esp32spi_socket as socket
 
 def setup_airlift():
 	global wifi
@@ -268,6 +322,7 @@ def setup_matrix_backpack():
 	global matrix_backpack
 	try:
 		matrix_backpack = adafruit_ht16k33.matrix.Matrix16x8(i2c, address=0x70)
+		#matrix_backpack.fill(1)
 		matrix_backpack.auto_write = False
 		#matrix_backpack.brightness = 0.5
 		#matrix_backpack.blink_rate = 0
@@ -297,17 +352,15 @@ def update_temperature_display_on_matrix_backpack():
 	columns = 16
 	gain_t = (max_t - offset_t) / (rows - 1)
 	matrix_backpack.fill(0)
-#	for y in range(rows):
-#		for x in range(columns):
-#			matrix_backpack[x, y] = 0
 	for x in range(columns):
 		if 0.0<temperatures_to_plot[x]:
-			y = int((temperatures_to_plot[x] - offset_t) / gain_t)
-			if y<0:
+			y = (temperatures_to_plot[x] - offset_t) / gain_t
+			if y<0.0:
 				y = 0
-			if rows<y:
+			if rows<=y:
 				y = rows - 1
-			matrix_backpack[x, y] = 1
+			y = int(y)
+			matrix_backpack[columns - 1 - x, y] = 1
 			#info("matrix_backpack[" + str(x) + ", " + str(y) + "]")
 	matrix_backpack.show()
 
@@ -337,11 +390,7 @@ if __name__ == "__main__":
 	except:
 		error("error setting up neopixel")
 		neopixel_is_available = False
-	try:
-		dotstar_matrix_is_available = setup_dotstar_matrix(False)
-	except:
-		error("error setting up dotstar matrix")
-		dotstar_matrix_is_available = False
+	dotstar_matrix_is_available = setup_dotstar_matrix(False)
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
 	except:
@@ -350,8 +399,12 @@ if __name__ == "__main__":
 		setup_temperature_sensors()
 	except:
 		error("can't find any temperature sensors on i2c bus")
-	#oled_display_is_available = setup_i2c_oled_display_ssd1327(0x3d)
-	oled_display_is_available = setup_i2c_oled_display_sh1107(0x3c)
+	if should_use_ssd1327_oled_display:
+		oled_display_is_available = setup_i2c_oled_display_ssd1327(0x3d)
+		clear_display_on_oled_ssd1327()
+	if should_use_sh1107_oled_display:
+		oled_display_is_available = setup_i2c_oled_display_sh1107(0x3c)
+		clear_display_on_oled_sh1107()
 	airlift_is_available = setup_airlift()
 	try:
 		matrix_backpack_available = setup_matrix_backpack()
@@ -361,7 +414,6 @@ if __name__ == "__main__":
 	#alphanumeric_backpack_available = setup_alphanumeric_backpack()
 	create_new_logfile_with_string_embedded("pct2075")
 	print_header()
-	clear_display_on_oled_sh1107()
 	while test_if_present():
 		temperature_accumulator = 0.0
 		for i in range(N):
@@ -385,9 +437,12 @@ if __name__ == "__main__":
 			#update_temperature_display_on_alphanumeric_backpack(temperature)
 		average_temperature = temperature_accumulator/N
 		post_data(average_temperature)
-		temperatures_to_plot.append(average_temperature)
-		temperatures_to_plot.pop(0)
+		temperatures_to_plot.insert(0, average_temperature)
+		temperatures_to_plot.pop()
 		update_temperature_display_on_dotstar_matrix()
 		update_temperature_display_on_matrix_backpack()
-		update_temperature_display_on_oled_sh1107()
+		if should_use_ssd1327_oled_display:
+			update_temperature_display_on_oled_ssd1327()
+		if should_use_sh1107_oled_display:
+			update_temperature_display_on_oled_sh1107()
 
