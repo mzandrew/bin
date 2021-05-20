@@ -1,6 +1,6 @@
 # written 2019-01-07 by mza to support python2.4-era SL5.11 on COPPERs
 # updated 2019-03-08 to write to logfiles
-# last updated 2021-04-28 by mza
+# last updated 2021-05-06 by mza
 
 import sys # stderr.write()
 import time # strftime
@@ -100,6 +100,16 @@ def print_string_logfile(string, should_flush=1):
 		#print("wrote to logfile")
 		if should_flush:
 			logfile.flush()
+
+def flush():
+	try:
+		sys.stderr.flush()
+	except:
+		pass
+	try:
+		logfile.flush()
+	except:
+		pass
 
 def debug3(string, should_flush=1):
 	if verbosity>=6:
