@@ -57,13 +57,16 @@ declare openocd="${HOME}/build/openocd"
 
 mkdir -p $build
 
-if [ -e $openocd ];then
+if [ -e $openocd ]; then
 	cd $openocd
 	echo "git pull..."
 	git pull || /bin/true
 	if [ $redhat -gt 0 ]; then
 		find -exec touch --date="2018-11-28" {} + # must be older than the datestamps in the patch file below
 		tar xjf $build/openocd-patch2.tar.bz2
+	fi
+	if [ ! -e "configure" ]; then
+		nice ./bootstrap
 	fi
 else
 	cd $build
@@ -73,7 +76,8 @@ else
 	#tar xjf openocd-0.10.0.tar.bz2
 	#mv openocd-0.10.0 openocd
 	echo "git clone..."
-	git clone git://git.code.sf.net/p/openocd/code openocd
+	#git clone git://git.code.sf.net/p/openocd/code openocd
+	git clone https://github.com/mzandrew/openocd.git
 	#tar xf openocd-from-git-repo.tar
 	cd $openocd
 	if [ $redhat -gt 0 ]; then
@@ -83,6 +87,9 @@ else
 		git submodule init
 		git submodule update
 	else
+		nice ./bootstrap
+	fi
+	if [ ! -e "configure" ]; then
 		nice ./bootstrap
 	fi
 fi
