@@ -22,6 +22,7 @@ deblist="$deblist libqt53dcore5 libqt5gui5 libqt5widgets5 libqt5opengl5 libqt5pr
 deblist="$deblist libfreetype-dev" # to render fonts
 deblist="$deblist python2-dev python3-dev libboost-python-dev" # for python bindings
 #deblist="$deblist libxerces-c-dev curl libcurl4 libcurl4-openssl-dev" # for "GDML XML Geometry Support"
+deblist="$deblist qtbase5-dev"
 #deblist="$deblist qtdeclarative5-dev"
 #rpmlist="$rpmlist qt5-qtdeclarative-devel"
 #deblist="$deblist libboost-dev"
@@ -35,10 +36,21 @@ declare -i numcores=$(($(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk 
 declare MAKE="make -j$numcores"
 
 # check http://geant4.cern.ch/support/download.shtml
-declare geant_version_string_a="geant4.10.07.p01" # latest as of 2021-04-06
-declare geant_version_string_b="Geant4-10.7.1" # install subdir name
+declare geant_version_string_a="geant4.10.05.p01" # latest as of 2019-04-25
+declare geant_version_string_b="Geant4-10.5.1" # install subdir name
+#declare geant_version_string_a="geant4.10.06.p03"
+#declare geant_version_string_b="Geant4-10.6.3" # install subdir name
+#declare geant_version_string_a="geant4.10.07.p01" # latest as of 2021-04-06
+#declare geant_version_string_b="Geant4-10.7.1" # install subdir name
 
-datasets_list="G4NDL.4.6.tar.gz G4EMLOW.7.13.tar.gz G4PhotonEvaporation.5.7.tar.gz G4RadioactiveDecay.5.6.tar.gz G4PARTICLEXS.3.1.tar.gz G4PII.1.3.tar.gz G4RealSurface.2.2.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4ENSDFSTATE.2.3.tar.gz G4PARTICLEXS.3.1.1.tar.gz"
+# for 10.5:
+datasets_list="G4NDL.4.5.tar.gz G4EMLOW.7.7.tar.gz G4PhotonEvaporation.5.3.tar.gz G4RadioactiveDecay.5.3.tar.gz G4PARTICLEXS.1.1.tar.gz G4PII.1.3.tar.gz G4RealSurface.2.1.1.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4ENSDFSTATE.2.2.tar.gz"
+
+# for 10.6:
+#datasets_list="G4NDL.4.6.tar.gz G4PARTICLEXS.3.1.tar.gz G4PII.1.3.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4EMLOW.7.9.1.tar.gz G4PhotonEvaporation.5.5.tar.gz G4RadioactiveDecay.5.4.tar.gz G4PARTICLEXS.2.1.tar.gz G4RealSurface.2.1.1.tar.gz G4ENSDFSTATE.2.2.tar.gz"
+
+# for 10.7:
+#datasets_list="G4NDL.4.6.tar.gz G4EMLOW.7.13.tar.gz G4PhotonEvaporation.5.7.tar.gz G4RadioactiveDecay.5.6.tar.gz G4PARTICLEXS.3.1.tar.gz G4PII.1.3.tar.gz G4RealSurface.2.2.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4ENSDFSTATE.2.3.tar.gz G4PARTICLEXS.3.1.1.tar.gz"
 
 declare list_of_things_that_should_be_there_after_complete_installation="
 	/usr/local/include/Geant4
