@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 
 # written 2021-04-21 by mza
-# last updated 2021-05-19 by mza
+# last updated 2021-09-11 by mza
+
+# to install on a circuitpython device:
+# cp DebugInfoWarningError24.py /media/circuitpython/
+# cp temperature_log_and_graph.py /media/circuitpython/code.py
+# cd ~/build/adafruit-circuitpython/bundle/lib
+# rsync -r adafruit_esp32spi adafruit_register adafruit_pct2075.mpy adafruit_displayio_sh1107.mpy neopixel.mpy adafruit_rgbled.mpy adafruit_requests.mpy adafruit_sdcard.mpy simpleio.mpy /media/circuitpython/lib/
 
 import time
 import sys
@@ -11,24 +17,40 @@ import displayio
 import digitalio
 import neopixel
 import adafruit_pct2075 # sudo pip3 install adafruit-circuitpython-pct2075
-import adafruit_ssd1327 # sudo pip3 install adafruit-circuitpython-ssd1327
-import adafruit_displayio_sh1107
-import adafruit_dotstar as dotstar
-import adafruit_ht16k33.matrix
-import adafruit_ht16k33.segments
 import adafruit_register
 import adafruit_sdcard
 import storage
 import adafruit_bus_device
-import adafruit_pcf8523
 from adafruit_esp32spi import adafruit_esp32spi
 from adafruit_esp32spi import adafruit_esp32spi_wifimanager
+from adafruit_esp32spi import PWMOut
 import adafruit_requests as requests
 import adafruit_esp32spi.adafruit_esp32spi_socket as socket
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+import adafruit_displayio_sh1107
+try:
+	import adafruit_ssd1327 # sudo pip3 install adafruit-circuitpython-ssd1327
+except:
+	pass
+try:
+	import adafruit_dotstar as dotstar
+except:
+	pass
+try:
+	import adafruit_ht16k33.matrix
+except:
+	pass
+try:
+	import adafruit_ht16k33.segments
+except:
+	pass
+try:
+	import adafruit_pcf8523
+except:
+	pass
 
 intensity = 8 # brightness of plotted data on dotstar display
-if 0:
+if 1:
 	feed = "heater"
 	offset_t = 45.0 # min temp we care to plot
 	max_t = 65.0 # max temp we care to plot
@@ -65,19 +87,24 @@ dir = "/" # will be replaced by /logs if/when sd card is detected/mounted
 max_columns_to_plot = 128
 temperatures_to_plot = [ -40.0 for a in range(max_columns_to_plot) ]
 
-def setup_temperature_sensor(address):
+def setup_temperature_sensor(i2c, address):
 	#i2c.deinit()
 	global temperature_sensors
-	temperature_sensors.append(adafruit_pct2075.PCT2075(i2c, address=address))
+	try:
+		pct = adafruit_pct2075.PCT2075(i2c, address=address)
+		pct.temperature
+		temperature_sensors.append(pct)
+	except:
+		raise
 	return 1
 
-def setup_temperature_sensors():
+def setup_temperature_sensors(i2c):
 	global header_string
 	count = 0
 	#for address in [0x37, 0x36, 0x35, 0x2f, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28, 0x77, 0x76, 0x75, 0x74, 0x73, 0x72, 0x71, 0x70, 0x4f, 0x4e, 0x4d, 0x4c, 0x4b, 0x4a, 0x49, 0x48]:
 	for address in [0x37, 0x36, 0x35, 0x2f, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28, 0x76, 0x75, 0x74, 0x73, 0x72, 0x4f, 0x4e, 0x4d, 0x4c, 0x4b, 0x4a, 0x49, 0x48]: # omit 0x70 and 0x71 and 0x77
 		try:
-			count += setup_temperature_sensor(address)
+			count += setup_temperature_sensor(i2c, address)
 			if 1!=count:
 				header_string += ", other" + str(count)
 		except:
@@ -304,8 +331,11 @@ def setup_airlift():
 				print("could not connect to AP, retrying: ", e)
 				continue
 		print("My IP address is", esp.pretty_ip(esp.ip_address))
-		import adafruit_rgbled
-		from adafruit_esp32spi import PWMOut
+		try:
+			import adafruit_rgbled
+		except:
+			error("you need adafruit_rgbled.mpy and/or simpleio.mpy")
+			raise
 		RED_LED = PWMOut.PWMOut(esp, 26)
 		GREEN_LED = PWMOut.PWMOut(esp, 25)
 		BLUE_LED = PWMOut.PWMOut(esp, 27)
@@ -449,12 +479,12 @@ if __name__ == "__main__":
 	dotstar_matrix_is_available = setup_dotstar_matrix(False)
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
-		#info("using I2C1")
+		info("using I2C1")
 	except:
 		i2c = busio.I2C(board.SCL, board.SDA)
-		#info("using I2C0")
+		info("using I2C0")
 	try:
-		setup_temperature_sensors()
+		setup_temperature_sensors(i2c)
 	except:
 		error("can't find any temperature sensors on i2c bus")
 	if should_use_ssd1327_oled_display:
