@@ -16,7 +16,7 @@ def setup(i2c):
 			t = rtc.datetime
 			info("%04d-%02d-%02d" % (t.tm_year, t.tm_mon, t.tm_mday))
 	except:
-		error("unable to set up RTC")
+		warning("unable to set up RTC")
 		return False
 	return True
 

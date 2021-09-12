@@ -18,7 +18,7 @@ def setup_sdcard_for_logging_data(dir):
 		#with open("/logs/test.txt", "w") as f:
 		#	f.write("Hello, World!\r\n")
 	except:
-		error("unable to find/mount sdcard")
+		warning("unable to find/mount sdcard")
 		return False
 	return True
 

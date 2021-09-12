@@ -15,11 +15,10 @@ import board
 import busio
 import displayio
 import digitalio
-import neopixel
 import adafruit_pct2075 # sudo pip3 install adafruit-circuitpython-pct2075
 import adafruit_register
 import microsd_adafruit
-import storage
+import neopixel_adafruit
 import adafruit_bus_device
 from adafruit_esp32spi import adafruit_esp32spi
 from adafruit_esp32spi import adafruit_esp32spi_wifimanager
@@ -254,14 +253,6 @@ def update_temperature_display_on_oled_sh1107():
 			bitmap[columns - 1 - x, y] = 1
 	display.refresh()
 
-def setup_neopixel():
-	global pixel
-	try:
-		pixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=0.01, auto_write=True)
-	except:
-		return False
-	return True
-
 def setup_dotstar_matrix(auto_write = True):
 	if not should_use_dotstar_matrix:
 		return False
@@ -425,7 +416,7 @@ if __name__ == "__main__":
 	except:
 		pass
 	try:
-		neopixel_is_available = setup_neopixel()
+		neopixel_is_available = neopixel_adafruit.setup_neopixel()
 	except:
 		error("error setting up neopixel")
 		neopixel_is_available = False
@@ -471,18 +462,10 @@ if __name__ == "__main__":
 	while test_if_present():
 		temperature_accumulator = 0.0
 		for i in range(N):
-			if neopixel_is_available:
-				try:
-					pixel.fill((255, 0, 0))
-				except:
-					pass
+			neopixel_adafruit.set_color(255, 0, 0)
 			print_compact()
 			temperature_accumulator += temperature
-			if neopixel_is_available:
-				try:
-					pixel.fill((0, 255, 0))
-				except:
-					pass
+			neopixel_adafruit.set_color(0, 255, 0)
 			try:
 				sys.stdout.flush()
 			except:
