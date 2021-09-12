@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 # written 2021-04-21 by mza
-# last updated 2021-09-11 by mza
+# last updated 2021-09-12 by mza
 
 # to install on a circuitpython device:
-# cp DebugInfoWarningError24.py /media/circuitpython/
+# cp DebugInfoWarningError24.py pcf8523_adafruit.py /media/circuitpython/
 # cp temperature_log_and_graph.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
-# rsync -r adafruit_esp32spi adafruit_register adafruit_pct2075.mpy adafruit_displayio_sh1107.mpy neopixel.mpy adafruit_rgbled.mpy adafruit_requests.mpy adafruit_sdcard.mpy simpleio.mpy /media/circuitpython/lib/
+# rsync -r adafruit_esp32spi adafruit_register adafruit_pcf8523.mpy adafruit_pct2075.mpy adafruit_displayio_sh1107.mpy neopixel.mpy adafruit_rgbled.mpy adafruit_requests.mpy adafruit_sdcard.mpy simpleio.mpy /media/circuitpython/lib/
 
 import time
 import sys
@@ -18,7 +18,7 @@ import digitalio
 import neopixel
 import adafruit_pct2075 # sudo pip3 install adafruit-circuitpython-pct2075
 import adafruit_register
-import adafruit_sdcard
+import microsd_adafruit
 import storage
 import adafruit_bus_device
 from adafruit_esp32spi import adafruit_esp32spi
@@ -26,8 +26,9 @@ from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 from adafruit_esp32spi import PWMOut
 import adafruit_requests as requests
 import adafruit_esp32spi.adafruit_esp32spi_socket as socket
-from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 import adafruit_displayio_sh1107
+from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+import pcf8523_adafruit
 try:
 	import adafruit_ssd1327 # sudo pip3 install adafruit-circuitpython-ssd1327
 except:
@@ -42,10 +43,6 @@ except:
 	pass
 try:
 	import adafruit_ht16k33.segments
-except:
-	pass
-try:
-	import adafruit_pcf8523
 except:
 	pass
 
@@ -82,7 +79,7 @@ else:
 temperature_sensors = []
 header_string = "heater"
 temperature = 0
-dir = "/" # will be replaced by /logs if/when sd card is detected/mounted
+dir = "/logs"
 
 max_columns_to_plot = 128
 temperatures_to_plot = [ -40.0 for a in range(max_columns_to_plot) ]
@@ -142,7 +139,7 @@ def print_compact():
 		date = time.strftime("%Y-%m-%d+%X, ")
 	except:
 		try:
-			date = get_timestring1() + ", "
+			date = pcf8523_adafruit.get_timestring1() + ", "
 		except:
 			date = ""
 	string = measure_string()
@@ -422,50 +419,6 @@ def update_temperature_display_on_alphanumeric_backpack(temperature):
 	#alphanumeric_backpack.set_digit_raw(0, DIGIT_2)
 	alphanumeric_backpack.show()
 
-def setup_sdcard_for_logging_data():
-	if not should_use_sdcard:
-		return False
-	global dir
-	try:
-		spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-		cs = digitalio.DigitalInOut(board.D6)
-		sdcard = adafruit_sdcard.SDCard(spi, cs)
-		vfs = storage.VfsFat(sdcard)
-		storage.mount(vfs, "/logs") # this does NOT need an empty dir to mount on
-		#with open("/logs/test.txt", "w") as f:
-		#	f.write("Hello, World!\r\n")
-		dir = "/logs"
-	except:
-		error("unable to find/mount sdcard")
-		return False
-	return True
-
-def setup_RTC():
-	global rtc
-	if not should_use_RTC:
-		return False
-	try:
-		rtc = adafruit_pcf8523.PCF8523(i2c)
-		#info(get_timestring1())
-		if False:
-			t = time.struct_time((2021, 5, 5, 17, 39, 6, 0, -1, -1))
-			#info("setting time to " + str(t))
-			rtc.datetime = t
-			t = rtc.datetime
-			info("%04d-%02d-%02d" % (t.tm_year, t.tm_mon, t.tm_mday))
-	except:
-		error("unable to set up RTC")
-		return False
-	return True
-
-def get_timestring1():
-	t = rtc.datetime
-	return "%04d-%02d-%02d+%02d:%02d:%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
-
-def get_timestring2():
-	t = rtc.datetime
-	return "%04d-%02d-%02d.%02d%02d%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
-
 if __name__ == "__main__":
 	try:
 		displayio.release_displays()
@@ -500,10 +453,18 @@ if __name__ == "__main__":
 		error("can't find matrix backpack (i2c address 0x70)")
 		matrix_backpack_available = False
 	alphanumeric_backpack_available = setup_alphanumeric_backpack(0x77)
-	RTC_is_available = setup_RTC()
-	sdcard_is_available = setup_sdcard_for_logging_data()
+	if should_use_RTC:
+		RTC_is_available = pcf8523_adafruit.setup(i2c)
+	else:
+		RTC_is_available = False
+	if should_use_sdcard:
+		sdcard_is_available = setup_sdcard_for_logging_data(dir)
+	else:
+		sdcard_is_available = False
+	if not sdcard_is_available:
+		dir = "/"
 	if RTC_is_available:
-		create_new_logfile_with_string_embedded(dir, "pct2075", get_timestring2())
+		create_new_logfile_with_string_embedded(dir, "pct2075", pcf8523_adafruit.get_timestring2())
 	else:
 		create_new_logfile_with_string_embedded(dir, "pct2075")
 	print_header()
