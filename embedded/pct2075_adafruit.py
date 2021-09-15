@@ -41,7 +41,7 @@ def setup(i2c):
 	if 0==count:
 		error("pct2075 not present (any i2c address)")
 	else:
-		info("found " + str(count) + " temperature sensor(s)")
+		debug("found " + str(count) + " temperature sensor(s)")
 	return count
 
 header_string = ", temperature (C)"

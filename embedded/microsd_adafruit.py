@@ -11,7 +11,7 @@ def setup_sdcard_for_logging_data(dir):
 	try:
 		spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 		#cs = digitalio.DigitalInOut(board.D6)
-		cs = digitalio.DigitalInOut(board.D10) # adalogger feather
+		cs = digitalio.DigitalInOut(board.D10) # adalogger featherwing
 		sdcard = adafruit_sdcard.SDCard(spi, cs)
 		vfs = storage.VfsFat(sdcard)
 		storage.mount(vfs, dir) # this does NOT need an empty dir to mount on
