@@ -12,6 +12,8 @@ import adafruit_tsl2591
 def setup(i2c):
 	global tsl2591
 	tsl2591 = adafruit_tsl2591.TSL2591(i2c)
+	# https://github.com/adafruit/Adafruit_CircuitPython_TSL2591/blob/main/adafruit_tsl2591.py
+	# https://cdn-learn.adafruit.com/assets/assets/000/078/658/original/TSL2591_DS000338_6-00.pdf?1564168468
 	# You can optionally change the gain and integration time:
 	tsl2591.gain = adafruit_tsl2591.GAIN_LOW # (1x gain)
 	# tsl2591.gain = adafruit_tsl2591.GAIN_MED # (25x gain, the default)

@@ -1,5 +1,5 @@
 # written 2021-09-10 by mza
-# last updated 2021-09-15 by mza
+# last updated 2021-09-17 by mza
 
 # to install on a circuitpython device:
 # cp DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py /media/circuitpython/
@@ -64,48 +64,48 @@ if __name__ == "__main__":
 		create_new_logfile_with_string_embedded(dir, "solar_water_heater")
 	try:
 		pct2075_adafruit.setup(i2c)
-		header_string += ",pct2075-C"
+		header_string += ", pct2075-C"
 	except:
 		error("pct2075 not found")
 	try:
 		bh1750_adafruit.setup(i2c)
 		bh1750_is_available = True
-		header_string += ",bh1750-lux"
+		header_string += ", bh1750-lux"
 	except:
 		warning("bh1750 not found")
 		bh1750_is_available = False
 	try:
 		ltr390_adafruit.setup(i2c)
 		ltr390_is_available = True
-		header_string += ",ltr390-uvs,ltr390-light"
+		header_string += ", ltr390-uvs, ltr390-light, ltr390-uvi, ltr390-lux"
 	except:
 		warning("ltr390 not found")
 		ltr390_is_available = False
 	try:
 		vcnl4040_adafruit.setup(i2c)
 		vcnl4040_is_available = True
-		header_string += ",vcnl4040-proximity,vcnl4040-lux"
+		header_string += ", vcnl4040-proximity, vcnl4040-lux"
 	except:
 		warning("vcnl4040 not found")
 		vcnl4040_is_available = False
 	try:
 		as7341_adafruit.setup(i2c)
 		as7341_is_available = True
-		header_string += ",as7341-415nm,as7341-445nm,as7341-480nm, as7341-515nm,as7341-555nm,as7341-590nm,as7341-630nm,as7341-680nm"
+		header_string += ", as7341-415nm, as7341-445nm, as7341-480nm, as7341-515nm, as7341-555nm, as7341-590nm, as7341-630nm, as7341-680nm"
 	except:
 		warning("as7341 not found")
 		as7341_is_available = False
 	try:
 		tsl2591_adafruit.setup(i2c)
 		tsl2591_is_available = True
-		header_string += ",tsl2591.lux,tsl2591.visible,tsl2591.infrared,tsl2591.full_spectrum"
+		header_string += ", tsl2591.lux, tsl2591.visible, tsl2591.infrared, tsl2591.full_spectrum"
 	except:
 		warning("tsl2591 not found")
 		tsl2591_is_available = False
 	try:
 		ds18b20_adafruit.setup(i2c)
 		ds18b20_is_available = True
-		header_string += ",ds18b20-C"
+		header_string += ", ds18b20-C"
 	except:
 		warning("ds18b20 not found")
 		ds18b20_is_available = False
@@ -113,7 +113,6 @@ if __name__ == "__main__":
 		neopixel_is_available = neopixel_adafruit.setup_neopixel()
 	except:
 		warning("error setting up neopixel")
-	#header="date/time, temperature-C, bh1750-lux, ltr390-uvs, ltr390-light, vcnl4040-proximity, vcnl4040-lux, as7341-415, as7341-445, as7341-480, as7341-515, as7341-555, as7341-590, as7341-630, as7341-680"
 	#gnuplot> set key autotitle columnheader
 	#gnuplot> set style data lines
 	#gnuplot> plot for [i=1:14] "solar_water_heater.log" using 0:i
@@ -127,13 +126,13 @@ if __name__ == "__main__":
 			#gnuplot> plot for [i=3:3] "solar_water_heater.log" using 0:i
 			string += bh1750_adafruit.measure_string()
 		if ltr390_is_available:
-			#gnuplot> plot for [i=4:5] "solar_water_heater.log" using 0:i
+			#gnuplot> plot for [i=4:7] "solar_water_heater.log" using 0:i
 			string += ltr390_adafruit.measure_string()
 		if vcnl4040_is_available:
-			#gnuplot> plot for [i=6:7] "solar_water_heater.log" using 0:i
+			#gnuplot> plot for [i=8:9] "solar_water_heater.log" using 0:i
 			string += vcnl4040_adafruit.measure_string()
 		if as7341_is_available:
-			#gnuplot> plot for [i=8:14] "solar_water_heater.log" using 0:i
+			#gnuplot> plot for [i=10:17] "solar_water_heater.log" using 0:i
 			string += as7341_adafruit.measure_string()
 		if tsl2591_is_available:
 			string += tsl2591_adafruit.measure_string()
