@@ -13,7 +13,7 @@ def setup(i2c):
 	bh1750 = adafruit_bh1750.BH1750(i2c)
 	# https://github.com/adafruit/Adafruit_CircuitPython_BH1750/blob/main/adafruit_bh1750.py
 	bh1750.resolution = adafruit_bh1750.Resolution.LOW
-	bh1750.mode = adafruit_bh1750.Mode.ONE_SHOT
+	#bh1750.mode = adafruit_bh1750.Mode.ONE_SHOT
 	# https://www.mouser.com/datasheet/2/348/bh1750fvi-e-186247.pdf
 	#return bh1750.i2c_device.device_address
 	return 0x23
