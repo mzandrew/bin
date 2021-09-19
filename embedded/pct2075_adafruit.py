@@ -47,6 +47,7 @@ def setup(i2c, prohibited_addresses):
 			pass
 	if 0==count:
 		error("pct2075 not present (any i2c address)")
+		raise
 	else:
 		debug("found " + str(count) + " temperature sensor(s)")
 	return found_addresses

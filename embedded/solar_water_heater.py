@@ -124,7 +124,7 @@ if __name__ == "__main__":
 	#info(str(prohibited_addresses)) # disallow treating any devices already discovered as pct2075s
 	try:
 		addresses = pct2075_adafruit.setup(i2c, prohibited_addresses)
-		#debug("pct2075")
+		#info("pct2075" + str(addresses))
 		header_string += ", pct2075-C"
 	except:
 		error("pct2075 not found")
