@@ -1,7 +1,7 @@
 # https://learn.adafruit.com/adafruit-as7341-10-channel-light-color-sensor-breakout/python-circuitpython
 # SPDX-FileCopyrightText: 2020 Bryan Siepert, written for Adafruit Industries
 # SPDX-License-Identifier: MIT
-# last updated 2021-09-16 by mza
+# last updated 2021-09-19 by mza
 
 import time
 import board
@@ -18,6 +18,8 @@ def setup(i2c):
 	as7341.astep = 599 # integration time per ASTEP (2.78us each) (0-65534)
 	# adc_fullscale = (atime+1)*(astep+1)
 	as7341.gain = 0
+	#return as7341.i2c_device.device_address
+	return 0x39
 
 def test_if_present():
 	try:

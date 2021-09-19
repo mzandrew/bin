@@ -73,7 +73,7 @@ def create_new_logfile_with_string_embedded(dirname, basename, timestring=""):
 			filename = dirname + "/" + timestring + "." + basename + ".log"
 		logfile = open(filename, "a")
 		logfile_is_open = 1
-		info("Writing output to logfile: %s" % filename)
+		debug("Writing output to logfile: %s" % filename)
 	except:
 		warning("Unable to open logfile")
 

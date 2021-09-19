@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 # Simple demo of printing the temperature from the first found DS18x20 sensor every second.
 # Author: Tony DiCola
-# last updated 2021-09-15 by mza
+# last updated 2021-09-19 by mza
 
 # A 4.7Kohm pullup between DATA and POWER is REQUIRED!
 
@@ -21,7 +21,7 @@ def test_if_present():
 	try:
 		ds18.temperature
 	except:
-		print("bh1750 not present")
+		print("ds18 not present")
 		return False
 	return True
 

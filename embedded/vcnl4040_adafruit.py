@@ -1,7 +1,7 @@
 # https://learn.adafruit.com/adafruit-vcnl4040-proximity-sensor/python-circuitpython
 # SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
 # SPDX-License-Identifier: MIT
-# last updated 2021-09-16 by mza
+# last updated 2021-09-19 by mza
 
 import time
 import board
@@ -14,6 +14,8 @@ def setup(i2c):
 	# https://github.com/adafruit/Adafruit_CircuitPython_VCNL4040/blob/main/adafruit_vcnl4040.py
 	# https://www.vishay.com/docs/84274/vcnl4040.pdf
 	#vcnl4040.light_integration_time = 0
+	#return vcnl4040.i2c_device.device_address
+	return 0x60
 
 def test_if_present():
 	try:

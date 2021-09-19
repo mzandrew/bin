@@ -1,6 +1,6 @@
 # https://learn.adafruit.com/adafruit-bh1750-ambient-light-sensor?view=all
 # SPDX-FileCopyrightText: 2020 Bryan Siepert, written for Adafruit Industries
-# last updated 2021-09-16 by mza
+# last updated 2021-09-19 by mza
 
 # SPDX-License-Identifier: Unlicense
 import time
@@ -15,6 +15,9 @@ def setup(i2c):
 	bh1750.resolution = "LOW"
 	bh1750.mode = "ONE_SHOT"
 	# https://www.mouser.com/datasheet/2/348/bh1750fvi-e-186247.pdf
+	#return bh1750.i2c_device.device_address
+	return 0x23
+	#return 0x5c
 
 def test_if_present():
 	try:

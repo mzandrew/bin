@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 # Simple demo of the TSL2591 sensor.  Will print the detected light value
 # every second.
-# last updated 2021-09-15 by mza
+# last updated 2021-09-19 by mza
 
 import time
 import board
@@ -25,6 +25,8 @@ def setup(i2c):
 	# tsl2591.integration_time = adafruit_tsl2591.INTEGRATIONTIME_400MS # (400ms)
 	# tsl2591.integration_time = adafruit_tsl2591.INTEGRATIONTIME_500MS # (500ms)
 	# tsl2591.integration_time = adafruit_tsl2591.INTEGRATIONTIME_600MS # (600ms)
+	#return tsl2591.i2c_device.device_address
+	return 0x29
 
 def test_if_present():
 	try:

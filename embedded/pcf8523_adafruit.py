@@ -1,4 +1,4 @@
-# last updated 2021-09-12 by mza
+# last updated 2021-09-19 by mza
 
 import time
 import adafruit_pcf8523
@@ -8,17 +8,20 @@ def setup(i2c):
 	global rtc
 	try:
 		rtc = adafruit_pcf8523.PCF8523(i2c)
+		rtc.calibration = -30 # -30 * 4.34 ppm (to compensate for +130 ppm error)
+		# https://github.com/adafruit/Adafruit_CircuitPython_PCF8523/blob/main/adafruit_pcf8523.py
+		# https://www.nxp.com/docs/en/data-sheet/PCF8523.pdf
 		#info(get_timestring1())
 		if False:
-			t = time.struct_time((2021, 9, 12, 11, 31, 3, 0, -1, -1))
+			t = time.struct_time((2021, 9, 19, 11, 43, 3, 0, -1, -1)) # off by +56 seconds after 5 days (+129.6 ppm)
 			info("setting time to " + str(t))
 			rtc.datetime = t
 			t = rtc.datetime
 			info("%04d-%02d-%02d" % (t.tm_year, t.tm_mon, t.tm_mday))
+		return rtc.i2c_device.device_address
 	except:
 		warning("unable to set up RTC")
-		return False
-	return True
+		raise
 
 def get_timestring1():
 	t = rtc.datetime

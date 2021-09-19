@@ -1,5 +1,5 @@
 # written 2021-09-10 by mza
-# last updated 2021-09-17 by mza
+# last updated 2021-09-19 by mza
 
 # to install on a circuitpython device:
 # cp DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py /media/circuitpython/
@@ -44,12 +44,19 @@ def print_header():
 if __name__ == "__main__":
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
-		info("using I2C1")
+		string = "using I2C1 "
 	except:
 		i2c = busio.I2C(board.SCL, board.SDA)
-		info("using I2C0")
+		string = "using I2C0 "
+	#i2c.try_lock()
+	#i2c_list = i2c.scan()
+	#i2c.unlock()
+	#info(string + str(i2c_list))
+	prohibited_addresses = []
 	if should_use_RTC:
-		RTC_is_available = pcf8523_adafruit.setup(i2c)
+		i2c_address = pcf8523_adafruit.setup(i2c)
+		prohibited_addresses.append(i2c_address)
+		RTC_is_available = True
 	else:
 		RTC_is_available = False
 	if should_use_sdcard:
@@ -63,47 +70,48 @@ if __name__ == "__main__":
 	else:
 		create_new_logfile_with_string_embedded(dir, "solar_water_heater")
 	try:
-		pct2075_adafruit.setup(i2c)
-		header_string += ", pct2075-C"
-	except:
-		error("pct2075 not found")
-	try:
-		bh1750_adafruit.setup(i2c)
+		i2c_address = bh1750_adafruit.setup(i2c)
+		prohibited_addresses.append(i2c_address)
 		bh1750_is_available = True
 		header_string += ", bh1750-lux"
 	except:
 		warning("bh1750 not found")
 		bh1750_is_available = False
 	try:
-		ltr390_adafruit.setup(i2c)
+		i2c_address = ltr390_adafruit.setup(i2c)
+		prohibited_addresses.append(i2c_address)
 		ltr390_is_available = True
 		header_string += ", ltr390-uvs, ltr390-light, ltr390-uvi, ltr390-lux"
 	except:
 		warning("ltr390 not found")
 		ltr390_is_available = False
 	try:
-		vcnl4040_adafruit.setup(i2c)
+		i2c_address = vcnl4040_adafruit.setup(i2c)
+		prohibited_addresses.append(i2c_address)
 		vcnl4040_is_available = True
 		header_string += ", vcnl4040-proximity, vcnl4040-lux"
 	except:
 		warning("vcnl4040 not found")
 		vcnl4040_is_available = False
 	try:
-		as7341_adafruit.setup(i2c)
+		i2c_address = as7341_adafruit.setup(i2c)
+		prohibited_addresses.append(i2c_address)
 		as7341_is_available = True
 		header_string += ", as7341-415nm, as7341-445nm, as7341-480nm, as7341-515nm, as7341-555nm, as7341-590nm, as7341-630nm, as7341-680nm"
 	except:
 		warning("as7341 not found")
 		as7341_is_available = False
 	try:
-		tsl2591_adafruit.setup(i2c)
+		i2c_address = tsl2591_adafruit.setup(i2c)
+		prohibited_addresses.append(i2c_address)
 		tsl2591_is_available = True
 		header_string += ", tsl2591.lux, tsl2591.visible, tsl2591.infrared, tsl2591.full_spectrum"
 	except:
 		warning("tsl2591 not found")
 		tsl2591_is_available = False
 	try:
-		ds18b20_adafruit.setup(i2c)
+		ow_bus = OneWireBus(board.D5)
+		ds18b20_adafruit.setup(ow_bus)
 		ds18b20_is_available = True
 		header_string += ", ds18b20-C"
 	except:
@@ -113,6 +121,13 @@ if __name__ == "__main__":
 		neopixel_is_available = neopixel_adafruit.setup_neopixel()
 	except:
 		warning("error setting up neopixel")
+	#info(str(prohibited_addresses)) # disallow treating any devices already discovered as pct2075s
+	try:
+		addresses = pct2075_adafruit.setup(i2c, prohibited_addresses)
+		#debug("pct2075")
+		header_string += ", pct2075-C"
+	except:
+		error("pct2075 not found")
 	#gnuplot> set key autotitle columnheader
 	#gnuplot> set style data lines
 	#gnuplot> plot for [i=1:14] "solar_water_heater.log" using 0:i
