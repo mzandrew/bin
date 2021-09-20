@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 # written 2021-04-21 by mza
-# last updated 2021-09-12 by mza
+# last updated 2021-09-20 by mza
 
 # to install on a circuitpython device:
-# cp DebugInfoWarningError24.py pcf8523_adafruit.py /media/circuitpython/
+# cp DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py /media/circuitpython/
 # cp temperature_log_and_graph.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
 # rsync -r adafruit_esp32spi adafruit_register adafruit_pcf8523.mpy adafruit_pct2075.mpy adafruit_displayio_sh1107.mpy neopixel.mpy adafruit_rgbled.mpy adafruit_requests.mpy adafruit_sdcard.mpy simpleio.mpy /media/circuitpython/lib/
@@ -17,21 +17,12 @@ import displayio
 import digitalio
 import adafruit_pct2075 # sudo pip3 install adafruit-circuitpython-pct2075
 import adafruit_register
-import microsd_adafruit
-import neopixel_adafruit
 import adafruit_bus_device
 from adafruit_esp32spi import adafruit_esp32spi
 from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 from adafruit_esp32spi import PWMOut
 import adafruit_requests as requests
 import adafruit_esp32spi.adafruit_esp32spi_socket as socket
-import adafruit_displayio_sh1107
-from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
-import pcf8523_adafruit
-try:
-	import adafruit_ssd1327 # sudo pip3 install adafruit-circuitpython-ssd1327
-except:
-	pass
 try:
 	import adafruit_dotstar as dotstar
 except:
@@ -44,6 +35,11 @@ try:
 	import adafruit_ht16k33.segments
 except:
 	pass
+import microsd_adafruit
+import neopixel_adafruit
+import pcf8523_adafruit
+import oled_adafruit
+from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
 intensity = 8 # brightness of plotted data on dotstar display
 if 1:
@@ -150,108 +146,6 @@ def test_if_present():
 	except:
 		return False
 	return True
-
-def setup_i2c_oled_display_ssd1327(address):
-	if not should_use_ssd1327_oled_display:
-		return False
-	global display
-	try:
-		display_bus = displayio.I2CDisplay(i2c, device_address=address)
-		display = adafruit_ssd1327.SSD1327(display_bus, width=128, height=128)
-	except:
-		error("can't initialize ssd1327 display over i2c (address " + hex(address) + ")")
-		return False
-	return True
-
-def setup_i2c_oled_display_sh1107(address):
-	if not should_use_sh1107_oled_display:
-		return False
-	#oled_reset = board.D9
-	global display
-	try:
-		display_bus = displayio.I2CDisplay(i2c, device_address=address)
-		display = adafruit_displayio_sh1107.SH1107(display_bus, width=128, height=64)
-		display.auto_refresh = False
-	except:
-		error("can't initialize sh1107 display over i2c (address " + hex(address) + ")")
-		return False
-	return True
-
-def clear_display_on_oled_ssd1327():
-	if not oled_display_is_available:
-		return
-	global bitmap
-	bitmap = displayio.Bitmap(128, 128, 2)
-	palette = displayio.Palette(2)
-	palette[0] = 0x000000
-	palette[1] = 0xffffff
-	tile_grid = displayio.TileGrid(bitmap, pixel_shader = palette)
-	group = displayio.Group()
-	group.append(tile_grid)
-	for x in range(128):
-		for y in range(128):
-			bitmap[x,y] = 0
-	display.show(group)
-	display.refresh()
-
-def clear_display_on_oled_sh1107():
-	if not oled_display_is_available:
-		return
-	global bitmap
-	bitmap = displayio.Bitmap(128, 64, 2)
-	palette = displayio.Palette(2)
-	palette[0] = 0x000000
-	palette[1] = 0xffffff
-	tile_grid = displayio.TileGrid(bitmap, pixel_shader = palette)
-	group = displayio.Group()
-	group.append(tile_grid)
-	for x in range(128):
-		for y in range(64):
-			bitmap[x,y] = 0
-	display.show(group)
-	display.refresh()
-
-def update_temperature_display_on_oled_ssd1327():
-	if not oled_display_is_available:
-		return
-	global bitmap
-	display.auto_refresh = False
-	rows = 128
-	columns = 128
-	gain_t = (max_t - offset_t) / (rows - 1)
-	for y in range(rows):
-		for x in range(columns):
-			bitmap[x, y] = 0
-	for x in range(columns):
-		if 0.0<temperatures_to_plot[x]:
-			y = rows - 1 - int((temperatures_to_plot[x] - offset_t) / gain_t)
-			if y<0.0:
-				y = 0
-			if rows<=y:
-				y = rows - 1
-			bitmap[columns - 1 - x, y] = 1
-	display.refresh()
-
-def update_temperature_display_on_oled_sh1107():
-	if not oled_display_is_available:
-		return
-	global bitmap
-	display.auto_refresh = False
-	rows = 64
-	columns = 128
-	gain_t = (max_t - offset_t) / (rows - 1)
-	for y in range(rows):
-		for x in range(columns):
-			bitmap[x, y] = 0
-	for x in range(columns):
-		if 0.0<temperatures_to_plot[x]:
-			y = rows - 1 - int((temperatures_to_plot[x] - offset_t) / gain_t)
-			if y<0.0:
-				y = 0
-			if rows<=y:
-				y = rows - 1
-			bitmap[columns - 1 - x, y] = 1
-	display.refresh()
 
 def setup_dotstar_matrix(auto_write = True):
 	if not should_use_dotstar_matrix:
@@ -432,11 +326,11 @@ if __name__ == "__main__":
 	except:
 		error("can't find any temperature sensors on i2c bus")
 	if should_use_ssd1327_oled_display:
-		oled_display_is_available = setup_i2c_oled_display_ssd1327(0x3d)
-		clear_display_on_oled_ssd1327()
+		oled_display_is_available = oled_adafruit.setup_i2c_oled_display_ssd1327(i2c, 0x3d)
+		oled_adafruit.clear_display_on_oled_ssd1327()
 	if should_use_sh1107_oled_display:
-		oled_display_is_available = setup_i2c_oled_display_sh1107(0x3c)
-		clear_display_on_oled_sh1107()
+		oled_display_is_available = oled_adafruit.setup_i2c_oled_display_sh1107(i2c, 0x3c)
+		oled_adafruit.clear_display_on_oled_sh1107()
 	airlift_is_available = setup_airlift()
 	try:
 		matrix_backpack_available = setup_matrix_backpack()
@@ -479,8 +373,8 @@ if __name__ == "__main__":
 		update_temperature_display_on_dotstar_matrix()
 		update_temperature_display_on_matrix_backpack()
 		if should_use_ssd1327_oled_display:
-			update_temperature_display_on_oled_ssd1327()
+			oled_adafruit.update_temperature_display_on_oled_ssd1327()
 		if should_use_sh1107_oled_display:
-			update_temperature_display_on_oled_sh1107()
+			oled_adafruit.update_temperature_display_on_oled_sh1107()
 		flush()
 
