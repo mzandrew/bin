@@ -157,4 +157,5 @@ if __name__ == "__main__":
 		flush()
 		neopixel_adafruit.set_color(0, 255, 0)
 		time.sleep(1)
+	info("pct2075 not available; cannot continue")
 
