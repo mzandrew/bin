@@ -76,7 +76,7 @@ if __name__ == "__main__":
 		import oled_adafruit
 		oled_display_available = oled_adafruit.setup_i2c_oled_display_ssd1327(i2c, 0x3d)
 		print("oled display is available")
-		#oled_adafruit.clear_display_on_oled_ssd1327()
+		oled_adafruit.clear_display_on_oled_ssd1327()
 	except:
 		print("unable to find ssd1327 oled display on i2c")
 		oled_display_available = False
@@ -84,7 +84,7 @@ if __name__ == "__main__":
 	print(measure_string())
 	while True:
 		string = show_if_changed()
-#		if oled_display_available:
-#			oled_adafruit.show_text_on_ssd1327(string)
+		if oled_display_available:
+			oled_adafruit.show_text_on_ssd1327(string)
 		time.sleep(1)
 

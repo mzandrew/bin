@@ -115,7 +115,7 @@ def update_temperature_display_on_oled_sh1107():
 			bitmap[columns - 1 - x, y] = 1
 	display.refresh()
 
-FONTSCALE = 1
+FONTSCALE = 3
 
 def show_text_on_ssd1327(string):
 	# https://learn.adafruit.com/adafruit-grayscale-1-5-128x128-oled-display/circuitpython-wiring-and-usage
