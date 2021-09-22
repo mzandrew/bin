@@ -2,7 +2,7 @@
 # https://github.com/adafruit/Adafruit_CircuitPython_LTR390
 # SPDX-FileCopyrightText: 2021 by Bryan Siepert, written for Adafruit Industries
 # SPDX-License-Identifier: Unlicense
-# last updated 2021-09-19 by mza
+# last updated 2021-09-22 by mza
 
 import time
 import board
@@ -23,7 +23,7 @@ def setup(i2c):
 	# gain=3 means gain is 9
 	# gain=4 means gain is 18
 	#ltr390.resolution = 2
-	#ltr390._rate_bits = 2
+	ltr390._rate_bits = 2
 	#lux_calc = wfac * 0.6 * als_data / (gain*integration_time)
 	#return ltr390.i2c_device.device_address
 	return 0x53
@@ -38,7 +38,7 @@ def test_if_present():
 	return True
 
 def measure_string():
-	return ", %d, %d, %d, %d" % (ltr390.uvs, ltr390.light, ltr390.uvi, ltr390.lux)
+	return ", %d, %d, %d, %d" % (ltr390.uvs, ltr390.uvi, ltr390.light, ltr390.lux)
 
 def print_compact():
 	print(measure_string())

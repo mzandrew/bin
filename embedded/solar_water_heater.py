@@ -1,9 +1,9 @@
 # written 2021-09-10 by mza
-# last updated 2021-09-19 by mza
+# last updated 2021-09-22 by mza
 
 # to install on a circuitpython device:
-# cp DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py /media/circuitpython/
-# cp solar_water_heater.py /media/circuitpython/code.py
+# cp -a DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py /media/circuitpython/
+# cp -a solar_water_heater.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
 # rsync -r adafruit_register adafruit_sdcard.mpy adafruit_pct2075.mpy adafruit_bh1750.mpy adafruit_vcnl4040.mpy adafruit_ltr390.mpy neopixel.mpy adafruit_as7341.mpy adafruit_pcf8523.mpy adafruit_tsl2591.mpy adafruit_onewire adafruit_ds18x20.mpy /media/circuitpython/lib/
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
 		i2c_address = ltr390_adafruit.setup(i2c)
 		prohibited_addresses.append(i2c_address)
 		ltr390_is_available = True
-		header_string += ", ltr390-uvs, ltr390-light, ltr390-uvi, ltr390-lux"
+		header_string += ", ltr390-uvs, ltr390-uvi, ltr390-light, ltr390-lux"
 	except:
 		warning("ltr390 not found")
 		ltr390_is_available = False
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 		i2c_address = tsl2591_adafruit.setup(i2c)
 		prohibited_addresses.append(i2c_address)
 		tsl2591_is_available = True
-		header_string += ", tsl2591.lux, tsl2591.visible, tsl2591.infrared, tsl2591.full_spectrum"
+		header_string += ", tsl2591.lux, tsl2591.infrared, tsl2591.visible, tsl2591.full-spectrum"
 	except:
 		warning("tsl2591 not found")
 		tsl2591_is_available = False
@@ -135,8 +135,6 @@ if __name__ == "__main__":
 	while pct2075_adafruit.test_if_present():
 		neopixel_adafruit.set_color(255, 0, 0)
 		string = ""
-		#gnuplot> plot for [i=2:2] "solar_water_heater.log" using 0:i
-		string += pct2075_adafruit.measure_string()
 		if bh1750_is_available:
 			#gnuplot> plot for [i=3:3] "solar_water_heater.log" using 0:i
 			string += bh1750_adafruit.measure_string()
@@ -147,12 +145,14 @@ if __name__ == "__main__":
 			#gnuplot> plot for [i=8:9] "solar_water_heater.log" using 0:i
 			string += vcnl4040_adafruit.measure_string()
 		if as7341_is_available:
-			#gnuplot> plot for [i=10:17] "solar_water_heater.log" using 0:i
+			#gnuplot> plot for [i=8:15] "solar_water_heater.log" using 0:i
 			string += as7341_adafruit.measure_string()
 		if tsl2591_is_available:
 			string += tsl2591_adafruit.measure_string()
 		if ds18b20_is_available:
 			string += ds18b20_adafruit.measure_string()
+		#gnuplot> plot for [i=2:2] "solar_water_heater.log" using 0:i
+		string += pct2075_adafruit.measure_string()
 		print_compact(string)
 		flush()
 		neopixel_adafruit.set_color(0, 255, 0)

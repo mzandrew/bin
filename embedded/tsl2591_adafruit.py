@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 # Simple demo of the TSL2591 sensor.  Will print the detected light value
 # every second.
-# last updated 2021-09-19 by mza
+# last updated 2021-09-22 by mza
 
 import time
 import board
@@ -37,7 +37,7 @@ def test_if_present():
 	return True
 
 def measure_string():
-	return ", %d, %d, %d, %d" % (tsl2591.lux, tsl2591.visible, tsl2591.infrared, tsl2591.full_spectrum)
+	return ", %d, %d, %d, %d" % (tsl2591.lux, tsl2591.infrared, tsl2591.visible, tsl2591.full_spectrum)
 
 def print_compact():
 	print(measure_string())
