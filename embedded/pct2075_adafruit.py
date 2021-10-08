@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
 # written 2020-11-24 by mza
-# last updated 2021-09-19 by mza
+# last updated 2021-10-07 by mza
 
 # from https://learn.adafruit.com/adafruit-pct2075-temperature-sensor/python-circuitpython
 
 import time
 import sys
+import adafruit_pct2075 # pip3 install adafruit-circuitpython-pct2075
 import board
 import busio
-import adafruit_pct2075 # sudo pip3 install adafruit-circuitpython-pct2075/
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string
 
 temperature_sensors = []
@@ -95,9 +95,12 @@ def test_if_present():
 	return True
 
 if __name__ == "__main__":
-	i2c = busio.I2C(board.SCL1, board.SDA1)
 	try:
-		setup(i2c)
+		i2c = busio.I2C(board.SCL1, board.SDA1)
+	except:
+		i2c = busio.I2C(board.SCL, board.SDA)
+	try:
+		setup(i2c, [])
 	except:
 		error("no pct2075 sensors present")
 		sys.exit(1)
