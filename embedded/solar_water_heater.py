@@ -1,5 +1,5 @@
 # written 2021-09-10 by mza
-# last updated 2021-11-20 by mza
+# last updated 2021-11-21 by mza
 
 # to install on a circuitpython device:
 # cp -a DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py /media/circuitpython/
@@ -24,6 +24,7 @@ import neopixel_adafruit
 import ds18b20_adafruit
 import tsl2591_adafruit
 import anemometer
+import sht31d_adafruit
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
 header_string = "date/time"
@@ -130,6 +131,14 @@ if __name__ == "__main__":
 		warning("anemometer not found")
 		anemometer_is_available = False
 	try:
+		i2c_address = sht31d_adafruit.setup(i2c)
+		prohibited_addresses.append(i2c_address)
+		header_string += ", sht31d-C, sht31d-%RH"
+		sht31d_is_available = True
+	except:
+		warning("sht31d not found")
+		sht31d_is_available = False
+	try:
 		addresses = pct2075_adafruit.setup(i2c, prohibited_addresses)
 		#info("pct2075" + str(addresses))
 		header_string += ", pct2075-C"
@@ -160,6 +169,8 @@ if __name__ == "__main__":
 			string += ds18b20_adafruit.measure_string()
 		if anemometer_is_available:
 			string += anemometer.measure_string()
+		if sht31d_is_available:
+			string += sht31d.measure_string()
 		#gnuplot> plot for [i=2:2] "solar_water_heater.log" using 0:i
 		string += ", " + pct2075_adafruit.measure_string()
 		print_compact(string)
