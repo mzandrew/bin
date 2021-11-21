@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-04-21 by mza
-# last updated 2021-09-20 by mza
+# last updated 2021-10-26 by mza
 
 # to install on a circuitpython device:
 # cp DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py /media/circuitpython/
@@ -44,8 +44,8 @@ from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3,
 intensity = 8 # brightness of plotted data on dotstar display
 if 1:
 	feed = "heater"
-	offset_t = 45.0 # min temp we care to plot
-	max_t = 65.0 # max temp we care to plot
+	offset_t = 25.0 # min temp we care to plot
+	max_t = 75.0 # max temp we care to plot
 	N = 5*60 # number of samples to average over
 	delay = 1.0 # number of seconds between samples
 	should_use_airlift = True

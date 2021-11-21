@@ -1,5 +1,5 @@
 # written 2021-09-10 by mza
-# last updated 2021-09-22 by mza
+# last updated 2021-11-20 by mza
 
 # to install on a circuitpython device:
 # cp -a DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py /media/circuitpython/
@@ -23,6 +23,7 @@ import microsd_adafruit
 import neopixel_adafruit
 import ds18b20_adafruit
 import tsl2591_adafruit
+import anemometer
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
 header_string = "date/time"
@@ -30,10 +31,10 @@ dir = "/logs"
 
 def print_compact(string):
 	try:
-		date = time.strftime("%Y-%m-%d+%X, ")
+		date = time.strftime("%Y-%m-%d+%X")
 	except:
 		try:
-			date = pcf8523_adafruit.get_timestring1() + ", "
+			date = pcf8523_adafruit.get_timestring1()
 		except:
 			date = ""
 	info("%s%s" % (date, string))
@@ -123,6 +124,12 @@ if __name__ == "__main__":
 		warning("error setting up neopixel")
 	#info(str(prohibited_addresses)) # disallow treating any devices already discovered as pct2075s
 	try:
+		anemometer_is_available = anemometer.setup(board.A0)
+		header_string += ", anemometer-m/s"
+	except:
+		warning("anemometer not found")
+		anemometer_is_available = False
+	try:
 		addresses = pct2075_adafruit.setup(i2c, prohibited_addresses)
 		#info("pct2075" + str(addresses))
 		header_string += ", pct2075-C"
@@ -151,8 +158,10 @@ if __name__ == "__main__":
 			string += tsl2591_adafruit.measure_string()
 		if ds18b20_is_available:
 			string += ds18b20_adafruit.measure_string()
+		if anemometer_is_available:
+			string += anemometer.measure_string()
 		#gnuplot> plot for [i=2:2] "solar_water_heater.log" using 0:i
-		string += pct2075_adafruit.measure_string()
+		string += ", " + pct2075_adafruit.measure_string()
 		print_compact(string)
 		flush()
 		neopixel_adafruit.set_color(0, 255, 0)
