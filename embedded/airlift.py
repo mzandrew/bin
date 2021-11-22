@@ -1,21 +1,31 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2021-05-01 by mza
+# last updated 2021-11-21 by mza
 
+#from adafruit_esp32spi import adafruit_esp32spi_wifimanager
+
+import board
+import busio
+import digitalio
 from adafruit_esp32spi import adafruit_esp32spi
-from adafruit_esp32spi import adafruit_esp32spi_wifimanager
+from adafruit_esp32spi import PWMOut
+from adafruit_io.adafruit_io import IO_HTTP, AdafruitIO_RequestError
 import adafruit_requests as requests
 import adafruit_esp32spi.adafruit_esp32spi_socket as socket
-#import rtc
+import math
+from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+
+epsilon = 0.000001
+MAXERRORCOUNT = 5
+errorcount = 0
 
 def setup_airlift():
-	global wifi
-	global secrets
-	if not should_use_airlift:
-		return False
+	global esp
 	# from https://github.com/ladyada/Adafruit_CircuitPython_ESP32SPI/blob/master/examples/esp32spi_localtime.py
 	# and https://learn.adafruit.com/adafruit-airlift-featherwing-esp32-wifi-co-processor-featherwing?view=all
+	# and https://learn.adafruit.com/adafruit-io-basics-airlift/circuitpython
+	global secrets
 	try:
 		from secrets import secrets
 	except ImportError:
@@ -44,6 +54,7 @@ def setup_airlift():
 				continue
 		#print("Connected to", str(esp.ssid, 'utf-8'), "\tRSSI:", esp.rssi)
 		print("My IP address is", esp.pretty_ip(esp.ip_address))
+		print("RSSI:", esp.rssi)
 		#print("IP lookup adafruit.com: %s" % esp.pretty_ip(esp.get_host_by_name("adafruit.com")))
 		#print("Ping google.com: %d ms" % esp.ping("google.com"))
 		#requests.set_socket(socket, esp)
@@ -54,25 +65,63 @@ def setup_airlift():
 		#print(r.text)
 		#print("-" * 40)
 		#r.close()
-		import adafruit_rgbled
-		from adafruit_esp32spi import PWMOut
-		RED_LED = PWMOut.PWMOut(esp, 26)
-		GREEN_LED = PWMOut.PWMOut(esp, 25)
-		BLUE_LED = PWMOut.PWMOut(esp, 27)
-		status_light = adafruit_rgbled.RGBLED(RED_LED, BLUE_LED, GREEN_LED)
-		wifi = adafruit_esp32spi_wifimanager.ESPSPI_WiFiManager(esp, secrets, status_light)
+		#from adafruit_esp32spi import PWMOut
+#		try:
+#			import adafruit_rgbled
+#		except:
+#			error("you need adafruit_rgbled.mpy and/or simpleio.mpy")
+#			raise
+		#RED_LED = PWMOut.PWMOut(esp, 26)
+		#GREEN_LED = PWMOut.PWMOut(esp, 25)
+		#BLUE_LED = PWMOut.PWMOut(esp, 27)
+		#status_light = adafruit_rgbled.RGBLED(RED_LED, BLUE_LED, GREEN_LED)
+		#wifi = adafruit_esp32spi_wifimanager.ESPSPI_WiFiManager(esp, secrets, status_light)
 		#DATA_SOURCE = "https://www.google.com/index.html"
 		#try:
 		#	response = wifi.get(DATA_SOURCE)
 		#except:
 		#	wifi.reset()
 	except:
-		return False
+		error("can't initialize airlift wifi")
+		#return False
+		raise
 	return True
 
-def post_data(data):
-	if not airlift_is_available:
-		return
+def setup_feed(feed):
+	global io
+	global myfeed
+	try:
+		print("connecting to feed " + feed + "...")
+		socket.set_interface(esp)
+		requests.set_socket(socket, esp)
+		io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
+		myfeed = io.get_feed(feed)
+#		except AdafruitIO_RequestError:
+#		    myfeed = io.create_new_feed(feed)
+	except:
+		raise
+
+def post_data(value, perform_readback_and_verify=False):
+	global errorcount
+	try:
+		value = float(value)
+		io.send_data(myfeed["key"], value)
+		if perform_readback_and_verify:
+			received_data = io.receive_data(myfeed["key"])
+			readback = float(received_data["value"])
+			if epsilon<math.fabs(readback-value):
+				errorcount = 0
+			else:
+				errorcount += 1
+				warning("readback failure " + str(readback) + "!=" + str(value))
+	except:
+		errorcount += 1
+		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")
+		raise
+	if MAXERRORCOUNT<errorcount:
+		setup_airlift()
+
+def old_post_data(data):
 	try:
 		#feed = "heater"
 		feed = "test"

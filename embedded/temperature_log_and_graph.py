@@ -18,11 +18,7 @@ import busio
 import displayio
 import digitalio
 import adafruit_pct2075 # sudo pip3 install adafruit-circuitpython-pct2075
-from adafruit_esp32spi import adafruit_esp32spi
-from adafruit_esp32spi import PWMOut
-from adafruit_io.adafruit_io import IO_HTTP, AdafruitIO_RequestError
-import adafruit_requests as requests
-import adafruit_esp32spi.adafruit_esp32spi_socket as socket
+import airlift
 try:
 	import adafruit_dotstar as dotstar
 except:
@@ -39,11 +35,8 @@ import microsd_adafruit
 import neopixel_adafruit
 import pcf8523_adafruit
 import oled_adafruit
-import math
-epsilon = 0.000001
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
-MAXERRORCOUNT = 5
 intensity = 8 # brightness of plotted data on dotstar display
 if 0:
 	feed = "heater"
@@ -204,88 +197,6 @@ def update_temperature_display_on_dotstar_matrix():
 			dots[index] = (red, green, blue)
 	dots.show()
 
-def setup_airlift():
-	global esp
-	global secrets
-	if not should_use_airlift:
-		return False
-	# from https://github.com/ladyada/Adafruit_CircuitPython_ESP32SPI/blob/master/examples/esp32spi_localtime.py
-	# and https://learn.adafruit.com/adafruit-airlift-featherwing-esp32-wifi-co-processor-featherwing?view=all
-	# and https://learn.adafruit.com/adafruit-io-basics-airlift/circuitpython
-	try:
-		from secrets import secrets
-	except ImportError:
-		print("WiFi secrets are kept in secrets.py, please add them there!")
-		return False
-	try:
-		esp32_cs = digitalio.DigitalInOut(board.D13)
-		esp32_ready = digitalio.DigitalInOut(board.D11)
-		esp32_reset = digitalio.DigitalInOut(board.D12)
-		spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
-		esp = adafruit_esp32spi.ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
-		print("Connecting to " + secrets["ssid"] + " ...")
-		while not esp.is_connected:
-			try:
-				esp.connect_AP(secrets["ssid"], secrets["password"])
-			except RuntimeError as e:
-				print("could not connect to AP, retrying: ", e)
-				continue
-		print("My IP address is", esp.pretty_ip(esp.ip_address))
-		print("RSSI:", esp.rssi)
-		try:
-			import adafruit_rgbled
-		except:
-			error("you need adafruit_rgbled.mpy and/or simpleio.mpy")
-			raise
-		RED_LED = PWMOut.PWMOut(esp, 26)
-		GREEN_LED = PWMOut.PWMOut(esp, 25)
-		BLUE_LED = PWMOut.PWMOut(esp, 27)
-		status_light = adafruit_rgbled.RGBLED(RED_LED, BLUE_LED, GREEN_LED)
-		#wifi = adafruit_esp32spi_wifimanager.ESPSPI_WiFiManager(esp, secrets, status_light)
-	except:
-		error("can't initialize airlift wifi")
-		raise
-		return False
-	return True
-
-def setup_feed(feed):
-	global io
-	global myfeed
-	try:
-		print("connecting to feed " + feed + "...")
-		socket.set_interface(esp)
-		requests.set_socket(socket, esp)
-		io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
-		myfeed = io.get_feed(feed)
-#		except AdafruitIO_RequestError:
-#		    myfeed = io.create_new_feed(feed)
-	except:
-		raise
-
-errorcount = 0
-def post_data(value, perform_readback_and_verify=False):
-	global errorcount
-	global airlift_is_available
-	if not airlift_is_available:
-		return
-	try:
-		value = float(value)
-		io.send_data(myfeed["key"], value)
-		if perform_readback_and_verify:
-			received_data = io.receive_data(myfeed["key"])
-			readback = float(received_data["value"])
-			if epsilon<math.fabs(readback-value):
-				errorcount = 0
-			else:
-				errorcount += 1
-				warning("readback failure " + str(readback) + "!=" + str(value))
-	except:
-		errorcount += 1
-		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")
-		raise
-	if MAXERRORCOUNT<errorcount:
-		setup_airlift()
-
 def setup_matrix_backpack():
 	if not should_use_matrix_backpack:
 		return False
@@ -387,9 +298,12 @@ if __name__ == "__main__":
 		RTC_is_available = pcf8523_adafruit.setup(i2c)
 	else:
 		RTC_is_available = False
-	airlift_is_available = setup_airlift()
+	if should_use_airlift:
+		airlift_is_available = airlift.setup_airlift()
+	else:
+		airlift_is_available = False
 	if airlift_is_available:
-		setup_feed(feed)
+		airlift.setup_feed(feed)
 	if should_use_sdcard:
 		sdcard_is_available = setup_sdcard_for_logging_data(dir)
 	else:
@@ -416,7 +330,7 @@ if __name__ == "__main__":
 			update_temperature_display_on_alphanumeric_backpack(temperature)
 		average_temperature = temperature_accumulator/N
 		print("posting " + str(average_temperature))
-		post_data(average_temperature)
+		airlift.post_data(average_temperature)
 		temperatures_to_plot.insert(0, average_temperature)
 		temperatures_to_plot.pop()
 		update_temperature_display_on_dotstar_matrix()
