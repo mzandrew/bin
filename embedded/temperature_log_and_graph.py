@@ -86,8 +86,8 @@ header_string = "heater"
 temperature = 0
 dir = "/logs"
 
-max_columns_to_plot = 128
-temperatures_to_plot = [ -40.0 for a in range(max_columns_to_plot) ]
+MAX_COLUMNS_TO_PLOT = 128
+temperatures_to_plot = [ -40.0 for a in range(MAX_COLUMNS_TO_PLOT) ]
 
 def setup_temperature_sensor(i2c, address):
 	#i2c.deinit()
@@ -304,6 +304,11 @@ if __name__ == "__main__":
 		airlift_is_available = False
 	if airlift_is_available:
 		airlift.setup_feed(feed)
+	if 0:
+		print("fetching old data from feed...")
+		temperatures_to_plot = airlift.get_all_data(MAX_COLUMNS_TO_PLOT)
+#		for i in range(MAX_COLUMNS_TO_PLOT-1, -1, -1):
+#			temperatures_to_plot[i] = airlift.get_previous() # the circuitpython library can't do this
 	if should_use_sdcard:
 		sdcard_is_available = setup_sdcard_for_logging_data(dir)
 	else:

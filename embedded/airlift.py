@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2021-11-21 by mza
+# last updated 2021-11-22 by mza
 
 #from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 
@@ -120,6 +120,28 @@ def post_data(value, perform_readback_and_verify=False):
 		raise
 	if MAXERRORCOUNT<errorcount:
 		setup_airlift()
+
+#def get_previous():
+#	try:
+#		value = io.receive_previous(myfeed["key"]) # the circuitpython library can't do this
+#	except:
+#		raise
+#	return value
+
+DEFAULT = -40
+def get_all_data(count):
+	try:
+		reverse_order_values = io.receive_all_data(myfeed["key"])
+		if count<len(reverse_order_values):
+			reverse_order_values = reverse_order_values[:count]
+		if len(reverse_order_values)<count:
+			for i in range(len(reverse_order_values), count):
+				reverse_order_values.append(DEFAULT)
+		for i in range(count):
+			values[i] = reverse_order_values[count - i]
+		return values
+	except:
+		raise
 
 def old_post_data(data):
 	try:
