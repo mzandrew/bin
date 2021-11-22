@@ -1,4 +1,4 @@
-# last updated 2021-09-20 by mza
+# last updated 2021-11-21 by mza
 
 import board
 import displayio
@@ -73,7 +73,7 @@ def clear_display_on_oled_sh1107():
 	display.show(group)
 	display.refresh()
 
-def update_temperature_display_on_oled_ssd1327():
+def update_temperature_display_on_oled_ssd1327(temperatures_to_plot):
 #	if not oled_display_is_available:
 #		return
 	global bitmap
@@ -94,7 +94,7 @@ def update_temperature_display_on_oled_ssd1327():
 			bitmap[columns - 1 - x, y] = 1
 	display.refresh()
 
-def update_temperature_display_on_oled_sh1107():
+def update_temperature_display_on_oled_sh1107(offset_t, max_t, temperatures_to_plot):
 #	if not oled_display_is_available:
 #		return
 	global bitmap
