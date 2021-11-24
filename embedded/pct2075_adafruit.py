@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2020-11-24 by mza
-# last updated 2021-10-07 by mza
+# last updated 2021-11-24 by mza
 
 # from https://learn.adafruit.com/adafruit-pct2075-temperature-sensor/python-circuitpython
 
@@ -10,6 +10,7 @@ import sys
 import adafruit_pct2075 # pip3 install adafruit-circuitpython-pct2075
 import board
 import busio
+import boxcar
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string
 
 temperature_sensors = []
@@ -26,7 +27,7 @@ def setup_temperature_sensor(i2c, address):
 	#print(address)
 	return 1
 
-def setup(i2c, prohibited_addresses):
+def setup(i2c, prohibited_addresses, N):
 	global header_string
 	pct_list = [0x37, 0x36, 0x35, 0x2f, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28, 0x77, 0x76, 0x75, 0x74, 0x73, 0x72, 0x71, 0x70, 0x4f, 0x4e, 0x4d, 0x4c, 0x4b, 0x4a, 0x49, 0x48]
 	for unallowed in prohibited_addresses:
@@ -50,6 +51,8 @@ def setup(i2c, prohibited_addresses):
 		raise
 	else:
 		debug("found " + str(count) + " temperature sensor(s)")
+	global myboxcar
+	myboxcar = boxcar.boxcar(count, N, "pct2075")
 	return found_addresses
 
 header_string = ", temperature (C)"
@@ -57,22 +60,35 @@ header_string = ", temperature (C)"
 def print_header():
 	info("#time" + header_string)
 
-def measure():
-	result = []
+def get_values():
+	values = []
 	for each in temperature_sensors:
 		try:
-			result.append(each.temperature)
+			values.append(each.temperature)
 		except:
 			pass
-	return result
+	#print(str(values))
+	#print("pct2075 len(values) = " + str(len(values)))
+	myboxcar.accumulate(values)
+	#myboxcar.show_accumulated_values()
+	return values
+
+def show_average_values():
+	myboxcar.show_average_values()
+
+def get_average_values():
+	return myboxcar.get_average_values()
+
+def get_previous_values():
+	return myboxcar.previous_values()
 
 def measure_string():
 	global temperature
-	result = measure()
-	#string = ", ".join(result)
-	temperature = result.pop(0)
+	values = get_values()
+	#string = ", ".join(values)
+	temperature = values.pop(0)
 	string = "%.1f" % temperature
-	for each in result:
+	for each in values:
 		string += ", %.1f" % each
 	return string
 

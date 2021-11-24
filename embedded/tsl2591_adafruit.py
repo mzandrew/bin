@@ -3,13 +3,14 @@
 # SPDX-License-Identifier: MIT
 # Simple demo of the TSL2591 sensor.  Will print the detected light value
 # every second.
-# last updated 2021-09-22 by mza
+# last updated 2021-11-24 by mza
 
 import time
 import board
 import adafruit_tsl2591
+import boxcar
 
-def setup(i2c):
+def setup(i2c, N):
 	global tsl2591
 	tsl2591 = adafruit_tsl2591.TSL2591(i2c)
 	# https://github.com/adafruit/Adafruit_CircuitPython_TSL2591/blob/main/adafruit_tsl2591.py
@@ -25,6 +26,8 @@ def setup(i2c):
 	# tsl2591.integration_time = adafruit_tsl2591.INTEGRATIONTIME_400MS # (400ms)
 	# tsl2591.integration_time = adafruit_tsl2591.INTEGRATIONTIME_500MS # (500ms)
 	# tsl2591.integration_time = adafruit_tsl2591.INTEGRATIONTIME_600MS # (600ms)
+	global myboxcar
+	myboxcar = boxcar.boxcar(4, N, "tsl2591")
 	#return tsl2591.i2c_device.device_address
 	return 0x29
 
@@ -36,8 +39,23 @@ def test_if_present():
 		return False
 	return True
 
+def get_values():
+	values = [ tsl2591.lux, tsl2591.infrared, tsl2591.visible, tsl2591.full_spectrum ]
+	myboxcar.accumulate(values)
+	return values
+
+def show_average_values():
+	myboxcar.show_average_values()
+
+def get_average_values():
+	return myboxcar.get_average_values()
+
+def get_previous_values():
+	return myboxcar.previous_values()
+
 def measure_string():
-	return ", %d, %d, %d, %d" % (tsl2591.lux, tsl2591.infrared, tsl2591.visible, tsl2591.full_spectrum)
+	values = get_values()
+	return ", %d, %d, %d, %d" % (values[0], values[1], values[2], values[3])
 
 def print_compact():
 	print(measure_string())

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 # Simple demo of printing the temperature from the first found DS18x20 sensor every second.
 # Author: Tony DiCola
-# last updated 2021-09-19 by mza
+# last updated 2021-11-24 by mza
 
 # A 4.7Kohm pullup between DATA and POWER is REQUIRED!
 
@@ -11,11 +11,14 @@ import time
 import board
 from adafruit_onewire.bus import OneWireBus
 from adafruit_ds18x20 import DS18X20
+import boxcar
 
-def setup(ow_bus):
+def setup(ow_bus, N):
 	global ds18
 	# Scan for sensors and grab the first one found.
 	ds18 = DS18X20(ow_bus, ow_bus.scan()[0])
+	global myboxcar
+	myboxcar = boxcar.boxcar(1, N, "ds18b20")
 
 def test_if_present():
 	try:
@@ -25,8 +28,23 @@ def test_if_present():
 		return False
 	return True
 
+def get_values():
+	values = [ ds18.temperature ]
+	myboxcar.accumulate(values)
+	return values
+
+def show_average_values():
+	myboxcar.show_average_values()
+
+def get_average_values():
+	return myboxcar.get_average_values()
+
+def get_previous_values():
+	return myboxcar.previous_values()
+
 def measure_string():
-	return ", %.1f" % ds18.temperature
+	values = get_values()
+	return ", %.1f" % values[0]
 
 def print_compact():
 	print(measure_string())

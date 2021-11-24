@@ -2,14 +2,15 @@
 # https://github.com/adafruit/Adafruit_CircuitPython_LTR390
 # SPDX-FileCopyrightText: 2021 by Bryan Siepert, written for Adafruit Industries
 # SPDX-License-Identifier: Unlicense
-# last updated 2021-09-22 by mza
+# last updated 2021-11-24 by mza
 
 import time
 import board
 import busio
 import adafruit_ltr390
+import boxcar
 
-def setup(i2c):
+def setup(i2c, N):
 	global ltr390
 	ltr390 = adafruit_ltr390.LTR390(i2c)
 	# https://github.com/adafruit/Adafruit_CircuitPython_LTR390/blob/main/adafruit_ltr390.py
@@ -25,6 +26,8 @@ def setup(i2c):
 	#ltr390.resolution = 2
 	ltr390._rate_bits = 2
 	#lux_calc = wfac * 0.6 * als_data / (gain*integration_time)
+	global myboxcar
+	myboxcar = boxcar.boxcar(4, N, "ltr390")
 	#return ltr390.i2c_device.device_address
 	return 0x53
 
@@ -37,8 +40,23 @@ def test_if_present():
 		return False
 	return True
 
+def get_values():
+	values = [ ltr390.uvs, ltr390.uvi, ltr390.light, ltr390.lux ]
+	myboxcar.accumulate(values)
+	return values
+
+def show_average_values():
+	myboxcar.show_average_values()
+
+def get_average_values():
+	return myboxcar.get_average_values()
+
+def get_previous_values():
+	return myboxcar.previous_values()
+
 def measure_string():
-	return ", %d, %d, %d, %d" % (ltr390.uvs, ltr390.uvi, ltr390.light, ltr390.lux)
+	values = get_values()
+	return ", %d, %d, %d, %d" % (values[0], values[1], values[2], values[3])
 
 def print_compact():
 	print(measure_string())

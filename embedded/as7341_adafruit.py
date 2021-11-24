@@ -1,13 +1,14 @@
 # https://learn.adafruit.com/adafruit-as7341-10-channel-light-color-sensor-breakout/python-circuitpython
 # SPDX-FileCopyrightText: 2020 Bryan Siepert, written for Adafruit Industries
 # SPDX-License-Identifier: MIT
-# last updated 2021-09-19 by mza
+# last updated 2021-11-24 by mza
 
 import time
 import board
 import adafruit_as7341
+import boxcar
 
-def setup(i2c):
+def setup(i2c, N):
 	global as7341
 	as7341 = adafruit_as7341.AS7341(i2c)
 	# https://github.com/adafruit/Adafruit_CircuitPython_AS7341/blob/main/adafruit_as7341.py
@@ -18,6 +19,8 @@ def setup(i2c):
 	as7341.astep = 599 # integration time per ASTEP (2.78us each) (0-65534)
 	# adc_fullscale = (atime+1)*(astep+1)
 	as7341.gain = 0
+	global myboxcar
+	myboxcar = boxcar.boxcar(8, N, "as7341")
 	#return as7341.i2c_device.device_address
 	return 0x39
 
@@ -32,9 +35,24 @@ def bar_graph(read_value):
 	scaled = int(read_value / 1000)
 	return "[%5d] " % read_value + (scaled * "*")
 
-def measure_string():
-	return ", %d, %d, %d, %d, %d, %d, %d, %d" % (as7341.channel_415nm, as7341.channel_445nm, as7341.channel_480nm, as7341.channel_515nm, as7341.channel_555nm, as7341.channel_590nm, as7341.channel_630nm, as7341.channel_680nm)
+def get_values():
+	values = [ as7341.channel_415nm, as7341.channel_445nm, as7341.channel_480nm, as7341.channel_515nm, as7341.channel_555nm, as7341.channel_590nm, as7341.channel_630nm, as7341.channel_680nm ]
 	#, as7341.channel_clear, as7341.channel_nir
+	myboxcar.accumulate(values)
+	return values
+
+def show_average_values():
+	myboxcar.show_average_values()
+
+def get_average_values():
+	return myboxcar.get_average_values()
+
+def get_previous_values():
+	return myboxcar.previous_values()
+
+def measure_string():
+	values = get_values()
+	return ", %d, %d, %d, %d, %d, %d, %d, %d" % (values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7])
 
 def compact_output():
 	print(measure_string)
