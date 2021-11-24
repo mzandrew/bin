@@ -14,10 +14,10 @@ dir = "/logs"
 N = 64
 delay = 0.7
 if 0:
-	feed = "test"
+	feed_name = "test"
 	should_use_airlift = False
 else:
-	feed = "sun"
+	feed_name = "sun"
 	should_use_airlift = True
 
 import sys
@@ -159,8 +159,8 @@ if __name__ == "__main__":
 		airlift_is_available = airlift.setup_airlift(spi)
 	else:
 		airlift_is_available = False
-	if airlift_is_available:
-		airlift.setup_feed(feed)
+#	if airlift_is_available:
+#		airlift.setup_feed(feed_name)
 	#gnuplot> set key autotitle columnheader
 	#gnuplot> set style data lines
 	#gnuplot> plot for [i=1:14] "solar_water_heater.log" using 0:i
@@ -209,23 +209,27 @@ if __name__ == "__main__":
 		if 0==i%N:
 			if bh1750_is_available:
 				bh1750_adafruit.show_average_values()
+				if airlift_is_available:
+					airlift.post_data("bh1750", bh1750_adafruit.get_average_values()[0])
 			if ltr390_is_available:
 				ltr390_adafruit.show_average_values()
 			if vcnl4040_is_available:
 				vcnl4040_adafruit.show_average_values()
 			if as7341_is_available:
 				as7341_adafruit.show_average_values()
+#				if airlift_is_available:
+#					airlift.post_data("as7341", as7341_adafruit.get_average_values())
 			if tsl2591_is_available:
 				tsl2591_adafruit.show_average_values()
 			if ds18b20_is_available:
 				ds18b20_adafruit.show_average_values()
 			if anemometer_is_available:
 				anemometer.show_average_values()
+#				if airlift_is_available:
+#					airlift.post_data("anemometer", anemometer_adafruit.get_average_values())
 			if sht31d_is_available:
 				sht31d_adafruit.show_average_values()
 			pct2075_adafruit.show_average_values()
-			if airlift_is_available:
-				airlift.post_data(bh1750_adafruit.get_average_values()[0])
 		neopixel_adafruit.set_color(0, 0, 255)
 		time.sleep(delay)
 	info("pct2075 not available; cannot continue")

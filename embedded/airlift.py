@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2021-11-23 by mza
+# last updated 2021-11-24 by mza
 
 #from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 
@@ -19,6 +19,7 @@ from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3,
 epsilon = 0.000001
 MAXERRORCOUNT = 5
 errorcount = 0
+myfeeds = []
 
 #spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 def setup_airlift(spi):
@@ -30,7 +31,7 @@ def setup_airlift(spi):
 	try:
 		from secrets import secrets
 	except ImportError:
-		print("WiFi secrets are kept in secrets.py, please add them there!")
+		info("WiFi secrets are kept in secrets.py, please add them there!")
 		return False
 	try:
 		esp32_cs = digitalio.DigitalInOut(board.D13)
@@ -38,31 +39,29 @@ def setup_airlift(spi):
 		esp32_reset = digitalio.DigitalInOut(board.D12)
 		esp = adafruit_esp32spi.ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
 		#if esp.status == adafruit_esp32spi.WL_IDLE_STATUS:
-			#print("ESP32 found and in idle mode")
+			#info("ESP32 found and in idle mode")
 			#print("Firmware vers.", esp.firmware_version)
 			#print("MAC addr:", [hex(i) for i in esp.MAC_address])
 		#for ap in esp.scan_networks():
 		#	print("\t%s\t\tRSSI: %d" % (str(ap['ssid'], 'utf-8'), ap['rssi']))
-		print("Connecting to " + secrets["ssid"] + " ...")
+		info("Connecting to " + secrets["ssid"] + "...")
 		while not esp.is_connected:
 			try:
 				esp.connect_AP(secrets["ssid"], secrets["password"])
-				#print(".", end = "")
-				#time.sleep(2)
 			except RuntimeError as e:
-				print("could not connect to AP, retrying: ", e)
+				info("could not connect to AP, retrying: " + str(e))
 				continue
-		#print("Connected to", str(esp.ssid, 'utf-8'), "\tRSSI:", esp.rssi)
-		print("My IP address is", esp.pretty_ip(esp.ip_address))
-		print("RSSI:", esp.rssi)
-		#print("IP lookup adafruit.com: %s" % esp.pretty_ip(esp.get_host_by_name("adafruit.com")))
-		#print("Ping google.com: %d ms" % esp.ping("google.com"))
+		#info("Connected to", str(esp.ssid, 'utf-8'), "\tRSSI:", esp.rssi)
+		info("My IP address is " + esp.pretty_ip(esp.ip_address))
+		info("RSSI: " + str(esp.rssi))
+		#info("IP lookup adafruit.com: %s" % esp.pretty_ip(esp.get_host_by_name("adafruit.com")))
+		#info("Ping google.com: %d ms" % esp.ping("google.com"))
 		#requests.set_socket(socket, esp)
 		#TEXT_URL = "http://wifitest.adafruit.com/testwifi/index.html"
-		#print("Fetching text from", TEXT_URL)
+		#info("Fetching text from " + TEXT_URL)
 		#r = requests.get(TEXT_URL)
 		#print("-" * 40)
-		#print(r.text)
+		#info(r.text)
 		#print("-" * 40)
 		#r.close()
 		#from adafruit_esp32spi import PWMOut
@@ -87,26 +86,35 @@ def setup_airlift(spi):
 		raise
 	return True
 
-def setup_feed(feed):
+def setup_feed(feed_name):
 	global io
-	global myfeed
+	global myfeeds
+	for feed in myfeeds:
+		if feed_name==feed[0]:
+			return feed[1]
 	try:
-		print("connecting to feed " + feed + "...")
+		info("connecting to feed " + feed_name + "...")
 		socket.set_interface(esp)
 		requests.set_socket(socket, esp)
 		io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
 		try:
-			myfeed = io.get_feed(feed)
+			myfeed = io.get_feed(feed_name)
 		except AdafruitIO_RequestError:
-		    myfeed = io.create_new_feed(feed)
+			info("creating new feed " + feed_name + "...")
+			myfeed = io.create_new_feed(feed_name)
 	except:
 		raise
+	myfeeds.append([ feed_name , myfeed ])
+	return myfeed
 
-def post_data(value, perform_readback_and_verify=False):
+def post_data(feed_name, value, perform_readback_and_verify=False):
 	global errorcount
+	myfeed = setup_feed(feed_name)
 	try:
 		value = float(value)
+		info("publishing " + str(value))
 		io.send_data(myfeed["key"], value)
+		#info("done")
 		if perform_readback_and_verify:
 			received_data = io.receive_data(myfeed["key"])
 			readback = float(received_data["value"])
@@ -151,7 +159,7 @@ def old_post_data(data):
 		payload = {"value": data}
 		url = "https://io.adafruit.com/api/v2/" + secrets["aio_username"] + "/feeds/" + feed + "/data"
 		response = wifi.post(url, json=payload, headers={"X-AIO-KEY": secrets["aio_key"]})
-		#print(response.json())
+		#info(response.json())
 		response.close()
 	except:
 		error("couldn't perform POST operation")
