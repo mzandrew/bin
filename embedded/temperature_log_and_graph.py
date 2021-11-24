@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-04-21 by mza
-# last updated 2021-11-22 by mza
+# last updated 2021-11-23 by mza
 
 # to install on a circuitpython device:
 # rsync -rv DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py oled_adafruit.py /media/circuitpython/
@@ -298,8 +298,9 @@ if __name__ == "__main__":
 		RTC_is_available = pcf8523_adafruit.setup(i2c)
 	else:
 		RTC_is_available = False
+	spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 	if should_use_airlift:
-		airlift_is_available = airlift.setup_airlift()
+		airlift_is_available = airlift.setup_airlift(spi)
 	else:
 		airlift_is_available = False
 	if airlift_is_available:
@@ -310,7 +311,7 @@ if __name__ == "__main__":
 #		for i in range(MAX_COLUMNS_TO_PLOT-1, -1, -1):
 #			temperatures_to_plot[i] = airlift.get_previous() # the circuitpython library can't do this
 	if should_use_sdcard:
-		sdcard_is_available = setup_sdcard_for_logging_data(dir)
+		sdcard_is_available = setup_sdcard_for_logging_data(spi, dir)
 	else:
 		sdcard_is_available = False
 	if not sdcard_is_available:

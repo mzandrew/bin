@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2021-11-22 by mza
+# last updated 2021-11-23 by mza
 
 #from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 
@@ -20,7 +20,8 @@ epsilon = 0.000001
 MAXERRORCOUNT = 5
 errorcount = 0
 
-def setup_airlift():
+#spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
+def setup_airlift(spi):
 	global esp
 	# from https://github.com/ladyada/Adafruit_CircuitPython_ESP32SPI/blob/master/examples/esp32spi_localtime.py
 	# and https://learn.adafruit.com/adafruit-airlift-featherwing-esp32-wifi-co-processor-featherwing?view=all
@@ -35,7 +36,6 @@ def setup_airlift():
 		esp32_cs = digitalio.DigitalInOut(board.D13)
 		esp32_ready = digitalio.DigitalInOut(board.D11)
 		esp32_reset = digitalio.DigitalInOut(board.D12)
-		spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 		esp = adafruit_esp32spi.ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
 		#if esp.status == adafruit_esp32spi.WL_IDLE_STATUS:
 			#print("ESP32 found and in idle mode")
@@ -95,9 +95,10 @@ def setup_feed(feed):
 		socket.set_interface(esp)
 		requests.set_socket(socket, esp)
 		io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
-		myfeed = io.get_feed(feed)
-#		except AdafruitIO_RequestError:
-#		    myfeed = io.create_new_feed(feed)
+		try:
+			myfeed = io.get_feed(feed)
+		except AdafruitIO_RequestError:
+		    myfeed = io.create_new_feed(feed)
 	except:
 		raise
 
