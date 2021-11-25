@@ -24,6 +24,7 @@ import sys
 import time
 import board
 import busio
+from adafruit_onewire.bus import OneWireBus
 import pct2075_adafruit
 import bh1750_adafruit
 import ltr390_adafruit
@@ -122,14 +123,6 @@ if __name__ == "__main__":
 		warning("tsl2591 not found")
 		tsl2591_is_available = False
 	try:
-		ow_bus = OneWireBus(board.D5)
-		ds18b20_adafruit.setup(ow_bus, N)
-		ds18b20_is_available = True
-		header_string += ", ds18b20-C"
-	except:
-		warning("ds18b20 not found")
-		ds18b20_is_available = False
-	try:
 		neopixel_is_available = neopixel_adafruit.setup_neopixel()
 	except:
 		warning("error setting up neopixel")
@@ -140,6 +133,14 @@ if __name__ == "__main__":
 	except:
 		warning("anemometer not found")
 		anemometer_is_available = False
+	try:
+		ow_bus = OneWireBus(board.D5)
+		ds18b20_adafruit.setup(ow_bus, N)
+		ds18b20_is_available = True
+		header_string += ", ds18b20-C"
+	except:
+		warning("ds18b20 not found")
+		ds18b20_is_available = False
 	try:
 		i2c_address = sht31d_adafruit.setup(i2c, N)
 		prohibited_addresses.append(i2c_address)
@@ -221,12 +222,12 @@ if __name__ == "__main__":
 #					airlift.post_data("as7341", as7341_adafruit.get_average_values())
 			if tsl2591_is_available:
 				tsl2591_adafruit.show_average_values()
-			if ds18b20_is_available:
-				ds18b20_adafruit.show_average_values()
 			if anemometer_is_available:
 				anemometer.show_average_values()
 #				if airlift_is_available:
 #					airlift.post_data("anemometer", anemometer_adafruit.get_average_values())
+			if ds18b20_is_available:
+				ds18b20_adafruit.show_average_values()
 			if sht31d_is_available:
 				sht31d_adafruit.show_average_values()
 			pct2075_adafruit.show_average_values()
