@@ -1,5 +1,5 @@
 # written 2021-09-10 by mza
-# last updated 2021-11-24 by mza
+# last updated 2021-11-25 by mza
 
 # to install on a circuitpython device:
 # cp -a anemometer.py boxcar.py airlift.py DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py sht31d_adafruit.py /media/circuitpython/
@@ -161,7 +161,7 @@ if __name__ == "__main__":
 	else:
 		airlift_is_available = False
 #	if airlift_is_available:
-#		airlift.setup_feed(feed_name)
+#		airlift.update_time_from_server()
 	#gnuplot> set key autotitle columnheader
 	#gnuplot> set style data lines
 	#gnuplot> plot for [i=1:14] "solar_water_heater.log" using 0:i
@@ -232,6 +232,8 @@ if __name__ == "__main__":
 				sht31d_adafruit.show_average_values()
 			pct2075_adafruit.show_average_values()
 		neopixel_adafruit.set_color(0, 0, 255)
+		if 0==i%86300:
+			airlift.update_time_from_server()
 		time.sleep(delay)
 	info("pct2075 not available; cannot continue")
 

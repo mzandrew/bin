@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2021-11-24 by mza
+# last updated 2021-11-25 by mza
 
 #from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 
@@ -13,6 +13,7 @@ from adafruit_esp32spi import PWMOut
 from adafruit_io.adafruit_io import IO_HTTP, AdafruitIO_RequestError
 import adafruit_requests as requests
 import adafruit_esp32spi.adafruit_esp32spi_socket as socket
+import pcf8523_adafruit # to set the RTC
 import math
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
@@ -24,6 +25,9 @@ myfeeds = []
 #spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 def setup_airlift(spi):
 	global esp
+	global socket
+	global requests
+	global io
 	# from https://github.com/ladyada/Adafruit_CircuitPython_ESP32SPI/blob/master/examples/esp32spi_localtime.py
 	# and https://learn.adafruit.com/adafruit-airlift-featherwing-esp32-wifi-co-processor-featherwing?view=all
 	# and https://learn.adafruit.com/adafruit-io-basics-airlift/circuitpython
@@ -53,6 +57,9 @@ def setup_airlift(spi):
 				continue
 		#info("Connected to", str(esp.ssid, 'utf-8'), "\tRSSI:", esp.rssi)
 		info("My IP address is " + esp.pretty_ip(esp.ip_address))
+		socket.set_interface(esp)
+		requests.set_socket(socket, esp)
+		io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
 		info("RSSI: " + str(esp.rssi))
 		#info("IP lookup adafruit.com: %s" % esp.pretty_ip(esp.get_host_by_name("adafruit.com")))
 		#info("Ping google.com: %d ms" % esp.ping("google.com"))
@@ -87,16 +94,12 @@ def setup_airlift(spi):
 	return True
 
 def setup_feed(feed_name):
-	global io
 	global myfeeds
 	for feed in myfeeds:
 		if feed_name==feed[0]:
 			return feed[1]
 	try:
 		info("connecting to feed " + feed_name + "...")
-		socket.set_interface(esp)
-		requests.set_socket(socket, esp)
-		io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
 		try:
 			myfeed = io.get_feed(feed_name)
 		except AdafruitIO_RequestError:
@@ -163,4 +166,10 @@ def old_post_data(data):
 		response.close()
 	except:
 		error("couldn't perform POST operation")
+
+def update_time_from_server():
+	info("setting RTC time from server...")
+	time = io.receive_time()
+	#info(str(time))
+	pcf8523_adafruit.set_from_timestruct(time)
 

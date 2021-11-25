@@ -1,4 +1,4 @@
-# last updated 2021-09-19 by mza
+# last updated 2021-11-25 by mza
 
 import time
 import adafruit_pcf8523
@@ -30,4 +30,8 @@ def get_timestring1():
 def get_timestring2():
 	t = rtc.datetime
 	return "%04d-%02d-%02d.%02d%02d%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
+
+def set_from_timestruct(time):
+	#info("setting time to " + str(time))
+	rtc.datetime = time
 
