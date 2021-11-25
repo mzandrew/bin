@@ -3,6 +3,7 @@
 
 #from collections import deque # not in circuitpython
 #import copy # not in circuitpython
+from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
 class boxcar:
 	def __init__(self, items=1, N=8, name=""):
@@ -27,7 +28,7 @@ class boxcar:
 		#self.show_accumulated_values()
 
 	def show_accumulated_values(self):
-		print(self.name + " accumulated_values = " + str(self.accumulated_values))
+		info(self.name + " accumulated_values = " + str(self.accumulated_values))
 
 #	def get_previous_values(self):
 #		return self.accumulated_values[self.N-1]
@@ -38,5 +39,5 @@ class boxcar:
 		return average_values
 
 	def show_average_values(self):
-		print(self.name + " " + str(self.get_average_values()))
+		info(self.name + " " + str(self.get_average_values()))
 

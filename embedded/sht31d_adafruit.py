@@ -19,7 +19,7 @@ def setup(i2c, N):
 	except:
 		raise
 	global myboxcar
-	myboxcar = boxcar.boxcar(1, N, "sht31d")
+	myboxcar = boxcar.boxcar(2, N, "sht31d")
 	#return adafruit_sht31d._SHT31_DEFAULT_ADDRESS
 	return 0x44
 

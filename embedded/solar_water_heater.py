@@ -198,7 +198,7 @@ if __name__ == "__main__":
 			string += anemometer.measure_string()
 		if sht31d_is_available:
 			#info("sht31d")
-			string += sht31d.measure_string()
+			string += sht31d_adafruit.measure_string()
 		#info("pct2075")
 		#gnuplot> plot for [i=2:2] "solar_water_heater.log" using 0:i
 		string += ", " + pct2075_adafruit.measure_string()
