@@ -2,7 +2,7 @@
 # last updated 2021-11-25 by mza
 
 # to install on a circuitpython device:
-# cp -a anemometer.py boxcar.py airlift.py DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py sht31d_adafruit.py /media/circuitpython/
+# cp -a pm25_adafruit.py anemometer.py boxcar.py airlift.py DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py sht31d_adafruit.py /media/circuitpython/
 # cp -a solar_water_heater.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
 # rsync -r adafruit_register adafruit_sdcard.mpy adafruit_pct2075.mpy adafruit_bh1750.mpy adafruit_vcnl4040.mpy adafruit_ltr390.mpy neopixel.mpy adafruit_as7341.mpy adafruit_pcf8523.mpy adafruit_tsl2591.mpy adafruit_onewire adafruit_ds18x20.mpy /media/circuitpython/lib/
@@ -33,6 +33,7 @@ import as7341_adafruit
 import pcf8523_adafruit
 import microsd_adafruit
 import neopixel_adafruit
+import pm25_adafruit
 import ds18b20_adafruit
 import tsl2591_adafruit
 import anemometer
@@ -134,6 +135,14 @@ if __name__ == "__main__":
 		warning("anemometer not found")
 		anemometer_is_available = False
 	try:
+		i2c_address = pm25_adafruit.setup(i2c, N)
+		prohibited_addresses.append(i2c_address)
+		pm25_is_available = True
+		header_string += ", pm10s, pm25s, pm100s, pm10e, pm25e, pm100e, 3um, 5um, 10um, 25um, 50um, 100um"
+	except:
+		warning("pm25 not found")
+		pm25_is_available = False
+	try:
 		ow_bus = OneWireBus(board.D5)
 		ds18b20_adafruit.setup(ow_bus, N)
 		ds18b20_is_available = True
@@ -191,6 +200,8 @@ if __name__ == "__main__":
 		if tsl2591_is_available:
 			#info("tsl2591")
 			string += tsl2591_adafruit.measure_string()
+		if pm25_is_available:
+			string += pm25_adafruit.measure_string()
 		if ds18b20_is_available:
 			#info("ds18b20")
 			string += ds18b20_adafruit.measure_string()
@@ -226,6 +237,8 @@ if __name__ == "__main__":
 				anemometer.show_average_values()
 #				if airlift_is_available:
 #					airlift.post_data("anemometer", anemometer_adafruit.get_average_values())
+			if pm25_is_available:
+				pm25_adafruit.show_average_values()
 			if ds18b20_is_available:
 				ds18b20_adafruit.show_average_values()
 			if sht31d_is_available:
