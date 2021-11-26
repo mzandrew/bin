@@ -1,5 +1,5 @@
 # written 2021-09-10 by mza
-# last updated 2021-11-25 by mza
+# last updated 2021-11-26 by mza
 
 # to install on a circuitpython device:
 # cp -a pm25_adafruit.py anemometer.py boxcar.py airlift.py DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py sht31d_adafruit.py /media/circuitpython/
@@ -222,7 +222,10 @@ if __name__ == "__main__":
 			if bh1750_is_available:
 				bh1750_adafruit.show_average_values()
 				if airlift_is_available:
-					airlift.post_data("bh1750", bh1750_adafruit.get_average_values()[0])
+					try:
+						airlift.post_data("bh1750", bh1750_adafruit.get_average_values()[0])
+					except:
+						warning("couldn't post data for bh1750")
 			if ltr390_is_available:
 				ltr390_adafruit.show_average_values()
 			if vcnl4040_is_available:
@@ -230,23 +233,35 @@ if __name__ == "__main__":
 			if as7341_is_available:
 				as7341_adafruit.show_average_values()
 #				if airlift_is_available:
-#					airlift.post_data("as7341", as7341_adafruit.get_average_values())
+#					try:
+#						airlift.post_data("as7341", as7341_adafruit.get_average_values())
+#					except:
+#						warning("couldn't post data for as7341")
 			if tsl2591_is_available:
 				tsl2591_adafruit.show_average_values()
 			if anemometer_is_available:
 				anemometer.show_average_values()
 				if airlift_is_available:
-					airlift.post_data("anemometer", anemometer.get_average_values()[0])
+					try:
+						airlift.post_data("anemometer", anemometer.get_average_values()[0])
+					except:
+						warning("couldn't post data for anemometer")
 			if pm25_is_available:
 				pm25_adafruit.show_average_values()
 			if ds18b20_is_available:
 				ds18b20_adafruit.show_average_values()
 				if airlift_is_available:
-					airlift.post_data("ds18b20", ds18b20_adafruit.get_average_values()[0])
+					try:
+						airlift.post_data("ds18b20", ds18b20_adafruit.get_average_values()[0])
+					except:
+						warning("couldn't post data for ds18b20")
 			if sht31d_is_available:
 				sht31d_adafruit.show_average_values()
 				if airlift_is_available:
-					airlift.post_data("sht31d", sht31d_adafruit.get_average_values()[0])
+					try:
+						airlift.post_data("sht31d", sht31d_adafruit.get_average_values()[0])
+					except:
+						warning("couldn't post data for sht31d")
 			pct2075_adafruit.show_average_values()
 		neopixel_adafruit.set_color(0, 0, 255)
 		if 0==i%86300:

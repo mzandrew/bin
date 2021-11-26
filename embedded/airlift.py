@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2021-11-25 by mza
+# last updated 2021-11-26 by mza
 
 #from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 
+import time
 import board
 import busio
 import digitalio
@@ -21,21 +22,30 @@ epsilon = 0.000001
 MAXERRORCOUNT = 5
 errorcount = 0
 myfeeds = []
+delay = 0.25
 
 #spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
-def setup_airlift(spi):
+def setup_airlift(spi, number_of_retries_remaining=5):
+	global saved_spi
+	saved_spi = spi
 	global esp
 	global socket
 	global requests
 	global io
+	if 2==number_of_retries_remaining:
+		esp.reset()
+	if 0==number_of_retries_remaining:
+		error("can't initialize airlift wifi")
+		return False
 	# from https://github.com/ladyada/Adafruit_CircuitPython_ESP32SPI/blob/master/examples/esp32spi_localtime.py
 	# and https://learn.adafruit.com/adafruit-airlift-featherwing-esp32-wifi-co-processor-featherwing?view=all
 	# and https://learn.adafruit.com/adafruit-io-basics-airlift/circuitpython
+	# and https://github.com/adafruit/Adafruit_CircuitPython_ESP32SPI/blob/main/adafruit_esp32spi/adafruit_esp32spi.py
 	global secrets
 	try:
 		from secrets import secrets
 	except ImportError:
-		info("WiFi secrets are kept in secrets.py, please add them there!")
+		warning("WiFi secrets are kept in secrets.py, please add them there!")
 		return False
 	try:
 		esp32_cs = digitalio.DigitalInOut(board.D13)
@@ -60,7 +70,7 @@ def setup_airlift(spi):
 		socket.set_interface(esp)
 		requests.set_socket(socket, esp)
 		io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
-		info("RSSI: " + str(esp.rssi))
+		info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
 		#info("IP lookup adafruit.com: %s" % esp.pretty_ip(esp.get_host_by_name("adafruit.com")))
 		#info("Ping google.com: %d ms" % esp.ping("google.com"))
 		#requests.set_socket(socket, esp)
@@ -88,16 +98,18 @@ def setup_airlift(spi):
 		#except:
 		#	wifi.reset()
 	except:
-		error("can't initialize airlift wifi")
-		#return False
-		raise
+		time.sleep(delay)
+		setup_airlift(spi, number_of_retries_remaining-1)
 	return True
 
-def setup_feed(feed_name):
+def setup_feed(feed_name, number_of_retries_remaining=5):
 	global myfeeds
 	for feed in myfeeds:
 		if feed_name==feed[0]:
 			return feed[1]
+	if 0==number_of_retries_remaining:
+		#esp.reset()
+		return False
 	try:
 		info("connecting to feed " + feed_name + "...")
 		try:
@@ -106,7 +118,8 @@ def setup_feed(feed_name):
 			info("creating new feed " + feed_name + "...")
 			myfeed = io.create_new_feed(feed_name)
 	except:
-		raise
+		time.sleep(delay)
+		myfeed = setup_feed(feed_name, number_of_retries_remaining-1)
 	myfeeds.append([ feed_name , myfeed ])
 	return myfeed
 
@@ -116,7 +129,14 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 	try:
 		value = float(value)
 		info("publishing " + str(value))
-		io.send_data(myfeed["key"], value)
+		for i in range(5):
+			try:
+				io.send_data(myfeed["key"], value) # sometimes this gives RuntimeError: Sending request failed
+			except:
+				if 0==i:
+					raise
+				else:
+					time.sleep(delay)
 		#info("done")
 		if perform_readback_and_verify:
 			received_data = io.receive_data(myfeed["key"])
@@ -129,9 +149,9 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 	except:
 		errorcount += 1
 		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")
-		raise
 	if MAXERRORCOUNT<errorcount:
-		setup_airlift()
+		esp.reset()
+		setup_airlift(saved_spi)
 
 #def get_previous():
 #	try:
@@ -142,8 +162,9 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 
 DEFAULT = -40
 def get_all_data(count):
+	# this function is still under construction...
 	try:
-		reverse_order_values = io.receive_all_data(myfeed["key"])
+		reverse_order_values = io.receive_all_data(myfeed["key"]) # out of memory
 		if count<len(reverse_order_values):
 			reverse_order_values = reverse_order_values[:count]
 		if len(reverse_order_values)<count:
@@ -169,7 +190,13 @@ def old_post_data(data):
 
 def update_time_from_server():
 	info("setting RTC time from server...")
-	time = io.receive_time()
-	#info(str(time))
-	pcf8523_adafruit.set_from_timestruct(time)
+	try:
+		time = io.receive_time()
+		#info(str(time))
+	except:
+		warning("couldn't get time from server")
+	try:
+		pcf8523_adafruit.set_from_timestruct(time)
+	except:
+		warning("couldn't set RTC")
 
