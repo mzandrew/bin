@@ -153,7 +153,7 @@ if __name__ == "__main__":
 	try:
 		i2c_address = sht31d_adafruit.setup(i2c, N)
 		prohibited_addresses.append(i2c_address)
-		header_string += ", sht31d-C, sht31d-%RH"
+		header_string += ", sht31d-%RH, sht31d-C"
 		sht31d_is_available = True
 	except:
 		warning("sht31d not found")
@@ -235,14 +235,18 @@ if __name__ == "__main__":
 				tsl2591_adafruit.show_average_values()
 			if anemometer_is_available:
 				anemometer.show_average_values()
-#				if airlift_is_available:
-#					airlift.post_data("anemometer", anemometer_adafruit.get_average_values())
+				if airlift_is_available:
+					airlift.post_data("anemometer", anemometer.get_average_values()[0])
 			if pm25_is_available:
 				pm25_adafruit.show_average_values()
 			if ds18b20_is_available:
 				ds18b20_adafruit.show_average_values()
+				if airlift_is_available:
+					airlift.post_data("ds18b20", ds18b20_adafruit.get_average_values()[0])
 			if sht31d_is_available:
 				sht31d_adafruit.show_average_values()
+				if airlift_is_available:
+					airlift.post_data("sht31d", sht31d_adafruit.get_average_values()[0])
 			pct2075_adafruit.show_average_values()
 		neopixel_adafruit.set_color(0, 0, 255)
 		if 0==i%86300:

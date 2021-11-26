@@ -32,7 +32,10 @@ def get_values():
 	# "pm10 env" "pm25 env" "pm100 env"
 	# "particles 03um" "particles 05um" "particles 10um"
 	# "particles 25um" "particles 50um" "particles 100um"
-	values = list(pm25.read().values())
+	try:
+		values = list(pm25.read().values())
+	except:
+		values = [ .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0 ]
 	myboxcar.accumulate(values)
 	return values
 
