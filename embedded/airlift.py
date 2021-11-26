@@ -147,6 +147,8 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 			else:
 				errorcount += 1
 				warning("readback failure " + str(readback) + "!=" + str(value))
+		else:
+			errorcount = 0
 	except:
 		errorcount += 1
 		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")
