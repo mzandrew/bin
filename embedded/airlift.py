@@ -132,6 +132,7 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 		for i in range(5):
 			try:
 				io.send_data(myfeed["key"], value) # sometimes this gives RuntimeError: Sending request failed
+				break
 			except:
 				if 0==i:
 					raise
