@@ -1,7 +1,7 @@
 # https://learn.adafruit.com/adafruit-as7341-10-channel-light-color-sensor-breakout/python-circuitpython
 # SPDX-FileCopyrightText: 2020 Bryan Siepert, written for Adafruit Industries
 # SPDX-License-Identifier: MIT
-# last updated 2021-11-24 by mza
+# last updated 2021-11-26 by mza
 
 import time
 import board
@@ -36,8 +36,11 @@ def bar_graph(read_value):
 	return "[%5d] " % read_value + (scaled * "*")
 
 def get_values():
-	values = [ as7341.channel_415nm, as7341.channel_445nm, as7341.channel_480nm, as7341.channel_515nm, as7341.channel_555nm, as7341.channel_590nm, as7341.channel_630nm, as7341.channel_680nm ]
+	try:
+		values = [ as7341.channel_415nm, as7341.channel_445nm, as7341.channel_480nm, as7341.channel_515nm, as7341.channel_555nm, as7341.channel_590nm, as7341.channel_630nm, as7341.channel_680nm ]
 	#, as7341.channel_clear, as7341.channel_nir
+	except:
+		values = [ 0, 0, 0, 0, 0, 0, 0, 0  ]
 	myboxcar.accumulate(values)
 	return values
 

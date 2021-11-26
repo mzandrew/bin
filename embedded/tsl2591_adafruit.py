@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 # Simple demo of the TSL2591 sensor.  Will print the detected light value
 # every second.
-# last updated 2021-11-24 by mza
+# last updated 2021-11-26 by mza
 
 import time
 import board
@@ -40,7 +40,10 @@ def test_if_present():
 	return True
 
 def get_values():
-	values = [ tsl2591.lux, tsl2591.infrared, tsl2591.visible, tsl2591.full_spectrum ]
+	try:
+		values = [ tsl2591.lux, tsl2591.infrared, tsl2591.visible, tsl2591.full_spectrum ]
+	except:
+		values = [ 0, 0, 0, 0 ]
 	myboxcar.accumulate(values)
 	return values
 

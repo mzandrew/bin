@@ -1,7 +1,7 @@
 # https://learn.adafruit.com/adafruit-bh1750-ambient-light-sensor?view=all
 # SPDX-FileCopyrightText: 2020 Bryan Siepert, written for Adafruit Industries
 # SPDX-License-Identifier: Unlicense
-# last updated 2021-11-24 by mza
+# last updated 2021-11-26 by mza
 
 import time
 import board
@@ -31,7 +31,10 @@ def test_if_present():
 	return True
 
 def get_values():
-	values = [ bh1750.lux ]
+	try:
+		values = [ bh1750.lux ]
+	except:
+		values = [ 0. ]
 	myboxcar.accumulate(values)
 	return values
 

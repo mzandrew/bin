@@ -2,7 +2,7 @@
 # https://github.com/adafruit/Adafruit_CircuitPython_LTR390
 # SPDX-FileCopyrightText: 2021 by Bryan Siepert, written for Adafruit Industries
 # SPDX-License-Identifier: Unlicense
-# last updated 2021-11-24 by mza
+# last updated 2021-11-26 by mza
 
 import time
 import board
@@ -41,7 +41,10 @@ def test_if_present():
 	return True
 
 def get_values():
-	values = [ ltr390.uvs, ltr390.uvi, ltr390.light, ltr390.lux ]
+	try:
+		values = [ ltr390.uvs, ltr390.uvi, ltr390.light, ltr390.lux ]
+	except:
+		values = [ 0, 0, 0, 0 ]
 	myboxcar.accumulate(values)
 	return values
 

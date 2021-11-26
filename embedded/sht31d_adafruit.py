@@ -32,7 +32,10 @@ def test_if_present():
 	return True
 
 def get_values():
-	values = [ sht31d.relative_humidity, sht31d.temperature ]
+	try:
+		values = [ sht31d.relative_humidity, sht31d.temperature ]
+	except:
+		values = [ 0., 0. ]
 	myboxcar.accumulate(values)
 	return values
 

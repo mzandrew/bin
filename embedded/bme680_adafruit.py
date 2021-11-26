@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2020-10-14 by mza
-# last updated 2021-11-24 by mza
+# last updated 2021-11-26 by mza
 
 # from https://learn.adafruit.com/adafruit-bme680-humidity-temperature-barometic-pressure-voc-gas/python-circuitpython
 
@@ -39,7 +39,10 @@ def print_header():
 	info("#time" + header_string)
 
 def get_values():
-	values = [ float(bme680.temperature + temperature_offset), bme680.humidity, bme680.pressure, bme680.altitude, bme680.gas ]
+	try:
+		values = [ float(bme680.temperature + temperature_offset), bme680.humidity, bme680.pressure, bme680.altitude, bme680.gas ]
+	except:
+		values = [ 0., 0., 0., 0., 0 ]
 	myboxcar.accumulate(values)
 	return values
 

@@ -25,7 +25,10 @@ def adc_to_wind_speed(val):
 	return map_range(voltage_val, 0.4, 2, 0, 32.4)
 
 def get_values():
-	values = [ adc_to_wind_speed(adc.value) ]
+	try:
+		values = [ adc_to_wind_speed(adc.value) ]
+	except:
+		values = [ 0. ]
 	myboxcar.accumulate(values)
 	return values
 

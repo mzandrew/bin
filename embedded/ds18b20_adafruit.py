@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 # Simple demo of printing the temperature from the first found DS18x20 sensor every second.
 # Author: Tony DiCola
-# last updated 2021-11-24 by mza
+# last updated 2021-11-26 by mza
 
 # A 4.7Kohm pullup between DATA and POWER is REQUIRED!
 
@@ -29,7 +29,10 @@ def test_if_present():
 	return True
 
 def get_values():
-	values = [ ds18.temperature ]
+	try:
+		values = [ ds18.temperature ]
+	except:
+		values = [ 0. ]
 	myboxcar.accumulate(values)
 	return values
 

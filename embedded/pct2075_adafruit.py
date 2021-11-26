@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2020-11-24 by mza
-# last updated 2021-11-24 by mza
+# last updated 2021-11-26 by mza
 
 # from https://learn.adafruit.com/adafruit-pct2075-temperature-sensor/python-circuitpython
 
@@ -66,7 +66,7 @@ def get_values():
 		try:
 			values.append(each.temperature)
 		except:
-			pass
+			values.append(0.)
 	#print(str(values))
 	#print("pct2075 len(values) = " + str(len(values)))
 	myboxcar.accumulate(values)
