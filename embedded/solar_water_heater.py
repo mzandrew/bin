@@ -1,5 +1,5 @@
 # written 2021-09-10 by mza
-# last updated 2021-11-26 by mza
+# last updated 2021-11-27 by mza
 
 # to install on a circuitpython device:
 # cp -a pm25_adafruit.py anemometer.py boxcar.py airlift.py DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py sht31d_adafruit.py /media/circuitpython/
@@ -39,7 +39,27 @@ import tsl2591_adafruit
 import anemometer
 import sht31d_adafruit
 import airlift
+import pwmio
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+
+# https://learn.adafruit.com/circuitpython-essentials/circuitpython-pwm
+PWM_MAX = 65535
+def setup_status_leds(red_pin, green_pin, blue_pin):
+	global status_led
+	status_led = []
+	status_led.append(pwmio.PWMOut(red_pin,   frequency=5000, duty_cycle=PWM_MAX))
+	status_led.append(pwmio.PWMOut(green_pin, frequency=5000, duty_cycle=PWM_MAX))
+	status_led.append(pwmio.PWMOut(blue_pin,  frequency=5000, duty_cycle=PWM_MAX))
+
+def set_status_led_color(desired_color):
+	global status_led
+	for i in range(3):
+		duty_cycle = int(PWM_MAX - 1.0*PWM_MAX*desired_color[i])
+		if duty_cycle<0:
+			duty_cycle = 0
+		if PWM_MAX<duty_cycle:
+			duty_cycle = PWM_MAX
+		status_led[i].duty_cycle = duty_cycle
 
 def print_compact(string):
 	try:
@@ -55,6 +75,7 @@ def print_header():
 	info("" + header_string)
 
 if __name__ == "__main__":
+	setup_status_leds(red_pin=board.A2, green_pin=board.D9, blue_pin=board.A3)
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
 		string = "using I2C1 "
@@ -169,8 +190,9 @@ if __name__ == "__main__":
 		airlift_is_available = airlift.setup_airlift(spi)
 	else:
 		airlift_is_available = False
-#	if airlift_is_available:
-#		airlift.update_time_from_server()
+	if 0:
+		if airlift_is_available:
+			airlift.update_time_from_server()
 	#gnuplot> set key autotitle columnheader
 	#gnuplot> set style data lines
 	#gnuplot> plot for [i=1:14] "solar_water_heater.log" using 0:i
@@ -180,6 +202,7 @@ if __name__ == "__main__":
 		#info("")
 		#info(str(i))
 		neopixel_adafruit.set_color(255, 0, 0)
+		set_status_led_color([1, 0, 0])
 		string = ""
 		if bh1750_is_available:
 			#info("bh1750")
@@ -217,6 +240,7 @@ if __name__ == "__main__":
 		print_compact(string)
 		flush()
 		neopixel_adafruit.set_color(0, 255, 0)
+		set_status_led_color([0, 1, 0])
 		i += 1
 		if 0==i%N:
 			if bh1750_is_available:
@@ -264,6 +288,7 @@ if __name__ == "__main__":
 						warning("couldn't post data for sht31d")
 			pct2075_adafruit.show_average_values()
 		neopixel_adafruit.set_color(0, 0, 255)
+		set_status_led_color([0, 0, 1])
 		if 0==i%86300:
 			airlift.update_time_from_server()
 		time.sleep(delay)
