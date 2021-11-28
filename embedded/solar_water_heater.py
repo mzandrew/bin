@@ -1,5 +1,5 @@
 # written 2021-09-10 by mza
-# last updated 2021-11-27 by mza
+# last updated 2021-11-28 by mza
 
 # to install on a circuitpython device:
 # cp -a pm25_adafruit.py anemometer.py boxcar.py airlift.py DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py sht31d_adafruit.py /media/circuitpython/
@@ -7,23 +7,30 @@
 # cd ~/build/adafruit-circuitpython/bundle/lib
 # rsync -r adafruit_register adafruit_sdcard.mpy adafruit_pct2075.mpy adafruit_bh1750.mpy adafruit_vcnl4040.mpy adafruit_ltr390.mpy neopixel.mpy adafruit_as7341.mpy adafruit_pcf8523.mpy adafruit_tsl2591.mpy adafruit_onewire adafruit_ds18x20.mpy /media/circuitpython/lib/
 
-should_use_RTC = True
-should_use_sdcard = True
 header_string = "date/time"
 dir = "/logs"
 N = 64
 delay = 0.7
-if 0:
-	feed_name = "test"
-	should_use_airlift = False
-else:
-	feed_name = "sun"
-	should_use_airlift = True
+should_use_airlift = True
+if 1: # for the one with the TFT and GPS but no adalogger
+	use_pwm_status_leds = False
+	should_use_sdcard = False
+	should_use_RTC = False
+	should_use_display = True
+	should_use_gps = True
+else: # cat on a hot tin roof
+	use_pwm_status_leds = True
+	should_use_sdcard = True
+	should_use_RTC = True
+	should_use_display = False
+	should_use_gps = False
 
 import sys
 import time
+import atexit
 import board
 import busio
+import pwmio
 from adafruit_onewire.bus import OneWireBus
 import pct2075_adafruit
 import bh1750_adafruit
@@ -39,8 +46,24 @@ import tsl2591_adafruit
 import anemometer
 import sht31d_adafruit
 import airlift
-import pwmio
+import gps_adafruit
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+
+import displayio
+import terminalio
+import adafruit_ili9341
+def setup_ili9341(spi):
+	displayio.release_displays()
+	tft_cs = board.D9
+	tft_dc = board.D10 # conflicts with adalogger cs
+	#tft_reset = board.D6
+	#sdcard_cs = board.D5
+	display_bus = displayio.FourWire( spi, command=tft_dc, chip_select=tft_cs )
+	#display_bus = displayio.FourWire( spi, command=tft_dc, chip_select=tft_cs, reset=tft_reset )
+	global display
+	display = adafruit_ili9341.ILI9341(display_bus, width=320, height=240)
+#	splash = displayio.Group()
+#	display.show(splash)
 
 # https://learn.adafruit.com/circuitpython-essentials/circuitpython-pwm
 PWM_MAX = 65535
@@ -68,14 +91,43 @@ def print_compact(string):
 		try:
 			date = pcf8523_adafruit.get_timestring1()
 		except:
-			date = ""
+			try:
+				date = gps_adafruit.time()
+			except:
+				date = ""
 	info("%s%s" % (date, string))
 
 def print_header():
 	info("" + header_string)
 
+def cleanup():
+	try:
+		try:
+			spi.unlock()
+		except:
+			pass
+		spi.clear_strip()
+		spi.deinit()
+	except:
+		pass
+	try:
+		i2c.unlock()
+	except:
+		pass
+#	try:
+#		display.cleanup()
+#	except:
+#		pass
+#	try:
+#		displayio.release_displays()
+#	except:
+#		pass
+
 if __name__ == "__main__":
-	setup_status_leds(red_pin=board.A2, green_pin=board.D9, blue_pin=board.A3)
+	atexit.register(cleanup)
+	if use_pwm_status_leds:
+		setup_status_leds(red_pin=board.A2, green_pin=board.D9, blue_pin=board.A3)
+		set_status_led_color([1.0, 1.0, 1.0])
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
 		string = "using I2C1 "
@@ -86,6 +138,9 @@ if __name__ == "__main__":
 	#i2c_list = i2c.scan()
 	#i2c.unlock()
 	#info(string + str(i2c_list))
+	displayio.release_displays()
+	spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+	uart = busio.UART(board.TX, board.RX, baudrate=9600, timeout=10)
 	prohibited_addresses = []
 	if should_use_RTC:
 		i2c_address = pcf8523_adafruit.setup(i2c)
@@ -93,7 +148,8 @@ if __name__ == "__main__":
 		RTC_is_available = True
 	else:
 		RTC_is_available = False
-	spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+	if should_use_display:
+		display_is_available = setup_ili9341(spi)
 	if should_use_sdcard:
 		sdcard_is_available = microsd_adafruit.setup_sdcard_for_logging_data(spi, dir)
 	else:
@@ -104,6 +160,12 @@ if __name__ == "__main__":
 		create_new_logfile_with_string_embedded(dir, "solar_water_heater", pcf8523_adafruit.get_timestring2())
 	else:
 		create_new_logfile_with_string_embedded(dir, "solar_water_heater")
+	if should_use_gps:
+		gps_adafruit.setup_uart(uart, 2000)
+		gps_is_available = True
+		header_string += gps_adafruit.header_string()
+	else:
+		gps_is_available = False
 	try:
 		i2c_address = bh1750_adafruit.setup(i2c, N)
 		prohibited_addresses.append(i2c_address)
@@ -186,6 +248,8 @@ if __name__ == "__main__":
 	except:
 		error("pct2075 not found")
 		sys.exit(1)
+	if use_pwm_status_leds:
+		set_status_led_color([0.5, 0.5, 0.5])
 	if should_use_airlift:
 		airlift_is_available = airlift.setup_airlift(spi)
 	else:
@@ -202,8 +266,11 @@ if __name__ == "__main__":
 		#info("")
 		#info(str(i))
 		neopixel_adafruit.set_color(255, 0, 0)
-		set_status_led_color([1, 0, 0])
+		if use_pwm_status_leds:
+			set_status_led_color([1, 0, 0])
 		string = ""
+		if gps_is_available:
+			string += gps_adafruit.measure_string()
 		if bh1750_is_available:
 			#info("bh1750")
 			#gnuplot> plot for [i=3:3] "solar_water_heater.log" using 0:i
@@ -237,10 +304,13 @@ if __name__ == "__main__":
 		#info("pct2075")
 		#gnuplot> plot for [i=2:2] "solar_water_heater.log" using 0:i
 		string += ", " + pct2075_adafruit.measure_string()
+		if airlift_is_available:
+			string += airlift.measure_string()
 		print_compact(string)
 		flush()
 		neopixel_adafruit.set_color(0, 255, 0)
-		set_status_led_color([0, 1, 0])
+		if use_pwm_status_leds:
+			set_status_led_color([0, 1, 0])
 		i += 1
 		if 0==i%N:
 			if bh1750_is_available:
@@ -288,9 +358,11 @@ if __name__ == "__main__":
 						warning("couldn't post data for sht31d")
 			pct2075_adafruit.show_average_values()
 		neopixel_adafruit.set_color(0, 0, 255)
-		set_status_led_color([0, 0, 1])
-		if 0==i%86300:
-			airlift.update_time_from_server()
+		if use_pwm_status_leds:
+			set_status_led_color([0, 0, 1])
+		if airlift_is_available:
+			if 0==i%86300:
+				airlift.update_time_from_server()
 		time.sleep(delay)
 	info("pct2075 not available; cannot continue")
 
