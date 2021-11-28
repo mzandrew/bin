@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2021-11-26 by mza
+# last updated 2021-11-28 by mza
 
 #from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 
@@ -22,7 +22,7 @@ epsilon = 0.000001
 MAXERRORCOUNT = 5
 errorcount = 0
 myfeeds = []
-delay = 0.25
+delay = 1.0
 
 #spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 def setup_airlift(spi, number_of_retries_remaining=5):
@@ -32,7 +32,7 @@ def setup_airlift(spi, number_of_retries_remaining=5):
 	global socket
 	global requests
 	global io
-	if 2==number_of_retries_remaining:
+	if number_of_retries_remaining<3:
 		esp.reset()
 	if 0==number_of_retries_remaining:
 		error("can't initialize airlift wifi")
@@ -109,6 +109,8 @@ def setup_feed(feed_name, number_of_retries_remaining=5):
 			return feed[1]
 	if 0==number_of_retries_remaining:
 		#esp.reset()
+		info("My IP address is " + esp.pretty_ip(esp.ip_address))
+		info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
 		return False
 	try:
 		info("connecting to feed " + feed_name + "...")
@@ -120,15 +122,19 @@ def setup_feed(feed_name, number_of_retries_remaining=5):
 	except:
 		time.sleep(delay)
 		myfeed = setup_feed(feed_name, number_of_retries_remaining-1)
-	myfeeds.append([ feed_name , myfeed ])
+	if myfeed:
+		myfeeds.append([ feed_name , myfeed ])
 	return myfeed
 
 def post_data(feed_name, value, perform_readback_and_verify=False):
 	global errorcount
 	myfeed = setup_feed(feed_name)
+	if not myfeed:
+		warning("feed " + feed_name + " not connected")
+		return
 	try:
 		value = float(value)
-		info("publishing " + str(value))
+		info("publishing " + str(value) + " to feed " + feed_name)
 		for i in range(5):
 			try:
 				io.send_data(myfeed["key"], value) # sometimes this gives RuntimeError: Sending request failed
@@ -152,9 +158,11 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 	except:
 		errorcount += 1
 		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")
-	if MAXERRORCOUNT<errorcount:
-		esp.reset()
-		setup_airlift(saved_spi)
+		info("My IP address is " + esp.pretty_ip(esp.ip_address))
+		info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
+#	if MAXERRORCOUNT<errorcount:
+#		esp.reset()
+#		setup_airlift(saved_spi)
 
 #def get_previous():
 #	try:
@@ -202,4 +210,10 @@ def update_time_from_server():
 		pcf8523_adafruit.set_from_timestruct(time)
 	except:
 		warning("couldn't set RTC")
+
+def show_signal_strength():
+	info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
+
+def measure_string():
+	return ", " + str(esp.rssi)
 
