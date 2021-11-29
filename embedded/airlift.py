@@ -24,13 +24,50 @@ errorcount = 0
 myfeeds = []
 delay = 1.0
 
+# for esp32-s2 boards
+# from https://learn.adafruit.com/adafruit-metro-esp32-s2/circuitpython-internet-test
+def setup_wifi():
+	global wifi
+	global io
+	import wifi
+	import ipaddress
+	import socketpool
+	import adafruit_requests
+	import ssl
+	wifi.radio.hostname = "RoamIfYouWantTo"
+	mac_address = list(wifi.radio.mac_address)
+	info(str(mac_address))
+	for network in wifi.radio.start_scanning_networks():
+		string = ""
+		string += str(network.ssid, "utf-8")
+		string += ", " + str(network.rssi)
+		string += ", " + str(network.channel)
+		info(string)
+	wifi.radio.stop_scanning_networks()
+	try:
+		from secrets import secrets
+	except ImportError:
+		warning("WiFi secrets are kept in secrets.py, please add them there!")
+		return False
+	wifi.radio.connect(ssid=secrets["ssid"], password=secrets["password"])
+	info(str(wifi.radio.ipv4_address))
+	info("RSSI: " + str(wifi.radio.ap_info.rssi) + " dB") # receiving signal strength indicator
+#	ap_mac = list(wifi.radio.mac_address_ap)
+#	info(str(ap_mac))
+	pool = socketpool.SocketPool(wifi.radio)
+	requests = adafruit_requests.Session(pool, ssl.create_default_context())
+	io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
+	#ipv4 = ipaddress.ip_address("8.8.4.4") # google.com
+	#info(str(wifi.radio.ping(ipv4)*1000))
+	return True
+
 #spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
-def setup_airlift(spi, number_of_retries_remaining=5):
+def setup_airlift(spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining=5):
 	global saved_spi
 	saved_spi = spi
 	global esp
-	global socket
-	global requests
+	#global socket
+	#global requests
 	global io
 	if number_of_retries_remaining<3:
 		esp.reset()
@@ -48,9 +85,9 @@ def setup_airlift(spi, number_of_retries_remaining=5):
 		warning("WiFi secrets are kept in secrets.py, please add them there!")
 		return False
 	try:
-		esp32_cs = digitalio.DigitalInOut(board.D13)
-		esp32_ready = digitalio.DigitalInOut(board.D11)
-		esp32_reset = digitalio.DigitalInOut(board.D12)
+		esp32_cs = digitalio.DigitalInOut(cs_pin)
+		esp32_ready = digitalio.DigitalInOut(ready_pin)
+		esp32_reset = digitalio.DigitalInOut(reset_pin)
 		esp = adafruit_esp32spi.ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
 		#if esp.status == adafruit_esp32spi.WL_IDLE_STATUS:
 			#info("ESP32 found and in idle mode")
@@ -102,15 +139,21 @@ def setup_airlift(spi, number_of_retries_remaining=5):
 		setup_airlift(spi, number_of_retries_remaining-1)
 	return True
 
+def show_network_status():
+	info("My IP address is " + esp.pretty_ip(esp.ip_address))
+	try:
+		info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
+	except:
+		info("RSSI: " + str(wifi.radio.ap_info.rssi) + " dB") # receiving signal strength indicator
+
 def setup_feed(feed_name, number_of_retries_remaining=5):
 	global myfeeds
 	for feed in myfeeds:
 		if feed_name==feed[0]:
 			return feed[1]
 	if 0==number_of_retries_remaining:
+		show_network_status()
 		#esp.reset()
-		info("My IP address is " + esp.pretty_ip(esp.ip_address))
-		info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
 		return False
 	try:
 		info("connecting to feed " + feed_name + "...")
@@ -158,11 +201,39 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 	except:
 		errorcount += 1
 		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")
-		info("My IP address is " + esp.pretty_ip(esp.ip_address))
-		info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
+		show_network_status()
 #	if MAXERRORCOUNT<errorcount:
 #		esp.reset()
 #		setup_airlift(saved_spi)
+
+def post_geolocated_data(feed_name, location, value, perform_readback_and_verify=False):
+	meta = {}
+	meta["lat"] = location[0]
+	meta["lon"] = location[1]
+	meta["ele"] = location[2]
+	info(str(meta))
+	global errorcount
+	myfeed = setup_feed(feed_name)
+	if not myfeed:
+		warning("feed " + feed_name + " not connected")
+		return
+	try:
+		value = float(value)
+		info("publishing " + str(value) + " to feed " + feed_name)
+		for i in range(5):
+			try:
+				io.send_data(myfeed["key"], value, metadata=meta) # sometimes this gives RuntimeError: Sending request failed
+				break
+			except:
+				if 0==i:
+					raise
+				else:
+					time.sleep(delay)
+	except:
+		errorcount += 1
+		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")
+
+#data_list = [Data(value=10), Data(value=11)]
 
 #def get_previous():
 #	try:
@@ -212,8 +283,22 @@ def update_time_from_server():
 		warning("couldn't set RTC")
 
 def show_signal_strength():
-	info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
+	try:
+		info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
+	except:
+		info("RSSI: " + str(wifi.radio.ap_info.rssi) + " dB") # receiving signal strength indicator
+
+def get_values():
+	try:
+		values = [ esp.rssi ]
+	except:
+		try:
+			values = [ wifi.radio.ap_info.rssi ]
+		except:
+			values = [ 0. ]
+	return values
 
 def measure_string():
-	return ", " + str(esp.rssi)
+	values = get_values()
+	return ", " + str(values[0])
 

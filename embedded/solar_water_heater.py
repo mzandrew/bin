@@ -5,12 +5,10 @@
 # cp -a pm25_adafruit.py anemometer.py boxcar.py airlift.py DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py sht31d_adafruit.py /media/circuitpython/
 # cp -a solar_water_heater.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
-# rsync -r adafruit_register adafruit_sdcard.mpy adafruit_pct2075.mpy adafruit_bh1750.mpy adafruit_vcnl4040.mpy adafruit_ltr390.mpy neopixel.mpy adafruit_as7341.mpy adafruit_pcf8523.mpy adafruit_tsl2591.mpy adafruit_onewire adafruit_ds18x20.mpy /media/circuitpython/lib/
+# rsync -r adafruit_register adafruit_sdcard.mpy adafruit_pct2075.mpy adafruit_bh1750.mpy adafruit_vcnl4040.mpy adafruit_ltr390.mpy neopixel.mpy adafruit_as7341.mpy adafruit_pcf8523.mpy adafruit_tsl2591.mpy adafruit_onewire adafruit_ds18x20.mpy adafruit_pm25.mpy adafruit_gps.mpy adafruit_sht31d.mpy adafruit_io adafruit_ili9341.mpy /media/circuitpython/lib/
 
 header_string = "date/time"
 dir = "/logs"
-N = 64
-delay = 0.7
 should_use_airlift = True
 if 1: # for the one with the TFT and GPS but no adalogger
 	use_pwm_status_leds = False
@@ -18,12 +16,26 @@ if 1: # for the one with the TFT and GPS but no adalogger
 	should_use_RTC = False
 	should_use_display = True
 	should_use_gps = True
+	wifi_mapping_mode = True
+	cat_on_a_hot_tin_roof_mode = False
+	N = 8
+	delay_between_acquisitions = 0.25
+	gps_delay_in_ms = 500
+	delay_between_posting_and_next_acquisition = 1.0
+	use_built_in_wifi = True
 else: # cat on a hot tin roof
 	use_pwm_status_leds = True
 	should_use_sdcard = True
 	should_use_RTC = True
 	should_use_display = False
 	should_use_gps = False
+	wifi_mapping_mode = False
+	cat_on_a_hot_tin_roof_mode = True
+	N = 64
+	delay_between_acquisitions = 0.7
+	gps_delay_in_ms = 2000
+	delay_between_posting_and_next_acquisition = 1.0
+	use_built_in_wifi = False
 
 import sys
 import time
@@ -31,6 +43,7 @@ import atexit
 import board
 import busio
 import pwmio
+import simpleio
 from adafruit_onewire.bus import OneWireBus
 import pct2075_adafruit
 import bh1750_adafruit
@@ -128,6 +141,8 @@ if __name__ == "__main__":
 	if use_pwm_status_leds:
 		setup_status_leds(red_pin=board.A2, green_pin=board.D9, blue_pin=board.A3)
 		set_status_led_color([1.0, 1.0, 1.0])
+	if 1: # for feather esp32-s2 to turn on power to i2c bus:
+		simpleio.DigitalOut(board.D7, value=0)
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
 		string = "using I2C1 "
@@ -151,7 +166,7 @@ if __name__ == "__main__":
 	if should_use_display:
 		display_is_available = setup_ili9341(spi)
 	if should_use_sdcard:
-		sdcard_is_available = microsd_adafruit.setup_sdcard_for_logging_data(spi, dir)
+		sdcard_is_available = microsd_adafruit.setup_sdcard_for_logging_data(spi, board.D10, dir) # D10 = adalogger featherwing
 	else:
 		sdcard_is_available = False
 	if not sdcard_is_available:
@@ -161,7 +176,7 @@ if __name__ == "__main__":
 	else:
 		create_new_logfile_with_string_embedded(dir, "solar_water_heater")
 	if should_use_gps:
-		gps_adafruit.setup_uart(uart, 2000)
+		gps_adafruit.setup_uart(uart, N, gps_delay_in_ms)
 		gps_is_available = True
 		header_string += gps_adafruit.header_string()
 	else:
@@ -251,7 +266,11 @@ if __name__ == "__main__":
 	if use_pwm_status_leds:
 		set_status_led_color([0.5, 0.5, 0.5])
 	if should_use_airlift:
-		airlift_is_available = airlift.setup_airlift(spi)
+		if use_built_in_wifi:
+			airlift_is_available = airlift.setup_wifi()
+		else:
+			airlift_is_available = airlift.setup_airlift(spi, board.D13, board.D11, board.D12)
+		header_string += ", RSSI-dB"
 	else:
 		airlift_is_available = False
 	if 0:
@@ -313,13 +332,41 @@ if __name__ == "__main__":
 			set_status_led_color([0, 1, 0])
 		i += 1
 		if 0==i%N:
-			if bh1750_is_available:
-				bh1750_adafruit.show_average_values()
+			if wifi_mapping_mode:
 				if airlift_is_available:
 					try:
-						airlift.post_data("bh1750", bh1750_adafruit.get_average_values()[0])
+						airlift.post_geolocated_data("wifi-signal-strength", gps_adafruit.average_location(), airlift.get_values()[0])
 					except:
-						warning("couldn't post data for bh1750")
+						warning("couldn't post data for wifi signal strength")
+			if cat_on_a_hot_tin_roof_mode:
+				if bh1750_is_available:
+					bh1750_adafruit.show_average_values()
+					if airlift_is_available:
+						try:
+							airlift.post_data("bh1750", bh1750_adafruit.get_average_values()[0])
+						except:
+							warning("couldn't post data for bh1750")
+				if anemometer_is_available:
+					anemometer.show_average_values()
+					if airlift_is_available:
+						try:
+							airlift.post_data("anemometer", anemometer.get_average_values()[0])
+						except:
+							warning("couldn't post data for anemometer")
+				if sht31d_is_available:
+					sht31d_adafruit.show_average_values()
+					if airlift_is_available:
+						try:
+							airlift.post_data("sht31d", sht31d_adafruit.get_average_values()[0])
+						except:
+							warning("couldn't post data for sht31d")
+				if ds18b20_is_available:
+					ds18b20_adafruit.show_average_values()
+					if airlift_is_available:
+						try:
+							airlift.post_data("ds18b20", ds18b20_adafruit.get_average_values()[0])
+						except:
+							warning("couldn't post data for ds18b20")
 			if ltr390_is_available:
 				ltr390_adafruit.show_average_values()
 			if vcnl4040_is_available:
@@ -333,36 +380,17 @@ if __name__ == "__main__":
 #						warning("couldn't post data for as7341")
 			if tsl2591_is_available:
 				tsl2591_adafruit.show_average_values()
-			if anemometer_is_available:
-				anemometer.show_average_values()
-				if airlift_is_available:
-					try:
-						airlift.post_data("anemometer", anemometer.get_average_values()[0])
-					except:
-						warning("couldn't post data for anemometer")
 			if pm25_is_available:
 				pm25_adafruit.show_average_values()
-			if ds18b20_is_available:
-				ds18b20_adafruit.show_average_values()
-				if airlift_is_available:
-					try:
-						airlift.post_data("ds18b20", ds18b20_adafruit.get_average_values()[0])
-					except:
-						warning("couldn't post data for ds18b20")
-			if sht31d_is_available:
-				sht31d_adafruit.show_average_values()
-				if airlift_is_available:
-					try:
-						airlift.post_data("sht31d", sht31d_adafruit.get_average_values()[0])
-					except:
-						warning("couldn't post data for sht31d")
-			pct2075_adafruit.show_average_values()
+			#pct2075_adafruit.show_average_values()
+			info("waiting...")
+			time.sleep(delay_between_posting_and_next_acquisition)
 		neopixel_adafruit.set_color(0, 0, 255)
 		if use_pwm_status_leds:
 			set_status_led_color([0, 0, 1])
 		if airlift_is_available:
 			if 0==i%86300:
 				airlift.update_time_from_server()
-		time.sleep(delay)
+		time.sleep(delay_between_acquisitions)
 	info("pct2075 not available; cannot continue")
 
