@@ -80,10 +80,14 @@ def _parse_degrees(nmea_data):
     # Where ddd is the degrees, mm.mmmm is the minutes.
     if nmea_data is None or len(nmea_data) < 3:
         return None
-    raw = float(nmea_data)
-    deg = raw // 100
-    minutes = raw % 100
-    return deg + minutes / 60
+    deg = float(nmea_data)//100
+    if deg<10:
+        minutes = float(nmea_data[1:])
+    elif deg<100:
+        minutes = float(nmea_data[2:])
+    else:
+        minutes = float(nmea_data[3:])
+    return deg + minutes / 60.
 
 
 def _parse_int(nmea_data):
