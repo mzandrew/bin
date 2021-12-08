@@ -1,5 +1,5 @@
 # written 2021-11-23 by mza
-# last updated 2021-12-07 by mza
+# last updated 2021-12-08 by mza
 
 #from collections import deque # not in circuitpython
 #import copy # not in circuitpython
@@ -23,7 +23,7 @@ class boxcar:
 		#self.show_accumulated_values()
 		self.number_accumulated_since_last_reset += 1
 		self.accumulated_values.append(values[:]) # need a shallow copy here or it does not work
-		if 1:
+		if 0: # this clause is pathological at the 4th decimal place and the error accumulates...
 			for i in range(self.items):
 				self.sums[i] += values[i]
 				self.sums[i] -= self.accumulated_values[0][i]
@@ -62,20 +62,20 @@ class boxcar:
 			N = self.N
 		if 0:
 			info(str(self.sums))
-		elif 1:
+		elif 0:
 			string = "sums[" + self.name + "] = ["
 			for i in range(self.items):
 				string += ",%.9f" % self.sums[i]
 			string += "]"
 			info(string)
 		if 0<N:
-			average_values = [ self.sums[i]/N for i in range(self.items) ]
+			average_values = [ self.sums[i]/float(N) for i in range(self.items) ]
 		else:
 			error("averaged zero things together")
 			raise
 		if 0:
 			info("average_values = " + str(average_values))
-		elif 1:
+		elif 0:
 			string = "average_values [" + self.name + "] = ["
 			for i in range(self.items):
 				string += ",%.9f" % average_values[i]
