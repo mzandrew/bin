@@ -10,4 +10,5 @@ logs
 secrets.py
 notes
 contrib/feathers2
+Adafruit_CircuitPython_GPS
 
