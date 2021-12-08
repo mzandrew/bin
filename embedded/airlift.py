@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2021-11-28 by mza
+# last updated 2021-12-07 by mza
 
 #from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 
@@ -24,6 +24,38 @@ errorcount = 0
 myfeeds = []
 delay = 1.0
 
+def hex(number, width=1):
+	return "%0*x" % (width, number)
+
+def format_MAC(MAC):
+	string = ""
+	for byte in MAC:
+		if len(string):
+			string += "-"
+		string += hex(byte, 2)
+	return string
+
+def show_networks(networks):
+	for network in networks:
+		string = ""
+		string += format_MAC(network[1])
+		string += ", " + str(network[3])
+		string += ", " + str(network[2])
+		string += ", " + network[0]
+		info(string)
+
+def scan_networks():
+	networks = []
+	for network in wifi.radio.start_scanning_networks():
+		ssid = str(network.ssid, "utf-8")
+		bssid = list(network.bssid)
+		channel = network.channel
+		rssi = network.rssi
+		networks.append([ssid, bssid, channel, rssi])
+	wifi.radio.stop_scanning_networks()
+	networks.sort(key=lambda farquar:farquar[3], reverse=True) # sort by signal strength
+	return networks
+
 # for esp32-s2 boards
 # from https://learn.adafruit.com/adafruit-metro-esp32-s2/circuitpython-internet-test
 def setup_wifi():
@@ -36,14 +68,9 @@ def setup_wifi():
 	import ssl
 	wifi.radio.hostname = "RoamIfYouWantTo"
 	mac_address = list(wifi.radio.mac_address)
-	info(str(mac_address))
-	for network in wifi.radio.start_scanning_networks():
-		string = ""
-		string += str(network.ssid, "utf-8")
-		string += ", " + str(network.rssi)
-		string += ", " + str(network.channel)
-		info(string)
-	wifi.radio.stop_scanning_networks()
+	info(format_MAC(mac_address))
+	networks = scan_networks()
+	show_networks(networks)
 	try:
 		from secrets import secrets
 	except ImportError:
@@ -162,6 +189,7 @@ def setup_feed(feed_name, number_of_retries_remaining=5):
 		except AdafruitIO_RequestError:
 			info("creating new feed " + feed_name + "...")
 			myfeed = io.create_new_feed(feed_name)
+		#info(str(myfeed["key"]))
 	except:
 		time.sleep(delay)
 		myfeed = setup_feed(feed_name, number_of_retries_remaining-1)
@@ -206,29 +234,88 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 #		esp.reset()
 #		setup_airlift(saved_spi)
 
+def show_geolocation_error(metadata, received_data):
+	lat = float(received_data["lat"])
+	lon = float(received_data["lon"])
+	ele = float(received_data["ele"])
+	string = "%.6f,%.6f,%.3f" % (lat, lon, ele)
+	info("readback location = " + string)
+	err_lat = float(metadata["lat"]) - lat
+	err_lon = float(metadata["lon"]) - lon
+	#err_ele = metadata["ele"] - ele
+	#string += " error(deg) = %.6f,%.6f" % (err_lat, err_lon)
+	equatorial_circumference_km = 40075.017
+	equatorial_m_per_degree = 1000. * equatorial_circumference_km / 360.
+	err_lon_m = err_lon * equatorial_m_per_degree
+	meridional_circumference_km = 40007.86
+	meridional_m_per_degree = 1000. * meridional_circumference_km / 360.
+	err_lat_m = err_lat * meridional_m_per_degree
+	string = "location error in readback = %.3f,%.3f (m)" % (err_lat_m, err_lon_m)
+	info(string)
+
+# https://github.com/adafruit/Adafruit_CircuitPython_AdafruitIO/blob/main/examples/adafruit_io_http/adafruit_io_metadata.py
+def test_posting_geolocated_data(feed_name):
+	myfeed = setup_feed(feed_name)
+	data_value = 42.000000123456789
+	metadata = {"lat": 21.123456, "lon": -157.654321, "ele": -6.283823, "created_at": None} # "123 fake street"
+	string = "%.6f,%.6f,%.3f" % (metadata["lat"], metadata["lon"], metadata["ele"])
+	info("location = " + string)
+	info("value = %.9f" % data_value)
+	metadata["lat"] = "%.7f" % metadata["lat"]
+	metadata["lon"] = "%.7f" % metadata["lon"]
+	metadata["ele"] = "%.4f" % metadata["ele"]
+	io.send_data(myfeed["key"], data_value, metadata, precision=9)
+	received_data = io.receive_data(myfeed["key"])
+	info("readback value = %.9f" % float(received_data["value"]))
+	show_geolocation_error(metadata, received_data)
+
 def post_geolocated_data(feed_name, location, value, perform_readback_and_verify=False):
-	meta = {}
-	meta["lat"] = location[0]
-	meta["lon"] = location[1]
-	meta["ele"] = location[2]
-	info(str(meta))
+	metadata = {}
+	metadata["lat"] = location[0]
+	metadata["lon"] = location[1]
+	metadata["ele"] = location[2]
+	if 0:
+		info(str(metadata))
+	elif 0:
+		string = "location = "
+#		for i in range(len(location)):
+#			string += ",%.6f" % location[i]
+		string += " "
+		string += "%.6f" % metadata["lat"]
+		string += ",%.6f" % metadata["lon"]
+		string += ",%.3f" % metadata["ele"]
+		info(string)
 	global errorcount
 	myfeed = setup_feed(feed_name)
 	if not myfeed:
 		warning("feed " + feed_name + " not connected")
 		return
+	metadata["lat"] = "%.7f" % metadata["lat"]
+	metadata["lon"] = "%.7f" % metadata["lon"]
+	metadata["ele"] = "%.4f" % metadata["ele"]
 	try:
 		value = float(value)
 		info("publishing " + str(value) + " to feed " + feed_name)
 		for i in range(5):
 			try:
-				io.send_data(myfeed["key"], value, metadata=meta) # sometimes this gives RuntimeError: Sending request failed
+				io.send_data(myfeed["key"], value, metadata=metadata) # sometimes this gives RuntimeError: Sending request failed
+				#io.send_data(myfeed["key"], value, metadata=metadata, precision=6) # sometimes this gives RuntimeError: Sending request failed
 				break
 			except:
 				if 0==i:
 					raise
 				else:
 					time.sleep(delay)
+		#perform_readback_and_verify = True
+		if perform_readback_and_verify:
+			received_data = io.receive_data(myfeed["key"])
+			#readback = float(received_data["value"])
+			show_geolocation_error(metadata, received_data)
+#			if epsilon<math.fabs(readback-value):
+#				errorcount = 0
+#			else:
+#				errorcount += 1
+#				warning("readback failure " + str(readback) + "!=" + str(value))
 	except:
 		errorcount += 1
 		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")

@@ -1,5 +1,5 @@
 # written 2021-11-23 by mza
-# last updated 2021-11-28 by mza
+# last updated 2021-12-07 by mza
 
 #from collections import deque # not in circuitpython
 #import copy # not in circuitpython
@@ -23,14 +23,29 @@ class boxcar:
 		#self.show_accumulated_values()
 		self.number_accumulated_since_last_reset += 1
 		self.accumulated_values.append(values[:]) # need a shallow copy here or it does not work
-		for i in range(self.items):
-			self.sums[i] += values[i]
-			self.sums[i] -= self.accumulated_values[0][i]
+		if 1:
+			for i in range(self.items):
+				self.sums[i] += values[i]
+				self.sums[i] -= self.accumulated_values[0][i]
+		else:
+			for i in range(self.items):
+				self.sums[i] = 0.
+				for j in range(1, len(self.accumulated_values)):
+					self.sums[i] += self.accumulated_values[j][i]
 		self.accumulated_values.pop(0)
 		#self.show_accumulated_values()
 
 	def show_accumulated_values(self):
-		info(self.name + " accumulated_values = " + str(self.accumulated_values))
+		if 0:
+			info(self.name + " accumulated_values = " + str(self.accumulated_values))
+		elif 1:
+			string = self.name + " accumulated_values = "
+			for values in self.accumulated_values:
+				string += ",["
+				for value in values:
+					string += ",%.9f" % value
+				string += "]"
+			info(string)
 
 	def get_previous_values(self):
 		return self.accumulated_values[self.N-1]
@@ -45,12 +60,27 @@ class boxcar:
 			info("using N = " + str(N))
 		else:
 			N = self.N
+		if 0:
+			info(str(self.sums))
+		elif 1:
+			string = "sums[" + self.name + "] = ["
+			for i in range(self.items):
+				string += ",%.9f" % self.sums[i]
+			string += "]"
+			info(string)
 		if 0<N:
 			average_values = [ self.sums[i]/N for i in range(self.items) ]
 		else:
 			error("averaged zero things together")
 			raise
-		#print("average_values = " + str(average_values))
+		if 0:
+			info("average_values = " + str(average_values))
+		elif 1:
+			string = "average_values [" + self.name + "] = ["
+			for i in range(self.items):
+				string += ",%.9f" % average_values[i]
+			string += "]"
+			info(string)
 		return average_values
 
 	def show_average_values(self):

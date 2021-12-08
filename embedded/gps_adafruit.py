@@ -1,6 +1,6 @@
 # from https://learn.adafruit.com/adafruit-ultimate-gps-featherwing/circuitpython-library
 # written 2021-11-28 by mza
-# last updated 2021-11-28 by mza
+# last updated 2021-12-07 by mza
 
 import time
 import board
@@ -37,6 +37,7 @@ def get_values():
 		hd = gps.horizontal_dilution
 		if hd is not None and hd<shmepsilon:
 			values = [ gps.latitude, gps.longitude, gps.altitude_m, gps.height_geoid, gps.horizontal_dilution, gps.satellites ]
+			#values = [ round(gps.latitude, 7), round(gps.longitude, 7), round(gps.altitude_m, 4), gps.height_geoid, gps.horizontal_dilution, gps.satellites ]
 			myboxcar.accumulate(values)
 	return values
 
@@ -47,14 +48,14 @@ def measure_string():
 	string = ""
 	if gps.has_fix:
 		values = get_values()
-		string += ", %.6f" % values[0]
-		string += ", %.6f" % values[1]
+		string += ", %.9f" % values[0]
+		string += ", %.9f" % values[1]
 		#string += ", %d" % gps.fix_quality
 		if values[2] is not None:
 			if values[3] is not None:
-				string += ", %.1f" % (values[2] - values[3])
+				string += ", %.6f" % (values[2] - values[3])
 			else:
-				string += ", %.1f" % values[2]
+				string += ", %.6f" % values[2]
 	#	if gps.speed_knots is not None:
 	#		string += ", %.1f" % gps.speed_knots
 	#	if gps.track_angle_deg is not None:
@@ -77,7 +78,7 @@ def average_location():
 		#location[3] = myboxcar.get_previous_values()[3]
 		#info(str(location))
 		location = [ location[0], location[1], location[2] - location[3] ]
-		#info(str(location))
+		#info("location = " + str([ "%.6f" % z for z in location]))
 		return location
 	except:
 		raise

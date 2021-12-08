@@ -1,5 +1,5 @@
 # written 2021-09-10 by mza
-# last updated 2021-11-28 by mza
+# last updated 2021-12-07 by mza
 
 # to install on a circuitpython device:
 # cp -a pm25_adafruit.py anemometer.py boxcar.py airlift.py DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py sht31d_adafruit.py /media/circuitpython/
@@ -21,7 +21,7 @@ if 1: # for the one with the TFT and GPS but no adalogger
 	N = 8
 	delay_between_acquisitions = 0.25
 	gps_delay_in_ms = 500
-	delay_between_posting_and_next_acquisition = 1.0
+	delay_between_posting_and_next_acquisition = 4.0
 	use_built_in_wifi = True
 else: # cat on a hot tin roof
 	use_pwm_status_leds = True
@@ -331,6 +331,10 @@ if __name__ == "__main__":
 		if use_pwm_status_leds:
 			set_status_led_color([0, 1, 0])
 		i += 1
+#		if wifi_mapping_mode:
+#			if airlift_is_available:
+#				if 2==i:
+#					airlift.test_posting_geolocated_data("test")
 		if 0==i%N:
 			if wifi_mapping_mode:
 				if airlift_is_available:
@@ -338,6 +342,8 @@ if __name__ == "__main__":
 						airlift.post_geolocated_data("wifi-signal-strength", gps_adafruit.average_location(), airlift.get_values()[0])
 					except:
 						warning("couldn't post data for wifi signal strength")
+					networks = airlift.scan_networks()
+					airlift.show_networks(networks)
 			if cat_on_a_hot_tin_roof_mode:
 				if bh1750_is_available:
 					bh1750_adafruit.show_average_values()
