@@ -1,5 +1,5 @@
 # written 2021-09-10 by mza
-# last updated 2021-12-07 by mza
+# last updated 2021-12-08 by mza
 
 # to install on a circuitpython device:
 # cp -a pm25_adafruit.py anemometer.py boxcar.py airlift.py DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py sht31d_adafruit.py /media/circuitpython/
@@ -19,9 +19,9 @@ if 1: # for the one with the TFT and GPS but no adalogger
 	wifi_mapping_mode = True
 	cat_on_a_hot_tin_roof_mode = False
 	N = 8
-	delay_between_acquisitions = 0.25
-	gps_delay_in_ms = 500
-	delay_between_posting_and_next_acquisition = 4.0
+	gps_delay_in_ms = 1000
+	delay_between_acquisitions = 2. * gps_delay_in_ms/1000.
+	delay_between_posting_and_next_acquisition = 2.0
 	use_built_in_wifi = True
 else: # cat on a hot tin roof
 	use_pwm_status_leds = True
@@ -105,7 +105,7 @@ def print_compact(string):
 			date = pcf8523_adafruit.get_timestring1()
 		except:
 			try:
-				date = gps_adafruit.time()
+				date = gps_adafruit.get_time()
 			except:
 				date = ""
 	info("%s%s" % (date, string))

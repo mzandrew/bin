@@ -1,6 +1,6 @@
 # from https://learn.adafruit.com/adafruit-ultimate-gps-featherwing/circuitpython-library
 # written 2021-11-28 by mza
-# last updated 2021-12-07 by mza
+# last updated 2021-12-08 by mza
 
 import time
 import board
@@ -10,16 +10,25 @@ import boxcar
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
 shmepsilon = 1.5
+DESIRED_PRECISION_DEGREES = 7
+DESIRED_PRECISION_METERS = 3
+MAX_TIMES_GPS_CAN_NOT_UPDATE_BEFORE_RESETTING_MICROCONTROLLER = 25
+STORE_IN_DEGREES = False
+if STORE_IN_DEGREES:
+	DIVISOR = 1.
+else:
+	DIVISOR = 60.
 
 def setup_internal(N, delay_in_ms=1000):
-	gps.send_command(b"PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")
+	#gps.send_command(b"PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0") # GLL, RMC, VTG, GGA, GSA, GSV, 0, 0, 0, 0, 0, 0, 0, MCHN
+	gps.send_command(b"PMTK314,0,4,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0") # GLL, RMC, VTG, GGA, GSA, GSV, 0, 0, 0, 0, 0, 0, 0, MCHN
 	gps.send_command(b'PMTK220,' + str(delay_in_ms))
 	global myboxcar
 	myboxcar = boxcar.boxcar(6, N, "gps")
 
 def setup_uart(uart, N, delay_in_ms=1000):
 	global gps
-	gps = adafruit_gps.GPS(uart, debug=False)
+	gps = adafruit_gps.GPS(uart, debug=False) # set debug to True to print out NMEA sentences
 	setup_internal(N, delay_in_ms)
 
 def setup_i2c(i2c, N, delay_in_ms=1000):
@@ -27,17 +36,73 @@ def setup_i2c(i2c, N, delay_in_ms=1000):
 	gps = adafruit_gps.GPS_GtopI2C(i2c)
 	setup_internal(N, delay_in_ms)
 
-def get_values():
+def has_fix():
 	try:
-		gps.update()
+		if 10<count_of_times_gps_did_not_update:
+			return False
+		else:
+			return gps.has_fix
 	except:
-		pass
+		return gps.has_fix
+
+def try_to_update():
+	global count_of_times_gps_did_not_update
+	global last_gps_fix_time_monotonic
+	updated = False
+	try:
+		for i in range(8):
+			#info(str(gps.in_waiting))
+			updated = gps.update()
+			if updated:
+				last_gps_fix_time_monotonic = time.monotonic()
+				count_of_times_gps_did_not_update = 0
+				break
+			else:
+				time.sleep(0.125)
+		if not updated:
+			try:
+				count_of_times_gps_did_not_update += 1
+			except:
+				count_of_times_gps_did_not_update = 1
+			duration = time.monotonic() - last_gps_fix_time_monotonic
+			if 2<count_of_times_gps_did_not_update:
+				warning("GPS did not get a fix for last " + str(count_of_times_gps_did_not_update) + " successive attempts (last " + str(duration) + " seconds)")
+			string = gps.read(gps.in_waiting) # read whatever is waiting
+			debug(string)
+	except:
+		warning("GPS did not update")
+		try:
+			count_of_times_gps_did_not_update += 1
+		except:
+			count_of_times_gps_did_not_update = 1
+		try:
+			duration = time.monotonic() - last_gps_fix_time_monotonic
+		except:
+			duration = time.monotonic()
+		if 2<count_of_times_gps_did_not_update:
+			warning("GPS did not get a fix for last " + str(count_of_times_gps_did_not_update) + " successive attempts (last " + str(duration) + " seconds)")
+	if MAX_TIMES_GPS_CAN_NOT_UPDATE_BEFORE_RESETTING_MICROCONTROLLER<count_of_times_gps_did_not_update:
+		error("resetting board...")
+		time.sleep(1)
+		info("")
+		import microcontroller
+		microcontroller.reset()
+
+def get_values():
+	try_to_update()
 	values = [ 0., 0., 0., 0., 0., 0 ]
-	if gps.has_fix:
+	if has_fix():
 		hd = gps.horizontal_dilution
 		if hd is not None and hd<shmepsilon:
-			values = [ gps.latitude, gps.longitude, gps.altitude_m, gps.height_geoid, gps.horizontal_dilution, gps.satellites ]
-			#values = [ round(gps.latitude, 7), round(gps.longitude, 7), round(gps.altitude_m, 4), gps.height_geoid, gps.horizontal_dilution, gps.satellites ]
+			lat_deg = gps.latitude
+			lon_deg = gps.longitude
+			if STORE_IN_DEGREES:
+				values = [ lat_deg, lon_deg, gps.altitude_m, gps.height_geoid, gps.horizontal_dilution, gps.satellites ]
+				#values = [ round(lat_deg, DESIRED_PRECISION_DEGREES), round(lon_deg, DESIRED_PRECISION_DEGREES), round(gps.altitude_m, DESIRED_PRECISION_METERS), gps.height_geoid, gps.horizontal_dilution, gps.satellites ]
+			else:
+				lat_min = 60. * lat_deg
+				lon_min = 60. * lon_deg
+				values = [ lat_min, lon_min, gps.altitude_m, gps.height_geoid, gps.horizontal_dilution, gps.satellites ]
 			myboxcar.accumulate(values)
 	return values
 
@@ -46,16 +111,16 @@ def header_string():
 
 def measure_string():
 	string = ""
-	if gps.has_fix:
+	if has_fix():
 		values = get_values()
-		string += ", %.9f" % values[0]
-		string += ", %.9f" % values[1]
+		string += ", %.*f" % (DESIRED_PRECISION_DEGREES, values[0]/DIVISOR)
+		string += ", %.*f" % (DESIRED_PRECISION_DEGREES, values[1]/DIVISOR)
 		#string += ", %d" % gps.fix_quality
 		if values[2] is not None:
 			if values[3] is not None:
-				string += ", %.6f" % (values[2] - values[3])
+				string += ", %.*f" % (DESIRED_PRECISION_METERS, values[2] - values[3])
 			else:
-				string += ", %.6f" % values[2]
+				string += ", %.*f" % (DESIRED_PRECISION_METERS, values[2])
 	#	if gps.speed_knots is not None:
 	#		string += ", %.1f" % gps.speed_knots
 	#	if gps.track_angle_deg is not None:
@@ -65,7 +130,7 @@ def measure_string():
 		if values[4] is not None:
 			string += ", %.2f" % values[4]
 	else:
-		pass
+		try_to_update()
 		#info("Waiting for fix...")
 	return string
 
@@ -77,18 +142,15 @@ def average_location():
 		#info(str(location))
 		#location[3] = myboxcar.get_previous_values()[3]
 		#info(str(location))
-		location = [ location[0], location[1], location[2] - location[3] ]
+		location = [ location[0]/DIVISOR, location[1]/DIVISOR, location[2] - location[3] ]
 		#info("location = " + str([ "%.6f" % z for z in location]))
 		return location
 	except:
 		raise
 
 def instantaneous_location():
-	try:
-		gps.update()
-	except:
-		pass
-	if gps.has_fix:
+	try_to_update()
+	if has_fix():
 		location = [ gps.latitude, gps.longitude ]
 		if gps.altitude_m is not None:
 			if gps.height_geoid is not None:
@@ -105,12 +167,14 @@ def instantaneous_location():
 def show_location():
 	info(measure_string())
 
-def time():
+def get_time():
 	try:
-		gps.update()
+		duration = time.monotonic() - last_gps_fix_time_monotonic
 	except:
-		pass
-	if gps.has_fix:
+		duration = time.monotonic()
+	if 1.0<duration:
+		try_to_update()
+	if has_fix():
 		return "{:04}-{:02}-{:02}+{:02}:{:02}:{:02}UTC".format(
 			gps.timestamp_utc.tm_year,
 			gps.timestamp_utc.tm_mon,
