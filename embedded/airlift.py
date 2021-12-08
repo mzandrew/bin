@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2021-12-07 by mza
+# last updated 2021-12-08 by mza
 
 #from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 
@@ -23,6 +23,8 @@ MAXERRORCOUNT = 5
 errorcount = 0
 myfeeds = []
 delay = 1.0
+DESIRED_PRECISION_DEGREES = 7
+DESIRED_PRECISION_METERS = 3
 
 def hex(number, width=1):
 	return "%0*x" % (width, number)
@@ -67,8 +69,6 @@ def setup_wifi():
 	import adafruit_requests
 	import ssl
 	wifi.radio.hostname = "RoamIfYouWantTo"
-	mac_address = list(wifi.radio.mac_address)
-	info(format_MAC(mac_address))
 	networks = scan_networks()
 	show_networks(networks)
 	try:
@@ -77,7 +77,9 @@ def setup_wifi():
 		warning("WiFi secrets are kept in secrets.py, please add them there!")
 		return False
 	wifi.radio.connect(ssid=secrets["ssid"], password=secrets["password"])
-	info(str(wifi.radio.ipv4_address))
+	mac_address = list(wifi.radio.mac_address)
+	info("MAC: " + format_MAC(mac_address))
+	info("IP: " + str(wifi.radio.ipv4_address))
 	info("RSSI: " + str(wifi.radio.ap_info.rssi) + " dB") # receiving signal strength indicator
 #	ap_mac = list(wifi.radio.mac_address_ap)
 #	info(str(ap_mac))
@@ -290,12 +292,12 @@ def post_geolocated_data(feed_name, location, value, perform_readback_and_verify
 	if not myfeed:
 		warning("feed " + feed_name + " not connected")
 		return
-	metadata["lat"] = "%.7f" % metadata["lat"]
-	metadata["lon"] = "%.7f" % metadata["lon"]
-	metadata["ele"] = "%.4f" % metadata["ele"]
+	metadata["lat"] = "%.*f" % (DESIRED_PRECISION_DEGREES, metadata["lat"])
+	metadata["lon"] = "%.*f" % (DESIRED_PRECISION_DEGREES, metadata["lon"])
+	metadata["ele"] = "%.*f" % (DESIRED_PRECISION_METERS, metadata["ele"])
 	try:
 		value = float(value)
-		info("publishing " + str(value) + " to feed " + feed_name)
+		info("publishing " + str(value) + " to feed " + feed_name + " @(" + metadata["lat"] + "," + metadata["lon"] + "," + metadata["ele"]  + ")")
 		for i in range(5):
 			try:
 				io.send_data(myfeed["key"], value, metadata=metadata) # sometimes this gives RuntimeError: Sending request failed
@@ -328,6 +330,14 @@ def post_geolocated_data(feed_name, location, value, perform_readback_and_verify
 #	except:
 #		raise
 #	return value
+
+# curl -H "X-AIO-Key: {io_key}" "https://io.adafruit.com/api/v2/{username}/feeds/{feed_key}/data?limit=1&end_time=2019-05-05T00:00Z"
+# curl -H "X-AIO-Key: {io_key}" "https://io.adafruit.com/api/v2/{username}/feeds/{feed_key}/data?start_time=2019-05-04T00:00Z&end_time=2019-05-05T00:00Z"
+# Not implemented in Adafruit IO CircuitPython
+def get_some_data(feed_key, start_time, end_time, limit=1):
+	adafruit_io.validate_feed_key(feed_key)
+	path = adafruit_io._compose_path("feeds/{0}/data?start_time={0}&end_time={0}&limit={0}".format(feed_key, start_time, end_time, limit))
+	return adafruit_io._get(path)
 
 DEFAULT = -40
 def get_all_data(count):
