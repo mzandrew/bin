@@ -2,7 +2,7 @@
 
 # last updated 2021-12-11 by mza
 
-declare -i debian_only=1
+#declare -i debian_only=1
 
 declare package_list_file=""
 function make_dpkg_list_if_necessary {
