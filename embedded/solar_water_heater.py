@@ -176,7 +176,10 @@ if __name__ == "__main__":
 	else:
 		create_new_logfile_with_string_embedded(dir, "solar_water_heater")
 	if should_use_gps:
-		gps_adafruit.setup_uart(uart, N, gps_delay_in_ms)
+		if 1:
+			gps_adafruit.setup_uart(uart, N, gps_delay_in_ms)
+		else:
+			gps_adafruit.setup_i2c(i2c, N, gps_delay_in_ms)
 		gps_is_available = True
 		header_string += gps_adafruit.header_string()
 	else:
