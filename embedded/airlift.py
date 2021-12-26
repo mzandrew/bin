@@ -14,7 +14,6 @@ from adafruit_esp32spi import PWMOut
 from adafruit_io.adafruit_io import IO_HTTP, AdafruitIO_RequestError
 import adafruit_requests as requests
 import adafruit_esp32spi.adafruit_esp32spi_socket as socket
-import pcf8523_adafruit # to set the RTC
 import math
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
@@ -375,6 +374,7 @@ def update_time_from_server():
 	except:
 		warning("couldn't get time from server")
 	try:
+		import pcf8523_adafruit # to set the RTC
 		pcf8523_adafruit.set_from_timestruct(time)
 	except:
 		warning("couldn't set RTC")
