@@ -1,5 +1,5 @@
 # written 2021-12-26 by mza
-# last updated 2021-12-26 by mza
+# last updated 2021-12-27 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -10,9 +10,9 @@
 header_string = "date/time"
 dir = "/logs"
 should_use_airlift = True
-N = 64
+N = 24
 use_built_in_wifi = True
-delay_between_acquisitions = 3.0
+delay_between_acquisitions = 2.3
 delay_between_posting_and_next_acquisition = 1.0
 
 import sys
@@ -58,6 +58,12 @@ def print_compact(string):
 
 if __name__ == "__main__":
 	try:
+		neopixel_is_available = neopixel_adafruit.setup_neopixel()
+	except:
+		warning("error setting up neopixel")
+	if neopixel_is_available:
+		neopixel_adafruit.set_color(100, 100, 100)
+	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
 		string = "using I2C1 "
 	except:
@@ -72,7 +78,7 @@ if __name__ == "__main__":
 		pm25_is_available = False
 	if should_use_airlift:
 		if use_built_in_wifi:
-			airlift_is_available = airlift.setup_wifi()
+			airlift_is_available = airlift.setup_wifi("RoamIfYouWantTwo")
 		else:
 			airlift_is_available = airlift.setup_airlift(spi, board.D13, board.D11, board.D12)
 		if airlift_is_available:
@@ -92,7 +98,8 @@ if __name__ == "__main__":
 	while pm25_adafruit.test_if_present():
 		#info("")
 		#info(str(i))
-		neopixel_adafruit.set_color(255, 0, 0)
+		if neopixel_is_available:
+			neopixel_adafruit.set_color(255, 0, 0)
 		string = ""
 		if pm25_is_available:
 			string += pm25_adafruit.measure_string()
@@ -100,7 +107,8 @@ if __name__ == "__main__":
 			string += airlift.measure_string()
 		print_compact(string)
 		flush()
-		neopixel_adafruit.set_color(0, 255, 0)
+		if neopixel_is_available:
+			neopixel_adafruit.set_color(0, 255, 0)
 		i += 1
 		if 0==i%N:
 			if pm25_is_available:
@@ -112,7 +120,8 @@ if __name__ == "__main__":
 					warning("couldn't post data for pm25")
 			info("waiting...")
 			time.sleep(delay_between_posting_and_next_acquisition)
-		neopixel_adafruit.set_color(0, 0, 255)
+		if neopixel_is_available:
+			neopixel_adafruit.set_color(0, 0, 255)
 		if airlift_is_available:
 			if 0==i%86300:
 				airlift.update_time_from_server()

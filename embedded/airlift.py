@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2021-12-08 by mza
+# last updated 2021-12-27 by mza
 
 #from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 
@@ -59,7 +59,7 @@ def scan_networks():
 
 # for esp32-s2 boards
 # from https://learn.adafruit.com/adafruit-metro-esp32-s2/circuitpython-internet-test
-def setup_wifi():
+def setup_wifi(hostname):
 	global wifi
 	global io
 	import wifi
@@ -67,7 +67,7 @@ def setup_wifi():
 	import socketpool
 	import adafruit_requests
 	import ssl
-	wifi.radio.hostname = "RoamIfYouWantTo"
+	wifi.radio.hostname = hostname
 	networks = scan_networks()
 	show_networks(networks)
 	try:
