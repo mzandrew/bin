@@ -1,9 +1,10 @@
-# last updated 2021-11-21 by mza
+# last updated 2021-12-27 by mza
 
 import board
 import displayio
 import terminalio
 from adafruit_display_text import label
+from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 try:
 	import adafruit_displayio_sh1107
 except:
