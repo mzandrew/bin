@@ -1,5 +1,5 @@
 # written 2021-12-26 by mza
-# last updated 2021-12-27 by mza
+# last updated 2021-12-29 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -18,6 +18,7 @@ delay_between_posting_and_next_acquisition = 1.0
 import sys
 import time
 import atexit
+import supervisor
 import board
 import busio
 import pwmio
@@ -39,6 +40,7 @@ import pm25_adafruit
 import airlift
 #import gps_adafruit
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+import generic
 
 def print_header():
 	info("" + header_string)
@@ -56,19 +58,56 @@ def print_compact(string):
 				date = ""
 	info("%s%s" % (date, string))
 
-if __name__ == "__main__":
+def loop():
+	#info("")
+	#info(str(i))
+	if neopixel_is_available:
+		neopixel_adafruit.set_color(255, 0, 0)
+	string = ""
+	if pm25_is_available:
+		string += pm25_adafruit.measure_string()
+	if airlift_is_available:
+		string += airlift.measure_string()
+	print_compact(string)
+	flush()
+	if neopixel_is_available:
+		neopixel_adafruit.set_color(0, 255, 0)
+	global i
+	i += 1
+	if 0==i%N:
+		if pm25_is_available:
+			pm25_adafruit.show_average_values()
+		if airlift_is_available:
+			try:
+				airlift.post_data("particle10", pm25_adafruit.get_average_values()[8])
+			except:
+				warning("couldn't post data for pm25")
+		info("waiting...")
+		time.sleep(delay_between_posting_and_next_acquisition)
+	if neopixel_is_available:
+		neopixel_adafruit.set_color(0, 0, 255)
+	if airlift_is_available:
+		if 0==i%86300:
+			airlift.update_time_from_server()
+	time.sleep(delay_between_acquisitions)
+
+def main():
+	global neopixel_is_available
 	try:
 		neopixel_is_available = neopixel_adafruit.setup_neopixel()
 	except:
 		warning("error setting up neopixel")
 	if neopixel_is_available:
 		neopixel_adafruit.set_color(100, 100, 100)
+	global i2c
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
 		string = "using I2C1 "
 	except:
 		i2c = busio.I2C(board.SCL, board.SDA)
 		string = "using I2C0 "
+	global pm25_is_available
+	global header_string
 	try:
 		i2c_address = pm25_adafruit.setup(i2c, N)
 		pm25_is_available = True
@@ -76,6 +115,7 @@ if __name__ == "__main__":
 	except:
 		warning("pm25 not found")
 		pm25_is_available = False
+	global airlift_is_available
 	if should_use_airlift:
 		if use_built_in_wifi:
 			airlift_is_available = airlift.setup_wifi("RoamIfYouWantTwo")
@@ -94,37 +134,31 @@ if __name__ == "__main__":
 	#gnuplot> set style data lines
 	#gnuplot> plot for [i=1:14] "solar_water_heater.log" using 0:i
 	print_header()
+	global i
 	i = 0
 	while pm25_adafruit.test_if_present():
-		#info("")
-		#info(str(i))
-		if neopixel_is_available:
-			neopixel_adafruit.set_color(255, 0, 0)
-		string = ""
-		if pm25_is_available:
-			string += pm25_adafruit.measure_string()
-		if airlift_is_available:
-			string += airlift.measure_string()
-		print_compact(string)
-		flush()
-		if neopixel_is_available:
-			neopixel_adafruit.set_color(0, 255, 0)
-		i += 1
-		if 0==i%N:
-			if pm25_is_available:
-				pm25_adafruit.show_average_values()
-			if airlift_is_available:
-				try:
-					airlift.post_data("particle10", pm25_adafruit.get_average_values()[8])
-				except:
-					warning("couldn't post data for pm25")
-			info("waiting...")
-			time.sleep(delay_between_posting_and_next_acquisition)
-		if neopixel_is_available:
-			neopixel_adafruit.set_color(0, 0, 255)
-		if airlift_is_available:
-			if 0==i%86300:
-				airlift.update_time_from_server()
-		time.sleep(delay_between_acquisitions)
+		loop()
 	info("pm25 not available; cannot continue")
+	if neopixel_is_available:
+		neopixel_adafruit.set_color(0, 255, 255)
+
+if __name__ == "__main__":
+	#supervisor.disable_autoreload()
+	atexit.register(generic.reset)
+	try:
+		main()
+	except KeyboardInterrupt:
+		info("caught ctrl-c")
+		flush()
+		atexit.unregister(generic.reset)
+		sys.exit(0)
+	except ReloadException:
+		info("reload exception")
+		flush()
+		atexit.unregister(generic.reset)
+		time.sleep(1)
+		supervisor.reload()
+	info("leaving program...")
+	flush()
+	generic.reset()
 
