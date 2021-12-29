@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2021-12-27 by mza
+# last updated 2021-12-29 by mza
 
 #from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 
@@ -68,6 +68,7 @@ def setup_wifi(hostname):
 	import adafruit_requests
 	import ssl
 	wifi.radio.hostname = hostname
+	#wifi.radio.mac_address = bytes((0x7E, 0xDF, 0xA1, 0xFF, 0xFF, 0xFF))
 	networks = scan_networks()
 	show_networks(networks)
 	try:
@@ -89,8 +90,20 @@ def setup_wifi(hostname):
 	#info(str(wifi.radio.ping(ipv4)*1000))
 	return True
 
+# this function does not work:
+# from https://issueexplorer.com/issue/adafruit/Adafruit_CircuitPython_ESP32SPI/140
+_SET_HOSTNAME = const(0x16)
+def set_hostname(esp, hostname):
+	"""Tells the ESP32 to set hostname"""
+	print("setting hostname...")
+	resp = esp._send_command_get_response(_SET_HOSTNAME, [hostname])
+	print(str(resp))
+	if resp[0][0] != 1:
+		raise RuntimeError("Failed to set hostname with esp32")
+	return resp
+
 #spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
-def setup_airlift(spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining=5):
+def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining=5):
 	global saved_spi
 	saved_spi = spi
 	global esp
@@ -123,6 +136,13 @@ def setup_airlift(spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining
 			#print("MAC addr:", [hex(i) for i in esp.MAC_address])
 		#for ap in esp.scan_networks():
 		#	print("\t%s\t\tRSSI: %d" % (str(ap['ssid'], 'utf-8'), ap['rssi']))
+		if 0:
+			try:
+				set_hostname(esp, hostname)
+				#import wifi
+				#wifi.radio.hostname = hostname
+			except:
+				warning("can't set hostname")
 		info("Connecting to " + secrets["ssid"] + "...")
 		while not esp.is_connected:
 			try:
@@ -164,7 +184,7 @@ def setup_airlift(spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining
 		#	wifi.reset()
 	except:
 		time.sleep(delay)
-		setup_airlift(spi, number_of_retries_remaining-1)
+		setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining-1)
 	return True
 
 def show_network_status():
