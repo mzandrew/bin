@@ -1,8 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # started 2015-09-08 by mza
 # updated 2015-09-28
 # updated 2017-11-07
-# last updated 2019-12-03
+# updated 2019-12-03
+# last updated 2022-01-06
 
 # todo:
 # generalize a bunch of hard-coded things (see "fixme" items in code below)
@@ -25,7 +26,7 @@ try:
 except:
 	import pip # python2 -m ensurepip
 	pip.main(['install', '--user', 'svgwrite'])
-	print "please try running this script again"
+	print("please try running this script again")
 	sys.exit(2)
 	#import svgwrite # pip install svgwrite
 import re # used for search
@@ -486,7 +487,7 @@ def get_extents_of_gerber_instructions(gerber_instructions):
 						x_min_candidate = x
 					if x_max_candidate < x:
 						x_max_candidate = x
-					#print (x, x_min, x_max)
+					#print((x, x_min, x_max))
 				elif (match.group(1) == "Y"):
 					y_string = match.group(2)
 					y = +int(y_string) * ratio
@@ -500,7 +501,7 @@ def get_extents_of_gerber_instructions(gerber_instructions):
 						y_min_candidate = y
 					if y_max_candidate < y:
 						y_max_candidate = y
-					#print (y, y_min, y_max)
+					#print((y, y_min, y_max))
 				elif (match.group(1) == "I"):
 					i_string = match.group(2)
 					i = +int(i_string) * ratio
@@ -554,7 +555,7 @@ def get_extents_of_gerber_instructions(gerber_instructions):
 			error("unknown d string", 5)
 		x_old = x
 		y_old = y
-	#print (x_min, y_min, x_max, y_max)
+	#print((x_min, y_min, x_max, y_max))
 	return (x_min, y_min, x_max-x_min, y_max-y_min) # x_offset, y_offset, width, height
 
 def draw_gerber_layer(parent_object, gerber_instructions, layer_name, color="#000000", stroke_width = laser_stroke_width):
@@ -896,10 +897,10 @@ def generate_pdf():
 	try:
 		subprocess.call(["inkscape", svg_filename, "--export-pdf=" + pdf_filename])
 	except:
-		print "can't run inkscape:"
-		print "install apt-cyg - see https://github.com/ilatypov/apt-cyg"
-		print "apt-cyg install inkscape"
-		print "then please try running this script again"
+		print("can't run inkscape:")
+		print("install apt-cyg - see https://github.com/ilatypov/apt-cyg")
+		print("apt-cyg install inkscape")
+		print("then please try running this script again")
 
 def generate_eps_and_dxf():
 # from https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/Other_2D_formats
@@ -977,7 +978,8 @@ for horizontal_instance in range(0, number_of_horizontal_instances):
 		setup_board_layer()
 		#draw_board_outline_layer()
 		#generate_drill_layers([6.05]) # 6mm clearance hole
-		generate_drill_layers([3.81]) # 6-32 clearance hole
+		#generate_drill_layers([3.81]) # 6-32 clearance hole
+		generate_drill_layers([3.2512]) # 4-40 clearance hole
 		#generate_drill_layers([0.062*25.4]) # SMA vertical center hole
 		draw_pastemask_layer()
 if (fill_protoboard == 1):
