@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 # written 2020-11-21 by mza
-# last updated 2020-11-26 by mza
+# last updated 2022-01-03 by mza
 
 declare desired_locale="en_US.UTF-8"
 declare desired_keyboard="us"
@@ -43,8 +43,8 @@ declare modified_image=$(echo $original_image | sed -e "s,\.img$,.$hostname.img,
 declare -i GID=$(getent passwd $USER | sed -e "s,$USER:x:\([0-9]\+\):\([0-9]\+\):.*,\2,")
 
 set -x
-declare -i wholeimagesize_intended=4000000000
-declare -i partition2size_intended=3500000000
+declare -i wholeimagesize_intended=7500000000
+declare -i partition2size_intended=7000000000
 unmount_unloop
 if [ ! -e $modified_image ]; then
 	echo "copying original..."
