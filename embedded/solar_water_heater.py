@@ -1,16 +1,17 @@
 # written 2021-09-10 by mza
-# last updated 2021-12-08 by mza
+# last updated 2022-01-08 by mza
 
 # to install on a circuitpython device:
-# cp -a pm25_adafruit.py anemometer.py boxcar.py airlift.py DebugInfoWarningError24.py pcf8523_adafruit.py microsd_adafruit.py neopixel_adafruit.py pct2075_adafruit.py bh1750_adafruit.py ltr390_adafruit.py vcnl4040_adafruit.py as7341_adafruit.py tsl2591_adafruit.py ds18b20_adafruit.py sht31d_adafruit.py /media/circuitpython/
+# rsync -av *.py /media/circuitpython/
 # cp -a solar_water_heater.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
-# rsync -r adafruit_register adafruit_sdcard.mpy adafruit_pct2075.mpy adafruit_bh1750.mpy adafruit_vcnl4040.mpy adafruit_ltr390.mpy neopixel.mpy adafruit_as7341.mpy adafruit_pcf8523.mpy adafruit_tsl2591.mpy adafruit_onewire adafruit_ds18x20.mpy adafruit_pm25.mpy adafruit_gps.mpy adafruit_sht31d.mpy adafruit_io adafruit_ili9341.mpy /media/circuitpython/lib/
+# rsync -r simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy adafruit_pct2075.mpy adafruit_bh1750.mpy adafruit_vcnl4040.mpy adafruit_ltr390.mpy neopixel.mpy adafruit_as7341.mpy adafruit_pcf8523.mpy adafruit_tsl2591.mpy adafruit_onewire adafruit_ds18x20.mpy adafruit_pm25 adafruit_gps.mpy adafruit_sht31d.mpy adafruit_io adafruit_ili9341.mpy adafruit_requests.mpy /media/circuitpython/lib/
 
 header_string = "date/time"
-dir = "/logs"
+mydir = "/logs"
 should_use_airlift = True
-if 1: # for the one with the TFT and GPS but no adalogger
+if 0: # for the one with the TFT and GPS but no adalogger
+	FEATHER_ESP32S2 = True
 	use_pwm_status_leds = False
 	should_use_sdcard = False
 	should_use_RTC = False
@@ -24,6 +25,7 @@ if 1: # for the one with the TFT and GPS but no adalogger
 	delay_between_posting_and_next_acquisition = 2.0
 	use_built_in_wifi = True
 else: # cat on a hot tin roof
+	FEATHER_ESP32S2 = False
 	use_pwm_status_leds = True
 	should_use_sdcard = True
 	should_use_RTC = True
@@ -61,6 +63,7 @@ import sht31d_adafruit
 import airlift
 import gps_adafruit
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+import generic
 
 import displayio
 import terminalio
@@ -98,83 +101,82 @@ def set_status_led_color(desired_color):
 		status_led[i].duty_cycle = duty_cycle
 
 def print_compact(string):
-	try:
-		date = time.strftime("%Y-%m-%d+%X")
-	except:
+	date = ""
+	if ""==date:
+		try:
+			date = time.strftime("%Y-%m-%d+%X")
+		except:
+			pass
+	if ""==date and RTC_is_available:
 		try:
 			date = pcf8523_adafruit.get_timestring1()
 		except:
-			try:
-				date = gps_adafruit.get_time()
-			except:
-				date = ""
+			pass
+	if ""==date and gps_is_available:
+		try:
+			date = gps_adafruit.get_time()
+		except:
+			pass
 	info("%s%s" % (date, string))
 
 def print_header():
 	info("" + header_string)
 
-def cleanup():
-	try:
-		try:
-			spi.unlock()
-		except:
-			pass
-		spi.clear_strip()
-		spi.deinit()
-	except:
-		pass
-	try:
-		i2c.unlock()
-	except:
-		pass
-#	try:
-#		display.cleanup()
-#	except:
-#		pass
-#	try:
-#		displayio.release_displays()
-#	except:
-#		pass
-
-if __name__ == "__main__":
-	atexit.register(cleanup)
+def main():
+	global header_string
 	if use_pwm_status_leds:
 		setup_status_leds(red_pin=board.A2, green_pin=board.D9, blue_pin=board.A3)
 		set_status_led_color([1.0, 1.0, 1.0])
-	if 1: # for feather esp32-s2 to turn on power to i2c bus:
+	if FEATHER_ESP32S2: # for feather esp32-s2 to turn on power to i2c bus:
 		simpleio.DigitalOut(board.D7, value=0)
+	global i2c
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
 		string = "using I2C1 "
 	except:
-		i2c = busio.I2C(board.SCL, board.SDA)
+		#i2c = busio.I2C(board.SCL, board.SDA)
+		i2c = board.I2C()
 		string = "using I2C0 "
+	info(string)
 	#i2c.try_lock()
 	#i2c_list = i2c.scan()
 	#i2c.unlock()
 	#info(string + str(i2c_list))
 	displayio.release_displays()
+	global spi
 	spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+	global uart
 	uart = busio.UART(board.TX, board.RX, baudrate=9600, timeout=10)
 	prohibited_addresses = []
+	global RTC_is_available
 	if should_use_RTC:
-		i2c_address = pcf8523_adafruit.setup(i2c)
-		prohibited_addresses.append(i2c_address)
-		RTC_is_available = True
+		try:
+			i2c_address = pcf8523_adafruit.setup(i2c)
+			prohibited_addresses.append(i2c_address)
+			RTC_is_available = True
+		except:
+			RTC_is_available = False
 	else:
 		RTC_is_available = False
+	global display_is_available
 	if should_use_display:
 		display_is_available = setup_ili9341(spi)
+	global sdcard_is_available
+	global mydir
 	if should_use_sdcard:
+		spi
+		mydir
+		board.D10
 		sdcard_is_available = microsd_adafruit.setup_sdcard_for_logging_data(spi, board.D10, dir) # D10 = adalogger featherwing
 	else:
 		sdcard_is_available = False
 	if not sdcard_is_available:
-		dir = "/"
+		mydir = "/"
 	if RTC_is_available:
-		create_new_logfile_with_string_embedded(dir, "solar_water_heater", pcf8523_adafruit.get_timestring2())
+		create_new_logfile_with_string_embedded(mydir, "solar_water_heater", pcf8523_adafruit.get_timestring2())
 	else:
-		create_new_logfile_with_string_embedded(dir, "solar_water_heater")
+		create_new_logfile_with_string_embedded(mydir, "solar_water_heater")
+	global gps_is_available
 	if should_use_gps:
 		if 1:
 			gps_adafruit.setup_uart(uart, N, gps_delay_in_ms)
@@ -184,6 +186,7 @@ if __name__ == "__main__":
 		header_string += gps_adafruit.header_string()
 	else:
 		gps_is_available = False
+	global bh1750_is_available
 	try:
 		i2c_address = bh1750_adafruit.setup(i2c, N)
 		prohibited_addresses.append(i2c_address)
@@ -192,6 +195,7 @@ if __name__ == "__main__":
 	except:
 		warning("bh1750 not found")
 		bh1750_is_available = False
+	global ltr390_is_available
 	try:
 		i2c_address = ltr390_adafruit.setup(i2c, N)
 		prohibited_addresses.append(i2c_address)
@@ -200,6 +204,7 @@ if __name__ == "__main__":
 	except:
 		warning("ltr390 not found")
 		ltr390_is_available = False
+	global vcnl4040_is_available
 	try:
 		i2c_address = vcnl4040_adafruit.setup(i2c, N)
 		prohibited_addresses.append(i2c_address)
@@ -208,6 +213,7 @@ if __name__ == "__main__":
 	except:
 		warning("vcnl4040 not found")
 		vcnl4040_is_available = False
+	global as7341_is_available
 	try:
 		i2c_address = as7341_adafruit.setup(i2c, N)
 		prohibited_addresses.append(i2c_address)
@@ -216,6 +222,7 @@ if __name__ == "__main__":
 	except:
 		warning("as7341 not found")
 		as7341_is_available = False
+	global tsl2591_is_available
 	try:
 		i2c_address = tsl2591_adafruit.setup(i2c, N)
 		prohibited_addresses.append(i2c_address)
@@ -224,17 +231,19 @@ if __name__ == "__main__":
 	except:
 		warning("tsl2591 not found")
 		tsl2591_is_available = False
+	global neopixel_is_available
 	try:
 		neopixel_is_available = neopixel_adafruit.setup_neopixel()
 	except:
 		warning("error setting up neopixel")
-	#info(str(prohibited_addresses)) # disallow treating any devices already discovered as pct2075s
+	global anemometer_is_available
 	try:
 		anemometer_is_available = anemometer.setup(board.A0, N)
 		header_string += ", anemometer-m/s"
 	except:
 		warning("anemometer not found")
 		anemometer_is_available = False
+	global pm25_is_available
 	try:
 		i2c_address = pm25_adafruit.setup(i2c, N)
 		prohibited_addresses.append(i2c_address)
@@ -243,6 +252,8 @@ if __name__ == "__main__":
 	except:
 		warning("pm25 not found")
 		pm25_is_available = False
+	global ow_bus
+	global ds18b20_is_available
 	try:
 		ow_bus = OneWireBus(board.D5)
 		ds18b20_adafruit.setup(ow_bus, N)
@@ -251,6 +262,7 @@ if __name__ == "__main__":
 	except:
 		warning("ds18b20 not found")
 		ds18b20_is_available = False
+	global sht31d_is_available
 	try:
 		i2c_address = sht31d_adafruit.setup(i2c, N)
 		prohibited_addresses.append(i2c_address)
@@ -259,20 +271,22 @@ if __name__ == "__main__":
 	except:
 		warning("sht31d not found")
 		sht31d_is_available = False
+	info("prohibited i2c addresses: " + str(prohibited_addresses)) # disallow treating any devices already discovered as pct2075s
 	try:
 		addresses = pct2075_adafruit.setup(i2c, prohibited_addresses, N)
 		#info("pct2075" + str(addresses))
 		header_string += ", pct2075-C"
 	except:
 		error("pct2075 not found")
-		sys.exit(1)
+		return
 	if use_pwm_status_leds:
 		set_status_led_color([0.5, 0.5, 0.5])
+	global airlift_is_available
 	if should_use_airlift:
 		if use_built_in_wifi:
 			airlift_is_available = airlift.setup_wifi()
 		else:
-			airlift_is_available = airlift.setup_airlift(spi, board.D13, board.D11, board.D12)
+			airlift_is_available = airlift.setup_airlift("rooftop", spi, board.D13, board.D11, board.D12)
 		header_string += ", RSSI-dB"
 	else:
 		airlift_is_available = False
@@ -283,7 +297,13 @@ if __name__ == "__main__":
 	#gnuplot> set style data lines
 	#gnuplot> plot for [i=1:14] "solar_water_heater.log" using 0:i
 	print_header()
+	global i
 	i = 0
+	loop()
+	info("pct2075 no longer available; cannot continue")
+
+def loop():
+	global i
 	while pct2075_adafruit.test_if_present():
 		#info("")
 		#info(str(i))
@@ -401,5 +421,24 @@ if __name__ == "__main__":
 			if 0==i%86300:
 				airlift.update_time_from_server()
 		time.sleep(delay_between_acquisitions)
-	info("pct2075 not available; cannot continue")
+
+if __name__ == "__main__":
+	#supervisor.disable_autoreload()
+	atexit.register(generic.reset)
+	try:
+		main()
+	except KeyboardInterrupt:
+		info("caught ctrl-c")
+		flush()
+		atexit.unregister(generic.reset)
+		sys.exit(0)
+	except ReloadException:
+		info("reload exception")
+		flush()
+		atexit.unregister(generic.reset)
+		time.sleep(1)
+		supervisor.reload()
+	info("leaving program...")
+	flush()
+	generic.reset()
 
