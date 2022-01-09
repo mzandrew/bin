@@ -1,4 +1,4 @@
-# last updated 2021-11-25 by mza
+# last updated 2022-01-08 by mza
 
 import time
 import adafruit_pcf8523
@@ -18,7 +18,8 @@ def setup(i2c):
 			rtc.datetime = t
 			t = rtc.datetime
 			info("%04d-%02d-%02d" % (t.tm_year, t.tm_mon, t.tm_mday))
-		return rtc.i2c_device.device_address
+		#return rtc.i2c_device.device_address
+		return 0x68
 	except:
 		warning("unable to set up RTC")
 		raise
