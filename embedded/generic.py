@@ -1,5 +1,5 @@
 # written 2021-12-28 by mza
-# last updated 2021-12-29 by mza
+# last updated 2022-01-08 by mza
 
 import sys
 import time
@@ -9,7 +9,13 @@ def reset():
 	try:
 		error("resetting board...")
 		sys.stdout.flush()
+	except:
+		pass
+	try:
 		time.sleep(10)
+	except:
+		pass
+	try:
 		info("")
 		flush()
 	except:
