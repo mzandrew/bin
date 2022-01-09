@@ -164,10 +164,7 @@ def main():
 	global sdcard_is_available
 	global mydir
 	if should_use_sdcard:
-		spi
-		mydir
-		board.D10
-		sdcard_is_available = microsd_adafruit.setup_sdcard_for_logging_data(spi, board.D10, dir) # D10 = adalogger featherwing
+		sdcard_is_available = microsd_adafruit.setup_sdcard_for_logging_data(spi, board.D10, mydir) # D10 = adalogger featherwing
 	else:
 		sdcard_is_available = False
 	if not sdcard_is_available:
