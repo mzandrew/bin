@@ -42,6 +42,7 @@ else: # cat on a hot tin roof
 import sys
 import time
 import atexit
+import supervisor
 import board
 import busio
 import pwmio
