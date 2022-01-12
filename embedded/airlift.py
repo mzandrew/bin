@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2021-12-29 by mza
+# last updated 2022-01-11 by mza
 
 #from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 
@@ -102,14 +102,33 @@ def set_hostname(esp, hostname):
 		raise RuntimeError("Failed to set hostname with esp32")
 	return resp
 
-#spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
-def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining=5):
-	global saved_spi
-	saved_spi = spi
+def esp32_connect():
 	global esp
 	#global socket
 	#global requests
 	global io
+	info("Connecting to " + secrets["ssid"] + "...")
+	while not esp.is_connected:
+		try:
+			esp.connect_AP(secrets["ssid"], secrets["password"])
+		except RuntimeError as e:
+			info("could not connect to AP, retrying: " + str(e))
+			continue
+	#info("Connected to", str(esp.ssid, 'utf-8'), "\tRSSI:", esp.rssi)
+	info("My IP address is " + esp.pretty_ip(esp.ip_address))
+	socket.set_interface(esp)
+	requests.set_socket(socket, esp)
+	io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
+	info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
+
+#spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
+def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining=5):
+	#global saved_airlift
+	#saved_airlift = hostname, spi, cs_pin, ready_pin, reset_pin
+	global esp
+	#global socket
+	#global requests
+	#global io
 	if number_of_retries_remaining<3:
 		esp.reset()
 	if 0==number_of_retries_remaining:
@@ -143,19 +162,7 @@ def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries
 				#wifi.radio.hostname = hostname
 			except:
 				warning("can't set hostname")
-		info("Connecting to " + secrets["ssid"] + "...")
-		while not esp.is_connected:
-			try:
-				esp.connect_AP(secrets["ssid"], secrets["password"])
-			except RuntimeError as e:
-				info("could not connect to AP, retrying: " + str(e))
-				continue
-		#info("Connected to", str(esp.ssid, 'utf-8'), "\tRSSI:", esp.rssi)
-		info("My IP address is " + esp.pretty_ip(esp.ip_address))
-		socket.set_interface(esp)
-		requests.set_socket(socket, esp)
-		io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
-		info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
+		esp32_connect()
 		#info("IP lookup adafruit.com: %s" % esp.pretty_ip(esp.get_host_by_name("adafruit.com")))
 		#info("Ping google.com: %d ms" % esp.ping("google.com"))
 		#requests.set_socket(socket, esp)
@@ -184,6 +191,7 @@ def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries
 		#	wifi.reset()
 	except:
 		time.sleep(delay)
+		info("trying wifi connection again...")
 		setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining-1)
 	return True
 
@@ -191,6 +199,20 @@ def show_network_status():
 	info("My IP address is " + esp.pretty_ip(esp.ip_address))
 	try:
 		info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
+		if esp.status == adafruit_esp32spi.WL_IDLE_STATUS:
+			info("IDLE")
+		elif esp.status == adafruit_esp32spi.WL_CONNECTION_LOST:
+			info("CONNECTION_LOST")
+		elif esp.status == adafruit_esp32spi.WL_NO_SSID_AVAILABLE:
+			info("NO_SSID_AVAILABLE")
+		elif esp.status == adafruit_esp32spi.WL_DISCONNECTED:
+			info("DISCONNECTED")
+		elif esp.status == adafruit_esp32spi.WL_CONNECT_FAILED:
+			info("CONNECT_FAILED")
+		elif esp.status == adafruit_esp32spi.WL_CONNECTED:
+			info("CONNECTED")
+		else:
+			info("UNKNOWN")
 	except:
 		info("RSSI: " + str(wifi.radio.ap_info.rssi) + " dB") # receiving signal strength indicator
 
@@ -251,9 +273,10 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 		errorcount += 1
 		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")
 		show_network_status()
-#	if MAXERRORCOUNT<errorcount:
-#		esp.reset()
-#		setup_airlift(saved_spi)
+	if MAXERRORCOUNT<errorcount:
+		info("Attempting reconnection...")
+		if esp32_connect():
+			errorcount = 0
 
 def show_geolocation_error(metadata, received_data):
 	lat = float(received_data["lat"])
