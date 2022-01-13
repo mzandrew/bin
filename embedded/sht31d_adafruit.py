@@ -2,7 +2,7 @@
 
 # from https://learn.adafruit.com/adafruit-sht31-d-temperature-and-humidity-sensor-breakout/python-circuitpython
 # written 2021-11-21 by mza
-# last updated 2021-11-24 by mza
+# last updated 2022-01-12 by mza
 
 import board
 import busio
@@ -25,7 +25,7 @@ def setup(i2c, N):
 
 def test_if_present():
 	try:
-		sht31d.lux
+		sht31d.temperature
 	except:
 		print("sht31d not present")
 		return False
