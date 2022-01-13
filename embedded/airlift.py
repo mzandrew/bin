@@ -9,6 +9,11 @@ import time
 import board
 import busio
 import digitalio
+import wifi
+import ipaddress
+import socketpool
+import adafruit_requests
+import ssl
 from adafruit_esp32spi import adafruit_esp32spi
 from adafruit_esp32spi import PWMOut
 from adafruit_io.adafruit_io import IO_HTTP, AdafruitIO_RequestError
@@ -61,37 +66,40 @@ def scan_networks():
 	networks.sort(key=lambda farquar:farquar[3], reverse=True) # sort by signal strength
 	return networks
 
-# for esp32-s2 boards
-# from https://learn.adafruit.com/adafruit-metro-esp32-s2/circuitpython-internet-test
-def setup_wifi(hostname):
-	global wifi
-	global using_builtin_wifi
-	using_builtin_wifi = True
+def connect_wifi(hostname):
 	global io
 	try:
-		import wifi
-		import ipaddress
-		import socketpool
-		import adafruit_requests
-		import ssl
 		wifi.radio.hostname = hostname
 		#wifi.radio.mac_address = bytes((0x7E, 0xDF, 0xA1, 0xFF, 0xFF, 0xFF))
 		#networks = scan_networks()
 		#show_networks(networks)
 		wifi.radio.connect(ssid=secrets["ssid"], password=secrets["password"])
-	#	ap_mac = list(wifi.radio.mac_address_ap)
-	#	info(str(ap_mac))
+#		ap_mac = list(wifi.radio.mac_address_ap)
+#		info(str(ap_mac))
 		pool = socketpool.SocketPool(wifi.radio)
 		requests = adafruit_requests.Session(pool, ssl.create_default_context())
 		io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
-		#ipv4 = ipaddress.ip_address("8.8.4.4") # google.com
-		#info(str(wifi.radio.ping(ipv4)*1000))
 		show_network_status()
 		return True
 	except:
-		error("couldn't connect to network with built-in wifi")
-		show_network_status()
-		return False
+		raise
+
+# for esp32-s2 boards
+# from https://learn.adafruit.com/adafruit-metro-esp32-s2/circuitpython-internet-test
+def setup_wifi(hostname, number_of_retries_remaining=2):
+	global using_builtin_wifi
+	using_builtin_wifi = True
+	for i in range(number_of_retries_remaining):
+		try:
+			if connect_wifi(hostname):
+				#show_network_status()
+				return True
+		except:
+			time.sleep(delay)
+			info("trying wifi connection again...")
+	error("can't initialize built-in wifi")
+	show_network_status()
+	return False
 
 # this function does not work:
 # from https://issueexplorer.com/issue/adafruit/Adafruit_CircuitPython_ESP32SPI/140
@@ -116,8 +124,11 @@ def esp32_connect(number_of_retries_remaining=2):
 	if esp.is_connected:
 		info("already connected")
 		show_network_status()
-		esp.disconnect()
-		info("disconnected")
+		try:
+			esp.disconnect()
+			info("disconnected")
+		except:
+			warning("can't disconnect")
 		show_network_status()
 	while not esp.is_connected:
 		info("Connecting to " + secrets["ssid"] + "...")
@@ -171,6 +182,7 @@ def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries
 	for i in range(number_of_retries_remaining):
 		try:
 			if esp32_connect():
+				#show_network_status()
 				return True
 		except:
 			time.sleep(delay)
@@ -298,8 +310,12 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 	if MAXERRORCOUNT<errorcount:
 		info("Attempting reconnection...")
 		try:
-			if esp32_connect():
-				errorcount = 0
+			if using_builtin_wifi:
+				if connect_wifi(hostname):
+					errorcount = 0
+			else:
+				if esp32_connect():
+					errorcount = 0
 		except:
 			pass
 
