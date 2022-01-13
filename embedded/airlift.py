@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-01-11 by mza
+# last updated 2022-01-12 by mza
 
 #from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 
@@ -16,6 +16,10 @@ import adafruit_requests as requests
 import adafruit_esp32spi.adafruit_esp32spi_socket as socket
 import math
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+try:
+	from secrets import secrets
+except ImportError:
+	warning("WiFi secrets are kept in secrets.py, please add them there!")
 
 epsilon = 0.000001
 MAXERRORCOUNT = 5
@@ -71,11 +75,6 @@ def setup_wifi(hostname):
 	#wifi.radio.mac_address = bytes((0x7E, 0xDF, 0xA1, 0xFF, 0xFF, 0xFF))
 	networks = scan_networks()
 	show_networks(networks)
-	try:
-		from secrets import secrets
-	except ImportError:
-		warning("WiFi secrets are kept in secrets.py, please add them there!")
-		return False
 	wifi.radio.connect(ssid=secrets["ssid"], password=secrets["password"])
 	mac_address = list(wifi.radio.mac_address)
 	info("MAC: " + format_MAC(mac_address))
@@ -102,121 +101,114 @@ def set_hostname(esp, hostname):
 		raise RuntimeError("Failed to set hostname with esp32")
 	return resp
 
-def esp32_connect():
+def esp32_connect(number_of_retries_remaining=2):
+	if number_of_retries_remaining<1:
+		return False
 	global esp
 	#global socket
 	#global requests
 	global io
-	info("Connecting to " + secrets["ssid"] + "...")
+	show_network_status()
+	if esp.is_connected:
+		info("already connected")
+		show_network_status()
+		esp.disconnect()
+		info("disconnected")
+		show_network_status()
 	while not esp.is_connected:
+		info("Connecting to " + secrets["ssid"] + "...")
 		try:
 			esp.connect_AP(secrets["ssid"], secrets["password"])
 		except RuntimeError as e:
-			info("could not connect to AP, retrying: " + str(e))
-			continue
+			info("could not connect to AP: " + str(e))
+			number_of_retries_remaining -= 1
+			if 0==number_of_retries_remaining:
+				return False
+			else:
+				time.sleep(delay)
+				continue
 	#info("Connected to", str(esp.ssid, 'utf-8'), "\tRSSI:", esp.rssi)
-	info("My IP address is " + esp.pretty_ip(esp.ip_address))
 	socket.set_interface(esp)
 	requests.set_socket(socket, esp)
 	io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
-	info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
+	show_network_status()
+	return True
 
-#spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
-def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining=5):
-	#global saved_airlift
-	#saved_airlift = hostname, spi, cs_pin, ready_pin, reset_pin
-	global esp
-	#global socket
-	#global requests
-	#global io
-	if number_of_retries_remaining<3:
-		esp.reset()
-	if 0==number_of_retries_remaining:
-		error("can't initialize airlift wifi")
-		return False
 	# from https://github.com/ladyada/Adafruit_CircuitPython_ESP32SPI/blob/master/examples/esp32spi_localtime.py
 	# and https://learn.adafruit.com/adafruit-airlift-featherwing-esp32-wifi-co-processor-featherwing?view=all
 	# and https://learn.adafruit.com/adafruit-io-basics-airlift/circuitpython
 	# and https://github.com/adafruit/Adafruit_CircuitPython_ESP32SPI/blob/main/adafruit_esp32spi/adafruit_esp32spi.py
-	global secrets
-	try:
-		from secrets import secrets
-	except ImportError:
-		warning("WiFi secrets are kept in secrets.py, please add them there!")
-		return False
+#spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
+def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining=2):
+	global esp
 	try:
 		esp32_cs = digitalio.DigitalInOut(cs_pin)
 		esp32_ready = digitalio.DigitalInOut(ready_pin)
 		esp32_reset = digitalio.DigitalInOut(reset_pin)
-		esp = adafruit_esp32spi.ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
-		#if esp.status == adafruit_esp32spi.WL_IDLE_STATUS:
-			#info("ESP32 found and in idle mode")
-			#print("Firmware vers.", esp.firmware_version)
-			#print("MAC addr:", [hex(i) for i in esp.MAC_address])
-		#for ap in esp.scan_networks():
-		#	print("\t%s\t\tRSSI: %d" % (str(ap['ssid'], 'utf-8'), ap['rssi']))
-		if 0:
-			try:
-				set_hostname(esp, hostname)
-				#import wifi
-				#wifi.radio.hostname = hostname
-			except:
-				warning("can't set hostname")
-		esp32_connect()
-		#info("IP lookup adafruit.com: %s" % esp.pretty_ip(esp.get_host_by_name("adafruit.com")))
-		#info("Ping google.com: %d ms" % esp.ping("google.com"))
-		#requests.set_socket(socket, esp)
-		#TEXT_URL = "http://wifitest.adafruit.com/testwifi/index.html"
-		#info("Fetching text from " + TEXT_URL)
-		#r = requests.get(TEXT_URL)
-		#print("-" * 40)
-		#info(r.text)
-		#print("-" * 40)
-		#r.close()
-		#from adafruit_esp32spi import PWMOut
-#		try:
-#			import adafruit_rgbled
-#		except:
-#			error("you need adafruit_rgbled.mpy and/or simpleio.mpy")
-#			raise
-		#RED_LED = PWMOut.PWMOut(esp, 26)
-		#GREEN_LED = PWMOut.PWMOut(esp, 25)
-		#BLUE_LED = PWMOut.PWMOut(esp, 27)
-		#status_light = adafruit_rgbled.RGBLED(RED_LED, BLUE_LED, GREEN_LED)
-		#wifi = adafruit_esp32spi_wifimanager.ESPSPI_WiFiManager(esp, secrets, status_light)
-		#DATA_SOURCE = "https://www.google.com/index.html"
-		#try:
-		#	response = wifi.get(DATA_SOURCE)
-		#except:
-		#	wifi.reset()
 	except:
-		time.sleep(delay)
-		info("trying wifi connection again...")
-		setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining-1)
-	return True
+		error("can't set up airlift control pins")
+		show_network_status()
+		return False
+	try:
+		esp = adafruit_esp32spi.ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
+	except:
+		error("can't set up esp")
+		show_network_status()
+		return False
+	if 0:
+		try:
+			set_hostname(esp, hostname)
+			#import wifi
+			#wifi.radio.hostname = hostname
+		except:
+			warning("can't set hostname")
+	for i in range(number_of_retries_remaining):
+		try:
+			if esp32_connect():
+				return True
+		except:
+			time.sleep(delay)
+			info("trying wifi connection again...")
+	error("can't initialize airlift wifi")
+	show_network_status()
+	return False
 
 def show_network_status():
-	info("My IP address is " + esp.pretty_ip(esp.ip_address))
 	try:
-		info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
-		if esp.status == adafruit_esp32spi.WL_IDLE_STATUS:
-			info("IDLE")
-		elif esp.status == adafruit_esp32spi.WL_CONNECTION_LOST:
-			info("CONNECTION_LOST")
-		elif esp.status == adafruit_esp32spi.WL_NO_SSID_AVAILABLE:
-			info("NO_SSID_AVAILABLE")
-		elif esp.status == adafruit_esp32spi.WL_DISCONNECTED:
-			info("DISCONNECTED")
-		elif esp.status == adafruit_esp32spi.WL_CONNECT_FAILED:
-			info("CONNECT_FAILED")
-		elif esp.status == adafruit_esp32spi.WL_CONNECTED:
-			info("CONNECTED")
-		else:
-			info("UNKNOWN")
+		esp
+		using_builtin_wifi = False
 	except:
-		info("RSSI: " + str(wifi.radio.ap_info.rssi) + " dB") # receiving signal strength indicator
+		pass
+	try:
+		wifi
+		using_builtin_wifi = True
+	except:
+		pass
+	#info("using builtin wifi = " + str(using_builtin_wifi))
+	try:
+		if using_builtin_wifi:
+			info("RSSI: " + str(wifi.radio.ap_info.rssi) + " dB") # receiving signal strength indicator
+		else:
+			info("My IP address is " + esp.pretty_ip(esp.ip_address))
+			info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
+			if esp.status == adafruit_esp32spi.WL_IDLE_STATUS:
+				info("IDLE")
+			elif esp.status == adafruit_esp32spi.WL_NO_SSID_AVAIL:
+				info("NO_SSID_AVAILABLE")
+			elif esp.status == adafruit_esp32spi.WL_CONNECTED:
+				info("CONNECTED")
+			elif esp.status == adafruit_esp32spi.WL_CONNECT_FAILED:
+				info("CONNECT_FAILED")
+			elif esp.status == adafruit_esp32spi.WL_CONNECTION_LOST:
+				info("CONNECTION_LOST")
+			elif esp.status == adafruit_esp32spi.WL_DISCONNECTED:
+				info("DISCONNECTED")
+			else:
+				info("UNKNOWN STATE")
+	except:
+		pass
 
-def setup_feed(feed_name, number_of_retries_remaining=5):
+def setup_feed(feed_name, number_of_retries_remaining=2):
 	global myfeeds
 	for feed in myfeeds:
 		if feed_name==feed[0]:
@@ -275,8 +267,11 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 		show_network_status()
 	if MAXERRORCOUNT<errorcount:
 		info("Attempting reconnection...")
-		if esp32_connect():
-			errorcount = 0
+		try:
+			if esp32_connect():
+				errorcount = 0
+		except:
+			pass
 
 def show_geolocation_error(metadata, received_data):
 	lat = float(received_data["lat"])
