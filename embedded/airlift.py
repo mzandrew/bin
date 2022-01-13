@@ -65,29 +65,33 @@ def scan_networks():
 # from https://learn.adafruit.com/adafruit-metro-esp32-s2/circuitpython-internet-test
 def setup_wifi(hostname):
 	global wifi
+	global using_builtin_wifi
+	using_builtin_wifi = True
 	global io
-	import wifi
-	import ipaddress
-	import socketpool
-	import adafruit_requests
-	import ssl
-	wifi.radio.hostname = hostname
-	#wifi.radio.mac_address = bytes((0x7E, 0xDF, 0xA1, 0xFF, 0xFF, 0xFF))
-	networks = scan_networks()
-	show_networks(networks)
-	wifi.radio.connect(ssid=secrets["ssid"], password=secrets["password"])
-	mac_address = list(wifi.radio.mac_address)
-	info("MAC: " + format_MAC(mac_address))
-	info("IP: " + str(wifi.radio.ipv4_address))
-	info("RSSI: " + str(wifi.radio.ap_info.rssi) + " dB") # receiving signal strength indicator
-#	ap_mac = list(wifi.radio.mac_address_ap)
-#	info(str(ap_mac))
-	pool = socketpool.SocketPool(wifi.radio)
-	requests = adafruit_requests.Session(pool, ssl.create_default_context())
-	io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
-	#ipv4 = ipaddress.ip_address("8.8.4.4") # google.com
-	#info(str(wifi.radio.ping(ipv4)*1000))
-	return True
+	try:
+		import wifi
+		import ipaddress
+		import socketpool
+		import adafruit_requests
+		import ssl
+		wifi.radio.hostname = hostname
+		#wifi.radio.mac_address = bytes((0x7E, 0xDF, 0xA1, 0xFF, 0xFF, 0xFF))
+		#networks = scan_networks()
+		#show_networks(networks)
+		wifi.radio.connect(ssid=secrets["ssid"], password=secrets["password"])
+	#	ap_mac = list(wifi.radio.mac_address_ap)
+	#	info(str(ap_mac))
+		pool = socketpool.SocketPool(wifi.radio)
+		requests = adafruit_requests.Session(pool, ssl.create_default_context())
+		io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
+		#ipv4 = ipaddress.ip_address("8.8.4.4") # google.com
+		#info(str(wifi.radio.ping(ipv4)*1000))
+		show_network_status()
+		return True
+	except:
+		error("couldn't connect to network with built-in wifi")
+		show_network_status()
+		return False
 
 # this function does not work:
 # from https://issueexplorer.com/issue/adafruit/Adafruit_CircuitPython_ESP32SPI/140
@@ -141,6 +145,8 @@ def esp32_connect(number_of_retries_remaining=2):
 #spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining=2):
 	global esp
+	global using_builtin_wifi
+	using_builtin_wifi = False
 	try:
 		esp32_cs = digitalio.DigitalInOut(cs_pin)
 		esp32_ready = digitalio.DigitalInOut(ready_pin)
@@ -175,18 +181,26 @@ def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries
 
 def show_network_status():
 	try:
-		esp
-		using_builtin_wifi = False
+		using_builtin_wifi
 	except:
-		pass
-	try:
-		wifi
-		using_builtin_wifi = True
-	except:
-		pass
+		error("wifi is not setup yet (builtin or esp32spi)")
+		return
+#	try:
+#		esp
+#		using_builtin_wifi = False
+#	except:
+#		pass
+#	try:
+#		wifi
+#		using_builtin_wifi = True
+#	except:
+#		pass
 	#info("using builtin wifi = " + str(using_builtin_wifi))
 	try:
 		if using_builtin_wifi:
+			mac_address = list(wifi.radio.mac_address)
+			info("MAC: " + format_MAC(mac_address))
+			info("My IP address is " + str(wifi.radio.ipv4_address))
 			info("RSSI: " + str(wifi.radio.ap_info.rssi) + " dB") # receiving signal strength indicator
 		else:
 			info("My IP address is " + esp.pretty_ip(esp.ip_address))
@@ -217,19 +231,35 @@ def setup_feed(feed_name, number_of_retries_remaining=2):
 		show_network_status()
 		#esp.reset()
 		return False
-	try:
-		info("connecting to feed " + feed_name + "...")
+	myfeed = False
+	for i in range(number_of_retries_remaining):
+		info("attempting to connect to feed " + feed_name + "...")
 		try:
 			myfeed = io.get_feed(feed_name)
+			info("connected to feed " + feed_name)
+			break
 		except AdafruitIO_RequestError:
-			info("creating new feed " + feed_name + "...")
-			myfeed = io.create_new_feed(feed_name)
+			try:
+				myfeed = io.create_new_feed(feed_name)
+				info("created new feed " + feed_name + "...")
+				break
+			except:
+				error("can't create feed " + feed_name)
+		except ValueError:
+			error("invalid feed name: " + feed_name)
+		except:
+			error("some other problem")
+			show_network_status()
+			raise
 		#info(str(myfeed["key"]))
-	except:
 		time.sleep(delay)
-		myfeed = setup_feed(feed_name, number_of_retries_remaining-1)
-	if myfeed:
+#	except:
+#		myfeed = setup_feed(feed_name, number_of_retries_remaining-1)
+	try:
 		myfeeds.append([ feed_name , myfeed ])
+	except:
+		warning("couldn't create/connect feed " + feed_name)
+		show_network_status()
 	return myfeed
 
 def post_data(feed_name, value, perform_readback_and_verify=False):
