@@ -17,8 +17,6 @@ if 0: # for the one with the TFT and GPS but no adalogger
 	should_use_sdcard = False
 	should_use_RTC = False
 	should_use_gps = True
-	wifi_mapping_mode = True
-	cat_on_a_hot_tin_roof_mode = False
 	N = 8
 	gps_delay_in_ms = 1000
 	delay_between_acquisitions = 2. * gps_delay_in_ms/1000.
@@ -30,8 +28,6 @@ elif 0: # cat on a hot tin roof
 	should_use_sdcard = True
 	should_use_RTC = True
 	should_use_gps = False
-	wifi_mapping_mode = False
-	cat_on_a_hot_tin_roof_mode = True
 	N = 32
 	delay_between_acquisitions = 0.75
 	gps_delay_in_ms = 2000
@@ -43,10 +39,8 @@ else: # outdoor temp/hum
 	should_use_sdcard = False
 	should_use_RTC = False
 	should_use_gps = False
-	wifi_mapping_mode = False
-	cat_on_a_hot_tin_roof_mode = False
 	N = 32
-	delay_between_acquisitions = 1.3
+	delay_between_acquisitions = 1.55
 	gps_delay_in_ms = 2000
 	delay_between_posting_and_next_acquisition = 1.0
 	use_built_in_wifi = True
