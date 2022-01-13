@@ -1,5 +1,5 @@
 # written 2021-09-10 by mza
-# last updated 2022-01-08 by mza
+# last updated 2022-01-12 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -33,10 +33,10 @@ else: # cat on a hot tin roof
 	should_use_gps = False
 	wifi_mapping_mode = False
 	cat_on_a_hot_tin_roof_mode = True
-	N = 64
-	delay_between_acquisitions = 0.7
+	N = 32
+	delay_between_acquisitions = 0.75
 	gps_delay_in_ms = 2000
-	delay_between_posting_and_next_acquisition = 1.0
+	delay_between_posting_and_next_acquisition = 4.0
 	use_built_in_wifi = False
 
 import sys
