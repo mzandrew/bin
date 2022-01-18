@@ -281,7 +281,7 @@ def loop():
 		update_temperature_display_on_alphanumeric_backpack(temperature)
 	average_temperature = temperature_accumulator/N
 	print("posting " + str(average_temperature))
-	airlift.post_data("heater", average_temperature)
+	airlift.post_data("water-heater", average_temperature)
 	temperatures_to_plot.insert(0, average_temperature)
 	temperatures_to_plot.pop()
 	update_temperature_display_on_dotstar_matrix()
