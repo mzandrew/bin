@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2020-10-14 by mza
-# last updated 2022-01-17 by mza
+# last updated 2022-01-18 by mza
 
 # from https://learn.adafruit.com/adafruit-bme680-humidity-temperature-barometic-pressure-voc-gas/python-circuitpython
 
@@ -18,6 +18,9 @@ from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3,
 # separate temperature sensor to calibrate this one.
 temperature_offset = 0.0
 
+Pa_to_atm = 101325.0 # Pa / atm
+hPa_to_atm = Pa_to_atm/100.0
+
 def setup(i2c, N):
 	global bme680
 	bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c, debug=False)
@@ -30,17 +33,20 @@ def print_verbose():
 	info("\nTemperature: %0.1f C" % float(bme680.temperature + temperature_offset))
 	info("Gas: %d ohm" % bme680.gas)
 	info("Humidity: %0.1f %%" % bme680.humidity)
-	info("Pressure: %0.3f hPa" % bme680.pressure)
+	#info("Pressure: %0.3f hPa" % bme680.pressure)
+	info("Pressure: %0.6f atm" % bme680.pressure/hPa_to_atm)
 	info("Altitude = %0.2f meters" % bme680.altitude)
 
-header_string = ", temperature (C), humidity (%RH), pressure (hPa), altitude (m), gas (Ohm)"
+#header_string = ", temperature (C), humidity (%RH), pressure (hPa), altitude (m), gas (Ohm)"
+header_string = ", temperature (C), humidity (%RH), pressure (atm), altitude (m), gas (Ohm)"
 
 def print_header():
 	info("#time" + header_string)
 
 def get_values():
 	try:
-		values = [ float(bme680.temperature + temperature_offset), bme680.humidity, bme680.pressure, bme680.altitude, bme680.gas ]
+		#values = [ float(bme680.temperature + temperature_offset), bme680.humidity, bme680.pressure, bme680.altitude, bme680.gas ]
+		values = [ float(bme680.temperature + temperature_offset), bme680.humidity, bme680.pressure/hPa_to_atm, bme680.altitude, bme680.gas ]
 	except:
 		values = [ 0., 0., 0., 0., 0 ]
 	myboxcar.accumulate(values)
@@ -57,7 +63,7 @@ def get_previous_values():
 
 def measure_string():
 	temp, hum, pres, alt, gas = get_values()
-	return "%0.1f, %0.1f, %0.3f, %0.2f, %d" % (temp, hum, pres, alt, gas)
+	return "%0.1f, %0.1f, %0.6f, %0.2f, %d" % (temp, hum, pres, alt, gas)
 
 def print_compact():
 	try:
