@@ -1,18 +1,28 @@
 # written 2021-12-28 by mza
-# last updated 2022-01-08 by mza
+# last updated 2022-01-17 by mza
 
 import sys
 import time
+import atexit
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
 def reset():
 	try:
-		error("resetting board...")
+		error("resetting board... (ctrl-c to abort)")
 		sys.stdout.flush()
 	except:
 		pass
+#	try:
+#		displayio.release_displays()
+#	except:
+#		pass
 	try:
 		time.sleep(10)
+	except KeyboardInterrupt:
+		info("caught ctrl-c")
+		flush()
+		atexit.unregister(reset)
+		sys.exit(0)
 	except:
 		pass
 	try:
