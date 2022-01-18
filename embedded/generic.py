@@ -70,3 +70,34 @@ def set_status_led_color(desired_color):
 		except:
 			pass
 
+def setup_battery_monitor(i2c):
+	global battery
+	try:
+		import adafruit_bus_device
+	except:
+		warning("can't find lib adafruit_bus_device")
+		return False
+	try:
+		import adafruit_lc709203f
+	except:
+		warning("can't find lib adafruit_lc709203f")
+		return False
+	try:
+		battery = adafruit_lc709203f.LC709203F(i2c)
+	except:
+		warning("can't initialize battery monitor")
+		return False
+	return True
+
+def get_battery_percentage():
+	try:
+		return ", %.1f" % battery.cell_percent
+	except:
+		return ""
+
+def report_battery_percentage():
+	try:
+		info(get_battery_percentage())
+	except:
+		pass
+
