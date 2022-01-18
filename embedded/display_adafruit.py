@@ -6,15 +6,15 @@ import terminalio
 from adafruit_display_text import label
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
-try:
-	import adafruit_ssd1327 # sudo pip3 install adafruit-circuitpython-ssd1327
-except:
-	print("unable to find adafruit_ssd1327 library")
-
 def setup_i2c_oled_display_ssd1327(i2c, address):
 #	if not should_use_ssd1327_oled_display:
 #		return False
 	global display
+	try:
+		import adafruit_ssd1327 # sudo pip3 install adafruit-circuitpython-ssd1327
+	except:
+		print("unable to find adafruit_ssd1327 library")
+		return False
 	try:
 		display_bus = displayio.I2CDisplay(i2c, device_address=address)
 		display = adafruit_ssd1327.SSD1327(display_bus, width=128, height=128)
@@ -23,16 +23,16 @@ def setup_i2c_oled_display_ssd1327(i2c, address):
 		return False
 	return True
 
-try:
-	import adafruit_displayio_sh1107
-except:
-	print("unable to find adafruit_displayio_sh1107 library")
-
 def setup_i2c_oled_display_sh1107(i2c, address):
 #	if not should_use_sh1107_oled_display:
 #		return False
 	#oled_reset = board.D9
 	global display
+	try:
+		import adafruit_displayio_sh1107
+	except:
+		print("unable to find adafruit_displayio_sh1107 library")
+		return False
 	try:
 		display_bus = displayio.I2CDisplay(i2c, device_address=address)
 		display = adafruit_displayio_sh1107.SH1107(display_bus, width=128, height=64)
@@ -135,24 +135,24 @@ def show_text_on_ssd1327(string):
 	splash.append(text_group)
 	display.refresh()
 
-try:
-	import adafruit_ili9341
-except:
-	print("unable to find adafruit_ili9341 library")
-
-def setup_ili9341(spi):
+def setup_ili9341(spi, tft_cs, tft_dc):
+	global display
+	try:
+		import adafruit_ili9341
+	except:
+		print("unable to find adafruit_ili9341 library")
+		return False
 	try:
 		displayio.release_displays()
 	except:
 		pass
-	tft_cs = board.D9
-	tft_dc = board.D10 # conflicts with adalogger cs
+	#tft_cs = board.D9
+	#tft_dc = board.D10 # conflicts with adalogger cs
 	#tft_reset = board.D6
 	#sdcard_cs = board.D5
-	global display
 	try:
-		display_bus = displayio.FourWire( spi, command=tft_dc, chip_select=tft_cs )
-		#display_bus = displayio.FourWire( spi, command=tft_dc, chip_select=tft_cs, reset=tft_reset )
+		display_bus = displayio.FourWire(spi, command=tft_dc, chip_select=tft_cs)
+		#display_bus = displayio.FourWire(spi, command=tft_dc, chip_select=tft_cs, reset=tft_reset)
 		display = adafruit_ili9341.ILI9341(display_bus, width=320, height=240)
 	#	splash = displayio.Group()
 	#	display.show(splash)
