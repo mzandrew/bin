@@ -146,7 +146,7 @@ def main():
 		RTC_is_available = False
 	global display_is_available
 	if should_use_display:
-		display_is_available = setup_ili9341(spi)
+		display_is_available = display_adafruit.setup_ili9341(spi, board.D9, board.D10)
 	global sdcard_is_available
 	global mydir
 	if should_use_sdcard:
