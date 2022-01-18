@@ -65,22 +65,7 @@ import airlift
 import gps_adafruit
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 import generic
-
-import displayio
-import terminalio
-import adafruit_ili9341
-def setup_ili9341(spi):
-	displayio.release_displays()
-	tft_cs = board.D9
-	tft_dc = board.D10 # conflicts with adalogger cs
-	#tft_reset = board.D6
-	#sdcard_cs = board.D5
-	display_bus = displayio.FourWire( spi, command=tft_dc, chip_select=tft_cs )
-	#display_bus = displayio.FourWire( spi, command=tft_dc, chip_select=tft_cs, reset=tft_reset )
-	global display
-	display = adafruit_ili9341.ILI9341(display_bus, width=320, height=240)
-#	splash = displayio.Group()
-#	display.show(splash)
+import display_adafruit
 
 # https://learn.adafruit.com/circuitpython-essentials/circuitpython-pwm
 PWM_MAX = 65535

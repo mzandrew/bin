@@ -5,7 +5,7 @@
 
 # to install on a circuitpython device:
 
-# mount /media/circuitpython/; cd ~/build/adafruit-circuitpython/bundle/lib/; cp adafruit_ssd1327.mpy /media/circuitpython/lib/ ; rsync -r adafruit_display_text /media/circuitpython/lib/; cd ~/build/bin/embedded/; cp oled_adafruit.py /media/circuitpython/; cp flow.py /media/circuitpython/code.py; umount /media/circuitpython
+# mount /media/circuitpython/; cd ~/build/adafruit-circuitpython/bundle/lib/; cp adafruit_ssd1327.mpy /media/circuitpython/lib/ ; rsync -r adafruit_display_text /media/circuitpython/lib/; cd ~/build/bin/embedded/; cp display_adafruit.py /media/circuitpython/; cp flow.py /media/circuitpython/code.py; umount /media/circuitpython
 
 liters_per_count = 0.002
 
@@ -73,10 +73,10 @@ if __name__ == "__main__":
 	time.sleep(2)
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
-		import oled_adafruit
-		oled_display_available = oled_adafruit.setup_i2c_oled_display_ssd1327(i2c, 0x3d)
+		import display_adafruit
+		oled_display_available = display_adafruit.setup_i2c_oled_display_ssd1327(i2c, 0x3d)
 		print("oled display is available")
-		oled_adafruit.clear_display_on_oled_ssd1327()
+		display_adafruit.clear_display_on_oled_ssd1327()
 	except:
 		print("unable to find ssd1327 oled display on i2c")
 		oled_display_available = False
@@ -85,6 +85,6 @@ if __name__ == "__main__":
 	while True:
 		string = show_if_changed()
 		if oled_display_available:
-			oled_adafruit.show_text_on_ssd1327(string)
+			display_adafruit.show_text_on_ssd1327(string)
 		time.sleep(1)
 

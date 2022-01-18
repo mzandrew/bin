@@ -36,9 +36,9 @@ except:
 import microsd_adafruit
 import neopixel_adafruit
 import pcf8523_adafruit
-import oled_adafruit
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 import generic
+import display_adafruit
 
 intensity = 8 # brightness of plotted data on dotstar display
 if 1:
@@ -288,10 +288,10 @@ def loop():
 	update_temperature_display_on_matrix_backpack()
 	if should_use_ssd1327_oled_display:
 		if oled_display_is_available and should_plot_temperatures:
-			oled_adafruit.update_temperature_display_on_oled_ssd1327(temperatures_to_plot)
+			display_adafruit.update_temperature_display_on_oled_ssd1327(temperatures_to_plot)
 	if should_use_sh1107_oled_display:
 		if oled_display_is_available and should_plot_temperatures:
-			oled_adafruit.update_temperature_display_on_oled_sh1107(offset_t, max_t, temperatures_to_plot)
+			display_adafruit.update_temperature_display_on_oled_sh1107(offset_t, max_t, temperatures_to_plot)
 	flush()
 
 def main():
@@ -322,13 +322,13 @@ def main():
 		error("can't find any temperature sensors on i2c bus")
 	global oled_display_is_available
 	if should_use_ssd1327_oled_display:
-		oled_display_is_available = oled_adafruit.setup_i2c_oled_display_ssd1327(i2c, 0x3d)
+		oled_display_is_available = display_adafruit.setup_i2c_oled_display_ssd1327(i2c, 0x3d)
 		if oled_display_is_available:
-			oled_adafruit.clear_display_on_oled_ssd1327()
+			display_adafruit.clear_display_on_oled_ssd1327()
 	if should_use_sh1107_oled_display:
-		oled_display_is_available = oled_adafruit.setup_i2c_oled_display_sh1107(i2c, 0x3c)
+		oled_display_is_available = display_adafruit.setup_i2c_oled_display_sh1107(i2c, 0x3c)
 		if oled_display_is_available:
-			oled_adafruit.clear_display_on_oled_sh1107()
+			display_adafruit.clear_display_on_oled_sh1107()
 	global matrix_backpack_available
 	try:
 		matrix_backpack_available = setup_matrix_backpack()

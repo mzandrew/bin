@@ -1,18 +1,15 @@
-# last updated 2021-12-27 by mza
+# last updated 2022-01-17 by mza
 
 import board
 import displayio
 import terminalio
 from adafruit_display_text import label
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
-try:
-	import adafruit_displayio_sh1107
-except:
-	print("unable to find adafruit_displayio_sh1107")
+
 try:
 	import adafruit_ssd1327 # sudo pip3 install adafruit-circuitpython-ssd1327
 except:
-	print("unable to find adafruit_ssd1327")
+	print("unable to find adafruit_ssd1327 library")
 
 def setup_i2c_oled_display_ssd1327(i2c, address):
 #	if not should_use_ssd1327_oled_display:
@@ -25,6 +22,11 @@ def setup_i2c_oled_display_ssd1327(i2c, address):
 		error("can't initialize ssd1327 display over i2c (address " + hex(address) + ")")
 		return False
 	return True
+
+try:
+	import adafruit_displayio_sh1107
+except:
+	print("unable to find adafruit_displayio_sh1107 library")
 
 def setup_i2c_oled_display_sh1107(i2c, address):
 #	if not should_use_sh1107_oled_display:
@@ -132,4 +134,52 @@ def show_text_on_ssd1327(string):
 	text_group.append(text_area)  # Subgroup for text scaling
 	splash.append(text_group)
 	display.refresh()
+
+try:
+	import adafruit_ili9341
+except:
+	print("unable to find adafruit_ili9341 library")
+
+def setup_ili9341(spi):
+	try:
+		displayio.release_displays()
+	except:
+		pass
+	tft_cs = board.D9
+	tft_dc = board.D10 # conflicts with adalogger cs
+	#tft_reset = board.D6
+	#sdcard_cs = board.D5
+	global display
+	try:
+		display_bus = displayio.FourWire( spi, command=tft_dc, chip_select=tft_cs )
+		#display_bus = displayio.FourWire( spi, command=tft_dc, chip_select=tft_cs, reset=tft_reset )
+		display = adafruit_ili9341.ILI9341(display_bus, width=320, height=240)
+	#	splash = displayio.Group()
+	#	display.show(splash)
+		return True
+	except:
+		return False
+
+try:
+	import ST7789
+except:
+	print("unable to find adafruit_st7789 library")
+
+#from adafruit_display_text import label
+
+def setup_st7789(spi, tft_cs, tft_dc, tft_reset):
+	try:
+		displayio.release_displays()
+	except:
+		pass
+	global display
+	global backlight_pwm
+	try:
+		display_bus = displayio.FourWire(spi, chip_select=tft_cs, command=tft_dc, reset=tft_reset)
+		display = adafruit_st7789.ST7789(display_bus, rotation=270, width=240, height=135, rowstart=40, colstart=53)
+		backlight_pwm = pwmio.PWMOut(board.TFT_BACKLIGHT, frequency=5000, duty_cycle=PWM_MAX)
+		backlight_pwm.duty_cycle = int(0.95 * PWM_MAX)
+		return True
+	except:
+		return False
 
