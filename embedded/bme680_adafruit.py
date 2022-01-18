@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2020-10-14 by mza
-# last updated 2021-11-26 by mza
+# last updated 2022-01-17 by mza
 
 # from https://learn.adafruit.com/adafruit-bme680-humidity-temperature-barometic-pressure-voc-gas/python-circuitpython
 
@@ -60,7 +60,10 @@ def measure_string():
 	return "%0.1f, %0.1f, %0.3f, %0.2f, %d" % (temp, hum, pres, alt, gas)
 
 def print_compact():
-	date = time.strftime("%Y-%m-%d+%X")
+	try:
+		date = time.strftime("%Y-%m-%d+%X")
+	except:
+		date = ""
 	string = measure_string()
 	info("%s, %s" % (date, string))
 
@@ -74,7 +77,7 @@ def test_if_present():
 if __name__ == "__main__":
 	try:
 		i2c = busio.I2C(board.SCL, board.SDA)
-		setup(i2c)
+		setup(i2c, 32)
 	except:
 		error("bme680 not present")
 		sys.exit(1)
@@ -83,6 +86,9 @@ if __name__ == "__main__":
 	while test_if_present():
 		#print_verbose()
 		print_compact()
-		sys.stdout.flush()
+		try:
+			sys.stdout.flush()
+		except:
+			pass
 		time.sleep(1)
 
