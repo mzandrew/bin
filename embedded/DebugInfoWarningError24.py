@@ -42,6 +42,7 @@ def create_new_logfile_with_string(string):
 #			sys.exit(1)
 		try:
 			logfile = open(logfilename, "a")
+			logfile_is_open = 1
 			#info("logfilename = " + logfilename)
 		except:
 			try:
@@ -58,7 +59,6 @@ def create_new_logfile_with_string(string):
 			info("Writing output from %s to logfile: %s" % (sys.argv[0], logfilename))
 		except:
 			pass
-		logfile_is_open = 1
 	except:
 		warning("Unable to open logfile")
 
