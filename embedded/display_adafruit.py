@@ -1,4 +1,4 @@
-# last updated 2022-01-17 by mza
+# last updated 2022-01-18 by mza
 
 import board
 import displayio
@@ -160,26 +160,32 @@ def setup_ili9341(spi):
 	except:
 		return False
 
-try:
-	import ST7789
-except:
-	print("unable to find adafruit_st7789 library")
-
 #from adafruit_display_text import label
 
-def setup_st7789(spi, tft_cs, tft_dc, tft_reset):
+def setup_st7789(spi, tft_cs, tft_dc, tft_reset, backlight_brightness=0.95):
+	global display
+	global backlight_pwm
+	try:
+		import adafruit_st7789
+	except:
+		print("unable to find adafruit_st7789 library")
+		return False
 	try:
 		displayio.release_displays()
 	except:
 		pass
-	global display
-	global backlight_pwm
 	try:
 		display_bus = displayio.FourWire(spi, chip_select=tft_cs, command=tft_dc, reset=tft_reset)
 		display = adafruit_st7789.ST7789(display_bus, rotation=270, width=240, height=135, rowstart=40, colstart=53)
-		backlight_pwm = pwmio.PWMOut(board.TFT_BACKLIGHT, frequency=5000, duty_cycle=PWM_MAX)
-		backlight_pwm.duty_cycle = int(0.95 * PWM_MAX)
+		try:
+			import pwmio
+			PWM_MAX = 65535
+			backlight_pwm = pwmio.PWMOut(board.TFT_BACKLIGHT, frequency=5000, duty_cycle=PWM_MAX)
+			backlight_pwm.duty_cycle = int(backlight_brightness * PWM_MAX)
+		except:
+			warning("can't find library pwmio; can't control backlight brightness")
 		return True
 	except:
+		raise
 		return False
 
