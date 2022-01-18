@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-01-12 by mza
+# last updated 2022-01-17 by mza
 
 #from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 
@@ -9,11 +9,14 @@ import time
 import board
 import busio
 import digitalio
-import wifi
-import ipaddress
-import socketpool
+try:
+	import wifi
+	import ipaddress
+	import socketpool
+	import ssl
+except:
+	pass
 import adafruit_requests
-import ssl
 from adafruit_esp32spi import adafruit_esp32spi
 from adafruit_esp32spi import PWMOut
 from adafruit_io.adafruit_io import IO_HTTP, AdafruitIO_RequestError
@@ -28,6 +31,7 @@ except ImportError:
 
 epsilon = 0.000001
 MAXERRORCOUNT = 5
+SUPERMAXERRORCOUNT = 50
 errorcount = 0
 myfeeds = []
 delay = 1.0
@@ -68,11 +72,21 @@ def scan_networks():
 
 def connect_wifi(hostname):
 	global io
+	if 0:
+		try:
+			if wifi.radio.enabled:
+				wifi.radio.enabled = False
+				time.sleep(0.25)
+				wifi.radio.enabled = True
+				time.sleep(0.25)
+		except:
+			pass
 	try:
 		wifi.radio.hostname = hostname
 		#wifi.radio.mac_address = bytes((0x7E, 0xDF, 0xA1, 0xFF, 0xFF, 0xFF))
 		#networks = scan_networks()
 		#show_networks(networks)
+		info("Connecting to " + secrets["ssid"] + "...")
 		wifi.radio.connect(ssid=secrets["ssid"], password=secrets["password"])
 #		ap_mac = list(wifi.radio.mac_address_ap)
 #		info(str(ap_mac))
@@ -82,6 +96,7 @@ def connect_wifi(hostname):
 		show_network_status()
 		return True
 	except:
+		info("could not connect to AP")
 		raise
 
 # for esp32-s2 boards
@@ -318,6 +333,10 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 					errorcount = 0
 		except:
 			pass
+	if SUPERMAXERRORCOUNT<errorcount:
+		error("too many errors (" + str(errorcount) + "/" + str(SUPERMAXERRORCOUNT) + ")")
+		import generic
+		generic.reset()
 
 def show_geolocation_error(metadata, received_data):
 	lat = float(received_data["lat"])
