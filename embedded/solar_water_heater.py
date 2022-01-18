@@ -1,5 +1,5 @@
 # written 2021-09-10 by mza
-# last updated 2022-01-12 by mza
+# last updated 2022-01-18 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -67,25 +67,6 @@ from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3,
 import generic
 import display_adafruit
 
-# https://learn.adafruit.com/circuitpython-essentials/circuitpython-pwm
-PWM_MAX = 65535
-def setup_status_leds(red_pin, green_pin, blue_pin):
-	global status_led
-	status_led = []
-	status_led.append(pwmio.PWMOut(red_pin,   frequency=5000, duty_cycle=PWM_MAX))
-	status_led.append(pwmio.PWMOut(green_pin, frequency=5000, duty_cycle=PWM_MAX))
-	status_led.append(pwmio.PWMOut(blue_pin,  frequency=5000, duty_cycle=PWM_MAX))
-
-def set_status_led_color(desired_color):
-	global status_led
-	for i in range(3):
-		duty_cycle = int(PWM_MAX - 1.0*PWM_MAX*desired_color[i])
-		if duty_cycle<0:
-			duty_cycle = 0
-		if PWM_MAX<duty_cycle:
-			duty_cycle = PWM_MAX
-		status_led[i].duty_cycle = duty_cycle
-
 def print_compact(string):
 	date = ""
 	if ""==date:
@@ -111,8 +92,8 @@ def print_header():
 def main():
 	global header_string
 	if use_pwm_status_leds:
-		setup_status_leds(red_pin=board.A2, green_pin=board.D9, blue_pin=board.A3)
-		set_status_led_color([1.0, 1.0, 1.0])
+		generic.setup_status_leds(red_pin=board.A2, green_pin=board.D9, blue_pin=board.A3)
+		generic.set_status_led_color([1.0, 1.0, 1.0])
 	if FEATHER_ESP32S2: # for feather esp32-s2 to turn on power to i2c bus:
 		simpleio.DigitalOut(board.D7, value=0)
 	global i2c
@@ -263,7 +244,7 @@ def main():
 		error("pct2075 not found")
 		return
 	if use_pwm_status_leds:
-		set_status_led_color([0.5, 0.5, 0.5])
+		generic.set_status_led_color([0.5, 0.5, 0.5])
 	global airlift_is_available
 	if should_use_airlift:
 		if use_built_in_wifi:
@@ -292,7 +273,7 @@ def loop():
 		#info(str(i))
 		neopixel_adafruit.set_color(255, 0, 0)
 		if use_pwm_status_leds:
-			set_status_led_color([1, 0, 0])
+			generic.set_status_led_color([1, 0, 0])
 		string = ""
 		if gps_is_available:
 			string += gps_adafruit.measure_string()
@@ -335,7 +316,7 @@ def loop():
 		flush()
 		neopixel_adafruit.set_color(0, 255, 0)
 		if use_pwm_status_leds:
-			set_status_led_color([0, 1, 0])
+			generic.set_status_led_color([0, 1, 0])
 		i += 1
 #		if wifi_mapping_mode:
 #			if airlift_is_available:
@@ -399,7 +380,7 @@ def loop():
 			time.sleep(delay_between_posting_and_next_acquisition)
 		neopixel_adafruit.set_color(0, 0, 255)
 		if use_pwm_status_leds:
-			set_status_led_color([0, 0, 1])
+			generic.set_status_led_color([0, 0, 1])
 		if airlift_is_available:
 			if 0==i%86300:
 				airlift.update_time_from_server()
