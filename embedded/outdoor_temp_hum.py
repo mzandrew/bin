@@ -1,6 +1,6 @@
 # written 2022-01-12 by mza
 # based on solar_water_heater.py
-# last updated 2022-01-12 by mza
+# last updated 2022-01-14 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -184,7 +184,10 @@ def main():
 			airlift_is_available = airlift.setup_wifi("outdoor-temp-hum")
 		else:
 			airlift_is_available = airlift.setup_airlift("outdoor-temp-hum", spi, board.D13, board.D11, board.D12)
-		header_string += ", RSSI-dB"
+		if airlift_is_available:
+			header_string += ", RSSI-dB"
+			airlift.setup_feed("outdoor-hum")
+			airlift.setup_feed("outdoor-temp")
 	else:
 		airlift_is_available = False
 	if 0:
