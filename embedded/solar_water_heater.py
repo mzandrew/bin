@@ -336,7 +336,7 @@ def loop():
 					bh1750_adafruit.show_average_values()
 					if airlift_is_available:
 						try:
-							airlift.post_data("bh1750", bh1750_adafruit.get_average_values()[0])
+							airlift.post_data("roof-bh1750", bh1750_adafruit.get_average_values()[0])
 						except:
 							warning("couldn't post data for bh1750")
 				if anemometer_is_available:
@@ -350,14 +350,14 @@ def loop():
 					sht31d_adafruit.show_average_values()
 					if airlift_is_available:
 						try:
-							airlift.post_data("sht31d", sht31d_adafruit.get_average_values()[0])
+							airlift.post_data("roof-hum", sht31d_adafruit.get_average_values()[0])
 						except:
 							warning("couldn't post data for sht31d")
 				if ds18b20_is_available:
 					ds18b20_adafruit.show_average_values()
 					if airlift_is_available:
 						try:
-							airlift.post_data("ds18b20", ds18b20_adafruit.get_average_values()[0])
+							airlift.post_data("roof-ds18b20", ds18b20_adafruit.get_average_values()[0])
 						except:
 							warning("couldn't post data for ds18b20")
 			if ltr390_is_available:
