@@ -1,5 +1,5 @@
 # written 2021-12-28 by mza
-# last updated 2022-01-17 by mza
+# last updated 2022-01-18 by mza
 
 import sys
 import time
@@ -40,4 +40,33 @@ def reset():
 		flush()
 	except:
 		pass
+
+# https://learn.adafruit.com/circuitpython-essentials/circuitpython-pwm
+PWM_MAX = 65535
+def setup_status_leds(red_pin, green_pin, blue_pin):
+	global status_led
+	status_led = []
+	try:
+		import pwmio
+		PWM_MAX = 65535
+		status_led.append(pwmio.PWMOut(red_pin,   frequency=5000, duty_cycle=PWM_MAX))
+		status_led.append(pwmio.PWMOut(green_pin, frequency=5000, duty_cycle=PWM_MAX))
+		status_led.append(pwmio.PWMOut(blue_pin,  frequency=5000, duty_cycle=PWM_MAX))
+		return True
+	except:
+		warning("can't find library pwmio; can't control backlight brightness")
+		return False
+
+def set_status_led_color(desired_color):
+	global status_led
+	for i in range(3):
+		duty_cycle = int(PWM_MAX - 1.0*PWM_MAX*desired_color[i])
+		if duty_cycle<0:
+			duty_cycle = 0
+		if PWM_MAX<duty_cycle:
+			duty_cycle = PWM_MAX
+		try:
+			status_led[i].duty_cycle = duty_cycle
+		except:
+			pass
 
