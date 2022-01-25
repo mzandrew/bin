@@ -160,9 +160,7 @@ def setup_ili9341(spi, tft_cs, tft_dc):
 	except:
 		return False
 
-#from adafruit_display_text import label
-
-def setup_st7789(spi, tft_cs, tft_dc, tft_reset, backlight_brightness=0.95):
+def setup_st7789(spi, tft_cs, tft_dc, tft_reset):
 	global display
 	global backlight_pwm
 	try:
@@ -176,16 +174,55 @@ def setup_st7789(spi, tft_cs, tft_dc, tft_reset, backlight_brightness=0.95):
 		pass
 	try:
 		display_bus = displayio.FourWire(spi, chip_select=tft_cs, command=tft_dc, reset=tft_reset)
+		#display_bus = displayio.FourWire(spi, chip_select=tft_cs, command=tft_dc)
 		display = adafruit_st7789.ST7789(display_bus, rotation=270, width=240, height=135, rowstart=40, colstart=53)
-		try:
-			import pwmio
-			PWM_MAX = 65535
-			backlight_pwm = pwmio.PWMOut(board.TFT_BACKLIGHT, frequency=5000, duty_cycle=PWM_MAX)
-			backlight_pwm.duty_cycle = int(backlight_brightness * PWM_MAX)
-		except:
-			warning("can't find library pwmio; can't control backlight brightness")
 		return True
 	except:
 		raise
 		return False
+
+def setup_pwm_backlight(backlight_pin, backlight_brightness=0.95):
+	try:
+		import pwmio
+		PWM_MAX = 65535
+		backlight_pwm = pwmio.PWMOut(backlight_pin, frequency=5000, duty_cycle=PWM_MAX)
+		backlight_pwm.duty_cycle = int(backlight_brightness * PWM_MAX)
+	except:
+		warning("can't find library pwmio; can't control backlight brightness")
+
+def test_st7789():
+	try:
+		display
+	except:
+		display = board.DISPLAY
+	BORDER = 20
+	FONTSCALE = 2
+	BACKGROUND_COLOR = 0x00FF00  # Bright Green
+	FOREGROUND_COLOR = 0xAA0088  # Purple
+	TEXT_COLOR = 0xFFFF00
+	global splash
+	splash = displayio.Group()
+	display.show(splash)
+	info("display show splash")
+	color_bitmap = displayio.Bitmap(display.width, display.height, 1)
+	color_palette = displayio.Palette(1)
+	color_palette[0] = BACKGROUND_COLOR
+	bg_sprite = displayio.TileGrid(color_bitmap, pixel_shader=color_palette, x=0, y=0)
+	splash.append(bg_sprite)
+	info("splash append bg sprite")
+	# Draw a smaller inner rectangle
+	inner_bitmap = displayio.Bitmap(display.width - BORDER * 2, display.height - BORDER * 2, 1)
+	inner_palette = displayio.Palette(1)
+	inner_palette[0] = FOREGROUND_COLOR
+	inner_sprite = displayio.TileGrid(inner_bitmap, pixel_shader=inner_palette, x=BORDER, y=BORDER)
+	splash.append(inner_sprite)
+	info("splash append inner sprite")
+	# Draw a label
+	text = "Hello World!"
+	text_area = label.Label(terminalio.FONT, text=text, color=TEXT_COLOR)
+	text_width = text_area.bounding_box[2] * FONTSCALE
+	text_group = displayio.Group(scale=FONTSCALE, x=display.width // 2 - text_width // 2, y=display.height // 2)
+	text_group.append(text_area)  # Subgroup for text scaling
+	splash.append(text_group)
+	info("splash append text group")
 

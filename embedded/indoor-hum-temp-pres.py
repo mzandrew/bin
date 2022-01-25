@@ -87,11 +87,20 @@ def main():
 	global spi
 	spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 	display_is_available = False
-	if display_adafruit.setup_st7789(spi, board.TFT_DC, board.TFT_CS, board.TFT_RESET):
+	if board.DISPLAY:
 		display_is_available = True
-		info("display is available")
+		display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.5)
+		info("display is available (1)")
+	elif display_adafruit.setup_st7789(spi, board.TFT_DC, board.TFT_CS, board.TFT_RESET):
+#	if display_adafruit.setup_st7789(spi, board.TFT_DC, board.TFT_CS, board.TFT_RESET):
+		display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.95)
+		display_is_available = True
+		info("display is available (2)")
 	else:
 		warning("display is not available")
+	if display_is_available:
+		display_adafruit.test_st7789()
+		info("done with st7789 test")
 	#global uart
 	#uart = busio.UART(board.TX, board.RX, baudrate=9600, timeout=10)
 	prohibited_addresses = []
