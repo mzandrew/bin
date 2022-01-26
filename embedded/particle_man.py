@@ -1,5 +1,5 @@
 # written 2021-12-26 by mza
-# last updated 2021-12-29 by mza
+# last updated 2022-01-25 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -58,39 +58,6 @@ def print_compact(string):
 				date = ""
 	info("%s%s" % (date, string))
 
-def loop():
-	#info("")
-	#info(str(i))
-	if neopixel_is_available:
-		neopixel_adafruit.set_color(255, 0, 0)
-	string = ""
-	if pm25_is_available:
-		string += pm25_adafruit.measure_string()
-	if airlift_is_available:
-		string += airlift.measure_string()
-	print_compact(string)
-	flush()
-	if neopixel_is_available:
-		neopixel_adafruit.set_color(0, 255, 0)
-	global i
-	i += 1
-	if 0==i%N:
-		if pm25_is_available:
-			pm25_adafruit.show_average_values()
-		if airlift_is_available:
-			try:
-				airlift.post_data("particle10", pm25_adafruit.get_average_values()[8])
-			except:
-				warning("couldn't post data for pm25")
-		info("waiting...")
-		time.sleep(delay_between_posting_and_next_acquisition)
-	if neopixel_is_available:
-		neopixel_adafruit.set_color(0, 0, 255)
-	if airlift_is_available:
-		if 0==i%86300:
-			airlift.update_time_from_server()
-	time.sleep(delay_between_acquisitions)
-
 def main():
 	global neopixel_is_available
 	try:
@@ -120,10 +87,16 @@ def main():
 		if use_built_in_wifi:
 			airlift_is_available = airlift.setup_wifi("RoamIfYouWantTwo")
 		else:
-			airlift_is_available = airlift.setup_airlift(spi, board.D13, board.D11, board.D12)
+			airlift_is_available = airlift.setup_airlift("RoamIfYouWantTwo", spi, board.D13, board.D11, board.D12)
 		if airlift_is_available:
 			info("airlift is available")
 			header_string += ", RSSI-dB"
+			airlift.setup_feed("particle0p3")
+			airlift.setup_feed("particle0p5")
+			airlift.setup_feed("particle1p0")
+			airlift.setup_feed("particle2p5")
+			airlift.setup_feed("particle5p0")
+			airlift.setup_feed("particle10p0")
 	else:
 		info("airlift is NOT available")
 		airlift_is_available = False
@@ -141,6 +114,59 @@ def main():
 	info("pm25 not available; cannot continue")
 	if neopixel_is_available:
 		neopixel_adafruit.set_color(0, 255, 255)
+
+def loop():
+	#info("")
+	#info(str(i))
+	if neopixel_is_available:
+		neopixel_adafruit.set_color(255, 0, 0)
+	string = ""
+	if pm25_is_available:
+		string += pm25_adafruit.measure_string()
+	if airlift_is_available:
+		string += airlift.measure_string()
+	print_compact(string)
+	flush()
+	if neopixel_is_available:
+		neopixel_adafruit.set_color(0, 255, 0)
+	global i
+	i += 1
+	if 0==i%N:
+		if pm25_is_available:
+			pm25_adafruit.show_average_values()
+		if airlift_is_available:
+			try:
+				airlift.post_data("particle0p3", pm25_adafruit.get_average_values()[6])
+			except:
+				warning("couldn't post 0p3 data for pm25")
+			try:
+				airlift.post_data("particle0p5", pm25_adafruit.get_average_values()[7])
+			except:
+				warning("couldn't post 0p5 data for pm25")
+			try:
+				airlift.post_data("particle1p0", pm25_adafruit.get_average_values()[8])
+			except:
+				warning("couldn't post 1p0 data for pm25")
+			try:
+				airlift.post_data("particle2p5", pm25_adafruit.get_average_values()[9])
+			except:
+				warning("couldn't post 2p5 data for pm25")
+			try:
+				airlift.post_data("particle5p0", pm25_adafruit.get_average_values()[10])
+			except:
+				warning("couldn't post 5p0 data for pm25")
+			try:
+				airlift.post_data("particle10p0", pm25_adafruit.get_average_values()[11])
+			except:
+				warning("couldn't post 10p0 data for pm25")
+		info("waiting...")
+		time.sleep(delay_between_posting_and_next_acquisition)
+	if neopixel_is_available:
+		neopixel_adafruit.set_color(0, 0, 255)
+	if airlift_is_available:
+		if 0==i%86300:
+			airlift.update_time_from_server()
+	time.sleep(delay_between_acquisitions)
 
 if __name__ == "__main__":
 	#supervisor.disable_autoreload()
