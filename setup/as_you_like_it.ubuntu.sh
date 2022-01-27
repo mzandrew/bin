@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-# last updated 2020-05-25 by mza
+# last updated 2021-06-24 by mza
 
 declare package_list_file=""
 function make_dpkg_list_if_necessary {
@@ -54,15 +54,25 @@ function install_packages {
 	# xpdf no longer available in ubuntu 20.04
 	sudo apt-get -y autoremove
 	sudo apt-get -y clean
-	echo "consider running these to use the local apt mirror:"
-	echo "	sudo sed -i 's,us.archive.ubuntu.com,mirror.ancl.hawaii.edu/linux,' /etc/apt/sources.list"
-	echo "	sudo sed -i 's,archive.ubuntu.com,mirror.ancl.hawaii.edu/linux,' /etc/apt/sources.list"
+	#echo "consider running these to use the local apt mirror:"
+	#echo "	sudo sed -i 's,us.archive.ubuntu.com,mirror.ancl.hawaii.edu/linux,' /etc/apt/sources.list"
+	#echo "	sudo sed -i 's,archive.ubuntu.com,mirror.ancl.hawaii.edu/linux,' /etc/apt/sources.list"
 	echo "add the following line to /etc/ntp.conf:"
 	echo "	pool 192.168.153.1 iburst"
 	echo "and to set the local timezone:"
 	echo "	dpkg-reconfigure tzdata"
 }
 
+function change_apt_sources_list_if_desired {
+	echo
+	read -p "would you like to exchange us.archive.ubuntu.com with mirror.ancl.hawaii.edu in /etc/apt/sources.list ? (y/n) " -n1 -r
+	echo
+	if [[ $REPLY =~ ^[yY]$ ]]; then
+		sudo sed -i 's,us.archive.ubuntu.com,mirror.ancl.hawaii.edu/linux,' /etc/apt/sources.list
+	fi
+}
+
+change_apt_sources_list_if_desired
 install_packages
 
 cd
