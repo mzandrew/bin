@@ -191,26 +191,10 @@ if [ $native -gt 0 ]; then
 	if [ $keyboardcount -lt 1 ]; then
 		sudo chroot /media/root raspi-config nonint do_configure_keyboard "$desired_keyboard"
 	fi
-	declare piusercount=$(grep -c "^pi" /media/root/etc/passwd)
-	if [ $piusercount -gt 0 ]; then
-		sudo chroot /media/root deluser pi
-	fi
-	declare pigroupcount=$(grep -c ":pi\|,pi" /media/root/etc/group)
-	if [ $pigroupcount -gt 0 ]; then
-		sudo chroot /media/root delgroup pi
-	fi
-	declare -i usercount=$(grep -c $USER /media/root/etc/passwd)
-	if [ $usercount -lt 1 ]; then
-		echo "adding user $USER..."
-		sudo chroot /media/root useradd --uid $UID --gid $GID --no-user-group --groups adm,sudo,dialout,cdrom,video,plugdev,staff,games,input,netdev,audio,users,spi,i2c,gpio $USER
-	fi
 else
 	echo "detected cross-platform situation; you must manually do the following:"
 	echo "fix the locale"
 	echo "fix the keyboard"
-	echo "delete the pi user"
-	echo "delete the pi group"
-	echo "add your custom user"
 fi
 declare -i shadowcount=$(sudo grep -c "^${USER}:\\!:" /media/root/etc/shadow)
 if [ $shadowcount -gt 0 ]; then
@@ -232,11 +216,30 @@ if [ $fstabcount1 -gt 0 ]; then
 	declare -i fstabcount3=$(grep -c nas /media/root/etc/fstab)
 	if [ $fstabcount3 -gt 0 ]; then
 		cd /media/root
-		mkdir -p $(grep nas /media/root/etc/fstab | awk '{ print $2 }')
+		sudo mkdir -p $(grep nas /media/root/etc/fstab | awk '{ print "/media/root"$2 }')
 		cd -
 	fi
 fi
 update_and_install_new_packages
+declare piusercount=$(grep -c "^pi" /media/root/etc/passwd)
+if [ $piusercount -gt 0 ]; then
+	sudo deluser --root /media/root pi
+fi
+declare pigroupcount=$(grep -c ":pi\|,pi" /media/root/etc/group)
+if [ $pigroupcount -gt 0 ]; then
+	sudo delgroup --root /media/root pi
+fi
+declare groupcount=$(grep -c ":x:$GID:" /media/root/etc/group || /bin/true)
+if [ $groupcount -lt 1 ]; then
+	declare GROUP=$(grep ":x:$GID:" /etc/group)
+	echo "adding group $GID($GROUP)..."
+	sudo groupadd --root /media/root --gid $GID $GROUP
+fi
+declare -i usercount=$(grep -c $USER /media/root/etc/passwd)
+if [ $usercount -lt 1 ]; then
+	echo "adding user $USER..."
+	sudo useradd --root /media/root --uid $UID --gid $GID --no-user-group --groups adm,sudo,dialout,cdrom,video,plugdev,staff,games,input,netdev,audio,users,spi,i2c,gpio $USER
+fi
 
 declare NEWHOME
 if [ ${should_add_a_third_partition} -gt 0 ]; then
