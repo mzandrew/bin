@@ -1,6 +1,8 @@
 #!/bin/bash -e
 
-# last updated 2021-06-24 by mza
+# last updated 2022-01-27 by mza
+
+#declare -i debian_only=1
 
 declare package_list_file=""
 function make_dpkg_list_if_necessary {
@@ -29,14 +31,18 @@ function install_packages_if_necessary {
 }
 
 function install_packages {
-	sudo add-apt-repository universe
-	sudo add-apt-repository multiverse
+	if [ ${debian_only} -eq 0 ]; then
+		sudo add-apt-repository universe
+		sudo add-apt-repository multiverse
+	fi
 	local list="vim git subversion rsync"
 	install_packages_if_necessary $list
 	list=""
 	list="$list vim-gtk3"
 	list="$list libcanberra-gtk-module libcanberra-gtk3-module" # to avoid annoying messages when starting gvim
-	list="$list firefox"
+	if [ ${debian_only} -eq 0 ]; then
+		list="$list firefox"
+	fi
 	list="$list mlocate build-essential openssh-server net-tools nfs-common"
 	list="$list dfu-util gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib" # tomu
 	list="$list synaptic gnuplot ntp meld doublecmd-gtk zip unzip dbus-x11 gimp inkscape xsane"

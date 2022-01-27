@@ -1,6 +1,6 @@
 # written 2019-01-07 by mza to support python2.4-era SL5.11 on COPPERs
 # updated 2019-03-08 to write to logfiles
-# last updated 2021-05-06 by mza
+# last updated 2021-09-12 by mza
 
 import sys # stderr.write()
 import time # strftime
@@ -42,6 +42,7 @@ def create_new_logfile_with_string(string):
 #			sys.exit(1)
 		try:
 			logfile = open(logfilename, "a")
+			logfile_is_open = 1
 			#info("logfilename = " + logfilename)
 		except:
 			try:
@@ -58,9 +59,8 @@ def create_new_logfile_with_string(string):
 			info("Writing output from %s to logfile: %s" % (sys.argv[0], logfilename))
 		except:
 			pass
-		logfile_is_open = 1
 	except:
-		error("Unable to open logfile")
+		warning("Unable to open logfile")
 
 def create_new_logfile_with_string_embedded(dirname, basename, timestring=""):
 	global logfile_is_open
@@ -73,9 +73,9 @@ def create_new_logfile_with_string_embedded(dirname, basename, timestring=""):
 			filename = dirname + "/" + timestring + "." + basename + ".log"
 		logfile = open(filename, "a")
 		logfile_is_open = 1
-		info("Writing output to logfile: %s" % filename)
+		debug("Writing output to logfile: %s" % filename)
 	except:
-		error("Unable to open logfile")
+		warning("Unable to open logfile")
 
 def print_string_stdout(string, should_flush=1):
 	print(string)

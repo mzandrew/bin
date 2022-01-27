@@ -1,3 +1,5 @@
+code.py
+lib
 __pycache__
 backup
 contrib/rpi-rgb-led-matrix.tar
@@ -9,4 +11,5 @@ logs
 secrets.py
 notes
 contrib/feathers2
+Adafruit_CircuitPython_GPS
 

@@ -1,11 +1,15 @@
 #!/bin/bash -e
 
 # written 2020-11-21 by mza
-# last updated 2020-11-26 by mza
+# last updated 2022-01-23 by mza
 
 declare desired_locale="en_US.UTF-8"
 declare desired_keyboard="us"
 declare desired_timezone="Pacific/Honolulu"
+
+declare -i should_add_a_third_partition=0
+declare -i wholeimagesize_intended=7500000000
+declare -i partition2size_intended=7000000000
 
 # helpful stuff on resizing loop-mounted partitions, etc here:
 # https://superuser.com/questions/1373289/how-do-i-shrink-the-partition-of-an-img-file-made-from-dd
@@ -16,7 +20,9 @@ declare desired_timezone="Pacific/Honolulu"
 function unmount_unloop {
 	sudo umount /media/boot/ 2>/dev/null || /bin/true
 	sudo umount /media/root/ 2>/dev/null || /bin/true
-	sudo umount /media/home/ 2>/dev/null || /bin/true
+	if [ ${should_add_a_third_partition} -gt 0 ]; then
+		sudo umount /media/home/ 2>/dev/null || /bin/true
+	fi
 	sudo losetup --detach /dev/loop0 2>/dev/null || /bin/true
 }
 
@@ -35,78 +41,92 @@ if [ $# -lt 2 ]; then
 	echo "and it will generate a custom image \"2020-08-20-raspios-buster-armhf-lite.hostname.img\" from that"
 	exit 1
 fi
-sudo mkdir -p /media/boot /media/root /media/home
+sudo mkdir -p /media/boot /media/root
+if [ ${should_add_a_third_partition} -gt 0 ]; then
+	sudo mkdir -p /media/home
+fi
 declare original_image="$1"
 declare hostname="$2"
 declare modified_image=$(echo $original_image | sed -e "s,\.img$,.$hostname.img,")
 #echo "$modified_image"
 declare -i GID=$(getent passwd $USER | sed -e "s,$USER:x:\([0-9]\+\):\([0-9]\+\):.*,\2,")
 
-set -x
-declare -i wholeimagesize_intended=4000000000
-declare -i partition2size_intended=3500000000
 unmount_unloop
 if [ ! -e $modified_image ]; then
 	echo "copying original..."
 	cp $original_image $modified_image
 fi
 #ls -lart $modified_image
-declare -i imagesize=$(du --bytes $modified_image | awk '{ print $1 }')
-if [ $imagesize -lt $wholeimagesize_intended ]; then
-	echo "expanding image..."
-	sudo dd bs=1M seek=$((wholeimagesize_intended/1000000)) of=$modified_image </dev/null
+
+if [ ${should_add_a_third_partition} -gt 0 ]; then
+	declare -i imagesize=$(du --bytes $modified_image | awk '{ print $1 }')
+	if [ $imagesize -lt $wholeimagesize_intended ]; then
+		echo "expanding image..."
+		sudo dd bs=1M seek=$((wholeimagesize_intended/1000000)) of=$modified_image </dev/null
+	fi
+	#ls -lart $modified_image
 fi
-#ls -lart $modified_image
+
 sudo losetup --partscan /dev/loop0 $modified_image
 lsblk /dev/loop0
-declare -i partitioncount=$(lsblk /dev/loop0 | grep -c loop0p)
-if [ $partitioncount -lt 3 ]; then
-	declare -i partition1size_current=$(lsblk /dev/loop0 --bytes | grep loop0p1 | awk '{ print $4 }')
-	declare -i partition2size_current=$(lsblk /dev/loop0 --bytes | grep loop0p2 | awk '{ print $4 }')
-	if [ $partition2size_current -lt $((partition2size_intended)) ]; then
-		echo "resizing partition..."
-		declare -i partition2end=$(( (partition2size_intended+partition1size_current)/1000000))
-		sudo parted /dev/loop0 resizepart 2 $partition2end
-		sudo e2fsck -f /dev/loop0p2
-		sudo resize2fs /dev/loop0p2
+
+if [ ${should_add_a_third_partition} -gt 0 ]; then
+	declare -i partitioncount=$(lsblk /dev/loop0 | grep -c loop0p)
+	if [ $partitioncount -lt 3 ]; then
+		declare -i partition1size_current=$(lsblk /dev/loop0 --bytes | grep loop0p1 | awk '{ print $4 }')
+		declare -i partition2size_current=$(lsblk /dev/loop0 --bytes | grep loop0p2 | awk '{ print $4 }')
+		if [ $partition2size_current -lt $((partition2size_intended)) ]; then
+			echo "resizing partition..."
+			declare -i partition2end=$(( (partition2size_intended+partition1size_current)/1000000))
+			sudo parted /dev/loop0 resizepart 2 $partition2end
+			sudo e2fsck -f /dev/loop0p2
+			sudo resize2fs /dev/loop0p2
+		fi
+		echo "adding home partition..."
+		sudo parted /dev/loop0 mkpart primary $partition2end 100%
+		lsblk /dev/loop0
+		echo "creating ext4 filesystem for /home partition..."
+		sudo mkfs.ext4 /dev/loop0p3
 	fi
-	echo "adding home partition..."
-	sudo parted /dev/loop0 mkpart primary $partition2end 100%
-	lsblk /dev/loop0
-	echo "creating ext4 filesystem for /home partition..."
-	sudo mkfs.ext4 /dev/loop0p3
+	echo "mounting boot, root, home..."
+	sudo mount /dev/loop0p3 /media/home/
+else
+	echo "mounting boot, root..."
 fi
-echo "mounting boot, root, home..."
 sudo mount /dev/loop0p1 /media/boot/
 sudo mount /dev/loop0p2 /media/root/
-sudo mount /dev/loop0p3 /media/home/
+
 if [ -e /media/root/home/pi ]; then
 	#echo "moving pi to home..."
 	#sudo mv /media/root/home/pi /media/home/
 	echo "removing pi account's files..."
 	sudo rm -rf /media/root/home/pi
 fi
-declare init_resize=$(grep -c init_resize /media/boot/cmdline.txt)
-if [ $init_resize -gt 0 ]; then
-	echo "halting automatic partition resize..."
-	#cat /media/boot/cmdline.txt
-	sudo sed -i -e "s, init=.*,," /media/boot/cmdline.txt
-	#cat /media/boot/cmdline.txt
+
+if [ ${should_add_a_third_partition} -gt 0 ]; then
+	declare init_resize=$(grep -c init_resize /media/boot/cmdline.txt)
+	if [ $init_resize -gt 0 ]; then
+		echo "halting automatic partition resize..."
+		#cat /media/boot/cmdline.txt
+		sudo sed -i -e "s, init=.*,," /media/boot/cmdline.txt
+		#cat /media/boot/cmdline.txt
+	fi
+	if [ -e /media/root/etc/rc3.d/S01resize2fs_once ]; then
+		echo "halting automatic filesystem resize..."
+		sudo rm /media/root/etc/rc3.d/S01resize2fs_once
+	fi
+	declare -i homecount=$(grep -c home /media/root/etc/fstab)
+	if [ $homecount -eq 0 ]; then
+		echo "adding home to fstab..."
+		declare line=$(grep boot /media/root/etc/fstab)
+		#echo $line
+		declare newline=$(echo "$line" | sed -e "s,\(PARTUUID=.*\)-01,\1-03," | sed -e "s,/boot,/home," | sed -e "s,vfat,ext4,")
+		#echo $newline
+		echo "$newline" | sudo tee -a /media/root/etc/fstab >/dev/null
+		#cat /media/root/etc/fstab
+	fi
 fi
-if [ -e /media/root/etc/rc3.d/S01resize2fs_once ]; then
-	echo "halting automatic filesystem resize..."
-	sudo rm /media/root/etc/rc3.d/S01resize2fs_once
-fi
-declare -i homecount=$(grep -c home /media/root/etc/fstab)
-if [ $homecount -eq 0 ]; then
-	echo "adding home to fstab..."
-	declare line=$(grep boot /media/root/etc/fstab)
-	#echo $line
-	declare newline=$(echo "$line" | sed -e "s,\(PARTUUID=.*\)-01,\1-03," | sed -e "s,/boot,/home," | sed -e "s,vfat,ext4,")
-	#echo $newline
-	echo "$newline" | sudo tee -a /media/root/etc/fstab >/dev/null
-	#cat /media/root/etc/fstab
-fi
+
 if [ ! -e /media/boot/SSH ]; then
 	sudo touch /media/boot/SSH
 fi
@@ -176,10 +196,20 @@ if [ $fstabcount1 -gt 0 ]; then
 fi
 update_and_install_new_packages
 
-if [ -e ~/build/${USER}-home.tar.bz2 ] && [ ! -e /media/home/${USER} ]; then
-	cd /media/home
-	sudo tar xjf ~/build/${USER}-home.tar.bz2
-	sudo chown -R $USER:$GID "/media/home/${USER}"
+declare NEWHOME
+if [ ${should_add_a_third_partition} -gt 0 ]; then
+	NEWHOME="/media/home"
+else
+	NEWHOME="/media/root/home"
+fi
+if [ -e "${HOME}/build/${USER}" ] && [ ! -e "${HOME}/build/${USER}-home.tar.bz2" ]; then
+	cd "${HOME}/build/"
+	tar cjf "${USER}-home.tar.bz2" "${USER}/"
+fi
+if [ -e "${HOME}/build/${USER}-home.tar.bz2" ] && [ ! -e "${NEWHOME}/${USER}" ]; then
+	cd "${NEWHOME}"
+	sudo tar xjf ${HOME}/build/${USER}-home.tar.bz2
+	sudo chown -R $USER:$GID "${NEWHOME}/${USER}"
 fi
 
 echo "all good"
