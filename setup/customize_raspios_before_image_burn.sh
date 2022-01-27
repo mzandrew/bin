@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 # written 2020-11-21 by mza
-# last updated 2022-01-23 by mza
+# last updated 2022-01-27 by mza
 
 declare desired_locale="en_US.UTF-8"
 declare desired_keyboard="us"
@@ -17,22 +17,53 @@ declare -i partition2size_intended=7000000000
 # https://raspberrypi.stackexchange.com/a/56623/38978
 # https://unix.stackexchange.com/a/215354/150012
 
-function unmount_unloop {
-	sudo umount /media/boot/ 2>/dev/null || /bin/true
-	sudo umount /media/root/ 2>/dev/null || /bin/true
+#declare loop_device="/dev/loop0"
+declare loop_device="/dev/loop16"
+
+declare -i native=0
+if [ -e /etc/os-release ]; then
+	#native=$(detect_linux_variant | grep -ic rasp)
+	native=$(cat /etc/os-release | grep -ic rasp || /bin/true)
+fi
+
+function unmount_unloop_inner {
+	lsof | grep "/media/boot" || /bin/true
+	lsof | grep "/media/root" || /bin/true
+	sudo umount -l /media/boot/ || /bin/true
+	sudo umount -l /media/root/ || /bin/true
 	if [ ${should_add_a_third_partition} -gt 0 ]; then
-		sudo umount /media/home/ 2>/dev/null || /bin/true
+		lsof | grep "/media/home" || /bin/true
+		sudo umount /media/home/ || /bin/true
 	fi
-	sudo losetup --detach /dev/loop0 2>/dev/null || /bin/true
+	sudo losetup --detach ${loop_device} || /bin/true
+}
+
+function unmount_unloop {
+	local -i keep_quiet=${1}
+	if [ $keep_quiet -gt 0 ]; then
+		unmount_unloop_inner 2>/dev/null
+	else
+		if [ ${should_add_a_third_partition} -gt 0 ]; then
+			echo "unmounting boot, root, home..."
+		else
+			echo "unmounting boot, root..."
+		fi
+		unmount_unloop_inner
+	fi
 }
 
 function update_and_install_new_packages {
-	sudo chroot /media/root apt update
-#	sudo chroot /media/root apt upgrade -y
-	sudo chroot /media/root apt install -y vim git ntp tmux mlocate subversion rsync nfs-common
-#	sudo chroot /media/root apt install -y raspinfo rpi.gpio-common raspi-gpio python-rpi.gpio python3-rpi.gpio python3-gpiozero python-gpiozero python3-spidev python-spidev i2c-tools spi-tools python3-picamera python-picamera u-boot-rpi rpiboot lm-sensors lshw wiringpi libpigpio-dev pigpio-tools python-pigpio python3-pigpio
-#	sudo chroot /media/root apt-get clean
-#	sudo chroot /media/root apt-get -y autoremove
+	local package_list="vim git ntp tmux mlocate subversion rsync nfs-common"
+	if [ $native -gt 0 ]; then
+		sudo chroot /media/root apt update
+#		sudo chroot /media/root apt upgrade -y
+		sudo chroot /media/root apt install -y $package_list
+#		sudo chroot /media/root apt install -y raspinfo rpi.gpio-common raspi-gpio python-rpi.gpio python3-rpi.gpio python3-gpiozero python-gpiozero python3-spidev python-spidev i2c-tools spi-tools python3-picamera python-picamera u-boot-rpi rpiboot lm-sensors lshw wiringpi libpigpio-dev pigpio-tools python-pigpio python3-pigpio
+#		sudo chroot /media/root apt-get clean
+#		sudo chroot /media/root apt-get -y autoremove
+	else
+		echo "install $package_list"
+	fi
 }
 
 if [ $# -lt 2 ]; then
@@ -51,7 +82,7 @@ declare modified_image=$(echo $original_image | sed -e "s,\.img$,.$hostname.img,
 #echo "$modified_image"
 declare -i GID=$(getent passwd $USER | sed -e "s,$USER:x:\([0-9]\+\):\([0-9]\+\):.*,\2,")
 
-unmount_unloop
+unmount_unloop 1
 if [ ! -e $modified_image ]; then
 	echo "copying original..."
 	cp $original_image $modified_image
@@ -67,34 +98,34 @@ if [ ${should_add_a_third_partition} -gt 0 ]; then
 	#ls -lart $modified_image
 fi
 
-sudo losetup --partscan /dev/loop0 $modified_image
-lsblk /dev/loop0
+sudo losetup --partscan ${loop_device} $modified_image
+lsblk ${loop_device}
 
 if [ ${should_add_a_third_partition} -gt 0 ]; then
-	declare -i partitioncount=$(lsblk /dev/loop0 | grep -c loop0p)
+	declare -i partitioncount=$(lsblk ${loop_device} | grep -c loop0p)
 	if [ $partitioncount -lt 3 ]; then
-		declare -i partition1size_current=$(lsblk /dev/loop0 --bytes | grep loop0p1 | awk '{ print $4 }')
-		declare -i partition2size_current=$(lsblk /dev/loop0 --bytes | grep loop0p2 | awk '{ print $4 }')
+		declare -i partition1size_current=$(lsblk ${loop_device} --bytes | grep loop0p1 | awk '{ print $4 }')
+		declare -i partition2size_current=$(lsblk ${loop_device} --bytes | grep loop0p2 | awk '{ print $4 }')
 		if [ $partition2size_current -lt $((partition2size_intended)) ]; then
 			echo "resizing partition..."
 			declare -i partition2end=$(( (partition2size_intended+partition1size_current)/1000000))
-			sudo parted /dev/loop0 resizepart 2 $partition2end
-			sudo e2fsck -f /dev/loop0p2
-			sudo resize2fs /dev/loop0p2
+			sudo parted ${loop_device} resizepart 2 $partition2end
+			sudo e2fsck -f ${loop_device}p2
+			sudo resize2fs ${loop_device}p2
 		fi
 		echo "adding home partition..."
-		sudo parted /dev/loop0 mkpart primary $partition2end 100%
-		lsblk /dev/loop0
+		sudo parted ${loop_device} mkpart primary $partition2end 100%
+		lsblk ${loop_device}
 		echo "creating ext4 filesystem for /home partition..."
-		sudo mkfs.ext4 /dev/loop0p3
+		sudo mkfs.ext4 ${loop_device}p3
 	fi
 	echo "mounting boot, root, home..."
-	sudo mount /dev/loop0p3 /media/home/
+	sudo mount ${loop_device}p3 /media/home/
 else
 	echo "mounting boot, root..."
 fi
-sudo mount /dev/loop0p1 /media/boot/
-sudo mount /dev/loop0p2 /media/root/
+sudo mount ${loop_device}p1 /media/boot/
+sudo mount ${loop_device}p2 /media/root/
 
 if [ -e /media/root/home/pi ]; then
 	#echo "moving pi to home..."
@@ -137,7 +168,7 @@ if [ $londoncount -gt 0 ]; then
 	echo "$desired_timezone" | sudo tee /media/root/etc/timezone >/dev/null
 	#cat /media/root/etc/timezone
 	#sudo chroot /media/root dpkg-reconfigure -f noninteractive tzdata
-	sudo chroot /media/root/ ln -fs "/usr/share/zoneinfo/$desired_timezone" /etc/localtime
+	#sudo chroot /media/root/ ln -fs "/usr/share/zoneinfo/$desired_timezone" /etc/localtime
 fi
 declare -i hostnamecount=$(grep -c $hostname /media/root/etc/hostname)
 if [ $hostnamecount -eq 0 ]; then
@@ -149,28 +180,37 @@ if [ $ssidcount -lt 1 ]; then
 	sudo bash -c "if [ -e /root/wpa_supplicant.conf ]; then cp -a /root/wpa_supplicant.conf /media/root/etc/wpa_supplicant/; fi"
 fi
 
-# https://raspberrypi.stackexchange.com/a/47958/38978
-# https://raspberrypi.stackexchange.com/a/66939/38978
-declare -i localecount=$(grep -c "$desired_locale" /media/root/etc/default/locale)
-if [ $localecount -lt 1 ]; then
-	sudo chroot /media/root raspi-config nonint do_change_locale "$desired_locale"
-fi
-declare -i keyboardcount=$(grep -c "$desired_keyboard" /media/root/etc/default/keyboard)
-if [ $keyboardcount -lt 1 ]; then
-	sudo chroot /media/root raspi-config nonint do_configure_keyboard "$desired_keyboard"
-fi
-declare piusercount=$(grep -c "^pi" /media/root/etc/passwd)
-if [ $piusercount -gt 0 ]; then
-	sudo chroot /media/root deluser pi
-fi
-declare pigroupcount=$(grep -c ":pi\|,pi" /media/root/etc/group)
-if [ $pigroupcount -gt 0 ]; then
-	sudo chroot /media/root delgroup pi
-fi
-declare -i usercount=$(grep -c $USER /media/root/etc/passwd)
-if [ $usercount -lt 1 ]; then
-	echo "adding user $USER..."
-	sudo chroot /media/root useradd --uid $UID --gid $GID --no-user-group --groups adm,sudo,dialout,cdrom,video,plugdev,staff,games,input,netdev,audio,users,spi,i2c,gpio $USER
+if [ $native -gt 0 ]; then
+	# https://raspberrypi.stackexchange.com/a/47958/38978
+	# https://raspberrypi.stackexchange.com/a/66939/38978
+	declare -i localecount=$(grep -c "$desired_locale" /media/root/etc/default/locale)
+	if [ $localecount -lt 1 ]; then
+		sudo chroot /media/root raspi-config nonint do_change_locale "$desired_locale"
+	fi
+	declare -i keyboardcount=$(grep -c "$desired_keyboard" /media/root/etc/default/keyboard)
+	if [ $keyboardcount -lt 1 ]; then
+		sudo chroot /media/root raspi-config nonint do_configure_keyboard "$desired_keyboard"
+	fi
+	declare piusercount=$(grep -c "^pi" /media/root/etc/passwd)
+	if [ $piusercount -gt 0 ]; then
+		sudo chroot /media/root deluser pi
+	fi
+	declare pigroupcount=$(grep -c ":pi\|,pi" /media/root/etc/group)
+	if [ $pigroupcount -gt 0 ]; then
+		sudo chroot /media/root delgroup pi
+	fi
+	declare -i usercount=$(grep -c $USER /media/root/etc/passwd)
+	if [ $usercount -lt 1 ]; then
+		echo "adding user $USER..."
+		sudo chroot /media/root useradd --uid $UID --gid $GID --no-user-group --groups adm,sudo,dialout,cdrom,video,plugdev,staff,games,input,netdev,audio,users,spi,i2c,gpio $USER
+	fi
+else
+	echo "detected cross-platform situation; you must manually do the following:"
+	echo "fix the locale"
+	echo "fix the keyboard"
+	echo "delete the pi user"
+	echo "delete the pi group"
+	echo "add your custom user"
 fi
 declare -i shadowcount=$(sudo grep -c "^${USER}:\\!:" /media/root/etc/shadow)
 if [ $shadowcount -gt 0 ]; then
@@ -191,7 +231,9 @@ if [ $fstabcount1 -gt 0 ]; then
 	fi
 	declare -i fstabcount3=$(grep -c nas /media/root/etc/fstab)
 	if [ $fstabcount3 -gt 0 ]; then
-		sudo chroot /media/root mkdir -p $(grep nas /media/root/etc/fstab | awk '{ print $2 }')
+		cd /media/root
+		mkdir -p $(grep nas /media/root/etc/fstab | awk '{ print $2 }')
+		cd -
 	fi
 fi
 update_and_install_new_packages
@@ -213,9 +255,8 @@ if [ -e "${HOME}/build/${USER}-home.tar.bz2" ] && [ ! -e "${NEWHOME}/${USER}" ];
 fi
 
 echo "all good"
-df --block-size=1000000 | grep "^Filesystem\|loop0"
-echo "unmounting boot, root, home..."
-unmount_unloop
+df --block-size=1000000 | grep "^Filesystem\|${loop_device}"
+unmount_unloop 0
 
 echo "image is ready to burn (doublecheck the "of=" below!):"
 echo "time nice sudo dd bs=1M if=$modified_image of="
