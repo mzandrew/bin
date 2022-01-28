@@ -2,7 +2,7 @@
 
 # written 2021-03-02 by mza
 # modified from timelapse.py
-# last updated 2021-03-09 by mza
+# last updated 2022-02-18 by mza
 
 # from https://www.raspberrypi.org/blog/picamera-pure-python-interface-for-camera-module/
 # and https://stackoverflow.com/a/8858026/5728815
@@ -11,13 +11,14 @@
 # and https://picamera.readthedocs.io/en/release-1.3/recipes1.html
 # and https://projects.raspberrypi.org/en/projects/getting-started-with-picamera/7
 
-import picamera
+import picamera # sudo apt install -y python3-picamera
 import datetime
 import time
 import shutil
 import sys
 
-destination = "/opt/photo/microscope"
+#destination = "/opt/photo/microscope"
+destination = "/opt/data/pictures/microscope"
 temporary_filename = "/tmp/image.jpg"
 
 # from https://stackoverflow.com/a/6599441/5728815
