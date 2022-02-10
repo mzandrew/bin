@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 # written 2020-11-21 by mza
-# last updated 2022-01-27 by mza
+# last updated 2022-02-07 by mza
 
 declare desired_locale="en_US.UTF-8"
 declare desired_keyboard="us"
@@ -54,6 +54,7 @@ function unmount_unloop {
 
 function update_and_install_new_packages {
 	local package_list="vim git ntp tmux mlocate subversion rsync nfs-common"
+	package_list="$package_list mdadm lvm2 nfs-kernel-server smartmontools"
 	if [ $native -gt 0 ]; then
 		sudo chroot /media/root apt update
 #		sudo chroot /media/root apt upgrade -y
@@ -200,11 +201,6 @@ else
 	echo "add your own group"
 	echo "add your own user"
 fi
-declare -i shadowcount=$(sudo grep -c "^${USER}:\\!:" /media/root/etc/shadow)
-if [ $shadowcount -gt 0 ]; then
-	sudo sed -i "s/^${USER}:.*//" /media/root/etc/shadow
-fi
-sudo sh -c 'grep "^'${USER}':" /etc/shadow >> /media/root/etc/shadow'
 declare -i hostscount=$(grep -c nas /media/root/etc/hosts)
 if [ $hostscount -lt 1 ]; then
 	grep "nas\|192.168" /etc/hosts | sudo tee -a /media/root/etc/hosts 1>/dev/null
@@ -246,6 +242,11 @@ if [ $native -gt 0 ]; then
 		sudo chroot /media/root useradd --uid $UID --gid $GID --no-user-group --groups adm,sudo,dialout,cdrom,video,plugdev,staff,games,input,netdev,audio,users,spi,i2c,gpio $USER
 	fi
 fi
+declare -i shadowcount=$(sudo grep -c "^${USER}:\\!:" /media/root/etc/shadow)
+if [ $shadowcount -gt 0 ]; then
+	sudo sed -i "s/^${USER}:.*//" /media/root/etc/shadow
+fi
+sudo sh -c 'grep "^'${USER}':" /etc/shadow >> /media/root/etc/shadow'
 
 declare NEWHOME
 if [ ${should_add_a_third_partition} -gt 0 ]; then
