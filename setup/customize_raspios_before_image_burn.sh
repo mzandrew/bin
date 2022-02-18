@@ -53,8 +53,10 @@ function unmount_unloop {
 }
 
 function update_and_install_new_packages {
+	sudo sed -i 's,raspbian.raspberrypi.org/raspbian,mirrordirector.raspbian.org/raspbian,' /media/root/etc/apt/sources.list
 	local package_list="vim git ntp tmux mlocate subversion rsync nfs-common"
 	package_list="$package_list mdadm lvm2 nfs-kernel-server smartmontools"
+	package_list="$package_list python3-picamera"
 	if [ $native -gt 0 ]; then
 		sudo chroot /media/root apt update
 #		sudo chroot /media/root apt upgrade -y
@@ -206,6 +208,7 @@ if [ $hostscount -lt 1 ]; then
 	grep "nas\|192.168" /etc/hosts | sudo tee -a /media/root/etc/hosts 1>/dev/null
 	#cat /media/root/etc/hosts
 fi
+# should add self to /etc/hosts (but don't know the ip address ahead of time)
 declare -i fstabcount1=$(grep -c nas /etc/fstab)
 if [ $fstabcount1 -gt 0 ]; then
 	declare -i fstabcount2=$(grep -c nas /media/root/etc/fstab)
