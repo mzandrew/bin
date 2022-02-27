@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 # written 2020-11-21 by mza
-# last updated 2022-02-07 by mza
+# last updated 2022-02-27 by mza
 
 declare desired_locale="en_US.UTF-8"
 declare desired_keyboard="us"
@@ -25,14 +25,31 @@ if [ -e /etc/os-release ]; then
 	#native=$(detect_linux_variant | grep -ic rasp)
 	native=$(cat /etc/os-release | grep -ic rasp || /bin/true)
 fi
+if [ $native -ne 0 ]; then
+	echo "running natively"
+else
+	if [ -x /usr/bin/qemu-arm-static ]; then
+		native=1
+	fi
+	if [ -e /proc/sys/fs/binfmt_misc/qemu-arm ]; then
+		native=1
+	fi
+	if [ $native -ne 0 ]; then
+		echo "running via qemu-arm-static"
+	else
+		echo "not running natively"
+		echo "consider installing qemu-arm-static with:"
+		echo "sudo apt install -y qemu-user-static"
+	fi
+fi
 
 function unmount_unloop_inner {
-	lsof | grep "/media/boot" || /bin/true
-	lsof | grep "/media/root" || /bin/true
-	sudo umount -l /media/boot/ || /bin/true
-	sudo umount -l /media/root/ || /bin/true
+	#lsof | grep "/media/boot" || /bin/true
+	#lsof | grep "/media/root" || /bin/true
+	sudo umount /media/boot/ || /bin/true
+	sudo umount /media/root/ || /bin/true
 	if [ ${should_add_a_third_partition} -gt 0 ]; then
-		lsof | grep "/media/home" || /bin/true
+		#lsof | grep "/media/home" || /bin/true
 		sudo umount /media/home/ || /bin/true
 	fi
 	sudo losetup --detach ${loop_device} || /bin/true
@@ -173,10 +190,22 @@ if [ $londoncount -gt 0 ]; then
 	#sudo chroot /media/root dpkg-reconfigure -f noninteractive tzdata
 	#sudo chroot /media/root/ ln -fs "/usr/share/zoneinfo/$desired_timezone" /etc/localtime
 fi
-declare -i hostnamecount=$(grep -c $hostname /media/root/etc/hostname)
+#declare original_hostname=$(grep "^127.0.1.1" /media/root/etc/hosts | awk '{ print $2 }')
+declare original_hostname=$(cat /media/root/etc/hostname)
+declare -i hostnamecount=$(grep -c "$hostname" /media/root/etc/hostname)
 if [ $hostnamecount -eq 0 ]; then
-	echo "setting hostname..."
+	echo "original hostname: $original_hostname"
+	echo "setting hostname to $hostname..."
 	echo "$hostname" | sudo tee /media/root/etc/hostname >/dev/null
+	# should add self to /etc/hosts (but don't know the ip address ahead of time) - partial workaround:
+	sudo sed -i -e "s,^127.0.1.1.*,127.0.1.1\t$hostname," /media/root/etc/hosts
+fi
+#cat /media/root/etc/hosts
+#cat /media/root/etc/hostname
+declare -i hostscount=$(grep -c nas /media/root/etc/hosts)
+if [ $hostscount -lt 1 ]; then
+	grep "nas\|192.168" /etc/hosts | sudo tee -a /media/root/etc/hosts 1>/dev/null
+	#cat /media/root/etc/hosts
 fi
 declare -i ssidcount=$(sudo grep -c ssid /media/root/etc/wpa_supplicant/wpa_supplicant.conf)
 if [ $ssidcount -lt 1 ]; then
@@ -203,12 +232,6 @@ else
 	echo "add your own group"
 	echo "add your own user"
 fi
-declare -i hostscount=$(grep -c nas /media/root/etc/hosts)
-if [ $hostscount -lt 1 ]; then
-	grep "nas\|192.168" /etc/hosts | sudo tee -a /media/root/etc/hosts 1>/dev/null
-	#cat /media/root/etc/hosts
-fi
-# should add self to /etc/hosts (but don't know the ip address ahead of time)
 declare -i fstabcount1=$(grep -c nas /etc/fstab)
 if [ $fstabcount1 -gt 0 ]; then
 	declare -i fstabcount2=$(grep -c nas /media/root/etc/fstab)
