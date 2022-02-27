@@ -28,6 +28,7 @@ fi
 if [ $native -ne 0 ]; then
 	echo "running natively"
 else
+	# https://wiki.archlinux.org/title/QEMU#Chrooting_into_arm/arm64_environment_from_x86_64
 	if [ -x /usr/bin/qemu-arm-static ]; then
 		native=1
 	fi
