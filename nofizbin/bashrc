@@ -166,4 +166,5 @@ else
 fi
 
 alias index="(lf > lf-r; dume; ) &"
+alias upapt="sudo apt update && sudo apt upgrade -y"
 
