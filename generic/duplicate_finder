@@ -59,7 +59,7 @@ for size in $file_sizes; do
 			fi
 		fi
 		#echo "$filename"
-		declare result=$(find -wholename "$filename" -printf "%TY-%Tm-%Td+%TH:%TM %12s $md5sum $is_dup %p\n")
+		declare result=$(IFS="$old_IFS"; find $prune_string -o -wholename "$filename" -printf "%TY-%Tm-%Td+%TH:%TM %12s $md5sum $is_dup %p\n")
 		echo "$result"
 		script_string="$script_string\n# $result"
 		filecount=$((filecount+1))
