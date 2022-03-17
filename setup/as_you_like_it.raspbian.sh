@@ -64,27 +64,5 @@ install_packages_0
 install_packages_1
 install_packages_2
 
-cd
-mkdir -p build
-cd build
-if [ ! -e bin ]; then
-	git clone https://github.com/mzandrew/bin.git
-fi
-cd
-mkdir -p bin
-cd bin
-if [ ! -e generic ]; then
-	ln -s ../build/bin/generic
-fi
-#ln -s ../build/bin/rpi
-
-cat >> ~/.bashrc <<HERE
-
-if [ -e $HOME/build/bin/nofizbin/bashrc ]; then
-	. $HOME/build/bin/nofizbin/bashrc
-fi
-
-HERE
-
 #add_swap_if_necessary
 
