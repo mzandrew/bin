@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 # written 2020-11-21 by mza
-# last updated 2022-02-27 by mza
+# last updated 2022-03-15 by mza
 
 declare desired_locale="en_US.UTF-8"
 declare desired_keyboard="us"
@@ -18,7 +18,7 @@ declare -i partition2size_intended=7000000000
 # https://unix.stackexchange.com/a/215354/150012
 
 #declare loop_device="/dev/loop0"
-declare loop_device="/dev/loop16"
+declare loop_device="/dev/loop128"
 
 declare -i native=0
 if [ -e /etc/os-release ]; then
@@ -266,7 +266,7 @@ if [ $native -gt 0 ]; then
 	declare -i usercount=$(grep -c $USER /media/root/etc/passwd)
 	if [ $usercount -lt 1 ]; then
 		echo "adding user $USER..."
-		sudo chroot /media/root useradd --uid $UID --gid $GID --no-user-group --groups adm,sudo,dialout,cdrom,video,plugdev,staff,games,input,netdev,audio,users,spi,i2c,gpio $USER
+		sudo chroot /media/root useradd --create-home --uid $UID --gid $GID --no-user-group --groups adm,sudo,dialout,cdrom,video,plugdev,staff,games,input,netdev,audio,users,spi,i2c,gpio $USER
 	fi
 fi
 declare -i shadowcount=$(sudo grep -c "^${USER}:\\!:" /media/root/etc/shadow)
@@ -285,7 +285,8 @@ if [ -e "${HOME}/build/${USER}" ] && [ ! -e "${HOME}/build/${USER}-home.tar.bz2"
 	cd "${HOME}/build/"
 	tar cjf "${USER}-home.tar.bz2" "${USER}/"
 fi
-if [ -e "${HOME}/build/${USER}-home.tar.bz2" ] && [ ! -e "${NEWHOME}/${USER}" ]; then
+#if [ -e "${HOME}/build/${USER}-home.tar.bz2" ] && [ ! -e "${NEWHOME}/${USER}" ]; then
+if [ -e "${HOME}/build/${USER}-home.tar.bz2" ]; then
 	cd "${NEWHOME}"
 	sudo tar xjf ${HOME}/build/${USER}-home.tar.bz2
 	sudo chown -R $USER:$GID "${NEWHOME}/${USER}"
