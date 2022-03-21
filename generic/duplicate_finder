@@ -9,22 +9,37 @@
 # writes out a script to delete all duplicate files newer than the first one found (by modification date)
 # updated 2016-06-16
 # updated 2016-06-27 to fix bug where it would only catch duplicates if they matched the oldest file found with that size
+# updated 2022-03-21 to work on just a given filespec/extention
 
+declare ext=""
+#ext="tar"
 declare -i lower_size_limit=250000 # in bytes
 #lower_size_limit=0 # in bytes
-declare script_to_remove_all_but_oldest_duplicate="script_to_remove_all_but_oldest_duplicate"
 declare action="#rm" # if you'd prefer it to leave everything commented out by default
 action="rm" # if you like to live dangerously
 #action="svn remove" # if you're in a repo situation
 
-echo "#/bin/bash -e" >> "$script_to_remove_all_but_oldest_duplicate"
 declare prune_string="-type d ( -name proc -o -name dev -o -name \.svn -o -name \.git -o -name \@eaDir ) -prune"
-declare file_sizes=$(find "${@}" $prune_string -o -type f -size +${lower_size_limit}c -printf "%s\n" | sort -rn | uniq -d)
+declare file_sizes
+declare output_script_name
+if [ ! -z "$ext" ]; then
+	echo "working only on: $ext"
+	output_script_name="script_to_remove_all_but_oldest_duplicate.${ext}.sh"
+	#file_sizes=$(find -type f -iname "*.$ext" -printf "%s\n" | sort -rn | uniq -d)
+	file_sizes=$(find "${@}" $prune_string -o -type f -iname "*.$ext" -size +${lower_size_limit}c -printf "%s\n" | sort -rn | uniq -d)
+else
+	output_script_name="script_to_remove_all_but_oldest_duplicate.sh"
+	#file_sizes=$(find -type f                 -printf "%s\n" | sort -rn | uniq -d)
+	file_sizes=$(find "${@}" $prune_string -o -type f                 -size +${lower_size_limit}c -printf "%s\n" | sort -rn | uniq -d)
+fi
+echo "#/bin/bash -e" >> "$output_script_name"
+chmod +x "$output_script_name"
+#echo $file_sizes
 declare -i total_potential_savings=0
 declare -i total_numdups=0
 for size in $file_sizes; do
 	echo
-	#echo "$size bytes:"
+	#echo "$size bytes"
 	declare script_string=""
 	declare list_of_files_to_potentially_remove=""
 	declare -i filecount=0 # filecount increments for each file that is $size bytes
@@ -35,7 +50,14 @@ for size in $file_sizes; do
 	declare is_dup="  "
 	declare old_IFS="$IFS"
 	IFS=$'\n'
-	for filename in $(IFS="$old_IFS"; find "${@}" $prune_string -o -type f -size ${size}c -printf "%TY-%Tm-%Td+%TH:%TM %p\n" | sort -k 1n | colrm 1 17); do
+	#for filename in $(IFS="$old_IFS"; find "${@}" $prune_string -o -type f -size ${size}c -printf "%TY-%Tm-%Td+%TH:%TM %p\n" | sort -k 1n | colrm 1 17); do
+	declare listy
+	if [ ! -z "$ext" ]; then
+		listy=$(IFS="$old_IFS"; find "${@}" $prune_string -o -type f -iname "*.$ext" -size ${size}c -printf "%TY-%Tm-%Td+%TH:%TM %p\n" | sort -k 1n | colrm 1 17)
+	else
+		listy=$(IFS="$old_IFS"; find "${@}" $prune_string -o -type f                 -size ${size}c -printf "%TY-%Tm-%Td+%TH:%TM %p\n" | sort -k 1n | colrm 1 17)
+	fi
+	for filename in $listy; do
 		declare md5sum=$(md5sum "$filename" | colrm 33)
 		is_dup="  "
 		if [ $filecount -eq 0 ]; then
@@ -68,20 +90,20 @@ for size in $file_sizes; do
 	script_string="$script_string\n# uncomment the following line to delete all but the oldest of the duplicate files immediately above:"
 	script_string="$script_string\n${action} -v$list_of_files_to_potentially_remove"
 	if [ $numdups -gt 0 ]; then
-		echo -e "${script_string}" >> "$script_to_remove_all_but_oldest_duplicate"
+		echo -e "${script_string}" >> "$output_script_name"
 	fi
 	total_potential_savings=$((total_potential_savings+numdups*size))
 	total_numdups=$((total_numdups+numdups))
 done
-echo >> "$script_to_remove_all_but_oldest_duplicate"
+echo >> "$output_script_name"
 
 echo
 echo "total potential savings:  $total_potential_savings bytes in $total_numdups files"
-echo "# total potential savings:  $total_potential_savings bytes in $total_numdups files" >> "$script_to_remove_all_but_oldest_duplicate"
+echo "# total potential savings:  $total_potential_savings bytes in $total_numdups files" >> "$output_script_name"
 if [ ${action:0:1} == "#" ]; then
 	echo
-	echo "now edit file \"$script_to_remove_all_but_oldest_duplicate\" and only uncomment the lines you're sure you want"
+	echo "now edit file \"$output_script_name\" and only uncomment the lines you're sure you want"
 	echo "(suggest useful vim expression \":s/^#rm/rm/\" (etc) and then repeatedly \"/\" and \"&\")"
-	echo "then do \"bash $script_to_remove_all_but_oldest_duplicate\" to actually do it"
+	echo "then do \"bash $output_script_name\" to actually do it"
 fi
 
