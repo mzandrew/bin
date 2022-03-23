@@ -11,8 +11,10 @@
 # updated 2016-06-27 to fix bug where it would only catch duplicates if they matched the oldest file found with that size
 # updated 2022-03-21 to work on just a given filespec/extention
 
-declare ext=""
-declare -i lower_size_limit=250000 # in bytes
+# user options:
+declare ext_list=""
+#ext_list="tar zip rar dmg avi mkv mp4 m4v m4a iso vob divx m4b cbr pdf mpg"
+declare -i lower_size_limit=10000000 # in bytes
 #lower_size_limit=0 # in bytes
 declare action="#rm" # if you'd prefer it to leave everything commented out by default
 action="rm" # if you like to live dangerously
@@ -23,6 +25,7 @@ declare file_sizes
 declare output_script_name
 declare -i actual_total_potential_savings=0
 declare -i actual_total_numdups=0
+declare ext=""
 
 function go {
 	if [ ! -z "$ext" ]; then
@@ -106,17 +109,13 @@ function go {
 	actual_total_numdups=$((actual_total_numdups+total_numdups))
 }
 
-declare ext_list=""
-#ext_list="tar zip rar dmg avi mkv mp4 m4v m4a"
-ext_list="rar avi mkv mp4 m4v m4a"
-for ext in $ext_list; do
+if [ ${#ext_list} -gt 0 ]; then
+	for ext in $ext_list; do
+		go
+	done
+else
 	go
-done
-#ext="tar"; go
-#ext="dmg"; go
-#ext="zip"; go
-
-#go
+fi
 
 echo
 echo "total potential savings:  $actual_total_potential_savings bytes in $actual_total_numdups files"
