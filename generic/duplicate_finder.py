@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 # written 2022-03-23 by mza
+# last updated 2022-03-24 by mza
 
 #upper_file_size_limit = 0
 lower_file_size_limit = 10000000
+#lower_file_size_limit = 10
 chunk_size = 65536
 
 # bash script version took 71m whereas this version takes 38s
@@ -15,7 +17,6 @@ import hashlib
 import operator
 
 files = []
-sizes_set = set()
 sizes = []
 
 def hashme(filename):
@@ -45,15 +46,15 @@ def read_it_in():
 			if match:
 				datestamp = match.group(1)
 				filesize = int(match.group(2))
-				name = match.group(3)
-			#filesize = int(filesize)
+				name = match.group(3).rstrip()
+				#filesize = int(filesize)
+				#files.append(line) # takes an extra 0.25 s to store in a list
+				files.append([filesize, datestamp, name]) # takes an extra 0.25 s to store in a list; takes an extra 1.1 s to store a list of lists
 			if 0==count%100000:
 				print("read " + str(count) + " lines")
 				#print(re.findall("[^ ]+", line))
 				#print(datestamp + " " + str(filesize) + " " + name)
 			#print(line)
-			#files.append(line) # takes an extra 0.25 s to store in a list
-			files.append([filesize, datestamp, name]) # takes an extra 0.25 s to store in a list; takes an extra 1.1 s to store a list of lists
 	except KeyboardInterrupt:
 		sys.stdout.flush()
 	print("read " + str(count) + " total lines")
@@ -65,6 +66,7 @@ def find_size_matches():
 	last_size = 0
 	size_matches = 0
 	#for myfile in sorted(files, reverse=True):
+	sizes_set = set()
 	for myfile in files:
 		if myfile[0]<lower_file_size_limit:
 			break
@@ -130,7 +132,7 @@ def compare_file_hashes():
 	size_matches = []
 	for i in range(len(files)):
 		if len(sizes)<=j:
-			continue
+			break
 		#print(str(files[i][0]) + "," + str(sizes[j]))
 		if sizes[j]<files[i][0]:
 			pass
@@ -143,7 +145,7 @@ def compare_file_hashes():
 			size_matches = []
 			j += 1
 			if len(sizes)<=j:
-				continue
+				break
 			if files[i][0]==sizes[j]:
 				size_matches.append(files[i])
 
