@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 # written 2022-03-23 by mza
-# last updated 2022-03-24 by mza
+# last updated 2022-03-29 by mza
 
-#upper_file_size_limit = 0
-lower_file_size_limit = 10000000
-#lower_file_size_limit = 10
+upper_file_size_limit =   0 * 1000000 # set to 0 to disable
+lower_file_size_limit =  10 * 1000000
 chunk_size = 65536
 
 # bash script version took 71m whereas this version takes 38s
@@ -57,6 +56,7 @@ def read_it_in():
 			#print(line)
 	except KeyboardInterrupt:
 		sys.stdout.flush()
+		sys.exit(1)
 	print("read " + str(count) + " total lines")
 	files.sort(reverse=True)
 
@@ -69,7 +69,10 @@ def find_size_matches():
 	sizes_set = set()
 	for myfile in files:
 		if myfile[0]<lower_file_size_limit:
-			break
+			continue
+		if upper_file_size_limit:
+			if upper_file_size_limit<myfile[0]:
+				continue
 		count += 1
 		#if 0==count%250:
 			#print("sorted " + str(count) + " lines")
@@ -114,6 +117,8 @@ def compare_these_size_matches(size_matches):
 	for i in range(len(filtered_list)):
 		try:
 			myhash = hashme(filtered_list[i][2])
+		except KeyboardInterrupt:
+			sys.exit(2)
 		except:
 			continue
 		matches = False
