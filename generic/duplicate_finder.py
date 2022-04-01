@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 # written 2022-03-23 by mza
-# last updated 2022-03-29 by mza
+# last updated 2022-04-01 by mza
 
-upper_file_size_limit =   0 * 1000 * 1000 # set to 0 to disable
-lower_file_size_limit =   0 * 1000 * 1000
+upper_file_size_limit = 0
+lower_file_size_limit = 0
+golden = ""
 chunk_size = 65536
 
 # bash script version took 71m whereas this version takes 38s
@@ -19,6 +20,14 @@ files = []
 sizes = []
 total_potential_savings = 0
 
+# deal with early termination due to output being piped somewhere:
+import signal
+signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
+def parse_arguments():
+	for arg in sys.argv[1:]:
+		min_max_or_golden(arg)
+
 def comma(value):
 	return "{:,}".format(value)
 
@@ -32,6 +41,36 @@ def hashme(filename):
 	#print(file_hash.digest())
 	#print(file_hash.hexdigest())  # to get a printable str instead of bytes
 	return file_hash.hexdigest()
+
+def parse_human_readable_number(string):
+	numeric = 0
+	suffix = ""
+	match = re.search("^([0-9.]+)([kKmMgGtT]*)$", string)
+	if match:
+		print(match.group(1))
+		numeric = float(match.group(1))
+		if len(match.group())>1:
+			suffix = match.group(2)
+	if suffix=="k" or suffix=="K":
+		numeric *= 1000
+	if suffix=="m" or suffix=="M":
+		numeric *= 1000000
+	if suffix=="g" or suffix=="G":
+		numeric *= 1000000000
+	if suffix=="t" or suffix=="T":
+		numeric *= 1000000000000
+	return int(numeric)
+
+def min_max_or_golden(arg):
+	global upper_file_size_limit
+	global lower_file_size_limit
+	global golden
+	if arg[0]=="+":
+		upper_file_size_limit = parse_human_readable_number(arg[1:])
+	elif arg[0]=="-":
+		lower_file_size_limit = parse_human_readable_number(arg[1:])
+	else:
+		golden = arg
 
 def read_it_in():
 	# reading in the list takes 3.6 s on a test file with 342201 lines
@@ -164,6 +203,7 @@ def show_potential_savings():
 	if total_potential_savings:
 		print("total potential savings = " + comma(total_potential_savings) + " bytes")
 
+parse_arguments()
 read_it_in()
 find_size_matches()
 find_number_of_different_sizes()
