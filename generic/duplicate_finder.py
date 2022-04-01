@@ -3,8 +3,8 @@
 # written 2022-03-23 by mza
 # last updated 2022-03-29 by mza
 
-upper_file_size_limit =   0 * 1000000 # set to 0 to disable
-lower_file_size_limit =  10 * 1000000
+upper_file_size_limit =   0 * 1000 * 1000 # set to 0 to disable
+lower_file_size_limit =   0 * 1000 * 1000
 chunk_size = 65536
 
 # bash script version took 71m whereas this version takes 38s
@@ -17,6 +17,10 @@ import operator
 
 files = []
 sizes = []
+total_potential_savings = 0
+
+def comma(value):
+	return "{:,}".format(value)
 
 def hashme(filename):
 	# with help from https://stackoverflow.com/a/59056837/5728815
@@ -103,6 +107,7 @@ def old_compare_file_hashes():
 		print(len(size_matches))
 
 def compare_these_size_matches(size_matches):
+	global total_potential_savings
 	filtered_list = []
 	for myfile in size_matches:
 		if os.path.isfile(myfile[2]): # skip the entry if the file is gone
@@ -126,6 +131,7 @@ def compare_these_size_matches(size_matches):
 			if hashes[j]==myhash:
 				match_string = str(j).rjust(2)
 				matches = True
+				total_potential_savings += filtered_list[i][0]
 		if not matches:
 			hashes.append(myhash)
 			match_string = "  "
@@ -154,8 +160,13 @@ def compare_file_hashes():
 			if files[i][0]==sizes[j]:
 				size_matches.append(files[i])
 
+def show_potential_savings():
+	if total_potential_savings:
+		print("total potential savings = " + comma(total_potential_savings) + " bytes")
+
 read_it_in()
 find_size_matches()
 find_number_of_different_sizes()
 compare_file_hashes()
+show_potential_savings()
 
