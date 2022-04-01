@@ -3,22 +3,24 @@
 # written 2022-03-23 by mza
 # last updated 2022-04-01 by mza
 
-upper_file_size_limit = 0
-lower_file_size_limit = 0
-golden = ""
-chunk_size = 65536
-
 # bash script version took 71m whereas this version takes 38s
 
 import sys
-import os.path
+import os
+import stat
 import re
 import hashlib
 import operator
 
+upper_file_size_limit = 0
+lower_file_size_limit = 0
+golden = ""
+chunk_size = 65536
 files = []
 sizes = []
 total_potential_savings = 0
+total_files_to_remove = 0
+script_filename = "script_to_remove_all_duplicates_that_are_not_golden.sh"
 
 # deal with early termination due to output being piped somewhere:
 import signal
@@ -27,6 +29,10 @@ signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 def parse_arguments():
 	for arg in sys.argv[1:]:
 		min_max_or_golden(arg)
+
+def make_executable(filename):
+	st = os.stat(filename)
+	os.chmod(filename, st.st_mode | stat.S_IEXEC)
 
 def comma(value):
 	return "{:,}".format(value)
@@ -47,7 +53,7 @@ def parse_human_readable_number(string):
 	suffix = ""
 	match = re.search("^([0-9.]+)([kKmMgGtT]*)$", string)
 	if match:
-		print(match.group(1))
+		#print(match.group(1))
 		numeric = float(match.group(1))
 		if len(match.group())>1:
 			suffix = match.group(2)
@@ -124,7 +130,12 @@ def find_size_matches():
 			size_matches += 1
 			sizes_set.add(myfile[0])
 		last_size = myfile[0]
-	print("parsed " + str(count) + " total files with sizes above the lower limit (" + str(lower_file_size_limit) + ")")
+	string = "parsed " + str(count) + " total files"
+	if lower_file_size_limit:
+		string += " with sizes above the lower limit (" + str(lower_file_size_limit) + ")"
+	if upper_file_size_limit:
+		string += " and below the upper limit (" + str(upper_file_size_limit) + ")"
+	print(string)
 	print("found " + str(size_matches) + " total size matches")
 	for size in sizes_set:
 		sizes.append(size)
@@ -147,17 +158,49 @@ def old_compare_file_hashes():
 
 def compare_these_size_matches(size_matches):
 	global total_potential_savings
+	global total_files_to_remove
 	filtered_list = []
 	for myfile in size_matches:
 		if os.path.isfile(myfile[2]): # skip the entry if the file is gone
 			filtered_list.append(myfile)
 	if len(filtered_list)<2: # give up if there's only one left to compare
 		return
-	#filtered_list.sort(key=lambda x: x[1]) # sort by datestamp
-	filtered_list.sort(key=operator.itemgetter(0, 2)) # sort by timestamp first, then by filename
-	#filtered_list.sort(key=operator.itemgetter(2, 0)) # sort by filename first, then by timestamp
+	if golden=="":
+		#filtered_list.sort(key=lambda x: x[1]) # sort by datestamp
+		filtered_list.sort(key=operator.itemgetter(0, 2)) # sort by timestamp first, then by filename
+		#filtered_list.sort(key=operator.itemgetter(2, 0)) # sort by filename first, then by timestamp
+	else:
+		match_count = 0
+		match_list = []
+		other_list = []
+		for i in range(len(filtered_list)):
+			match = re.search("^" + golden, filtered_list[i][2])
+			if match:
+				match_count += 1
+				match_list.append(filtered_list[i])
+				#print("match = " + filtered_list[i][2])
+			else:
+				other_list.append(filtered_list[i])
+		if match_count==1:
+			filtered_list = []
+			filtered_list.extend(match_list)
+			other_list.sort(key=operator.itemgetter(0, 2)) # sort by timestamp first, then by filename
+			filtered_list.extend(other_list)
+		elif match_count>1:
+			# need to special case this and keep going if the golden files aren't identical, since there still may be other duplicates
+			print("too many matches for golden string:")
+			for each in match_list:
+				print(each[2])
+			print("")
+			return
+		else:
+			filtered_list.sort(key=operator.itemgetter(0, 2)) # sort by timestamp first, then by filename
+			#filtered_list.sort(key=operator.itemgetter(2, 0)) # sort by filename first, then by timestamp
 	hashes = []
 	match_string = "  "
+	#remove_string = "rm -v"
+	remove_string = "rm"
+	match_count = 0
 	for i in range(len(filtered_list)):
 		try:
 			myhash = hashme(filtered_list[i][2])
@@ -170,11 +213,16 @@ def compare_these_size_matches(size_matches):
 			if hashes[j]==myhash:
 				match_string = str(j).rjust(2)
 				matches = True
+				match_count += 1
 				total_potential_savings += filtered_list[i][0]
+				total_files_to_remove += 1
+				remove_string += " \"" + filtered_list[i][2]  + "\""
 		if not matches:
 			hashes.append(myhash)
 			match_string = "  "
 		print(filtered_list[i][1] + " " + str(filtered_list[i][0]).rjust(12) + " " + myhash + " " + match_string + " " + filtered_list[i][2])
+	if match_count:
+		print(remove_string, file=script_file)
 	print()
 
 def compare_file_hashes():
@@ -201,12 +249,18 @@ def compare_file_hashes():
 
 def show_potential_savings():
 	if total_potential_savings:
+		print("")
+		print("total duplicate files = " + comma(total_files_to_remove))
 		print("total potential savings = " + comma(total_potential_savings) + " bytes")
 
-parse_arguments()
-read_it_in()
-find_size_matches()
-find_number_of_different_sizes()
-compare_file_hashes()
-show_potential_savings()
+with open(script_filename, "a") as script_file:
+	print("#!/bin/bash -e", file=script_file)
+	parse_arguments()
+	read_it_in()
+	find_size_matches()
+	find_number_of_different_sizes()
+	compare_file_hashes()
+	show_potential_savings()
+	print("\n", file=script_file)
+make_executable(script_filename)
 
