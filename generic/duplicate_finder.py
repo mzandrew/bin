@@ -156,6 +156,31 @@ def old_compare_file_hashes():
 		size_matches = [ files[x] for x in range(len(files)) if files[x][0]==size ]
 		print(len(size_matches))
 
+def uniq(input_list):
+	output_list = []
+	if len(input_list):
+		try:
+			number_of_indices = len(input_list[0])
+		except:
+			number_of_indices = 1
+		output_list.append(input_list[0])
+		for i in range(len(input_list)):
+			for j in range(len(output_list)):
+				match = True
+				if 1<number_of_indices:
+					for k in range(number_of_indices):
+						if not input_list[i][k]==output_list[j][k]:
+							match = False
+				else:
+					if not input_list[i]==output_list[j]:
+						match = False
+				if match:
+					break
+			if not match:
+				output_list.append(input_list[i])
+			#print(str(output_list))
+	return output_list
+
 def compare_these_size_matches(size_matches):
 	global total_potential_savings
 	global total_files_to_remove
@@ -163,6 +188,7 @@ def compare_these_size_matches(size_matches):
 	for myfile in size_matches:
 		if os.path.isfile(myfile[2]): # skip the entry if the file is gone
 			filtered_list.append(myfile)
+	filtered_list = uniq(filtered_list)
 	if len(filtered_list)<2: # give up if there's only one left to compare
 		return
 	if golden=="":
