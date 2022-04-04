@@ -242,7 +242,7 @@ def compare_these_size_matches(size_matches):
 				match_count += 1
 				total_potential_savings += filtered_list[i][0]
 				total_files_to_remove += 1
-				remove_string += " \"" + filtered_list[i][2]  + "\""
+				remove_string += " '" + filtered_list[i][2]  + "'"
 		if not matches:
 			hashes.append(myhash)
 			match_string = "  "
