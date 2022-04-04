@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2022-03-23 by mza
-# last updated 2022-04-01 by mza
+# last updated 2022-04-04 by mza
 
 # bash script version took 71m whereas this version takes 38s
 
@@ -14,7 +14,7 @@ import operator
 
 upper_file_size_limit = 0
 lower_file_size_limit = 0
-golden = ""
+golden = []
 chunk_size = 65536
 files = []
 sizes = []
@@ -76,7 +76,7 @@ def min_max_or_golden(arg):
 	elif arg[0]=="-":
 		lower_file_size_limit = parse_human_readable_number(arg[1:])
 	else:
-		golden = arg
+		golden.append(arg)
 
 def read_it_in():
 	# reading in the list takes 3.6 s on a test file with 342201 lines
@@ -191,7 +191,7 @@ def compare_these_size_matches(size_matches):
 	filtered_list = uniq(filtered_list)
 	if len(filtered_list)<2: # give up if there's only one left to compare
 		return
-	if golden=="":
+	if 0==len(golden):
 		#filtered_list.sort(key=lambda x: x[1]) # sort by datestamp
 		filtered_list.sort(key=operator.itemgetter(0, 2)) # sort by timestamp first, then by filename
 		#filtered_list.sort(key=operator.itemgetter(2, 0)) # sort by filename first, then by timestamp
@@ -200,13 +200,14 @@ def compare_these_size_matches(size_matches):
 		match_list = []
 		other_list = []
 		for i in range(len(filtered_list)):
-			match = re.search("^" + golden, filtered_list[i][2])
-			if match:
-				match_count += 1
-				match_list.append(filtered_list[i])
-				#print("match = " + filtered_list[i][2])
-			else:
-				other_list.append(filtered_list[i])
+			for j in range(len(golden)):
+				match = re.search("^" + golden[j], filtered_list[i][2])
+				if match:
+					match_count += 1
+					match_list.append(filtered_list[i])
+					#print("match = " + filtered_list[i][2])
+				else:
+					other_list.append(filtered_list[i])
 		if match_count==1:
 			filtered_list = []
 			filtered_list.extend(match_list)
