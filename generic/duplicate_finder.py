@@ -278,6 +278,9 @@ def show_potential_savings():
 		print("")
 		print("total duplicate files = " + comma(total_files_to_remove))
 		print("total potential savings = " + comma(total_potential_savings) + " bytes")
+		print("", file=script_file)
+		print("# total duplicate files = " + comma(total_files_to_remove), file=script_file)
+		print("# total potential savings = " + comma(total_potential_savings) + " bytes", file=script_file)
 
 with open(script_filename, "a") as script_file:
 	print("#!/bin/bash -e", file=script_file)
@@ -287,6 +290,6 @@ with open(script_filename, "a") as script_file:
 	find_number_of_different_sizes()
 	compare_file_hashes()
 	show_potential_savings()
-	print("\n", file=script_file)
+	print("", file=script_file)
 make_executable(script_filename)
 
