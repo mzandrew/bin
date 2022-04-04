@@ -8,7 +8,7 @@ import sys
 import re
 
 root_dirs = set()
-files = []
+#files = []
 root_dir_count = {}
 
 def read_it_in():
@@ -36,18 +36,18 @@ def read_it_in():
 					root_dir_count[root_dir] += 1
 				except:
 					root_dir_count[root_dir] = 1
-				files.append([root_dir, name, filesize, datestamp])
+				#files.append([root_dir, name, filesize, datestamp])
 			#if 0==count%100000:
 			#	print("read " + str(count) + " lines")
 	except KeyboardInterrupt:
 		sys.stdout.flush()
 		sys.exit(1)
 	#print("read " + str(count) + " total lines")
-	files.sort()
+	#files.sort()
 
-def show_files():
-	for i in range(len(files)):
-		print(files[i][3] + " " + str(files[i][2]).rjust(12) + " " + files[i][1])
+#def show_files():
+#	for i in range(len(files)):
+#		print(files[i][3] + " " + str(files[i][2]).rjust(12) + " " + files[i][1])
 
 def show_count_of_files_in_each_root_dir():
 	strings = []
