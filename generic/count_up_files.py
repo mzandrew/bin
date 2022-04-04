@@ -10,6 +10,10 @@ import re
 root_dirs = set()
 #files = []
 root_dir_count = {}
+root_dir_size = {}
+
+def comma(value):
+	return "{:,}".format(value)
 
 def read_it_in():
 	# with help from https://stackoverflow.com/a/45223675/5728815
@@ -34,8 +38,10 @@ def read_it_in():
 				root_dirs.add(root_dir)
 				try:
 					root_dir_count[root_dir] += 1
+					root_dir_size[root_dir] += filesize
 				except:
 					root_dir_count[root_dir] = 1
+					root_dir_size[root_dir] = filesize
 				#files.append([root_dir, name, filesize, datestamp])
 			#if 0==count%100000:
 			#	print("read " + str(count) + " lines")
@@ -52,8 +58,11 @@ def read_it_in():
 def show_count_of_files_in_each_root_dir():
 	strings = []
 	for root_dir in root_dirs:
-		string = str(root_dir_count[root_dir]).rjust(6) + " " + root_dir
+		#string = str(root_dir_count[root_dir]).rjust(6) + " " + root_dir
+		string = comma(root_dir_count[root_dir]).rjust(7) + " " + comma(root_dir_size[root_dir]).rjust(17) + " " + root_dir
 		strings.append(string)
+	header = " #files       total_bytes dirname"
+	print(header)
 	strings.sort()
 	for string in strings:
 		print(string)
