@@ -1,3 +1,5 @@
+#!/bin/bash -e
+
 # keepers: .bash_history .bashrc .cddb .gaim .purple .purple2 .gnupg .ssh .subversion .profile .mozilla-thunderbird .thunderbird .fluxbox
 
 for each in \
