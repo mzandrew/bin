@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2022-03-23 by mza
-# last updated 2022-04-04 by mza
+# last updated 2022-04-05 by mza
 
 # bash script version took 71m whereas this version takes 38s
 
@@ -21,6 +21,7 @@ sizes = []
 total_potential_savings = 0
 total_files_to_remove = 0
 script_filename = "script_to_remove_all_duplicates_that_are_not_golden.sh"
+MAX_COMMAND_LENGTH_SOFT = 1000
 
 # deal with early termination due to output being piped somewhere:
 import signal
@@ -232,8 +233,9 @@ def compare_these_size_matches(size_matches):
 			#filtered_list.sort(key=operator.itemgetter(2, 0)) # sort by filename first, then by timestamp
 	hashes = []
 	match_string = "  "
-	#remove_string = "rm -v"
-	remove_string = "rm"
+	#remove_string_prefix = "rm -v"
+	remove_string_prefix = "rm"
+	remove_string = remove_string_prefix
 	match_count = 0
 	for i in range(len(filtered_list)):
 		try:
@@ -250,11 +252,15 @@ def compare_these_size_matches(size_matches):
 				match_count += 1
 				total_potential_savings += filtered_list[i][0]
 				total_files_to_remove += 1
-				match = re.search("[~$]", filtered_list[i][2])
+				match = re.search("[~`$]", filtered_list[i][2])
 				if match:
 					remove_string += " '"  + filtered_list[i][2]  + "'"
 				else:
 					remove_string += " \"" + filtered_list[i][2]  + "\""
+				if MAX_COMMAND_LENGTH_SOFT<len(remove_string):
+					print(remove_string, file=script_file)
+					remove_string = remove_string_prefix
+					match_count = 0
 		if not matches:
 			hashes.append(myhash)
 			match_string = "  "
@@ -291,7 +297,7 @@ def compare_file_hashes():
 		compare_these_size_matches(size_matches)
 
 def show_potential_savings():
-	if total_potential_savings:
+	if total_files_to_remove:
 		print("")
 		print("total duplicate files = " + comma(total_files_to_remove))
 		print("total potential savings = " + comma(total_potential_savings) + " bytes")
@@ -301,6 +307,7 @@ def show_potential_savings():
 
 with open(script_filename, "a") as script_file:
 	print("#!/bin/bash -e", file=script_file)
+	make_executable(script_filename)
 	parse_arguments()
 	read_it_in()
 	find_size_matches()
@@ -308,5 +315,4 @@ with open(script_filename, "a") as script_file:
 	compare_file_hashes()
 	show_potential_savings()
 	print("", file=script_file)
-make_executable(script_filename)
 
