@@ -136,7 +136,7 @@ def find_size_matches():
 	if upper_file_size_limit:
 		string += " and below the upper limit (" + str(upper_file_size_limit) + ")"
 	print(string)
-	print("found " + str(size_matches) + " total size matches")
+	print("found " + str(size_matches) + " total potential duplicates")
 	for size in sizes_set:
 		sizes.append(size)
 	sizes.sort(reverse=True)
@@ -148,7 +148,8 @@ def find_number_of_different_sizes():
 		count += 1
 		#if 0==count%15:
 			#print("filesize: " + str(size))
-	print("found " + str(count) + " different sizes among the size matches")
+	print("found " + str(count) + " different sizes among the potential duplicates")
+	print("")
 
 def old_compare_file_hashes():
 	# this adds 11.0 s
@@ -200,19 +201,25 @@ def compare_these_size_matches(size_matches):
 		match_list = []
 		other_list = []
 		for i in range(len(filtered_list)):
+			immediate_match = False
 			for j in range(len(golden)):
 				match = re.search("^" + golden[j], filtered_list[i][2])
 				if match:
 					match_count += 1
+					immediate_match = True
 					match_list.append(filtered_list[i])
-					#print("match = " + filtered_list[i][2])
-				else:
-					other_list.append(filtered_list[i])
+					#print("match=" + filtered_list[i][2] + "  golden_string=" + golden[j])
+					continue
+			if not immediate_match:
+				other_list.append(filtered_list[i])
 		if match_count==1:
 			filtered_list = []
+			#print(str(match_list))
 			filtered_list.extend(match_list)
 			other_list.sort(key=operator.itemgetter(0, 2)) # sort by timestamp first, then by filename
+			#print(str(other_list))
 			filtered_list.extend(other_list)
+			#print(str(filtered_list))
 		elif match_count>1:
 			# need to special case this and keep going if the golden files aren't identical, since there still may be other duplicates
 			print("too many matches for golden string:")
@@ -260,7 +267,9 @@ def compare_file_hashes():
 	j = 0
 	size_matches = []
 	for i in range(len(files)):
+		#print("i,j:" + str(i) + "," + str(j))
 		if len(sizes)<=j:
+			#print("got to the end of the sizes list")
 			break
 		#print(str(files[i][0]) + "," + str(sizes[j]))
 		if sizes[j]<files[i][0]:
@@ -274,9 +283,12 @@ def compare_file_hashes():
 			size_matches = []
 			j += 1
 			if len(sizes)<=j:
+				#print("got to the end of the sizes list")
 				break
 			if files[i][0]==sizes[j]:
 				size_matches.append(files[i])
+	if len(size_matches):
+		compare_these_size_matches(size_matches)
 
 def show_potential_savings():
 	if total_potential_savings:
