@@ -19,7 +19,6 @@ golden = []
 chunk_size = 65536
 files = []
 sizes = []
-still_need_to_deal_with_these = []
 total_potential_savings = 0
 total_files_to_remove = 0
 script_filename = "script_to_remove_all_duplicates_that_are_not_golden.sh"
@@ -236,8 +235,8 @@ def compare_these_size_matches(size_matches):
 			print("too many matches for golden string:")
 			for each in match_list:
 				print(each[2])
-				still_need_to_deal_with_these.extend(match_list)
-				still_need_to_deal_with_these.extend(other_list)
+			write_out_list_of_files_that_still_need_to_be_dealt_with(match_list)
+			write_out_list_of_files_that_still_need_to_be_dealt_with(other_list)
 			print("")
 			return
 		else:
@@ -313,11 +312,10 @@ def show_potential_savings():
 		print("# total duplicate files = " + comma(total_files_to_remove), file=script_file)
 		print("# total potential savings = " + comma(total_potential_savings) + " bytes", file=script_file)
 
-def write_out_list_of_files_that_still_need_to_be_dealt_with():
-	with open(still_need_to_deal_with_these_filename, "a") as still_need_to_deal_with_these_file:
-		for each in still_need_to_deal_with_these:
-			string = each[1] + " " + str(each[0]).rjust(12) + " " + each[2]
-			print(string, file=still_need_to_deal_with_these_file)
+def write_out_list_of_files_that_still_need_to_be_dealt_with(mylist):
+	for each in mylist:
+		string = each[1] + " " + str(each[0]).rjust(12) + " " + each[2]
+		print(string, file=still_need_to_deal_with_these_file)
 
 with open(script_filename, "a") as script_file:
 	print("#!/bin/bash -e", file=script_file)
@@ -326,8 +324,8 @@ with open(script_filename, "a") as script_file:
 	read_it_in()
 	find_size_matches()
 	find_number_of_different_sizes()
-	compare_file_hashes()
+	with open(still_need_to_deal_with_these_filename, "a") as still_need_to_deal_with_these_file:
+		compare_file_hashes()
 	show_potential_savings()
-	write_out_list_of_files_that_still_need_to_be_dealt_with()
 	print("", file=script_file)
 
