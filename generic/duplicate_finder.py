@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2022-03-23 by mza
-# last updated 2022-04-05 by mza
+# last updated 2022-04-06 by mza
 
 # bash script version took 71m whereas this version takes 38s
 
@@ -11,6 +11,7 @@ import stat
 import re
 import hashlib
 import operator
+import shlex
 
 upper_file_size_limit = 0
 lower_file_size_limit = 0
@@ -18,9 +19,11 @@ golden = []
 chunk_size = 65536
 files = []
 sizes = []
+still_need_to_deal_with_these = []
 total_potential_savings = 0
 total_files_to_remove = 0
 script_filename = "script_to_remove_all_duplicates_that_are_not_golden.sh"
+still_need_to_deal_with_these_filename = "still-need-to-deal-with-these.lf-r"
 MAX_COMMAND_LENGTH_SOFT = 1000
 
 # deal with early termination due to output being piped somewhere:
@@ -183,6 +186,13 @@ def uniq(input_list):
 			#print(str(output_list))
 	return output_list
 
+def properly_escape_this_for_the_shell(input_string):
+	# https://stackoverflow.com/a/28120935/5728815
+	output_string = shlex.quote(input_string)
+	#print(input_string)
+	#print(output_string)
+	return output_string
+
 def compare_these_size_matches(size_matches):
 	global total_potential_savings
 	global total_files_to_remove
@@ -213,11 +223,11 @@ def compare_these_size_matches(size_matches):
 					continue
 			if not immediate_match:
 				other_list.append(filtered_list[i])
+		other_list.sort(key=operator.itemgetter(0, 2)) # sort by timestamp first, then by filename
 		if match_count==1:
 			filtered_list = []
 			#print(str(match_list))
 			filtered_list.extend(match_list)
-			other_list.sort(key=operator.itemgetter(0, 2)) # sort by timestamp first, then by filename
 			#print(str(other_list))
 			filtered_list.extend(other_list)
 			#print(str(filtered_list))
@@ -226,6 +236,8 @@ def compare_these_size_matches(size_matches):
 			print("too many matches for golden string:")
 			for each in match_list:
 				print(each[2])
+				still_need_to_deal_with_these.extend(match_list)
+				still_need_to_deal_with_these.extend(other_list)
 			print("")
 			return
 		else:
@@ -234,7 +246,7 @@ def compare_these_size_matches(size_matches):
 	hashes = []
 	match_string = "  "
 	#remove_string_prefix = "rm -v"
-	remove_string_prefix = "rm"
+	remove_string_prefix = "rm -f"
 	remove_string = remove_string_prefix
 	match_count = 0
 	for i in range(len(filtered_list)):
@@ -252,11 +264,7 @@ def compare_these_size_matches(size_matches):
 				match_count += 1
 				total_potential_savings += filtered_list[i][0]
 				total_files_to_remove += 1
-				match = re.search("[~`$]", filtered_list[i][2])
-				if match:
-					remove_string += " '"  + filtered_list[i][2]  + "'"
-				else:
-					remove_string += " \"" + filtered_list[i][2]  + "\""
+				remove_string += " " + properly_escape_this_for_the_shell(filtered_list[i][2])
 				if MAX_COMMAND_LENGTH_SOFT<len(remove_string):
 					print(remove_string, file=script_file)
 					remove_string = remove_string_prefix
@@ -305,6 +313,12 @@ def show_potential_savings():
 		print("# total duplicate files = " + comma(total_files_to_remove), file=script_file)
 		print("# total potential savings = " + comma(total_potential_savings) + " bytes", file=script_file)
 
+def write_out_list_of_files_that_still_need_to_be_dealt_with():
+	with open(still_need_to_deal_with_these_filename, "a") as still_need_to_deal_with_these_file:
+		for each in still_need_to_deal_with_these:
+			string = each[1] + " " + str(each[0]).rjust(12) + " " + each[2]
+			print(string, file=still_need_to_deal_with_these_file)
+
 with open(script_filename, "a") as script_file:
 	print("#!/bin/bash -e", file=script_file)
 	make_executable(script_filename)
@@ -314,5 +328,6 @@ with open(script_filename, "a") as script_file:
 	find_number_of_different_sizes()
 	compare_file_hashes()
 	show_potential_savings()
+	write_out_list_of_files_that_still_need_to_be_dealt_with()
 	print("", file=script_file)
 
