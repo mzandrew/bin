@@ -4,6 +4,9 @@
 # parts taken from duplicate_finder.py
 # last updated 2022-04-04 by mza
 
+# usage:
+# lf $(find -type d -name gerbers) | count_up_files.py
+
 import sys
 import re
 

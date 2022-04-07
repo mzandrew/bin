@@ -1,9 +1,28 @@
 #!/usr/bin/env python3
 
 # written 2022-03-23 by mza
-# last updated 2022-04-06 by mza
+# last updated 2022-04-07 by mza
 
-# bash script version took 71m whereas this version takes 38s
+# usage:
+# takes a stdin pipe that consists of file listing data in the following "lf-r" format:
+# 2022-02-22+13:21      3034824 ./libraries/usr.pd9
+# [-nkKmMgGtT] minimum size files to consider
+# [+nkKmMgGtT] maximum size files to consider
+# all other arguments are interpreted as "golden" prefixes (string must match
+# the first part of the input filenames exactly) and will cause the script to
+# avoid recommending deletion for anything that matches
+# outputs a script called "script_to_remove_all_duplicates_that_are_not_golden.sh" that should be inspected and then run
+# also outputs a file called "still-need-to-deal-with-these.lf-r" for when too many files of the same size matched golden strings
+
+# usage examples:
+# lf | duplicate_finder.py
+# cat lf-r | duplicate_finder.py
+# cat lf-r | duplicate_finder.py -1M +10M
+# cat lf-r | grep tar$ | duplicate_finder.py
+# lf ./mostly-good-stuff ./probably-duplicates | duplicate_finder.py ./mostly-good-stuff 
+
+script_filename = "script_to_remove_all_duplicates_that_are_not_golden.sh"
+still_need_to_deal_with_these_filename = "still-need-to-deal-with-these.lf-r"
 
 import sys
 import os
@@ -21,8 +40,6 @@ files = []
 sizes = []
 total_potential_savings = 0
 total_files_to_remove = 0
-script_filename = "script_to_remove_all_duplicates_that_are_not_golden.sh"
-still_need_to_deal_with_these_filename = "still-need-to-deal-with-these.lf-r"
 MAX_COMMAND_LENGTH_SOFT = 1000
 
 # deal with early termination due to output being piped somewhere:
