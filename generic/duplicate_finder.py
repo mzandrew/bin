@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2022-03-23 by mza
-# last updated 2022-04-07 by mza
+# last updated 2022-04-10 by mza
 
 # usage:
 # takes a stdin pipe that consists of file listing data in the following "lf-r" format:
@@ -12,7 +12,6 @@
 # the first part of the input filenames exactly) and will cause the script to
 # avoid recommending deletion for anything that matches
 # outputs a script called "script_to_remove_all_duplicates_that_are_not_golden.sh" that should be inspected and then run
-# also outputs a file called "still-need-to-deal-with-these.lf-r" for when too many files of the same size matched golden strings
 
 # usage examples:
 # lf | duplicate_finder.py
@@ -23,7 +22,6 @@
 
 script_filename = "script_to_remove_all_duplicates_that_are_not_golden.sh"
 potential_duplicates_filename = "potential-duplicates.lf-r-with-hashes"
-still_need_to_deal_with_these_filename = "still-need-to-deal-with-these.lf-r"
 
 import sys
 import os
@@ -214,6 +212,8 @@ def compare_these_size_matches(size_matches):
 	global total_potential_savings
 	global total_files_to_remove
 	filtered_list = []
+	match_list = []
+	other_list = []
 	for myfile in size_matches:
 		if os.path.isfile(myfile[2]): # skip the entry if the file is gone
 			filtered_list.append(myfile)
@@ -226,9 +226,8 @@ def compare_these_size_matches(size_matches):
 		#filtered_list.sort(key=operator.itemgetter(2, 0)) # sort by filename first, then by timestamp
 	else:
 		match_count = 0
-		match_list = []
-		other_list = []
 		for i in range(len(filtered_list)):
+			#print(str(i))
 			immediate_match = False
 			for j in range(len(golden)):
 				match = re.search("^" + golden[j], filtered_list[i][2])
@@ -237,10 +236,15 @@ def compare_these_size_matches(size_matches):
 					immediate_match = True
 					match_list.append(filtered_list[i])
 					#print("match=" + filtered_list[i][2] + "  golden_string=" + golden[j])
-					continue
+					break
 			if not immediate_match:
+				#print("other=" + filtered_list[i][2])
 				other_list.append(filtered_list[i])
 		other_list.sort(key=operator.itemgetter(0, 2)) # sort by timestamp first, then by filename
+		#print(str(len(match_list)))
+		#print(str(len(other_list)))
+		if 0==len(other_list): # give up if there's none left to remove
+			return
 		if match_count==1:
 			filtered_list = []
 			#print(str(match_list))
@@ -250,24 +254,30 @@ def compare_these_size_matches(size_matches):
 			#print(str(filtered_list))
 		elif match_count>1:
 			# need to special case this and keep going if the golden files aren't identical, since there still may be other duplicates
-			print("too many matches for golden string:")
-			for each in match_list:
-				print(each[2])
-			write_out_list_of_files_that_still_need_to_be_dealt_with(match_list)
-			write_out_list_of_files_that_still_need_to_be_dealt_with(other_list)
-			print("")
-			return
+			#print("too many matches for golden string:")
+			match_list.sort(key=operator.itemgetter(0, 2)) # sort by timestamp first, then by filename
+			#for each in match_list:
+				#print(each[2])
+			#write_out_list_of_files_that_still_need_to_be_dealt_with(match_list)
+			#write_out_list_of_files_that_still_need_to_be_dealt_with(other_list)
+			#print("")
+			#return
+			filtered_list = []
+			filtered_list.extend(match_list)
+			filtered_list.extend(other_list)
 		else:
 			filtered_list.sort(key=operator.itemgetter(0, 2)) # sort by timestamp first, then by filename
 			#filtered_list.sort(key=operator.itemgetter(2, 0)) # sort by filename first, then by timestamp
+	#print(str(len(filtered_list)))
 	hashes = []
 	match_string = "  "
 	#remove_string_prefix = "rm -v"
 	remove_string_prefix = "rm -f"
 	remove_string = remove_string_prefix
-	match_count = 0
+	#match_count = 0
 	items = {}
 	for i in range(len(filtered_list)):
+		#print(str(i))
 		try:
 			myhash = hashme(filtered_list[i][2])
 		except KeyboardInterrupt:
@@ -280,14 +290,15 @@ def compare_these_size_matches(size_matches):
 			if hashes[j]==myhash:
 				match_string = str(j).rjust(2)
 				matches = True
-				match_count += 1
-				total_potential_savings += filtered_list[i][0]
-				total_files_to_remove += 1
-				remove_string += " " + properly_escape_this_for_the_shell(filtered_list[i][2])
-				if MAX_COMMAND_LENGTH_SOFT<len(remove_string):
-					print(remove_string, file=script_file)
-					remove_string = remove_string_prefix
-					match_count = 0
+				#match_count += 1
+				if len(match_list)<=i:
+					total_potential_savings += filtered_list[i][0]
+					total_files_to_remove += 1
+					remove_string += " " + properly_escape_this_for_the_shell(filtered_list[i][2])
+					if MAX_COMMAND_LENGTH_SOFT<len(remove_string):
+						print(remove_string, file=script_file)
+						remove_string = remove_string_prefix
+						#match_count = 0
 		if not matches:
 			hashes.append(myhash)
 			match_string = "  "
@@ -297,12 +308,12 @@ def compare_these_size_matches(size_matches):
 		print(string)
 		if this_one_is_brand_new or matches:
 			items[myhash].append(string)
-	if match_count:
+	if len(remove_string_prefix)<len(remove_string):
 		print(remove_string, file=script_file)
-		for key in items.keys():
-			if 1<len(items[key]):
-				for string in items[key]:
-					write_out_list_of_potential_matches(string)
+	for key in items.keys():
+		if 1<len(items[key]):
+			for string in items[key]:
+				print(string, file=potential_duplicates_file)
 	print()
 
 def compare_file_hashes():
@@ -346,9 +357,6 @@ def write_out_list_of_files_that_still_need_to_be_dealt_with(mylist):
 		string = each[1] + " " + str(each[0]).rjust(12) + " " + each[2]
 		print(string, file=still_need_to_deal_with_these_file)
 
-def write_out_list_of_potential_matches(string):
-	print(string, file=potential_duplicates_file)
-
 with open(script_filename, "a") as script_file:
 	print("#!/bin/bash -e", file=script_file)
 	make_executable(script_filename)
@@ -356,9 +364,8 @@ with open(script_filename, "a") as script_file:
 	read_it_in()
 	find_size_matches()
 	find_number_of_different_sizes()
-	with open(still_need_to_deal_with_these_filename, "a") as still_need_to_deal_with_these_file:
-		with open(potential_duplicates_filename, "a") as potential_duplicates_file:
-			compare_file_hashes()
+	with open(potential_duplicates_filename, "a") as potential_duplicates_file:
+		compare_file_hashes()
 	show_potential_savings()
 	print("", file=script_file)
 
