@@ -351,6 +351,7 @@ with open(script_filename, "a") as script_file:
 		compare_file_hashes()
 	show_potential_savings()
 	print("", file=script_file)
-#print("consider removing empty directories with:")
+#print("consider removing empty files/directories with:")
+#print("find -type f -empty -exec rm \"{}\" \;")
 #print("find -depth -type d -empty -exec rmdir \"{}\" \;")
 
