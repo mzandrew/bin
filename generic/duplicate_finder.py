@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2022-03-23 by mza
-# last updated 2022-04-10 by mza
+# last updated 2022-04-11 by mza
 
 # usage:
 # takes a stdin pipe that consists of file listing data in the following "lf-r" format:
@@ -98,7 +98,6 @@ def min_max_or_golden(arg):
 		golden.append(arg)
 
 def read_it_in():
-	# reading in the list takes 3.6 s on a test file with 342201 lines
 	# with help from https://stackoverflow.com/a/45223675/5728815
 	count = 0
 	try:
@@ -108,15 +107,13 @@ def read_it_in():
 			count += 1
 			#(datestamp, filesize, name) = line.split(' ')
 			#datestamp, filesize, name = re.findall("[^ ]+", line)
-			# using re.search adds 2.3 s
 			match = re.search("([^ ]+)[ ]+([^ ]+)[ ]+(.*)", line)
 			if match:
 				datestamp = match.group(1)
 				filesize = int(match.group(2))
 				name = match.group(3).rstrip()
 				#filesize = int(filesize)
-				#files.append(line) # takes an extra 0.25 s to store in a list
-				files.append([filesize, datestamp, name]) # takes an extra 0.25 s to store in a list; takes an extra 1.1 s to store a list of lists
+				files.append([filesize, datestamp, name])
 			if 0==count%100000:
 				print("read " + str(count) + " lines")
 				#print(re.findall("[^ ]+", line))
@@ -129,7 +126,6 @@ def read_it_in():
 	files.sort(reverse=True)
 
 def find_size_matches():
-	# takes 0.3 s
 	count = 0
 	last_size = 0
 	size_matches = 0
@@ -162,7 +158,6 @@ def find_size_matches():
 
 def find_number_of_different_sizes():
 	count = 0
-	#for size in sorted(list(sizes), reverse=True):
 	for size in sizes:
 		count += 1
 		#if 0==count%15:
@@ -171,7 +166,6 @@ def find_number_of_different_sizes():
 	print("")
 
 def old_compare_file_hashes():
-	# this adds 11.0 s
 	for size in sizes:
 		size_matches = [ files[x] for x in range(len(files)) if files[x][0]==size ]
 		print(len(size_matches))
@@ -253,15 +247,7 @@ def compare_these_size_matches(size_matches):
 			filtered_list.extend(other_list)
 			#print(str(filtered_list))
 		elif match_count>1:
-			# need to special case this and keep going if the golden files aren't identical, since there still may be other duplicates
-			#print("too many matches for golden string:")
 			match_list.sort(key=operator.itemgetter(0, 2)) # sort by timestamp first, then by filename
-			#for each in match_list:
-				#print(each[2])
-			#write_out_list_of_files_that_still_need_to_be_dealt_with(match_list)
-			#write_out_list_of_files_that_still_need_to_be_dealt_with(other_list)
-			#print("")
-			#return
 			filtered_list = []
 			filtered_list.extend(match_list)
 			filtered_list.extend(other_list)
@@ -274,7 +260,6 @@ def compare_these_size_matches(size_matches):
 	#remove_string_prefix = "rm -v"
 	remove_string_prefix = "rm -f"
 	remove_string = remove_string_prefix
-	#match_count = 0
 	items = {}
 	for i in range(len(filtered_list)):
 		#print(str(i))
@@ -290,7 +275,6 @@ def compare_these_size_matches(size_matches):
 			if hashes[j]==myhash:
 				match_string = str(j).rjust(2)
 				matches = True
-				#match_count += 1
 				if len(match_list)<=i:
 					total_potential_savings += filtered_list[i][0]
 					total_files_to_remove += 1
@@ -298,7 +282,6 @@ def compare_these_size_matches(size_matches):
 					if MAX_COMMAND_LENGTH_SOFT<len(remove_string):
 						print(remove_string, file=script_file)
 						remove_string = remove_string_prefix
-						#match_count = 0
 		if not matches:
 			hashes.append(myhash)
 			match_string = "  "
