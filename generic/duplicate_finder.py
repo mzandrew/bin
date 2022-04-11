@@ -22,6 +22,7 @@
 # lf ./mostly-good-stuff ./probably-duplicates | duplicate_finder.py ./mostly-good-stuff 
 
 script_filename = "script_to_remove_all_duplicates_that_are_not_golden.sh"
+potential_duplicates_filename = "potential-duplicates.lf-r-with-hashes"
 still_need_to_deal_with_these_filename = "still-need-to-deal-with-these.lf-r"
 
 import sys
@@ -265,6 +266,7 @@ def compare_these_size_matches(size_matches):
 	remove_string_prefix = "rm -f"
 	remove_string = remove_string_prefix
 	match_count = 0
+	items = {}
 	for i in range(len(filtered_list)):
 		try:
 			myhash = hashme(filtered_list[i][2])
@@ -273,6 +275,7 @@ def compare_these_size_matches(size_matches):
 		except:
 			continue
 		matches = False
+		this_one_is_brand_new = False
 		for j in range(len(hashes)):
 			if hashes[j]==myhash:
 				match_string = str(j).rjust(2)
@@ -288,9 +291,18 @@ def compare_these_size_matches(size_matches):
 		if not matches:
 			hashes.append(myhash)
 			match_string = "  "
-		print(filtered_list[i][1] + " " + str(filtered_list[i][0]).rjust(12) + " " + myhash + " " + match_string + " " + filtered_list[i][2])
+			this_one_is_brand_new = True
+			items[myhash] = []
+		string = filtered_list[i][1] + " " + str(filtered_list[i][0]).rjust(12) + " " + myhash + " " + match_string + " " + filtered_list[i][2]
+		print(string)
+		if this_one_is_brand_new or matches:
+			items[myhash].append(string)
 	if match_count:
 		print(remove_string, file=script_file)
+		for key in items.keys():
+			if 1<len(items[key]):
+				for string in items[key]:
+					write_out_list_of_potential_matches(string)
 	print()
 
 def compare_file_hashes():
@@ -334,6 +346,9 @@ def write_out_list_of_files_that_still_need_to_be_dealt_with(mylist):
 		string = each[1] + " " + str(each[0]).rjust(12) + " " + each[2]
 		print(string, file=still_need_to_deal_with_these_file)
 
+def write_out_list_of_potential_matches(string):
+	print(string, file=potential_duplicates_file)
+
 with open(script_filename, "a") as script_file:
 	print("#!/bin/bash -e", file=script_file)
 	make_executable(script_filename)
@@ -342,7 +357,8 @@ with open(script_filename, "a") as script_file:
 	find_size_matches()
 	find_number_of_different_sizes()
 	with open(still_need_to_deal_with_these_filename, "a") as still_need_to_deal_with_these_file:
-		compare_file_hashes()
+		with open(potential_duplicates_filename, "a") as potential_duplicates_file:
+			compare_file_hashes()
 	show_potential_savings()
 	print("", file=script_file)
 
