@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+# last updated 2022-04-07 by mza
+
 # find -printf:
 # %u = user
 # %g = group
@@ -19,12 +21,14 @@ declare BASE="$DATESTAMP $SIZE %p"
 declare REGULAR_FILE_STRING=""
 declare REGULAR_DIR_STRING=""
 declare SYMLINK_STRING=""
+declare SORT_STRING=""
 
 # defaults:
 declare -i showdir=0
 declare -i showsymlink=0
 declare -i showusergroup=0
 declare -i showpermissions=0
+declare -i shouldsort=1
 
 if [ $# -gt 0 ]; then
 	for each; do
@@ -40,6 +44,9 @@ if [ $# -gt 0 ]; then
 			fi
 			if [ "${each}" != "${each/p/}" ]; then
 				showpermissions=1
+			fi
+			if [ "${each}" != "${each/s/}" ]; then
+				shouldsort=0
 			fi
 			shift
 		else
@@ -72,13 +79,18 @@ else
 	SYMLINK_STRING=""
 fi
 
+if [ $shouldsort -gt 0 ]; then
+	SORT_STRING='sort -k 1n,1'
+else
+	SORT_STRING='cat'
+fi
+# a second -k 3 should then sort by filename to break ties, but it doesn't seem to work
+
 # page 421 of "bash Cookbook" is helpful here
 find "${@}" \
 	-type d \( -name "proc" -o -name "dev" -o -name "\.svn" -o -name "\.git" -o -name "\@eaDir" \) -prune \
 	-o -type d -printf "$REGULAR_DIR_STRING" \
 	-o -type l -printf "$SYMLINK_STRING" \
 	-o         -printf "$REGULAR_FILE_STRING" \
-	| sort -k 1n,1
-
-# a second -k 3 should then sort by filename to break ties, but it doesn't seem to work
+	| $SORT_STRING
 
