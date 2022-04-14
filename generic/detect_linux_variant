@@ -64,7 +64,28 @@ export OS ARCH VER BITS KERNEL KERNEL_RELEASE_DATE
 
 # from https://kernelnewbies.org/LinuxVersions?action=raw
 
+#= 5.x =
+# * [[Linux_5.17]] Released Sun, 20 Mar 2022 (70 days)
+# * [[Linux_5.16]] Released Sun, 9 Jan 2022 (70 days)
+# * [[Linux_5.15]] Released Sun, 31 Oct 2021 (63 days)
+# * [[Linux_5.14]] Released Sun, 29 Aug 2021 (63 days)
+# * [[Linux_5.13]] Released Sun, 27 June 2021 (63 days)
+# * [[Linux_5.12]] Released Sun, 25 Apr 2021 (70 days)
+# * [[Linux_5.11]] Released Sun, 14 Feb 2021 (63 days)
+# * [[Linux_5.10]] Released Sun, 13 December 2020 (63 days)
+# * [[Linux_5.9]] Released Sun, 11 October 2020 (70 days)
+# * [[Linux_5.8]] Released Sun, 2 August 2020 (64 days)
+# * [[Linux_5.7]] Released Sun, 31 May 2020 (63 days)
+# * [[Linux_5.6]] Released Sun, 29 March 2020 (63 days)
+# * [[Linux_5.5]] Released Sun, 26 January 2020 (63 days)
+# * [[Linux_5.4]] Released Sun, 24 Nov 2019 (70 days)
+# * [[Linux_5.3]] Released Sun, 15 September 2019 (70 days)
+# * [[Linux_5.2]] Released Sun, 7 July 2019 (63 days)
+# * [[Linux_5.1]] Released Sun, 5 May 2019 (63 days)
+# * [[Linux_5.0]] Released Sun, 3 March 2019 (70 days)
+
 #= 4.x =
+# * [[Linux_4.20]] Released 23 December, 2018 (62 days)
 # * [[Linux_4.19]] Released 22 October, 2018 (71 days)
 # * [[Linux_4.18]] Released 12 August, 2018 (70 days)
 # * [[Linux_4.17]] Released 3 Jun, 2018 (63 days)
