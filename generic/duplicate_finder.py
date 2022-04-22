@@ -39,7 +39,6 @@ files = []
 sizes = []
 total_potential_savings = 0
 total_files_to_remove = 0
-MAX_COMMAND_LENGTH_SOFT = 1000
 
 # deal with early termination due to output being piped somewhere:
 import signal
@@ -271,7 +270,6 @@ def compare_these_size_matches(size_matches):
 	match_string = "  "
 	#remove_string_prefix = "rm -v"
 	remove_string_prefix = "rm -f"
-	remove_string = remove_string_prefix
 	items = {}
 	for i in range(len(filtered_list)):
 		#print(str(i))
@@ -290,10 +288,8 @@ def compare_these_size_matches(size_matches):
 				if len(match_list)<=i:
 					total_potential_savings += filtered_list[i][0]
 					total_files_to_remove += 1
-					remove_string += " " + properly_escape_this_for_the_shell(filtered_list[i][2])
-					if MAX_COMMAND_LENGTH_SOFT<len(remove_string):
-						print(remove_string, file=script_file)
-						remove_string = remove_string_prefix
+					remove_string = remove_string_prefix + " " + properly_escape_this_for_the_shell(filtered_list[i][2])
+					print(remove_string, file=script_file)
 		if not matches:
 			hashes.append(myhash)
 			match_string = "  "
@@ -303,12 +299,12 @@ def compare_these_size_matches(size_matches):
 		print(string)
 		if this_one_is_brand_new or matches:
 			items[myhash].append(string)
-	if len(remove_string_prefix)<len(remove_string):
-		print(remove_string, file=script_file)
 	for key in items.keys():
 		if 1<len(items[key]):
 			for string in items[key]:
 				print(string, file=potential_duplicates_file)
+	script_file.flush()
+	potential_duplicates_file.flush()
 	print()
 
 def compare_file_hashes():
