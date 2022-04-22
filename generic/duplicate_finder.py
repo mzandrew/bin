@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2022-03-23 by mza
-# last updated 2022-04-11 by mza
+# last updated 2022-04-21 by mza
 
 # usage:
 # takes a stdin pipe that consists of file listing data in the following "lf-r" format:
@@ -97,10 +97,22 @@ def min_max_or_golden(arg):
 	else:
 		golden.append(arg)
 
+# https://stackoverflow.com/a/56388265/5728815
+from chardet import detect
+# get file encoding type
+def get_encoding_type(file):
+	with open(file, 'rb') as f:
+		rawdata = f.read()
+	return detect(rawdata)['encoding']
+
 def read_it_in():
 	# with help from https://stackoverflow.com/a/45223675/5728815
 	count = 0
 	try:
+		#sys.stdin.reconfigure(encoding='Windows-1254')
+		#sys.stdin.reconfigure(encoding='cp1252')
+		#sys.stdin.reconfigure(encoding='utf-8')
+		sys.stdin.reconfigure(encoding='iso-8859-1')
 		for line in iter(sys.stdin.readline, b''):
 			if line=='':
 				break
