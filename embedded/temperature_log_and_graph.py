@@ -45,7 +45,7 @@ if 1:
 	feed = "heater"
 	offset_t = 25.0 # min temp we care to plot
 	max_t = 75.0 # max temp we care to plot
-	N = 5*60 # number of samples to average over
+	N = 1*60 # number of samples to average over
 	delay = 1.0 # number of seconds between samples
 	should_use_airlift = True
 	should_use_dotstar_matrix = False
