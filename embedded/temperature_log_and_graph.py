@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-04-21 by mza
-# last updated 2021-12-29 by mza
+# last updated 2022-04-23 by mza
 
 # to install on a circuitpython device:
 # rsync -r *.py /media/circuitpython/
@@ -90,7 +90,7 @@ else:
 temperature_sensors = []
 header_string = "heater"
 temperature = 0
-dir = "/logs"
+dirname = "/logs"
 
 MAX_COLUMNS_TO_PLOT = 128
 temperatures_to_plot = [ -40.0 for a in range(MAX_COLUMNS_TO_PLOT) ]
@@ -281,7 +281,7 @@ def loop():
 		update_temperature_display_on_alphanumeric_backpack(temperature)
 	average_temperature = temperature_accumulator/N
 	print("posting " + str(average_temperature))
-	airlift.post_data("water-heater", average_temperature)
+	airlift.post_data(feed, average_temperature)
 	temperatures_to_plot.insert(0, average_temperature)
 	temperatures_to_plot.pop()
 	update_temperature_display_on_dotstar_matrix()
@@ -346,7 +346,8 @@ def main():
 	spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 	global airlift_is_available
 	if should_use_airlift:
-		airlift_is_available = airlift.setup_airlift("water-heater", spi, board.D13, board.D11, board.D12)
+		airlift_is_available = airlift.setup_airlift(feed, spi, board.D13, board.D11, board.D12)
+		#airlift_is_available = airlift.setup_airlift(feed, spi, board.ESP_CS, board.ESP_BUSY, board.ESP_RESET)
 	else:
 		airlift_is_available = False
 	if airlift_is_available:
@@ -356,16 +357,17 @@ def main():
 		global temperatures_to_plot
 		temperatures_to_plot = airlift.get_all_data(MAX_COLUMNS_TO_PLOT)
 	global sdcard_is_available
+	global dirname
 	if should_use_sdcard:
-		sdcard_is_available = setup_sdcard_for_logging_data(spi, dir)
+		sdcard_is_available = microsd_adafruit.setup_sdcard_for_logging_data(spi, board.D5, dirname)
+		#sdcard_is_available = microsd_adafruit.setup_sdcard_for_logging_data(spi, board.SD_CS, dirname)
 	else:
 		sdcard_is_available = False
-	if not sdcard_is_available:
-		dir = "/"
+		dirname = "/"
 	if RTC_is_available:
-		create_new_logfile_with_string_embedded(dir, "pct2075", pcf8523_adafruit.get_timestring2())
+		create_new_logfile_with_string_embedded(dirname, "pct2075", pcf8523_adafruit.get_timestring2())
 	else:
-		create_new_logfile_with_string_embedded(dir, "pct2075")
+		create_new_logfile_with_string_embedded(dirname, "pct2075")
 	print_header()
 	while test_if_present():
 		loop()
