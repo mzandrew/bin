@@ -45,7 +45,7 @@ def setup_i2c_oled_display_sh1107(i2c, address):
 
 def setup_builtin_lcd_hx8357():
 	global display
-	print("attempting to configure built-in hx8357 lcd...")
+	#print("attempting to configure built-in hx8357 lcd...")
 	try:
 		display = board.DISPLAY
 	except:
@@ -56,7 +56,7 @@ def setup_builtin_lcd_hx8357():
 #	except:
 #		print("can't initialize pwm for display backlight")
 	board.DISPLAY.brightness = 0.75
-	print("complete")
+	#print("complete")
 	return True
 
 def clear_display_on_oled_ssd1327():
@@ -92,6 +92,61 @@ def clear_display_on_oled_sh1107():
 			bitmap[x,y] = 0
 	display.show(group)
 	display.refresh()
+
+def setup_for_one_plot():
+	global display
+	display = board.DISPLAY
+	display.auto_refresh = False
+	padding_size = 16
+	tile_width = display.width
+	tile_height = display.height
+	global plot_width
+	global plot_height
+	plot_width = tile_width - padding_size - 1
+	plot_height = tile_height - padding_size - 1
+	palette = displayio.Palette(8)
+	palette[0] = 0x000000
+	palette[1] = 0xffffff
+	palette[2] = 0xff0000
+	palette[3] = 0x00ff00
+	palette[4] = 0x2f2fff
+	palette[5] = 0xffff00
+	palette[6] = 0x00efbf
+	palette[7] = 0xff00ff
+	palette2 = displayio.Palette(2)
+	for i in range(len(palette2)):
+		palette2[i] = palette[i]
+	palette8 = displayio.Palette(8)
+	for i in range(len(palette8)):
+		palette8[i] = palette[i]
+	axes_bitmap = displayio.Bitmap(tile_width, tile_height, 1)
+	for i in range(padding_size//2, tile_width-padding_size//2):
+		axes_bitmap[i,padding_size//2] = 1
+		axes_bitmap[i,tile_height-padding_size//2] = 1
+	for j in range(padding_size//2, tile_height-padding_size//2):
+		axes_bitmap[padding_size//2,j] = 1
+		axes_bitmap[tile_width-padding_size//2,j] = 1
+	axes_group = displayio.Group()
+	axes = displayio.TileGrid(axes_bitmap, pixel_shader=palette2, width=2, height=2, tile_width=tile_width, tile_height=tile_height, default_tile=0)
+	axes_group.append(axes)
+	global plot_bitmap
+	plot_bitmap = []
+	for i in range(1):
+		plot_bitmap.append(displayio.Bitmap(plot_width, plot_height, 8))
+	global plot
+	plot = []
+	for i in range(1):
+		plot.append(displayio.TileGrid(plot_bitmap[i], pixel_shader=palette8, width=1, height=1, tile_width=plot_width, tile_height=plot_height, default_tile=0))
+	plot_group = displayio.Group()
+	for i in range(1):
+		plot_group.append(plot[i])
+	global group
+	group = displayio.Group()
+	group.append(axes_group)
+	group.append(plot_group)
+	plot[0].x = padding_size//2 + 1
+	plot[0].y = padding_size//2 + 1
+	display.show(group)
 
 def setup_for_four_plots():
 	global display
@@ -165,6 +220,9 @@ def setup_for_four_plots():
 	plot[3].y = tile_height + padding_size//2 + 1
 	display.show(group)
 
+def refresh():
+	display.refresh()
+
 def update_four_plots(loop_counter):
 	for x in range(plot_width):
 		yy = int(plot_height/2-plot_height/2*math.sin(2. * x * math.pi / plot_width))
@@ -182,8 +240,15 @@ def update_plot(plot_number, arrays_to_plot):
 			plot_bitmap[plot_number][x,y] = 0
 			for n in range(len(arrays_to_plot)):
 				yn = int(0. + plot_height - 1. * plot_height * arrays_to_plot[n][x])
+				doit = False
 				if y==yn:
-					plot_bitmap[plot_number][x,y] = n + 2
+					doit = True
+				elif 0==y and yn<0:
+					doit = True
+				elif plot_height-1==y and plot_height<yn:
+					doit = True
+				if doit:
+					plot_bitmap[plot_number][x,y] = n + 2 # first two indices are black and white
 	display.refresh()
 
 def update_temperature_display_on_oled_ssd1327(temperatures_to_plot):
@@ -252,10 +317,10 @@ def setup_ili9341(spi, tft_cs, tft_dc):
 	except:
 		print("unable to find adafruit_ili9341 library")
 		return False
-	try:
-		displayio.release_displays()
-	except:
-		pass
+#	try:
+#		displayio.release_displays()
+#	except:
+#		pass
 	#tft_cs = board.D9
 	#tft_dc = board.D10 # conflicts with adalogger cs
 	#tft_reset = board.D6
@@ -278,10 +343,10 @@ def setup_st7789(spi, tft_cs, tft_dc, tft_reset):
 	except:
 		print("unable to find adafruit_st7789 library")
 		return False
-	try:
-		displayio.release_displays()
-	except:
-		pass
+#	try:
+#		displayio.release_displays()
+#	except:
+#		pass
 	try:
 		display_bus = displayio.FourWire(spi, chip_select=tft_cs, command=tft_dc, reset=tft_reset)
 		#display_bus = displayio.FourWire(spi, chip_select=tft_cs, command=tft_dc)
