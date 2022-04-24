@@ -1,12 +1,19 @@
 # written 2022-01-17 by mza
 # based on outdoor_temp_hum.py
-# last updated 2022-01-18 by mza
+# last updated 2022-04-24 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
 # cp -a indoor-hum-temp-pres.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
-# rsync -r adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
+# rsync -r adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
+
+MIN_TEMP_TO_PLOT = 10.0
+MAX_TEMP_TO_PLOT = 80.0
+MIN_HUM_TO_PLOT = 40.0
+MAX_HUM_TO_PLOT = 100.0
+MIN_PRES_TO_PLOT = 0.997
+MAX_PRES_TO_PLOT = 1.008
 
 header_string = "date/time"
 mydir = "/logs"
@@ -22,6 +29,7 @@ if 1: # bme680 temp/hum/pressure/alt/gas on feather tft esp32-s2
 	gps_delay_in_ms = 2000
 	delay_between_posting_and_next_acquisition = 1.0
 	use_built_in_wifi = True
+	should_use_display = True
 
 import sys
 import time
@@ -85,22 +93,29 @@ def main():
 	#i2c.unlock()
 	#info(string + str(i2c_list))
 	global spi
-	spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+	try:
+		spi = board.SPI
+	except:
+		spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO) # this line stops the builtin from working
 	display_is_available = False
-	if board.DISPLAY:
-		display_is_available = True
-		display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.5)
-		info("display is available (1)")
-	elif display_adafruit.setup_st7789(spi, board.TFT_DC, board.TFT_CS, board.TFT_RESET):
-#	if display_adafruit.setup_st7789(spi, board.TFT_DC, board.TFT_CS, board.TFT_RESET):
-		display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.95)
-		display_is_available = True
-		info("display is available (2)")
-	else:
-		warning("display is not available")
+	if should_use_display:
+		if board.DISPLAY:
+			display_is_available = True
+			board.DISPLAY.brightness = 0.75
+			#display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.5)
+			info("display is available (1)")
+		elif display_adafruit.setup_st7789(spi, board.TFT_DC, board.TFT_CS, board.TFT_RESET):
+#		if display_adafruit.setup_st7789(spi, board.TFT_DC, board.TFT_CS, board.TFT_RESET):
+			display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.95)
+			display_is_available = True
+			info("display is available (2)")
+		else:
+			warning("display is not available")
 	if display_is_available:
-		display_adafruit.test_st7789()
-		info("done with st7789 test")
+		display_adafruit.setup_for_one_plot()
+		display_adafruit.refresh()
+		#display_adafruit.test_st7789()
+		#info("done with st7789 test")
 	#global uart
 	#uart = busio.UART(board.TX, board.RX, baudrate=9600, timeout=10)
 	prohibited_addresses = []
@@ -189,6 +204,9 @@ def main():
 
 def loop():
 	global i
+	temperatures_to_plot = [ -40.0 for i in range(display_adafruit.plot_width) ]
+	humidities_to_plot   = [ -40.0 for i in range(display_adafruit.plot_width) ]
+	pressures_to_plot    = [ -40.0 for i in range(display_adafruit.plot_width) ]
 	while bme680_adafruit.test_if_present():
 		neopixel_adafruit.set_color(255, 0, 0)
 		if use_pwm_status_leds:
@@ -212,11 +230,21 @@ def loop():
 		if 0==i%N:
 			if bme680_is_available:
 				bme680_adafruit.show_average_values()
+				temperatures_to_plot.append((bme680_adafruit.get_average_values()[0] - MIN_TEMP_TO_PLOT) / (MAX_TEMP_TO_PLOT-MIN_TEMP_TO_PLOT))
+				temperatures_to_plot.pop(0)
+				humidities_to_plot.append(  (bme680_adafruit.get_average_values()[1] - MIN_HUM_TO_PLOT)  / (MAX_HUM_TO_PLOT-MIN_HUM_TO_PLOT))
+				humidities_to_plot.pop(0)
+				pressures_to_plot.append(   (bme680_adafruit.get_average_values()[2] - MIN_PRES_TO_PLOT) / (MAX_PRES_TO_PLOT-MIN_PRES_TO_PLOT))
+				pressures_to_plot.pop(0)
+				#print(str(temperatures_to_plot))
+				#print(str(humidities_to_plot))
+				#print(str(pressures_to_plot))
+				display_adafruit.update_plot(0, [temperatures_to_plot, humidities_to_plot, pressures_to_plot])
 				if airlift_is_available:
 					try:
 						airlift.post_data("inside-temp", bme680_adafruit.get_average_values()[0])
-						airlift.post_data("inside-hum", bme680_adafruit.get_average_values()[1])
-						airlift.post_data("pressure", bme680_adafruit.get_average_values()[2])
+						airlift.post_data("inside-hum",  bme680_adafruit.get_average_values()[1])
+						airlift.post_data("pressure",    bme680_adafruit.get_average_values()[2])
 						#airlift.post_data("indoor-altitude", bme680_adafruit.get_average_values()[3])
 						#airlift.post_data("indoor-gas", bme680_adafruit.get_average_values()[4])
 					except:
