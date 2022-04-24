@@ -276,8 +276,26 @@ def loop():
 #		if oled_display_is_available and should_plot_temperatures:
 #			display_adafruit.update_temperature_display_on_oled_sh1107(offset_t, max_t, temperatures_to_plot)
 	print("loop(" + str(loop_counter) + ")")
-	display_adafruit.update_four_plots(loop_counter)
-	time.sleep(0.1)
+	#display_adafruit.update_four_plots(loop_counter)
+	time.sleep(1.0)
+	lcm4 = loop_counter%4
+	if 0==lcm4:
+		myarray_a = [ -0.15 + 1.7 * i/display_adafruit.plot_width for i in range(display_adafruit.plot_width) ]
+		myarray_b = [ 1.15  - 2.1 * i/display_adafruit.plot_width for i in range(display_adafruit.plot_width) ]
+		display_adafruit.update_plot(0, [myarray_a, myarray_b])
+	elif 1==lcm4:
+		myarray_a = [ 0.10 + 0.5*i/display_adafruit.plot_height for i in range(display_adafruit.plot_width) ]
+		myarray_b = [ 0.15 + 0.4*i/display_adafruit.plot_width for i in range(display_adafruit.plot_width) ]
+		myarray_c = [ 0.19 + 0.3*i/display_adafruit.plot_height for i in range(display_adafruit.plot_width) ]
+		myarray_d = [ 0.12 + 0.2*i/display_adafruit.plot_width for i in range(display_adafruit.plot_width) ]
+		display_adafruit.update_plot(1, [myarray_a, myarray_b, myarray_c, myarray_d])
+	elif 2==lcm4:
+		myarray_a = [ 0.1 + 0.5*i/display_adafruit.plot_height for i in range(display_adafruit.plot_width) ]
+		myarray_b = [ 0.15 + 0.4*i/display_adafruit.plot_width for i in range(display_adafruit.plot_width) ]
+		display_adafruit.update_plot(2, [myarray_a, myarray_b])
+	else:
+		myarray_c = [ 0.55 - 0.1 * i/display_adafruit.plot_height for i in range(display_adafruit.plot_width) ]
+		display_adafruit.update_plot(3, [myarray_c])
 	flush()
 
 def main():

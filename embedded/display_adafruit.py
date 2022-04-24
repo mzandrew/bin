@@ -175,6 +175,17 @@ def update_four_plots(loop_counter):
 				plot_bitmap[loop_counter%4][x,y] = 0
 	display.refresh()
 
+# arrays to plot should be plot_width elements deep and go from 0.0 to 1.0
+def update_plot(plot_number, arrays_to_plot):
+	for x in range(plot_width):
+		for y in range(plot_height):
+			plot_bitmap[plot_number][x,y] = 0
+			for n in range(len(arrays_to_plot)):
+				yn = int(0. + plot_height - 1. * plot_height * arrays_to_plot[n][x])
+				if y==yn:
+					plot_bitmap[plot_number][x,y] = n + 2
+	display.refresh()
+
 def update_temperature_display_on_oled_ssd1327(temperatures_to_plot):
 #	if not oled_display_is_available:
 #		return
