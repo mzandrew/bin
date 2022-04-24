@@ -1,6 +1,6 @@
 # written 2019-01-07 by mza to support python2.4-era SL5.11 on COPPERs
 # updated 2019-03-08 to write to logfiles
-# last updated 2021-09-12 by mza
+# last updated 2022-04-23 by mza
 
 import sys # stderr.write()
 import time # strftime
@@ -71,6 +71,7 @@ def create_new_logfile_with_string_embedded(dirname, basename, timestring=""):
 			filename = dirname + "/" + basename + ".log"
 		else:
 			filename = dirname + "/" + timestring + "." + basename + ".log"
+		info("logfile filename: " + filename)
 		logfile = open(filename, "a")
 		logfile_is_open = 1
 		debug("Writing output to logfile: %s" % filename)
