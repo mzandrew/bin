@@ -363,7 +363,7 @@ def main():
 		#sdcard_is_available = microsd_adafruit.setup_sdcard_for_logging_data(spi, board.SD_CS, dirname)
 	else:
 		sdcard_is_available = False
-		dirname = "/"
+		dirname = ""
 	if RTC_is_available:
 		create_new_logfile_with_string_embedded(dirname, "pct2075", pcf8523_adafruit.get_timestring2())
 	else:
