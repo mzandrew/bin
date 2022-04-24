@@ -4,7 +4,24 @@
 import sys
 import time
 import atexit
+import supervisor
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+
+def register_atexit_handler():
+	atexit.register(reset)
+
+def keyboard_interrupt_exception_handler():
+	info("caught ctrl-c")
+	flush()
+	atexit.unregister(reset)
+	sys.exit(0)
+
+def reload_exception_handler():
+	info("reload exception")
+	flush()
+	atexit.unregister(reset)
+	time.sleep(1)
+	supervisor.reload()
 
 def reset():
 	try:
