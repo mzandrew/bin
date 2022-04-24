@@ -1,5 +1,6 @@
-# last updated 2022-01-18 by mza
+# last updated 2022-04-24 by mza
 
+import math
 import board
 import displayio
 import terminalio
@@ -42,6 +43,22 @@ def setup_i2c_oled_display_sh1107(i2c, address):
 		return False
 	return True
 
+def setup_builtin_lcd_hx8357():
+	global display
+	print("attempting to configure built-in hx8357 lcd...")
+	try:
+		display = board.DISPLAY
+	except:
+		print("can't initialize hx8357 display")
+		return False
+#	try:
+#		setup_pwm_backlight(backlight_pin, 1.0)
+#	except:
+#		print("can't initialize pwm for display backlight")
+	board.DISPLAY.brightness = 0.75
+	print("complete")
+	return True
+
 def clear_display_on_oled_ssd1327():
 #	if not oled_display_is_available:
 #		return
@@ -74,6 +91,88 @@ def clear_display_on_oled_sh1107():
 		for y in range(64):
 			bitmap[x,y] = 0
 	display.show(group)
+	display.refresh()
+
+def setup_for_four_plots():
+	global display
+	display = board.DISPLAY
+	display.auto_refresh = False
+	padding_size = 16
+	tile_width = display.width//2
+	tile_height = display.height//2
+	global plot_width
+	global plot_height
+	plot_width = tile_width - padding_size - 1
+	plot_height = tile_height - padding_size - 1
+	palette = displayio.Palette(8)
+	palette[0] = 0x000000
+	palette[1] = 0xffffff
+	palette[2] = 0xff0000
+	palette[3] = 0x00ff00
+	palette[4] = 0x2f2fff
+	palette[5] = 0xffff00
+	palette[6] = 0x00efbf
+	palette[7] = 0xff00ff
+	palette2 = displayio.Palette(2)
+	for i in range(len(palette2)):
+		palette2[i] = palette[i]
+	palette8 = displayio.Palette(8)
+	for i in range(len(palette8)):
+		palette8[i] = palette[i]
+	axes_bitmap = displayio.Bitmap(tile_width, tile_height, 1)
+	for i in range(padding_size//2, tile_width-padding_size//2):
+		axes_bitmap[i,padding_size//2] = 1
+		axes_bitmap[i,tile_height-padding_size//2] = 1
+	for j in range(padding_size//2, tile_height-padding_size//2):
+		axes_bitmap[padding_size//2,j] = 1
+		axes_bitmap[tile_width-padding_size//2,j] = 1
+	axes_group = displayio.Group()
+	axes = displayio.TileGrid(axes_bitmap, pixel_shader=palette2, width=2, height=2, tile_width=tile_width, tile_height=tile_height, default_tile=0)
+	axes_group.append(axes)
+	global plot_bitmap
+	plot_bitmap = []
+	for i in range(4):
+		plot_bitmap.append(displayio.Bitmap(plot_width, plot_height, 8))
+#	for i in range(tile_width//2):
+#		thickness = tile_height//12
+#		for j in range(thickness):
+#			plot_bitmap[i,thickness*0+j] = 0
+#			plot_bitmap[i,thickness*1+j] = 1
+#			plot_bitmap[i,thickness*2+j] = 2
+#			plot_bitmap[i,thickness*3+j] = 3
+#			plot_bitmap[i,thickness*4+j] = 4
+#			plot_bitmap[i,thickness*5+j] = 5
+#			plot_bitmap[i,thickness*6+j] = 6
+#			plot_bitmap[i,thickness*7+j] = 7
+	global plot
+	plot = []
+	for i in range(4):
+		plot.append(displayio.TileGrid(plot_bitmap[i], pixel_shader=palette8, width=1, height=1, tile_width=plot_width, tile_height=plot_height, default_tile=0))
+	plot_group = displayio.Group()
+	for i in range(4):
+		plot_group.append(plot[i])
+	global group
+	group = displayio.Group()
+	group.append(axes_group)
+	group.append(plot_group)
+	plot[0].x = padding_size//2 + 1
+	plot[0].y = padding_size//2 + 1
+	plot[1].x = tile_width + padding_size//2 + 1
+	plot[1].y = padding_size//2 + 1
+	plot[2].x = padding_size//2 + 1
+	plot[2].y = tile_height + padding_size//2 + 1
+	plot[3].x = tile_width + padding_size//2 + 1
+	plot[3].y = tile_height + padding_size//2 + 1
+	display.show(group)
+
+def update_four_plots(loop_counter):
+	for x in range(plot_width):
+		yy = int(plot_height/2-plot_height/2*math.sin(2. * x * math.pi / plot_width))
+		for y in range(plot_height):
+			if yy==y:
+				plot_bitmap[loop_counter%4][x,y] = 1 + loop_counter%7
+			else:
+				plot_bitmap[loop_counter%4][x,y] = 0
 	display.refresh()
 
 def update_temperature_display_on_oled_ssd1327(temperatures_to_plot):
@@ -162,7 +261,7 @@ def setup_ili9341(spi, tft_cs, tft_dc):
 
 def setup_st7789(spi, tft_cs, tft_dc, tft_reset):
 	global display
-	global backlight_pwm
+	#global backlight_pwm
 	try:
 		import adafruit_st7789
 	except:
@@ -184,11 +283,14 @@ def setup_st7789(spi, tft_cs, tft_dc, tft_reset):
 def setup_pwm_backlight(backlight_pin, backlight_brightness=0.95):
 	try:
 		import pwmio
-		PWM_MAX = 65535
+	except:
+		warning("can't find library pwmio; can't control backlight brightness")
+	PWM_MAX = 65535
+	try:
 		backlight_pwm = pwmio.PWMOut(backlight_pin, frequency=5000, duty_cycle=PWM_MAX)
 		backlight_pwm.duty_cycle = int(backlight_brightness * PWM_MAX)
 	except:
-		warning("can't find library pwmio; can't control backlight brightness")
+		warning("can't initialize display backlight pwm pin")
 
 def test_st7789():
 	try:
