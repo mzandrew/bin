@@ -45,7 +45,7 @@ if 1:
 	feed = "heater"
 	offset_t = 25.0 # min temp we care to plot
 	max_t = 75.0 # max temp we care to plot
-	N = 5*60 # number of samples to average over
+	N = 1*60 # number of samples to average over
 	delay = 1.0 # number of seconds between samples
 	should_use_airlift = True
 	should_use_dotstar_matrix = False
@@ -363,7 +363,7 @@ def main():
 		#sdcard_is_available = microsd_adafruit.setup_sdcard_for_logging_data(spi, board.SD_CS, dirname)
 	else:
 		sdcard_is_available = False
-		dirname = "/"
+		dirname = ""
 	if RTC_is_available:
 		create_new_logfile_with_string_embedded(dirname, "pct2075", pcf8523_adafruit.get_timestring2())
 	else:
