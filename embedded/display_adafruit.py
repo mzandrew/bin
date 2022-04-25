@@ -178,7 +178,7 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 				text_width = text_area.bounding_box[2] * FONT_SCALE + FONT_GAP
 				running_text_width += text_width
 				text_areas.append(text_area)
-		y = (m//2)*tile_height + tile_height - FONT_SCALE * 5
+		y = (m//2)*tile_height + tile_height - FONT_SCALE * 5 - 2
 		running_text_width -= text_areas[0].bounding_box[2] * FONT_SCALE + FONT_GAP
 		for text_area in text_areas:
 			text_width = text_area.bounding_box[2] * FONT_SCALE
