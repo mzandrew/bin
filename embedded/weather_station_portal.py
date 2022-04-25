@@ -2,7 +2,7 @@
 
 # written 2022-04-23 by mza
 # based on temperature_log_and_graph.py
-# last updated 2022-04-24 by mza
+# last updated 2022-04-25 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/mza/CIRCUITPY/; cp -a weather_station_portal.py /media/mza/CIRCUITPY/code.py ; sync
@@ -32,117 +32,98 @@ import display_adafruit
 
 if 1:
 	feed = "scoopy-boops"
-	offset_t = 25.0 # min temp we care to plot
-	max_t = 75.0 # max temp we care to plot
-	N = 5*60 # number of samples to average over
-	delay = 1.0 # number of seconds between samples
-	#should_use_airlift = True
-	should_use_airlift = False
+	delay = 15.0 # number of seconds between updates
+	should_use_airlift = True
+	#should_use_airlift = False
 	should_use_hx8357_lcd = True
-	should_use_sdcard = True
+	#should_use_sdcard = True
+	should_use_sdcard = False
 	should_use_RTC = False
-	should_plot_temperatures = True
 
-temperature_sensors = []
-header_string = "scoopy-boops"
-temperature = 0
+array_size = 215 # display_adafruit.plot_width
+ds18b20 = [ -40.0 for i in range(array_size) ]
+temperature_outdoor = [ -40.0 for i in range(array_size) ]
+temperature_indoor = [ -40.0 for i in range(array_size) ]
+heater = [ -40.0 for i in range(array_size) ]
+sht31d = [ -40.0 for i in range(array_size) ]
+humidity_outdoor = [ -40.0 for i in range(array_size) ]
+humidity_indoor = [ -40.0 for i in range(array_size) ]
+pressure = [ -40.0 for i in range(array_size) ]
+particle0p3 = [ -40.0 for i in range(array_size) ]
+particle0p5 = [ -40.0 for i in range(array_size) ]
+particle1p0 = [ -40.0 for i in range(array_size) ]
+particle2p5 = [ -40.0 for i in range(array_size) ]
+particle5p0 = [ -40.0 for i in range(array_size) ]
+
+MIN_TEMP_TO_PLOT = 10.0
+MAX_TEMP_TO_PLOT = 80.0
+MIN_HUM_TO_PLOT = 40.0
+MAX_HUM_TO_PLOT = 100.0
+MIN_PRES_TO_PLOT = 0.997
+MAX_PRES_TO_PLOT = 1.008
+MIN_PARTICLE_COUNT_TO_PLOT = 0.0
+MAX_PARTICLE_COUNT_TO_PLOT = 350.0
+
 dirname = "/logs"
 loop_counter = 0
-MAX_COLUMNS_TO_PLOT = 128
-#temperatures_to_plot = [ -40.0 for a in range(MAX_COLUMNS_TO_PLOT) ]
-
-def setup_temperature_sensor(i2c, address):
-	#i2c.deinit()
-	global temperature_sensors
-	try:
-		pct = adafruit_pct2075.PCT2075(i2c, address=address)
-		pct.temperature
-		temperature_sensors.append(pct)
-	except:
-		raise
-	return 1
-
-def setup_temperature_sensors(i2c):
-	global header_string
-	count = 0
-	#for address in [0x37, 0x36, 0x35, 0x2f, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28, 0x77, 0x76, 0x75, 0x74, 0x73, 0x72, 0x71, 0x70, 0x4f, 0x4e, 0x4d, 0x4c, 0x4b, 0x4a, 0x49, 0x48]:
-	for address in [0x37, 0x36, 0x35, 0x2f, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28, 0x76, 0x75, 0x74, 0x73, 0x72, 0x4f, 0x4e, 0x4d, 0x4c, 0x4b, 0x4a, 0x49, 0x48]: # omit 0x70 and 0x71 and 0x77
-		try:
-			count += setup_temperature_sensor(i2c, address)
-			if 1!=count:
-				header_string += ", other" + str(count)
-		except:
-			pass
-	if 0==count:
-		error("pct2075 not present (any i2c address)")
-	else:
-		info("found " + str(count) + " temperature sensor(s)")
-	return count
-
-def print_header():
-	info("#" + header_string)
-
-def measure():
-	result = []
-	for each in temperature_sensors:
-		try:
-			result.append(each.temperature)
-		except:
-			pass
-	return result
-
-def measure_string():
-	global temperature
-	result = measure()
-	#string = ", ".join(result)
-	temperature = result.pop(0)
-	string = "%.1f" % temperature
-	for each in result:
-		string += ", %.1f" % each
-	return string
-
-def print_compact():
-	try:
-		date = time.strftime("%Y-%m-%d+%X, ")
-	except:
-		try:
-			date = pcf8523_adafruit.get_timestring1() + ", "
-		except:
-			date = ""
-	string = measure_string()
-	info("%s%s" % (date, string))
-
-def test_if_present():
-	try:
-		temperature_sensors[0].temperature
-	except:
-		return False
-	return True
 
 def loop():
-	print("loop(" + str(loop_counter) + ")")
+	#print("loop(" + str(loop_counter) + ")")
 	#display_adafruit.update_four_plots(loop_counter)
-	time.sleep(1.0)
 	lcm4 = loop_counter%4
 	if 0==lcm4:
-		myarray_a = [ -0.15 + 1.7 * i/display_adafruit.plot_width for i in range(display_adafruit.plot_width) ]
-		myarray_b = [ 1.15  - 2.1 * i/display_adafruit.plot_width for i in range(display_adafruit.plot_width) ]
-		display_adafruit.update_plot(0, [myarray_a, myarray_b])
+		info("updating temperatures...")
+		global ds18b20
+		ds18b20 = airlift.add_most_recent_data_to_end_of_array(ds18b20, "ds18b20")
+		myarray_a = display_adafruit.format_for_plot(ds18b20, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
+		global temperature_outdoor
+		temperature_outdoor = airlift.add_most_recent_data_to_end_of_array(temperature_outdoor, "outdoor-temp")
+		myarray_b = display_adafruit.format_for_plot(temperature_outdoor, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
+		global temperature_indoor
+		temperature_indoor = airlift.add_most_recent_data_to_end_of_array(temperature_indoor, "inside-temp")
+		myarray_c = display_adafruit.format_for_plot(temperature_indoor, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
+		global heater
+		heater = airlift.add_most_recent_data_to_end_of_array(heater, "heater")
+		myarray_d = display_adafruit.format_for_plot(heater, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
+		display_adafruit.update_plot(0, [myarray_a, myarray_b, myarray_c, myarray_d])
 	elif 1==lcm4:
-		myarray_a = [ 0.10 + 0.5*i/display_adafruit.plot_height for i in range(display_adafruit.plot_width) ]
-		myarray_b = [ 0.15 + 0.4*i/display_adafruit.plot_width for i in range(display_adafruit.plot_width) ]
-		display_adafruit.update_plot(1, [myarray_a, myarray_b])
+		info("updating humidities...")
+		global sht31d
+		sht31d = airlift.add_most_recent_data_to_end_of_array(sht31d, "sht31d")
+		myarray_a = display_adafruit.format_for_plot(sht31d, MIN_HUM_TO_PLOT, MAX_HUM_TO_PLOT)
+		global humidity_outdoor
+		humidity_outdoor = airlift.add_most_recent_data_to_end_of_array(humidity_outdoor, "outdoor-hum")
+		myarray_b = display_adafruit.format_for_plot(humidity_outdoor, MIN_HUM_TO_PLOT, MAX_HUM_TO_PLOT)
+		global humidity_indoor
+		humidity_indoor = airlift.add_most_recent_data_to_end_of_array(humidity_indoor, "inside-hum")
+		myarray_c = display_adafruit.format_for_plot(humidity_indoor, MIN_HUM_TO_PLOT, MAX_HUM_TO_PLOT)
+		display_adafruit.update_plot(1, [myarray_a, myarray_b, myarray_c])
 	elif 2==lcm4:
-		myarray_a = [ 0.1 + 0.5*i/display_adafruit.plot_height for i in range(display_adafruit.plot_width) ]
+		info("updating pressures...")
+		global pressure
+		pressure = airlift.add_most_recent_data_to_end_of_array(pressure, "pressure")
+		myarray_a = display_adafruit.format_for_plot(pressure, MIN_PRES_TO_PLOT, MAX_PRES_TO_PLOT)
 		display_adafruit.update_plot(2, [myarray_a])
 	else:
-		myarray_a = [ 0.15 + 0.4*i/display_adafruit.plot_width for i in range(display_adafruit.plot_width) ]
-		myarray_b = [ 0.55 - 0.1 * i/display_adafruit.plot_height for i in range(display_adafruit.plot_width) ]
-		myarray_c = [ 0.19 + 0.3*i/display_adafruit.plot_height for i in range(display_adafruit.plot_width) ]
-		myarray_d = [ 0.12 + 0.2*i/display_adafruit.plot_width for i in range(display_adafruit.plot_width) ]
-		myarray_e = [ 0.88 - 0.2*i/display_adafruit.plot_width for i in range(display_adafruit.plot_width) ]
+		info("updating particle counts...")
+		global particle0p3
+		particle0p3 = airlift.add_most_recent_data_to_end_of_array(particle0p3, "particle0p3")
+		myarray_a = display_adafruit.format_for_plot(particle0p3, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
+		global particle0p5
+		particle0p5 = airlift.add_most_recent_data_to_end_of_array(particle0p5, "particle0p5")
+		myarray_b = display_adafruit.format_for_plot(particle0p5, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
+		global particle1p0
+		particle1p0 = airlift.add_most_recent_data_to_end_of_array(particle1p0, "particle1p0")
+		myarray_c = display_adafruit.format_for_plot(particle1p0, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
+		global particle2p5
+		particle2p5 = airlift.add_most_recent_data_to_end_of_array(particle2p5, "particle2p5")
+		myarray_d = display_adafruit.format_for_plot(particle2p5, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
+		global particle5p0
+		particle5p0 = airlift.add_most_recent_data_to_end_of_array(particle5p0, "particle5p0")
+		myarray_e = display_adafruit.format_for_plot(particle5p0, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
 		display_adafruit.update_plot(3, [myarray_a, myarray_b, myarray_c, myarray_d, myarray_e])
 	flush()
+	time.sleep(delay)
 
 def main():
 #	try:
@@ -159,11 +140,14 @@ def main():
 		neopixel_adafruit.set_color(127, 127, 127)
 	global i2c
 	try:
-		i2c = busio.I2C(board.SCL1, board.SDA1)
-		info("using I2C1")
+		i2c = board.I2C
 	except:
-		i2c = busio.I2C(board.SCL, board.SDA)
-		info("using I2C0")
+		try:
+			i2c = busio.I2C(board.SCL1, board.SDA1)
+			info("using I2C1")
+		except:
+			i2c = busio.I2C(board.SCL, board.SDA)
+			info("using I2C0")
 #	try:
 #		setup_temperature_sensors(i2c)
 #	except:
@@ -177,18 +161,17 @@ def main():
 	else:
 		RTC_is_available = False
 	global spi
+#	try:
+#		spi = board.SPI
+#	except:
 	spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 	global airlift_is_available
 	if should_use_airlift:
-		airlift_is_available = airlift.setup_airlift(feed, spi, board.ESP_CS, board.ESP_BUSY, board.ESP_RESET)
+		airlift_is_available = airlift.setup_airlift("weather-station-portal", spi, board.ESP_CS, board.ESP_BUSY, board.ESP_RESET)
 	else:
 		airlift_is_available = False
-	if airlift_is_available:
-		airlift.setup_feed(feed)
-	if 0:
-		print("fetching old data from feed...")
-		global temperatures_to_plot
-		temperatures_to_plot = airlift.get_all_data(MAX_COLUMNS_TO_PLOT)
+#	if airlift_is_available:
+#		airlift.setup_feed(feed)
 	global sdcard_is_available
 	global dirname
 	if should_use_sdcard:
@@ -200,9 +183,16 @@ def main():
 		create_new_logfile_with_string_embedded(dirname, "weather_station", pcf8523_adafruit.get_timestring2())
 	else:
 		create_new_logfile_with_string_embedded(dirname, "weather_station")
-	print_header()
-	display_adafruit.setup_for_n_m_plots(2, 2, [["temperature", "indoor", "outdoor"], ["humidity", "indoor", "outdoor"], ["pressure", "indoor"], ["particle count", "0.3", "0.5", "1.0", "2.5", "5.0"]])
+	display_adafruit.setup_for_n_m_plots(2, 2, [["temperature", "roof", "outdoor", "indoor", "heater"], ["humidity", "roof", "outdoor", "indoor"], ["pressure", "indoor"], ["particle count", "0.3", "0.5", "1.0", "2.5", "5.0"]])
 	display_adafruit.refresh()
+	if 0:
+		#array_size = display_adafruit.plot_width
+		print("fetching old data from feeds...")
+		#global temperature_indoor
+		#temperature_indoor = airlift.get_all_data("inside-temp", array_size)
+		global humidity_indoor
+		humidity_indoor = airlift.get_all_data("inside-hum", array_size)
+		print(str(humidity_indoor))
 	global loop_counter
 	while True:
 		loop()
