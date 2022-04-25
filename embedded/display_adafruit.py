@@ -93,7 +93,7 @@ def clear_display_on_oled_sh1107():
 	display.show(group)
 	display.refresh()
 
-def setup_for_one_plot():
+def setup_for_one_plot(list_of_labels=[[]]):
 	global display
 	display = board.DISPLAY
 	display.auto_refresh = False
@@ -148,11 +148,11 @@ def setup_for_one_plot():
 	plot[0].y = padding_size//2 + 1
 	display.show(group)
 
-def setup_for_four_plots():
+def setup_for_four_plots(list_of_labels=[[]]):
 	global display
 	display = board.DISPLAY
 	display.auto_refresh = False
-	padding_size = 16
+	padding_size = 24
 	tile_width = display.width//2
 	tile_height = display.height//2
 	global plot_width
@@ -188,17 +188,6 @@ def setup_for_four_plots():
 	plot_bitmap = []
 	for i in range(4):
 		plot_bitmap.append(displayio.Bitmap(plot_width, plot_height, 8))
-#	for i in range(tile_width//2):
-#		thickness = tile_height//12
-#		for j in range(thickness):
-#			plot_bitmap[i,thickness*0+j] = 0
-#			plot_bitmap[i,thickness*1+j] = 1
-#			plot_bitmap[i,thickness*2+j] = 2
-#			plot_bitmap[i,thickness*3+j] = 3
-#			plot_bitmap[i,thickness*4+j] = 4
-#			plot_bitmap[i,thickness*5+j] = 5
-#			plot_bitmap[i,thickness*6+j] = 6
-#			plot_bitmap[i,thickness*7+j] = 7
 	global plot
 	plot = []
 	for i in range(4):
@@ -218,6 +207,34 @@ def setup_for_four_plots():
 	plot[2].y = tile_height + padding_size//2 + 1
 	plot[3].x = tile_width + padding_size//2 + 1
 	plot[3].y = tile_height + padding_size//2 + 1
+	FONT_SCALE = 1
+	FONT_GAP = FONT_SCALE * 14
+	for m in range(len(list_of_labels)):
+		text_areas = []
+		running_text_width = 0
+		x = (m%2)*tile_width + tile_width//2
+		for n in range(len(list_of_labels[m])):
+			#print(list_of_labels[m][n])
+			if n==0:
+				y = (m//2)*tile_height + FONT_SCALE * 5
+				text_area = label.Label(terminalio.FONT, text=list_of_labels[m][n], color=palette[1]) # white for plot label
+				text_width = text_area.bounding_box[2] * FONT_SCALE
+				text_group = displayio.Group(scale=FONT_SCALE, x=x-text_width//2, y=y)
+				text_group.append(text_area)
+				group.append(text_group)
+			else:
+				text_area = label.Label(terminalio.FONT, text=list_of_labels[m][n], color=palette[n+1]) # other colors
+				text_width = text_area.bounding_box[2] * FONT_SCALE + FONT_GAP
+				running_text_width += text_width
+				text_areas.append(text_area)
+		y = (m//2)*tile_height + tile_height - FONT_SCALE * 5
+		running_text_width -= text_areas[0].bounding_box[2] * FONT_SCALE + FONT_GAP
+		for text_area in text_areas:
+			text_width = text_area.bounding_box[2] * FONT_SCALE
+			text_group = displayio.Group(scale=FONT_SCALE, x=x-running_text_width//2-text_width//2, y=y)
+			running_text_width -= 2 * (text_width + FONT_GAP)
+			text_group.append(text_area)
+			group.append(text_group)
 	display.show(group)
 
 def refresh():
