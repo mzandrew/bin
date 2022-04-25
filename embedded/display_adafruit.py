@@ -55,7 +55,8 @@ def setup_builtin_lcd_hx8357():
 #		setup_pwm_backlight(backlight_pin, 1.0)
 #	except:
 #		print("can't initialize pwm for display backlight")
-	board.DISPLAY.brightness = 0.75
+	#board.DISPLAY.brightness = 0.75
+	board.DISPLAY.auto_brightness = True
 	#print("complete")
 	return True
 
@@ -112,14 +113,14 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 	plot_width = tile_width - padding_size - 1
 	plot_height = tile_height - padding_size - 1
 	palette = displayio.Palette(8)
-	palette[0] = 0x000000
-	palette[1] = 0xffffff
-	palette[2] = 0xff0000
-	palette[3] = 0x00ff00
-	palette[4] = 0x2f2fff
-	palette[5] = 0xffff00
-	palette[6] = 0x00efbf
-	palette[7] = 0xff00ff
+	palette[0] = 0x000000 # black
+	palette[1] = 0xffffff # white
+	palette[2] = 0xff3f3f # red
+	palette[3] = 0x00df00 # green
+	palette[4] = 0x3f3fff # blue
+	palette[5] = 0xdfdf00 # yellow
+	palette[6] = 0x00efbf # cyan
+	palette[7] = 0xff00ff # magenta
 	palette2 = displayio.Palette(2)
 	for i in range(len(palette2)):
 		palette2[i] = palette[i]

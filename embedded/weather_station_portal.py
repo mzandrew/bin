@@ -140,7 +140,8 @@ def loop():
 		myarray_b = [ 0.55 - 0.1 * i/display_adafruit.plot_height for i in range(display_adafruit.plot_width) ]
 		myarray_c = [ 0.19 + 0.3*i/display_adafruit.plot_height for i in range(display_adafruit.plot_width) ]
 		myarray_d = [ 0.12 + 0.2*i/display_adafruit.plot_width for i in range(display_adafruit.plot_width) ]
-		display_adafruit.update_plot(3, [myarray_a, myarray_b, myarray_c, myarray_d])
+		myarray_e = [ 0.88 - 0.2*i/display_adafruit.plot_width for i in range(display_adafruit.plot_width) ]
+		display_adafruit.update_plot(3, [myarray_a, myarray_b, myarray_c, myarray_d, myarray_e])
 	flush()
 
 def main():
@@ -200,7 +201,7 @@ def main():
 	else:
 		create_new_logfile_with_string_embedded(dirname, "weather_station")
 	print_header()
-	display_adafruit.setup_for_n_m_plots(2, 2, [["temperature", "indoor", "outdoor"], ["humidity", "indoor", "outdoor"], ["pressure", "indoor"], ["particle count", "1.0", "2.5", "5.0", "10.0"]])
+	display_adafruit.setup_for_n_m_plots(2, 2, [["temperature", "indoor", "outdoor"], ["humidity", "indoor", "outdoor"], ["pressure", "indoor"], ["particle count", "0.3", "0.5", "1.0", "2.5", "5.0"]])
 	display_adafruit.refresh()
 	global loop_counter
 	while True:
