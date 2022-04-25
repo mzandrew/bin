@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-01-17 by mza
+# last updated 2022-04-25 by mza
 
 #from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 
@@ -441,18 +441,40 @@ def get_some_data(feed_key, start_time, end_time, limit=1):
 	path = adafruit_io._compose_path("feeds/{0}/data?start_time={0}&end_time={0}&limit={0}".format(feed_key, start_time, end_time, limit))
 	return adafruit_io._get(path)
 
-DEFAULT = -40
-def get_all_data(count):
-	# this function is still under construction...
+def get_most_recent_data(feed):
 	try:
-		reverse_order_values = io.receive_all_data(myfeed["key"]) # out of memory
+		value = io.receive_data(feed)["value"]
+		#print(str(value))
+		value = float(value)
+		#print(str(value))
+		return value
+	except:
+		raise
+
+def add_most_recent_data_to_end_of_array(values, feed):
+	values.append(get_most_recent_data(feed))
+	values.pop(0)
+	return values
+
+DEFAULT = -40
+def get_all_data(feed, count):
+	values = [ DEFAULT for i in range(count) ]
+	try:
+		print(str(count))
+		info("fetching data from feed " + str(feed) + "...")
+		reverse_order_values = io.receive_all_data(feed) # out of memory
+		print(str(len(reverse_order_values)))
 		if count<len(reverse_order_values):
 			reverse_order_values = reverse_order_values[:count]
+		print(str(len(reverse_order_values)))
 		if len(reverse_order_values)<count:
 			for i in range(len(reverse_order_values), count):
 				reverse_order_values.append(DEFAULT)
-		for i in range(count):
-			values[i] = reverse_order_values[count - i]
+		print(str(len(reverse_order_values)))
+		for i in range(len(reverse_order_values)):
+			values[i] = reverse_order_values[count - i - 1]
+		print(str(len(values)))
+		info("done")
 		return values
 	except:
 		raise
