@@ -1,4 +1,4 @@
-# last updated 2022-04-24 by mza
+# last updated 2022-04-25 by mza
 
 import math
 import board
@@ -191,15 +191,12 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 def refresh():
 	display.refresh()
 
-def update_four_plots(loop_counter):
-	for x in range(plot_width):
-		yy = int(plot_height/2-plot_height/2*math.sin(2. * x * math.pi / plot_width))
-		for y in range(plot_height):
-			if yy==y:
-				plot_bitmap[loop_counter%4][x,y] = 1 + loop_counter%7
-			else:
-				plot_bitmap[loop_counter%4][x,y] = 0
-	display.refresh()
+def format_for_plot(values, minimum, maximum):
+	new_values = []
+	#print(str(values))
+	for i in range(len(values)):
+		new_values.append((values[i]-minimum)/(maximum - minimum))
+	return new_values
 
 # arrays to plot should be plot_width elements deep and go from 0.0 to 1.0
 def update_plot(plot_number, arrays_to_plot):
