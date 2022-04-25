@@ -200,7 +200,8 @@ def main():
 	else:
 		create_new_logfile_with_string_embedded(dirname, "weather_station")
 	print_header()
-	display_adafruit.setup_for_four_plots([["temperature", "indoor", "outdoor"], ["humidity", "indoor", "outdoor"], ["pressure", "indoor"], ["particle count", "1.0", "2.5", "5.0", "10.0"]])
+	display_adafruit.setup_for_n_m_plots(2, 2, [["temperature", "indoor", "outdoor"], ["humidity", "indoor", "outdoor"], ["pressure", "indoor"], ["particle count", "1.0", "2.5", "5.0", "10.0"]])
+	display_adafruit.refresh()
 	global loop_counter
 	while True:
 		loop()
