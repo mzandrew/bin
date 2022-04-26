@@ -9,6 +9,7 @@ oldlogfile
 logs
 *.log
 secrets.py
+secrets.json
 notes
 contrib/feathers2
 Adafruit_CircuitPython_GPS
