@@ -112,7 +112,7 @@ def loop():
 		global heater
 		heater = airlift.add_most_recent_data_to_end_of_array(heater, "heater")
 		myarray_d = display_adafruit.format_for_plot(heater, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
-		display_adafruit.update_plot(0, [myarray_a, myarray_b, myarray_c, myarray_d])
+		display_adafruit.update_plot(0, [myarray_c, myarray_b, myarray_a, myarray_d])
 	if update_plot[1]:
 		info("updating humidities...")
 		global sht31d
@@ -124,7 +124,7 @@ def loop():
 		global humidity_indoor
 		humidity_indoor = airlift.add_most_recent_data_to_end_of_array(humidity_indoor, "inside-hum")
 		myarray_c = display_adafruit.format_for_plot(humidity_indoor, MIN_HUM_TO_PLOT, MAX_HUM_TO_PLOT)
-		display_adafruit.update_plot(1, [myarray_a, myarray_b, myarray_c])
+		display_adafruit.update_plot(1, [myarray_c, myarray_b, myarray_a])
 	if update_plot[2]:
 		info("updating pressures...")
 		global pressure
@@ -214,7 +214,7 @@ def main():
 		create_new_logfile_with_string_embedded(dirname, "weather_station", pcf8523_adafruit.get_timestring2())
 	else:
 		create_new_logfile_with_string_embedded(dirname, "weather_station")
-	display_adafruit.setup_for_n_m_plots(2, 2, [["temperature", "roof", "outdoor", "indoor", "heater"], ["humidity", "roof", "outdoor", "indoor"], ["pressure", "indoor"], ["particle count", "0.3", "0.5", "1.0", "2.5", "5.0"]])
+	display_adafruit.setup_for_n_m_plots(2, 2, [["temperature", "indoor", "outdoor", "roof", "heater"], ["humidity", "indoor", "outdoor", "roof"], ["pressure", "indoor"], ["particle count", "0.3", "0.5", "1.0", "2.5", "5.0"]])
 	display_adafruit.refresh()
 	if 0:
 		#array_size = display_adafruit.plot_width
