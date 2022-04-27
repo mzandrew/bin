@@ -10,27 +10,33 @@ from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3,
 
 display_has_autorefresh = True
 
-def setup_palette(inverted = False):
+def setup_palette(number_of_colors=8, inverted = False):
 	global palette2
 	global palette8
-	palette = displayio.Palette(8)
-	palette[0] = 0x000000 # black
-	palette[1] = 0xffffff # white
-	palette[2] = 0xff3f3f # red
-	palette[3] = 0x00df00 # green
-	palette[4] = 0x3f3fff # blue
-	palette[5] = 0xdfdf00 # yellow
-	palette[6] = 0x00efbf # cyan
-	palette[7] = 0xff00ff # magenta
+	palette = displayio.Palette(number_of_colors)
+	palette2 = displayio.Palette(2)
+	palette8 = displayio.Palette(8)
+	palette[0] = 0x000000 # black / background
+	palette[1] = 0xffffff # white / foreground
+	if 3<number_of_colors:
+		palette[2] = 0xff3f3f # red
+		palette[3] = 0x00df00 # green
+	if 5<number_of_colors:
+		palette[4] = 0x3f3fff # blue
+		palette[5] = 0xdfdf00 # yellow
+	if 7<number_of_colors:
+		palette[6] = 0x00efbf # cyan
+		palette[7] = 0xff00ff # magenta
 	if inverted:
 		for i in range(len(palette)):
 			palette[i] = 0xffffff - palette[i]
-	palette2 = displayio.Palette(2)
 	for i in range(len(palette2)):
 		palette2[i] = palette[i]
-	palette8 = displayio.Palette(8)
-	for i in range(len(palette8)):
 		palette8[i] = palette[i]
+	for i in range(2, len(palette8)):
+		j = 1 + i % (number_of_colors-1) # don't duplicate the background color
+		#print(str(i) + " " + str(j))
+		palette8[i] = palette[j]
 
 def setup_i2c_oled_display_ssd1327(i2c, address):
 #	if not should_use_ssd1327_oled_display:
@@ -87,7 +93,7 @@ def setup_builtin_lcd_hx8357():
 	return True
 
 def setup_builtin_epd():
-	setup_palette(True)
+	setup_palette(2, True)
 	global display_has_autorefresh
 	display_has_autorefresh = False
 	global display
@@ -107,12 +113,10 @@ def setup_builtin_epd():
 def clear_display_on_oled_ssd1327():
 #	if not oled_display_is_available:
 #		return
+	setup_palette()
 	global bitmap
 	bitmap = displayio.Bitmap(128, 128, 2)
-	palette = displayio.Palette(2)
-	palette[0] = 0x000000
-	palette[1] = 0xffffff
-	tile_grid = displayio.TileGrid(bitmap, pixel_shader = palette)
+	tile_grid = displayio.TileGrid(bitmap, pixel_shader = palette2)
 	group = displayio.Group()
 	group.append(tile_grid)
 	for x in range(128):
@@ -124,12 +128,10 @@ def clear_display_on_oled_ssd1327():
 def clear_display_on_oled_sh1107():
 #	if not oled_display_is_available:
 #		return
+	setup_palette()
 	global bitmap
 	bitmap = displayio.Bitmap(128, 64, 2)
-	palette = displayio.Palette(2)
-	palette[0] = 0x000000
-	palette[1] = 0xffffff
-	tile_grid = displayio.TileGrid(bitmap, pixel_shader = palette)
+	tile_grid = displayio.TileGrid(bitmap, pixel_shader = palette2)
 	group = displayio.Group()
 	group.append(tile_grid)
 	for x in range(128):
