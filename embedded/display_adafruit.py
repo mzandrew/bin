@@ -34,7 +34,7 @@ def setup_palette(number_of_colors=8, inverted = False):
 		palette2[i] = palette[i]
 		palette8[i] = palette[i]
 	for i in range(2, len(palette8)):
-		j = 1 + i % (number_of_colors-1) # don't duplicate the background color
+		j = 1 + (i-1) % (number_of_colors-1) # don't duplicate the background color
 		#print(str(i) + " " + str(j))
 		palette8[i] = palette[j]
 
