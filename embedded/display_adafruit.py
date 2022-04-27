@@ -190,8 +190,27 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 	group = displayio.Group()
 	group.append(axes_group)
 	group.append(plot_group)
-	FONT_SCALE = 1
-	FONT_GAP = FONT_SCALE * 14
+	FONT_SCALE = 1 # int
+	text_area = label.Label(terminalio.FONT, text="i", color=palette2[1]) # 6 pixels each for "W" and "i"
+	width_of_single_character = text_area.bounding_box[2] * FONT_SCALE
+	FONT_GAP = 2 * width_of_single_character
+	#print(str(display.width))
+	#print(str(plot_width))
+	print("width of a single character: " + str(width_of_single_character))
+	maximum_character_count = 0
+	for m in range(len(list_of_labels)):
+		character_count = 0
+		for n in range(1, len(list_of_labels[m])): # first entry is the plot title
+			character_count += len(list_of_labels[m][n])
+		number_of_gap_characters = len(list_of_labels[m]) - 2 # first entry is the plot title
+		character_count += number_of_gap_characters
+		#print(str(character_count))
+		if maximum_character_count<character_count:
+			maximum_character_count = character_count
+	#print(str(maximum_character_count))
+	if plot_width<maximum_character_count*width_of_single_character:
+		FONT_GAP = FONT_SCALE*width_of_single_character
+	print("font gap: " + str(FONT_GAP))
 	for m in range(len(list_of_labels)):
 		text_areas = []
 		running_text_width = 0
@@ -211,11 +230,11 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 				running_text_width += text_width
 				text_areas.append(text_area)
 		y = (m//2)*tile_height + tile_height - FONT_SCALE * 5 - 2
-		running_text_width -= text_areas[0].bounding_box[2] * FONT_SCALE + FONT_GAP
+		x -= running_text_width//2
 		for text_area in text_areas:
-			text_width = text_area.bounding_box[2] * FONT_SCALE
-			text_group = displayio.Group(scale=FONT_SCALE, x=x-running_text_width//2-text_width//2, y=y)
-			running_text_width -= 2 * (text_width + FONT_GAP)
+			text_width = text_area.bounding_box[2] * FONT_SCALE + FONT_GAP
+			text_group = displayio.Group(scale=FONT_SCALE, x=x, y=y)
+			x += text_width
 			text_group.append(text_area)
 			group.append(text_group)
 	display.show(group)
