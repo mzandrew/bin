@@ -1,43 +1,11 @@
 # written 2021-09-10 by mza
-# last updated 2022-01-18 by mza
+# last updated 2022-04-27 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
 # cp -a solar_water_heater.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
-# rsync -r simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy adafruit_pct2075.mpy adafruit_bh1750.mpy adafruit_vcnl4040.mpy adafruit_ltr390.mpy neopixel.mpy adafruit_as7341.mpy adafruit_pcf8523.mpy adafruit_tsl2591.mpy adafruit_onewire adafruit_ds18x20.mpy adafruit_pm25 adafruit_gps.mpy adafruit_sht31d.mpy adafruit_io adafruit_ili9341.mpy adafruit_requests.mpy /media/circuitpython/lib/
-
-header_string = "date/time"
-mydir = "/logs"
-should_use_airlift = True
-if 0: # for the one with the TFT and GPS but no adalogger
-	FEATHER_ESP32S2 = True
-	use_pwm_status_leds = False
-	should_use_sdcard = False
-	should_use_RTC = False
-	should_use_display = True
-	should_use_gps = True
-	wifi_mapping_mode = True
-	cat_on_a_hot_tin_roof_mode = False
-	N = 8
-	gps_delay_in_ms = 1000
-	delay_between_acquisitions = 2. * gps_delay_in_ms/1000.
-	delay_between_posting_and_next_acquisition = 2.0
-	use_built_in_wifi = True
-else: # cat on a hot tin roof
-	FEATHER_ESP32S2 = False
-	use_pwm_status_leds = True
-	should_use_sdcard = True
-	should_use_RTC = True
-	should_use_display = False
-	should_use_gps = False
-	wifi_mapping_mode = False
-	cat_on_a_hot_tin_roof_mode = True
-	N = 32
-	delay_between_acquisitions = 0.75
-	gps_delay_in_ms = 2000
-	delay_between_posting_and_next_acquisition = 4.0
-	use_built_in_wifi = False
+# rsync -r adafruit_minimqtt simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy adafruit_pct2075.mpy adafruit_bh1750.mpy adafruit_vcnl4040.mpy adafruit_ltr390.mpy neopixel.mpy adafruit_as7341.mpy adafruit_pcf8523.mpy adafruit_tsl2591.mpy adafruit_onewire adafruit_ds18x20.mpy adafruit_pm25 adafruit_gps.mpy adafruit_sht31d.mpy adafruit_io adafruit_ili9341.mpy adafruit_requests.mpy /media/circuitpython/lib/
 
 import sys
 import time
@@ -56,16 +24,52 @@ import as7341_adafruit
 import pcf8523_adafruit
 import microsd_adafruit
 import neopixel_adafruit
-import pm25_adafruit
 import ds18b20_adafruit
 import tsl2591_adafruit
 import anemometer
 import sht31d_adafruit
 import airlift
-import gps_adafruit
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 import generic
-import display_adafruit
+
+header_string = "date/time"
+mydir = "/logs"
+should_use_airlift = True
+board_id = board.board_id
+info("we are " + board_id)
+if board_id=="ASDF": # for the one with the TFT and GPS but no adalogger
+	FEATHER_ESP32S2 = True
+	use_pwm_status_leds = False
+	should_use_sdcard = False
+	should_use_RTC = False
+	should_use_display = True
+	should_use_gps = True
+	wifi_mapping_mode = True
+	cat_on_a_hot_tin_roof_mode = False
+	N = 8
+	gps_delay_in_ms = 1000
+	delay_between_acquisitions = 2. * gps_delay_in_ms/1000.
+	delay_between_posting_and_next_acquisition = 2.0
+	use_built_in_wifi = True
+	import pm25_adafruit
+	import gps_adafruit
+	import display_adafruit
+elif board_id=="adafruit_feather_rp2040": # cat on a hot tin roof
+	FEATHER_ESP32S2 = False
+	use_pwm_status_leds = True
+	should_use_sdcard = True
+	should_use_RTC = True
+	should_use_display = False
+	should_use_gps = False
+	wifi_mapping_mode = False
+	cat_on_a_hot_tin_roof_mode = True
+	N = 32
+	delay_between_acquisitions = 0.5
+	gps_delay_in_ms = 2000
+	delay_between_posting_and_next_acquisition = 2.0
+	use_built_in_wifi = False
+else:
+	error("what board am I?")
 
 def print_compact(string):
 	date = ""
@@ -109,7 +113,8 @@ def main():
 	#i2c_list = i2c.scan()
 	#i2c.unlock()
 	#info(string + str(i2c_list))
-	displayio.release_displays()
+	if should_use_display:
+		displayio.release_displays()
 	global spi
 	spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 	global uart
@@ -366,11 +371,18 @@ def loop():
 				vcnl4040_adafruit.show_average_values()
 			if as7341_is_available:
 				as7341_adafruit.show_average_values()
-#				if airlift_is_available:
-#					try:
-#						airlift.post_data("as7341", as7341_adafruit.get_average_values())
-#					except:
-#						warning("couldn't post data for as7341")
+				if airlift_is_available:
+					try:
+						airlift.post_data("as7341-415nm", as7341_adafruit.get_average_values()[0])
+						airlift.post_data("as7341-445nm", as7341_adafruit.get_average_values()[1])
+						airlift.post_data("as7341-480nm", as7341_adafruit.get_average_values()[2])
+						airlift.post_data("as7341-515nm", as7341_adafruit.get_average_values()[3])
+						airlift.post_data("as7341-555nm", as7341_adafruit.get_average_values()[4])
+						airlift.post_data("as7341-590nm", as7341_adafruit.get_average_values()[5])
+						airlift.post_data("as7341-630nm", as7341_adafruit.get_average_values()[6])
+						airlift.post_data("as7341-680nm", as7341_adafruit.get_average_values()[7])
+					except:
+						warning("couldn't post data for as7341")
 			if tsl2591_is_available:
 				tsl2591_adafruit.show_average_values()
 			if pm25_is_available:
