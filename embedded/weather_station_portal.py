@@ -8,7 +8,7 @@
 # rsync -av *.py /media/mza/CIRCUITPY/; cp -a weather_station_portal.py /media/mza/CIRCUITPY/code.py ; sync
 # ln -s ~/build/adafruit-circuitpython/bundle/lib
 # cd lib
-# rsync -av microcontroller adafruit_display_text adafruit_esp32spi adafruit_register neopixel.mpy adafruit_rgbled.mpy adafruit_requests.mpy adafruit_sdcard.mpy simpleio.mpy adafruit_io /media/circuitpython/lib/
+# rsync -r adafruit_minimqtt adafruit_magtag adafruit_bitmap_font adafruit_portalbase adafruit_display_text adafruit_esp32spi adafruit_register neopixel.mpy adafruit_rgbled.mpy adafruit_requests.mpy adafruit_sdcard.mpy simpleio.mpy adafruit_io /media/circuitpython/lib/
 # sync
 
 import time
@@ -30,15 +30,28 @@ import generic
 import display_adafruit
 #import adafruit_touchscreen
 
-if 1:
-	feed = "scoopy-boops"
+board_id = board.board_id
+info("we are " + board_id)
+if board_id=="pyportal_titano":
 	delay = 15.0 # number of seconds between updates
 	should_use_airlift = True
-	#should_use_airlift = False
+	should_use_builtin_wifi = False
+	should_use_epd = False
 	should_use_hx8357_lcd = True
-	#should_use_sdcard = True
+	should_use_sdcard = True
+	should_use_RTC = False
+	should_use_SPI = True
+elif board_id=="adafruit_magtag_2.9_grayscale":
+	delay = 15.0 # number of seconds between updates
+	should_use_airlift = False
+	should_use_builtin_wifi = True
+	should_use_epd = True
+	should_use_hx8357_lcd = False
 	should_use_sdcard = False
 	should_use_RTC = False
+	should_use_SPI = False
+else:
+	error("what board am I?")
 
 array_size = 215 # display_adafruit.plot_width
 ds18b20 = [ -40.0 for i in range(array_size) ]
@@ -155,6 +168,8 @@ def main():
 	global display_is_available
 	if should_use_hx8357_lcd:
 		display_is_available = display_adafruit.setup_builtin_lcd_hx8357()
+	if should_use_epd:
+		display_is_available = display_adafruit.setup_builtin_epd()
 	global RTC_is_available
 	if should_use_RTC:
 		RTC_is_available = pcf8523_adafruit.setup(i2c)
@@ -164,21 +179,22 @@ def main():
 #	try:
 #		spi = board.SPI
 #	except:
-	spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
+	if should_use_SPI:
+		spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 	global airlift_is_available
 	if should_use_airlift:
 		airlift_is_available = airlift.setup_airlift("weather-station-portal", spi, board.ESP_CS, board.ESP_BUSY, board.ESP_RESET)
+	elif should_use_builtin_wifi:
+		airlift_is_available = airlift.setup_wifi("weather-station-portal")
 	else:
 		airlift_is_available = False
-#	if airlift_is_available:
-#		airlift.setup_feed(feed)
 	global sdcard_is_available
 	global dirname
 	if should_use_sdcard:
 		sdcard_is_available = microsd_adafruit.setup_sdcard_for_logging_data(spi, board.SD_CS, dirname)
 	else:
 		sdcard_is_available = False
-		dirname = "/"
+		dirname = ""
 	if RTC_is_available:
 		create_new_logfile_with_string_embedded(dirname, "weather_station", pcf8523_adafruit.get_timestring2())
 	else:
