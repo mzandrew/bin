@@ -231,6 +231,7 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 				text_areas.append(text_area)
 		y = (m//2)*tile_height + tile_height - FONT_SCALE * 5 - 2
 		x -= running_text_width//2
+		x += FONT_GAP//2
 		for text_area in text_areas:
 			text_width = text_area.bounding_box[2] * FONT_SCALE + FONT_GAP
 			text_group = displayio.Group(scale=FONT_SCALE, x=x, y=y)
