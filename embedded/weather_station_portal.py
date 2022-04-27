@@ -2,7 +2,7 @@
 
 # written 2022-04-23 by mza
 # based on temperature_log_and_graph.py
-# last updated 2022-04-25 by mza
+# last updated 2022-04-27 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/mza/CIRCUITPY/; cp -a weather_station_portal.py /media/mza/CIRCUITPY/code.py ; sync
@@ -32,7 +32,7 @@ import display_adafruit
 
 board_id = board.board_id
 info("we are " + board_id)
-if board_id=="pyportal_titano":
+if board_id=="pyportal_titano" or board_id=="pyportal":
 	delay = 15.0 # number of seconds between updates
 	plots_to_update_every_screen_refresh = 1
 	should_use_airlift = True
