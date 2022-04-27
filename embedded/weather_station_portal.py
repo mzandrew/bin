@@ -101,7 +101,7 @@ def loop():
 	if update_plot[0]:
 		info("updating temperatures...")
 		global ds18b20
-		ds18b20 = airlift.add_most_recent_data_to_end_of_array(ds18b20, "ds18b20")
+		ds18b20 = airlift.add_most_recent_data_to_end_of_array(ds18b20, "roof-ds18b20")
 		myarray_a = display_adafruit.format_for_plot(ds18b20, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
 		global temperature_outdoor
 		temperature_outdoor = airlift.add_most_recent_data_to_end_of_array(temperature_outdoor, "outdoor-temp")
@@ -116,7 +116,7 @@ def loop():
 	if update_plot[1]:
 		info("updating humidities...")
 		global sht31d
-		sht31d = airlift.add_most_recent_data_to_end_of_array(sht31d, "sht31d")
+		sht31d = airlift.add_most_recent_data_to_end_of_array(sht31d, "roof-hum")
 		myarray_a = display_adafruit.format_for_plot(sht31d, MIN_HUM_TO_PLOT, MAX_HUM_TO_PLOT)
 		global humidity_outdoor
 		humidity_outdoor = airlift.add_most_recent_data_to_end_of_array(humidity_outdoor, "outdoor-hum")
