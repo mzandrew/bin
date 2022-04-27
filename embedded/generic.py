@@ -26,6 +26,7 @@ def reload_exception_handler():
 	supervisor.reload()
 
 def reset():
+	atexit.unregister(reset)
 	try:
 		error("resetting board... (ctrl-c to abort)")
 		sys.stdout.flush()
@@ -38,10 +39,7 @@ def reset():
 	try:
 		time.sleep(10)
 	except KeyboardInterrupt:
-		info("caught ctrl-c")
-		flush()
-		atexit.unregister(reset)
-		sys.exit(0)
+		keyboard_interrupt_exception_handler()
 	except:
 		info("couldn't sleep (10), sorry!")
 		flush()
