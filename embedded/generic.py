@@ -1,5 +1,5 @@
 # written 2021-12-28 by mza
-# last updated 2022-01-18 by mza
+# last updated 2022-04-27 by mza
 
 import sys
 import time
@@ -11,16 +11,18 @@ def register_atexit_handler():
 	atexit.register(reset)
 
 def keyboard_interrupt_exception_handler():
+	atexit.unregister(reset)
+	info("")
 	info("caught ctrl-c")
 	flush()
-	atexit.unregister(reset)
 	sys.exit(0)
 
 def reload_exception_handler():
+	atexit.unregister(reset)
+	info("")
 	info("reload exception")
 	flush()
-	atexit.unregister(reset)
-	time.sleep(1)
+	time.sleep(2)
 	supervisor.reload()
 
 def reset():
@@ -41,12 +43,18 @@ def reset():
 		atexit.unregister(reset)
 		sys.exit(0)
 	except:
-		pass
+		info("couldn't sleep (10), sorry!")
+		flush()
 	try:
 		info("")
 		flush()
 	except:
 		pass
+	try:
+		time.sleep(2)
+	except:
+		info("couldn't sleep (2), sorry!")
+		flush()
 	try:
 		import microcontroller
 		microcontroller.reset()
@@ -57,6 +65,7 @@ def reset():
 		flush()
 	except:
 		pass
+	sys.exit(0)
 
 # https://learn.adafruit.com/circuitpython-essentials/circuitpython-pwm
 PWM_MAX = 65535
