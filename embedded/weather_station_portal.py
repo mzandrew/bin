@@ -34,6 +34,7 @@ board_id = board.board_id
 info("we are " + board_id)
 if board_id=="pyportal_titano":
 	delay = 15.0 # number of seconds between updates
+	plots_to_update_every_screen_refresh = 1
 	should_use_airlift = True
 	should_use_builtin_wifi = False
 	should_use_epd = False
@@ -42,7 +43,8 @@ if board_id=="pyportal_titano":
 	should_use_RTC = False
 	should_use_SPI = True
 elif board_id=="adafruit_magtag_2.9_grayscale":
-	delay = 15.0 # number of seconds between updates
+	delay = 60.0 # number of seconds between updates
+	plots_to_update_every_screen_refresh = 4
 	should_use_airlift = False
 	should_use_builtin_wifi = True
 	should_use_epd = True
@@ -83,8 +85,20 @@ loop_counter = 0
 def loop():
 	#print("loop(" + str(loop_counter) + ")")
 	#display_adafruit.update_four_plots(loop_counter)
-	lcm4 = loop_counter%4
-	if 0==lcm4:
+	update_plot = [ False, False, False, False ]
+	if 1==plots_to_update_every_screen_refresh:
+		lcm4 = loop_counter%4
+		if 0==lcm4:
+			update_plot[0] = True
+		elif 1==lcm4:
+			update_plot[1] = True
+		elif 2==lcm4:
+			update_plot[2] = True
+		else:
+			update_plot[3] = True
+	else:
+		update_plot = [ True, True, True, True ]
+	if update_plot[0]:
 		info("updating temperatures...")
 		global ds18b20
 		ds18b20 = airlift.add_most_recent_data_to_end_of_array(ds18b20, "ds18b20")
@@ -99,7 +113,7 @@ def loop():
 		heater = airlift.add_most_recent_data_to_end_of_array(heater, "heater")
 		myarray_d = display_adafruit.format_for_plot(heater, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
 		display_adafruit.update_plot(0, [myarray_a, myarray_b, myarray_c, myarray_d])
-	elif 1==lcm4:
+	if update_plot[1]:
 		info("updating humidities...")
 		global sht31d
 		sht31d = airlift.add_most_recent_data_to_end_of_array(sht31d, "sht31d")
@@ -111,13 +125,13 @@ def loop():
 		humidity_indoor = airlift.add_most_recent_data_to_end_of_array(humidity_indoor, "inside-hum")
 		myarray_c = display_adafruit.format_for_plot(humidity_indoor, MIN_HUM_TO_PLOT, MAX_HUM_TO_PLOT)
 		display_adafruit.update_plot(1, [myarray_a, myarray_b, myarray_c])
-	elif 2==lcm4:
+	if update_plot[2]:
 		info("updating pressures...")
 		global pressure
 		pressure = airlift.add_most_recent_data_to_end_of_array(pressure, "pressure")
 		myarray_a = display_adafruit.format_for_plot(pressure, MIN_PRES_TO_PLOT, MAX_PRES_TO_PLOT)
 		display_adafruit.update_plot(2, [myarray_a])
-	else:
+	if update_plot[3]:
 		info("updating particle counts...")
 		global particle0p3
 		particle0p3 = airlift.add_most_recent_data_to_end_of_array(particle0p3, "particle0p3")
@@ -135,6 +149,7 @@ def loop():
 		particle5p0 = airlift.add_most_recent_data_to_end_of_array(particle5p0, "particle5p0")
 		myarray_e = display_adafruit.format_for_plot(particle5p0, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
 		display_adafruit.update_plot(3, [myarray_a, myarray_b, myarray_c, myarray_d, myarray_e])
+	display_adafruit.refresh()
 	flush()
 	time.sleep(delay)
 

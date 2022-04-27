@@ -274,7 +274,6 @@ def update_plot(plot_number, arrays_to_plot):
 					doit = True
 				if doit:
 					plot_bitmap[plot_number][x,y] = n + 2 # first two indices are black and white
-	refresh()
 
 def update_temperature_display_on_oled_ssd1327(temperatures_to_plot):
 #	if not oled_display_is_available:
