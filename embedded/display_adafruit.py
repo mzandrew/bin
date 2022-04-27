@@ -1,11 +1,36 @@
-# last updated 2022-04-25 by mza
+# last updated 2022-04-27 by mza
 
+import time
 import math
 import board
 import displayio
 import terminalio
 from adafruit_display_text import label
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+
+display_has_autorefresh = True
+
+def setup_palette(inverted = False):
+	global palette2
+	global palette8
+	palette = displayio.Palette(8)
+	palette[0] = 0x000000 # black
+	palette[1] = 0xffffff # white
+	palette[2] = 0xff3f3f # red
+	palette[3] = 0x00df00 # green
+	palette[4] = 0x3f3fff # blue
+	palette[5] = 0xdfdf00 # yellow
+	palette[6] = 0x00efbf # cyan
+	palette[7] = 0xff00ff # magenta
+	if inverted:
+		for i in range(len(palette)):
+			palette[i] = 0xffffff - palette[i]
+	palette2 = displayio.Palette(2)
+	for i in range(len(palette2)):
+		palette2[i] = palette[i]
+	palette8 = displayio.Palette(8)
+	for i in range(len(palette8)):
+		palette8[i] = palette[i]
 
 def setup_i2c_oled_display_ssd1327(i2c, address):
 #	if not should_use_ssd1327_oled_display:
@@ -44,6 +69,7 @@ def setup_i2c_oled_display_sh1107(i2c, address):
 	return True
 
 def setup_builtin_lcd_hx8357():
+	setup_palette()
 	global display
 	#print("attempting to configure built-in hx8357 lcd...")
 	try:
@@ -57,6 +83,24 @@ def setup_builtin_lcd_hx8357():
 #		print("can't initialize pwm for display backlight")
 	#board.DISPLAY.brightness = 0.75
 	board.DISPLAY.auto_brightness = True
+	#print("complete")
+	return True
+
+def setup_builtin_epd():
+	setup_palette(True)
+	global display_has_autorefresh
+	display_has_autorefresh = False
+	global display
+	#print("attempting to configure built-in epd...")
+	try:
+		display = board.DISPLAY
+	except:
+		print("can't initialize epd display")
+		return False
+#	try:
+#		setup_pwm_backlight(backlight_pin, 1.0)
+#	except:
+#		print("can't initialize pwm for display backlight")
 	#print("complete")
 	return True
 
@@ -75,7 +119,7 @@ def clear_display_on_oled_ssd1327():
 		for y in range(128):
 			bitmap[x,y] = 0
 	display.show(group)
-	display.refresh()
+	refresh()
 
 def clear_display_on_oled_sh1107():
 #	if not oled_display_is_available:
@@ -92,13 +136,14 @@ def clear_display_on_oled_sh1107():
 		for y in range(64):
 			bitmap[x,y] = 0
 	display.show(group)
-	display.refresh()
+	refresh()
 
 def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]]):
 	number_of_plots = number_of_plots_n * number_of_plots_m
 	global display
 	display = board.DISPLAY
-	display.auto_refresh = False
+	if display_has_autorefresh:
+		display.auto_refresh = False
 	if 1<number_of_plots_n:
 		tile_width = display.width//number_of_plots_n
 	else:
@@ -112,21 +157,6 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 	padding_size = 24
 	plot_width = tile_width - padding_size - 1
 	plot_height = tile_height - padding_size - 1
-	palette = displayio.Palette(8)
-	palette[0] = 0x000000 # black
-	palette[1] = 0xffffff # white
-	palette[2] = 0xff3f3f # red
-	palette[3] = 0x00df00 # green
-	palette[4] = 0x3f3fff # blue
-	palette[5] = 0xdfdf00 # yellow
-	palette[6] = 0x00efbf # cyan
-	palette[7] = 0xff00ff # magenta
-	palette2 = displayio.Palette(2)
-	for i in range(len(palette2)):
-		palette2[i] = palette[i]
-	palette8 = displayio.Palette(8)
-	for i in range(len(palette8)):
-		palette8[i] = palette[i]
 	axes_bitmap = displayio.Bitmap(tile_width, tile_height, 1)
 	for i in range(padding_size//2, tile_width-padding_size//2):
 		axes_bitmap[i,padding_size//2] = 1
@@ -159,7 +189,7 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 	group.append(axes_group)
 	group.append(plot_group)
 	FONT_SCALE = 1
-	FONT_GAP = FONT_SCALE * 16
+	FONT_GAP = FONT_SCALE * 14
 	for m in range(len(list_of_labels)):
 		text_areas = []
 		running_text_width = 0
@@ -168,13 +198,13 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 			#print(list_of_labels[m][n])
 			if n==0:
 				y = (m//2)*tile_height + FONT_SCALE * 5
-				text_area = label.Label(terminalio.FONT, text=list_of_labels[m][n], color=palette[1]) # white for plot label
+				text_area = label.Label(terminalio.FONT, text=list_of_labels[m][n], color=palette8[1]) # white for plot label
 				text_width = text_area.bounding_box[2] * FONT_SCALE
 				text_group = displayio.Group(scale=FONT_SCALE, x=x-text_width//2, y=y)
 				text_group.append(text_area)
 				group.append(text_group)
 			else:
-				text_area = label.Label(terminalio.FONT, text=list_of_labels[m][n], color=palette[n+1]) # other colors
+				text_area = label.Label(terminalio.FONT, text=list_of_labels[m][n], color=palette8[n+1]) # other colors
 				text_width = text_area.bounding_box[2] * FONT_SCALE + FONT_GAP
 				running_text_width += text_width
 				text_areas.append(text_area)
@@ -189,7 +219,16 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 	display.show(group)
 
 def refresh():
-	display.refresh()
+	try:
+		display.refresh()
+		#info("worked immediately")
+	except:
+		time.sleep(0.05)
+		try:
+			display.refresh()
+			#info("worked after 50 ms")
+		except:
+			pass
 
 def format_for_plot(values, minimum, maximum):
 	new_values = []
@@ -214,7 +253,7 @@ def update_plot(plot_number, arrays_to_plot):
 					doit = True
 				if doit:
 					plot_bitmap[plot_number][x,y] = n + 2 # first two indices are black and white
-	display.refresh()
+	refresh()
 
 def update_temperature_display_on_oled_ssd1327(temperatures_to_plot):
 #	if not oled_display_is_available:
@@ -235,7 +274,7 @@ def update_temperature_display_on_oled_ssd1327(temperatures_to_plot):
 			if rows<=y:
 				y = rows - 1
 			bitmap[columns - 1 - x, y] = 1
-	display.refresh()
+	refresh()
 
 def update_temperature_display_on_oled_sh1107(offset_t, max_t, temperatures_to_plot):
 #	if not oled_display_is_available:
@@ -256,7 +295,7 @@ def update_temperature_display_on_oled_sh1107(offset_t, max_t, temperatures_to_p
 			if rows<=y:
 				y = rows - 1
 			bitmap[columns - 1 - x, y] = 1
-	display.refresh()
+	refresh()
 
 FONTSCALE = 3
 
@@ -273,7 +312,7 @@ def show_text_on_ssd1327(string):
 	)
 	text_group.append(text_area)  # Subgroup for text scaling
 	splash.append(text_group)
-	display.refresh()
+	refresh()
 
 def setup_ili9341(spi, tft_cs, tft_dc):
 	global display
