@@ -1,12 +1,12 @@
 # written 2022-01-12 by mza
 # based on solar_water_heater.py
-# last updated 2022-01-14 by mza
+# last updated 2022-04-25 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
 # cp -a outdoor_temp_hum.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
-# rsync -r simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_sht31d.mpy adafruit_io adafruit_requests.mpy /media/circuitpython/lib/
+# rsync -r adafruit_minimqtt simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_sht31d.mpy adafruit_io adafruit_requests.mpy /media/circuitpython/lib/
 
 header_string = "date/time"
 mydir = "/logs"
@@ -128,9 +128,9 @@ def main():
 	if not sdcard_is_available:
 		mydir = "/"
 	if RTC_is_available:
-		create_new_logfile_with_string_embedded(mydir, "solar_water_heater", pcf8523_adafruit.get_timestring2())
+		create_new_logfile_with_string_embedded(mydir, "outdoor-temp-hum", pcf8523_adafruit.get_timestring2())
 	else:
-		create_new_logfile_with_string_embedded(mydir, "solar_water_heater")
+		create_new_logfile_with_string_embedded(mydir, "outdoor-temp-hum")
 	global gps_is_available
 	if should_use_gps:
 		if 1:
@@ -228,16 +228,9 @@ if __name__ == "__main__":
 	try:
 		main()
 	except KeyboardInterrupt:
-		info("caught ctrl-c")
-		flush()
-		atexit.unregister(generic.reset)
-		sys.exit(0)
+		generic.keyboard_interrupt_exception_handler()
 	except ReloadException:
-		info("reload exception")
-		flush()
-		atexit.unregister(generic.reset)
-		time.sleep(1)
-		supervisor.reload()
+		generic.reload_exception_handler()
 	info("leaving program...")
 	flush()
 	generic.reset()
