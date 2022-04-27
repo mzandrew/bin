@@ -8,7 +8,7 @@
 # cp -a temperature_log_and_graph.py /media/circuitpython/code.py
 # ln -s ~/build/adafruit-circuitpython/bundle/lib
 # cd lib
-# rsync -av microcontroller adafruit_display_text adafruit_esp32spi adafruit_register adafruit_pcf8523.mpy adafruit_pct2075.mpy adafruit_displayio_sh1107.mpy neopixel.mpy adafruit_rgbled.mpy adafruit_requests.mpy adafruit_sdcard.mpy simpleio.mpy adafruit_io /media/circuitpython/lib/
+# rsync -av adafruit_minimqtt adafruit_display_text adafruit_esp32spi adafruit_register adafruit_pcf8523.mpy adafruit_pct2075.mpy adafruit_displayio_sh1107.mpy neopixel.mpy adafruit_rgbled.mpy adafruit_requests.mpy adafruit_sdcard.mpy simpleio.mpy adafruit_io /media/circuitpython/lib/
 # sync
 
 import time
