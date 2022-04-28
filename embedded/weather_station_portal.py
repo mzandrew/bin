@@ -33,7 +33,7 @@ import display_adafruit
 board_id = board.board_id
 info("we are " + board_id)
 if board_id=="pyportal_titano" or board_id=="pyportal":
-	delay = 15.0 # number of seconds between updates
+	delay = 1.0 # number of seconds between updates
 	plots_to_update_every_screen_refresh = 1
 	should_use_airlift = True
 	should_use_builtin_wifi = False
@@ -43,7 +43,7 @@ if board_id=="pyportal_titano" or board_id=="pyportal":
 	should_use_RTC = False
 	should_use_SPI = True
 elif board_id=="adafruit_magtag_2.9_grayscale":
-	delay = 60.0 # number of seconds between updates
+	delay = 1.0 # number of seconds between updates
 	plots_to_update_every_screen_refresh = 4
 	should_use_airlift = False
 	should_use_builtin_wifi = True
@@ -90,6 +90,9 @@ def loop():
 		lcm4 = loop_counter%4
 		if 0==lcm4:
 			update_plot[0] = True
+			if airlift_is_available:
+				string = airlift.get_time_string_from_server()
+				info(string)
 		elif 1==lcm4:
 			update_plot[1] = True
 		elif 2==lcm4:
@@ -98,6 +101,9 @@ def loop():
 			update_plot[3] = True
 	else:
 		update_plot = [ True, True, True, True ]
+		if airlift_is_available:
+			string = airlift.get_time_string_from_server()
+			info(string)
 	if update_plot[0]:
 		info("updating temperatures...")
 		global ds18b20

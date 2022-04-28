@@ -135,7 +135,7 @@ def esp32_connect(number_of_retries_remaining=2):
 	#global socket
 	#global requests
 	global io
-	show_network_status()
+	#show_network_status()
 	if esp.is_connected:
 		info("already connected")
 		show_network_status()
@@ -491,8 +491,18 @@ def old_post_data(data):
 	except:
 		error("couldn't perform POST operation")
 
+def get_time_string_from_server():
+	try:
+		t = io.receive_time()
+		#info(str(t))
+		string = "%04d-%02d-%02d+%02d:%02d:%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
+		return string
+	except:
+		return ""
+
 def update_time_from_server():
 	info("setting RTC time from server...")
+	time = ""
 	try:
 		time = io.receive_time()
 		#info(str(time))
@@ -503,6 +513,7 @@ def update_time_from_server():
 		pcf8523_adafruit.set_from_timestruct(time)
 	except:
 		warning("couldn't set RTC")
+	return time
 
 def show_signal_strength():
 	try:
