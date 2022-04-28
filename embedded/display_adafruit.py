@@ -196,7 +196,7 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 	FONT_GAP = 2 * width_of_single_character
 	#print(str(display.width))
 	#print(str(plot_width))
-	print("width of a single character: " + str(width_of_single_character))
+	#print("width of a single character: " + str(width_of_single_character))
 	maximum_character_count = 0
 	for m in range(len(list_of_labels)):
 		character_count = 0
@@ -210,7 +210,7 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 	#print(str(maximum_character_count))
 	if plot_width<maximum_character_count*width_of_single_character:
 		FONT_GAP = FONT_SCALE*width_of_single_character
-	print("font gap: " + str(FONT_GAP))
+	#print("font gap: " + str(FONT_GAP))
 	for m in range(len(list_of_labels)):
 		text_areas = []
 		running_text_width = 0
@@ -265,7 +265,11 @@ def update_plot(plot_number, arrays_to_plot):
 		for y in range(plot_height):
 			plot_bitmap[plot_number][x,y] = 0
 			for n in range(len(arrays_to_plot)):
-				yn = int(0. + plot_height - 1. * plot_height * arrays_to_plot[n][x])
+				if plot_width<len(arrays_to_plot[n]):
+					array_to_plot = arrays_to_plot[n][-plot_width:]
+				else:
+					array_to_plot = arrays_to_plot[n]
+				yn = int(0. + plot_height - 1. * plot_height * array_to_plot[x])
 				doit = False
 				if y==yn:
 					doit = True
