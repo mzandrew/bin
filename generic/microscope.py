@@ -72,11 +72,6 @@ def read_single_keypress():
 		fcntl.fcntl(fd, fcntl.F_SETFL, flags_save)
 	return tuple(ret)
 
-def query():
-	camera.resolution = (1920, 1080)
-	camera.start_preview()
-	time.sleep(2)
-
 def take_one_picture():
 	timestring = time.strftime("%Y-%m-%d.%H%M%S")
 	camera.capture(temporary_filename)
@@ -85,24 +80,29 @@ def take_one_picture():
 	#print(filename + " " + is_battery_running_low())
 	print(filename)
 
-print("starting preview...")
+print("press x or q to exit; any other key to take a(nother) pic")
 sys.stdout.flush()
+time.sleep(1)
 try:
 	camera = picamera.PiCamera()
+	camera.awb_mode = "fluorescent"
+	camera.rotation = 180
 	camera.framerate = 10
 	#camera.resolution = (3280, 2464) # max res of old v2 camera
 	#camera.resolution = (4072, 3176) # total pixels - Invalid resolution requested
 	#camera.resolution = (4072, 3064) # effective pixels - Invalid resolution requested: PiResolution(width=4072, height=3064)
-	camera.resolution = (4056, 3040) # active pixels - Failed to enable component: Out of resources
+	#camera.resolution = (4056, 3040) # active pixels - Failed to enable component: Out of resources
 	#camera.resolution = (4056, 2288) # 16:9 - Unable to enable port vc.ril.image_encode:out:0: Out of memory
-	#camera.resolution = (3808, 2142) # 16:9 works
+	#camera.resolution = (3808, 2142) # 16:9 works but the preview blinks
 	#camera.resolution = (3808, 2856) # 4:3 out of resources
-	query()
+	camera.resolution = (1920, 1080) # works great
+	print("starting preview...")
+	camera.start_preview(alpha = 200)
+	time.sleep(2)
 except:
 	print("try changing gpu_mem from 128 to 192 in /boot/config.txt (or from raspi-config)")
 	sys.exit(1)
 #take_one_picture()
-print("press x or q to exit; any other key to take a(nother) pic")
 while True:
 	keys = read_single_keypress()
 	#print(keys)
