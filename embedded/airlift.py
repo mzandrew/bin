@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-04-25 by mza
+# last updated 2022-04-29 by mza
 
 #from adafruit_esp32spi import adafruit_esp32spi_wifimanager
 
@@ -31,7 +31,7 @@ except ImportError:
 
 epsilon = 0.000001
 MAXERRORCOUNT = 5
-SUPERMAXERRORCOUNT = 50
+SUPERMAXERRORCOUNT = 10
 errorcount = 0
 myfeeds = []
 delay = 1.0
@@ -294,7 +294,7 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 	myfeed = setup_feed(feed_name)
 	if not myfeed:
 		warning("feed " + feed_name + " not connected")
-		return
+		return False
 	try:
 		value = float(value)
 		info("publishing " + str(value) + " to feed " + feed_name)
@@ -322,19 +322,21 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 		errorcount += 1
 		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")
 		show_network_status()
-	if MAXERRORCOUNT<errorcount:
-		info("Attempting reconnection...")
-		try:
-			if using_builtin_wifi:
-				if connect_wifi(hostname):
-					errorcount = 0
-			else:
-				if esp32_connect():
-					errorcount = 0
-		except:
-			pass
+#	if MAXERRORCOUNT<errorcount:
+#		info("Attempting reconnection...")
+#		try:
+#			if using_builtin_wifi:
+#				if connect_wifi(hostname):
+#					errorcount = 0
+#			else:
+#				if esp32_connect():
+#					errorcount = 0
+#		except:
+#			pass
 	if SUPERMAXERRORCOUNT<errorcount:
 		error("too many errors (" + str(errorcount) + "/" + str(SUPERMAXERRORCOUNT) + ")")
+		flush()
+		time.sleep(2)
 		import generic
 		generic.reset()
 

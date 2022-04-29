@@ -381,16 +381,9 @@ if __name__ == "__main__":
 	try:
 		main()
 	except KeyboardInterrupt:
-		info("caught ctrl-c")
-		flush()
-		atexit.unregister(generic.reset)
-		sys.exit(0)
+		generic.keyboard_interrupt_exception_handler()
 	except ReloadException:
-		info("reload exception")
-		flush()
-		atexit.unregister(generic.reset)
-		time.sleep(1)
-		supervisor.reload()
+		generic.reload_exception_handler()
 	info("leaving program...")
 	flush()
 	generic.reset()
