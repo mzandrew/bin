@@ -55,21 +55,6 @@ elif board_id=="adafruit_magtag_2.9_grayscale":
 else:
 	error("what board am I?")
 
-array_size = 215 # display_adafruit.plot_width
-ds18b20 = [ -40.0 for i in range(array_size) ]
-temperature_outdoor = [ -40.0 for i in range(array_size) ]
-temperature_indoor = [ -40.0 for i in range(array_size) ]
-heater = [ -40.0 for i in range(array_size) ]
-sht31d = [ -40.0 for i in range(array_size) ]
-humidity_outdoor = [ -40.0 for i in range(array_size) ]
-humidity_indoor = [ -40.0 for i in range(array_size) ]
-pressure = [ -40.0 for i in range(array_size) ]
-particle0p3 = [ -40.0 for i in range(array_size) ]
-particle0p5 = [ -40.0 for i in range(array_size) ]
-particle1p0 = [ -40.0 for i in range(array_size) ]
-particle2p5 = [ -40.0 for i in range(array_size) ]
-particle5p0 = [ -40.0 for i in range(array_size) ]
-
 MIN_TEMP_TO_PLOT = 10.0
 MAX_TEMP_TO_PLOT = 80.0
 MIN_HUM_TO_PLOT = 40.0
@@ -201,6 +186,9 @@ def main():
 #		spi = board.SPI
 #	except:
 	if should_use_SPI:
+		#try:
+		#	spi = board.SPI # this does not work for the pyportal board
+		#except:
 		spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 	global airlift_is_available
 	if should_use_airlift:
@@ -209,6 +197,11 @@ def main():
 		airlift_is_available = airlift.setup_wifi("weather-station-portal")
 	else:
 		airlift_is_available = False
+	if not airlift_is_available:
+		error("can't connect to wifi - rebooting in 10 seconds...")
+		flush()
+		time.sleep(10)
+		generic.reset()
 	global sdcard_is_available
 	global dirname
 	if should_use_sdcard:
@@ -222,8 +215,35 @@ def main():
 		create_new_logfile_with_string_embedded(dirname, "weather_station")
 	display_adafruit.setup_for_n_m_plots(2, 2, [["temperature", "indoor", "outdoor", "roof", "heater"], ["humidity", "indoor", "outdoor", "roof"], ["pressure", "indoor"], ["particle count", "0.3", "0.5", "1.0", "2.5", "5.0"]])
 	display_adafruit.refresh()
+	array_size = display_adafruit.plot_width
+	if 1:
+		global ds18b20
+		global temperature_outdoor
+		global temperature_indoor
+		global heater
+		global sht31d
+		global humidity_outdoor
+		global humidity_indoor
+		global pressure
+		global particle0p3
+		global particle0p5
+		global particle1p0
+		global particle2p5
+		global particle5p0
+		ds18b20 = [ -40.0 for i in range(array_size) ]
+		temperature_outdoor = [ -40.0 for i in range(array_size) ]
+		temperature_indoor = [ -40.0 for i in range(array_size) ]
+		heater = [ -40.0 for i in range(array_size) ]
+		sht31d = [ -40.0 for i in range(array_size) ]
+		humidity_outdoor = [ -40.0 for i in range(array_size) ]
+		humidity_indoor = [ -40.0 for i in range(array_size) ]
+		pressure = [ -40.0 for i in range(array_size) ]
+		particle0p3 = [ -40.0 for i in range(array_size) ]
+		particle0p5 = [ -40.0 for i in range(array_size) ]
+		particle1p0 = [ -40.0 for i in range(array_size) ]
+		particle2p5 = [ -40.0 for i in range(array_size) ]
+		particle5p0 = [ -40.0 for i in range(array_size) ]
 	if 0:
-		#array_size = display_adafruit.plot_width
 		print("fetching old data from feeds...")
 		#global temperature_indoor
 		#temperature_indoor = airlift.get_all_data("inside-temp", array_size)
