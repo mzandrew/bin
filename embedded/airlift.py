@@ -1,27 +1,11 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-04-29 by mza
-
-#from adafruit_esp32spi import adafruit_esp32spi_wifimanager
+# last updated 2022-04-30 by mza
 
 import time
-import board
 import busio
 import digitalio
-try:
-	import wifi
-	import ipaddress
-	import socketpool
-	import ssl
-except:
-	pass
-import adafruit_requests
-from adafruit_esp32spi import adafruit_esp32spi
-from adafruit_esp32spi import PWMOut
-from adafruit_io.adafruit_io import IO_HTTP, AdafruitIO_RequestError
-import adafruit_requests as requests
-import adafruit_esp32spi.adafruit_esp32spi_socket as socket
 import math
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 try:
@@ -71,6 +55,11 @@ def scan_networks():
 	return networks
 
 def connect_wifi(hostname):
+	import wifi
+	import ssl
+	import socketpool
+	import adafruit_requests as requests
+	from adafruit_io.adafruit_io import IO_HTTP
 	global io
 	if 0:
 		try:
@@ -118,8 +107,8 @@ def setup_wifi(hostname, number_of_retries_remaining=2):
 
 # this function does not work:
 # from https://issueexplorer.com/issue/adafruit/Adafruit_CircuitPython_ESP32SPI/140
-_SET_HOSTNAME = const(0x16)
 def set_hostname(esp, hostname):
+	_SET_HOSTNAME = const(0x16)
 	"""Tells the ESP32 to set hostname"""
 	print("setting hostname...")
 	resp = esp._send_command_get_response(_SET_HOSTNAME, [hostname])
@@ -129,13 +118,12 @@ def set_hostname(esp, hostname):
 	return resp
 
 def esp32_connect(number_of_retries_remaining=2):
+	import adafruit_esp32spi.adafruit_esp32spi_socket as socket
+	import adafruit_requests as requests
+	from adafruit_io.adafruit_io import IO_HTTP
 	if number_of_retries_remaining<1:
 		return False
-	global esp
-	#global socket
-	#global requests
 	global io
-	#show_network_status()
 	if esp.is_connected:
 		info("already connected")
 		show_network_status()
@@ -170,6 +158,8 @@ def esp32_connect(number_of_retries_remaining=2):
 	# and https://github.com/adafruit/Adafruit_CircuitPython_ESP32SPI/blob/main/adafruit_esp32spi/adafruit_esp32spi.py
 #spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining=2):
+	#from adafruit_esp32spi import PWMOut
+	from adafruit_esp32spi import adafruit_esp32spi
 	global esp
 	global using_builtin_wifi
 	using_builtin_wifi = False
@@ -225,11 +215,13 @@ def show_network_status():
 	#info("using builtin wifi = " + str(using_builtin_wifi))
 	try:
 		if using_builtin_wifi:
+			info("using internal wifi")
 			mac_address = list(wifi.radio.mac_address)
 			info("MAC: " + format_MAC(mac_address))
 			info("My IP address is " + str(wifi.radio.ipv4_address))
 			info("RSSI: " + str(wifi.radio.ap_info.rssi) + " dB") # receiving signal strength indicator
 		else:
+			info("using external/spi wifi")
 			info("My IP address is " + esp.pretty_ip(esp.ip_address))
 			info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
 			if esp.status == adafruit_esp32spi.WL_IDLE_STATUS:
@@ -249,7 +241,21 @@ def show_network_status():
 	except:
 		pass
 
+# adafruit io blinka:
+# https://learn.adafruit.com/adafruit-io-basics-digital-input/python-setup
+# sudo pip3 install --upgrade setuptools
+# pip3 install adafruit-blinka
+# pip3 install adafruit-io
+def setup_io():
+	from Adafruit_IO import Client
+	global io
+	try:
+		io = Client(secrets["aio_username"], secrets["aio_key"])
+	except:
+		warning("can't connect to adafruit io")
+
 def setup_feed(feed_name, number_of_retries_remaining=2):
+	from adafruit_io.adafruit_io import AdafruitIO_RequestError
 	global myfeeds
 	for feed in myfeeds:
 		if feed_name==feed[0]:
@@ -426,6 +432,25 @@ def post_geolocated_data(feed_name, location, value, perform_readback_and_verify
 		errorcount += 1
 		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")
 
+def get_most_recent_data(feed):
+	try:
+		value = io.receive_data(feed)["value"]
+		#print(str(value))
+		value = float(value)
+		#print(str(value))
+		return value
+	except:
+		raise
+
+def add_most_recent_data_to_end_of_array(values, feed):
+	try:
+		new_value = get_most_recent_data(feed)
+		values.append(new_value)
+		values.pop(0)
+	except:
+		warning("couldn't get the most recent datapoint for feed " + feed)
+	return values
+
 #data_list = [Data(value=10), Data(value=11)]
 
 #def get_previous():
@@ -443,45 +468,42 @@ def get_some_data(feed_key, start_time, end_time, limit=1):
 	path = adafruit_io._compose_path("feeds/{0}/data?start_time={0}&end_time={0}&limit={0}".format(feed_key, start_time, end_time, limit))
 	return adafruit_io._get(path)
 
-def get_most_recent_data(feed):
-	try:
-		value = io.receive_data(feed)["value"]
-		#print(str(value))
-		value = float(value)
-		#print(str(value))
-		return value
-	except:
-		raise
-
-def add_most_recent_data_to_end_of_array(values, feed):
-	values.append(get_most_recent_data(feed))
-	values.pop(0)
-	return values
-
 DEFAULT = -40
+# url -H "X-AIO-Key: {io_key}" "https://io.adafruit.com/api/v2/{username}/feeds/{feed_key}/data?start_time=2019-05-04T00:00Z&end_time=2019-05-05T00:00Z"
+# in blinka/python, this works
+# in circuitpython, we get "AttributeError: 'IO_HTTP' object has no attribute 'data'"
 def get_all_data(feed, count):
 	values = [ DEFAULT for i in range(count) ]
 	try:
-		print(str(count))
+		VALUE_INDEX = 3 # gotta know that "value" is index #3 in the tuple
+		#print(str(count))
 		info("fetching data from feed " + str(feed) + "...")
-		reverse_order_values = io.receive_all_data(feed) # out of memory
-		print(str(len(reverse_order_values)))
+		reverse_order_values_raw = io.data(feed, max_results=count)
+		#print(str(reverse_order_values_raw[0]))
+		#print(str(reverse_order_values_raw[1]))
+		reverse_order_values = []
+		for i in range(len(reverse_order_values_raw)):
+			reverse_order_values.append(reverse_order_values_raw[i][VALUE_INDEX])
+		#print(str(len(reverse_order_values)))
+		#print(str(reverse_order_values))
 		if count<len(reverse_order_values):
 			reverse_order_values = reverse_order_values[:count]
-		print(str(len(reverse_order_values)))
+		#print(str(len(reverse_order_values)))
 		if len(reverse_order_values)<count:
 			for i in range(len(reverse_order_values), count):
 				reverse_order_values.append(DEFAULT)
-		print(str(len(reverse_order_values)))
+		#print(str(len(reverse_order_values)))
 		for i in range(len(reverse_order_values)):
 			values[i] = reverse_order_values[count - i - 1]
-		print(str(len(values)))
+		#print(str(len(values)))
+		#print(str(values))
 		info("done")
 		return values
 	except:
 		raise
 
 def old_post_data(data):
+	import wifi
 	try:
 		#feed = "heater"
 		feed = "test"
