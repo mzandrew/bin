@@ -4,7 +4,6 @@
 import sys
 import time
 import atexit
-import supervisor
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
 def register_atexit_handler():
@@ -18,6 +17,7 @@ def keyboard_interrupt_exception_handler():
 	sys.exit(0)
 
 def reload_exception_handler():
+	import supervisor
 	atexit.unregister(reset)
 	info("")
 	info("reload exception")
@@ -124,4 +124,20 @@ def report_battery_percentage():
 		info(get_battery_percentage())
 	except:
 		pass
+
+def convert_date_to_local_time(datestamp):
+	from datetime import datetime
+	from dateutil import tz
+	from_zone = tz.tzutc()
+	to_zone = tz.tzlocal()
+	utc = datetime.strptime(datestamp, "%Y-%m-%dT%H:%M:%SZ")
+	#print(str(utc))
+	utc = utc.replace(tzinfo=from_zone)
+	#print(str(utc))
+	localtime = utc.astimezone(to_zone)
+	#print(str(localtime))
+	#datestamp = localtime.strptime(localtime, "%Y-%m-%d %H:%M:S%z")
+	datestamp = localtime.strftime("%Y-%m-%d+%H:%M")
+	#print(str(datestamp))
+	return datestamp
 
