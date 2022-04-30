@@ -468,36 +468,62 @@ def get_some_data(feed_key, start_time, end_time, limit=1):
 	path = adafruit_io._compose_path("feeds/{0}/data?start_time={0}&end_time={0}&limit={0}".format(feed_key, start_time, end_time, limit))
 	return adafruit_io._get(path)
 
-DEFAULT = -40
 # url -H "X-AIO-Key: {io_key}" "https://io.adafruit.com/api/v2/{username}/feeds/{feed_key}/data?start_time=2019-05-04T00:00Z&end_time=2019-05-05T00:00Z"
 # in blinka/python, this works
 # in circuitpython, we get "AttributeError: 'IO_HTTP' object has no attribute 'data'"
-def get_all_data(feed, count):
-	values = [ DEFAULT for i in range(count) ]
+def get_all_data(feed, count_desired=None):
+	# fetches 100 if count_desired is None
+	DEFAULT_VALUE = -40
 	try:
 		VALUE_INDEX = 3 # gotta know that "value" is index #3 in the tuple
-		#print(str(count))
-		info("fetching data from feed " + str(feed) + "...")
-		reverse_order_values_raw = io.data(feed, max_results=count)
-		#print(str(reverse_order_values_raw[0]))
-		#print(str(reverse_order_values_raw[1]))
-		reverse_order_values = []
-		for i in range(len(reverse_order_values_raw)):
-			reverse_order_values.append(reverse_order_values_raw[i][VALUE_INDEX])
-		#print(str(len(reverse_order_values)))
-		#print(str(reverse_order_values))
-		if count<len(reverse_order_values):
-			reverse_order_values = reverse_order_values[:count]
-		#print(str(len(reverse_order_values)))
-		if len(reverse_order_values)<count:
-			for i in range(len(reverse_order_values), count):
-				reverse_order_values.append(DEFAULT)
-		#print(str(len(reverse_order_values)))
-		for i in range(len(reverse_order_values)):
-			values[i] = reverse_order_values[count - i - 1]
-		#print(str(len(values)))
-		#print(str(values))
-		info("done")
+		#info("fetching data from feed " + str(feed) + "...")
+		if count_desired is not None:
+			raw = io.data(feed, max_results=count_desired)
+		else:
+			raw = io.data(feed)
+		count_gotten = len(raw)
+		values = []
+		for i in range(count_gotten):
+			values.insert(0, raw[i][VALUE_INDEX])
+		if count_desired is not None:
+			if count_desired<count_gotten:
+				values = values[:count_desired]
+			elif count_gotten<count_desired:
+				for i in range(count_gotten, count_desired):
+					values.append(DEFAULT_VALUE)
+		#info("done")
+		return values
+	except:
+		raise
+
+# url -H "X-AIO-Key: {io_key}" "https://io.adafruit.com/api/v2/{username}/feeds/{feed_key}/data?start_time=2019-05-04T00:00Z&end_time=2019-05-05T00:00Z"
+# in blinka/python, this works
+# in circuitpython, we get "AttributeError: 'IO_HTTP' object has no attribute 'data'"
+# format is:
+# Data(created_epoch=1651335357, created_at='2022-04-30T16:15:57Z', updated_at=None, value='77.2382', completed_at=None, feed_id=1785141, expiration='2022-06-29T16:15:57Z', position=None, id='0F0K895WA8728HXVYE37EBD27V', lat=None, lon=None, ele=None)
+def get_all_data_with_datestamps(feed, count_desired=None):
+	# fetches 100 if count_desired is None
+	DEFAULT_DATESTAMP = "2020-02-02T22:22:22Z"
+	DEFAULT_VALUE = -40
+	try:
+		VALUE_INDEX = 3 # gotta know that "value" is index #3 in the tuple
+		DATESTAMP_INDEX = 1 # gotta know that "created_at" is index #1 in the tuple
+		#info("fetching data from feed " + str(feed) + "...")
+		if count_desired is not None:
+			raw = io.data(feed, max_results=count_desired)
+		else:
+			raw = io.data(feed)
+		count_gotten = len(raw)
+		values = []
+		for i in range(count_gotten):
+			values.insert(0, [raw[i][DATESTAMP_INDEX],raw[i][VALUE_INDEX]])
+		if count_desired is not None:
+			if count_desired<count_gotten:
+				values = values[:count_desired]
+			elif count_gotten<count_desired:
+				for i in range(count_gotten, count_desired):
+					values.append([DEFAULT_DATESTAMP,DEFAULT_VALUE])
+		#info("done")
 		return values
 	except:
 		raise
