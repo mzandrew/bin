@@ -1,6 +1,6 @@
 # written 2022-01-17 by mza
 # based on outdoor_temp_hum.py
-# last updated 2022-04-24 by mza
+# last updated 2022-05-03 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -19,6 +19,7 @@ header_string = "date/time"
 mydir = "/logs"
 should_use_airlift = True
 if 1: # bme680 temp/hum/pressure/alt/gas on feather tft esp32-s2
+	my_wifi_name = "indoor2"
 	FEATHER_ESP32S2 = True
 	use_pwm_status_leds = False
 	should_use_sdcard = False
@@ -103,15 +104,16 @@ def main():
 			display_is_available = True
 			board.DISPLAY.brightness = 0.75
 			#display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.5)
-			info("display is available (1)")
+			info("display is available (builtin)")
 		elif display_adafruit.setup_st7789(spi, board.TFT_DC, board.TFT_CS, board.TFT_RESET):
 #		if display_adafruit.setup_st7789(spi, board.TFT_DC, board.TFT_CS, board.TFT_RESET):
 			display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.95)
 			display_is_available = True
-			info("display is available (2)")
+			info("display is available (external/spi)")
 		else:
 			warning("display is not available")
 	if display_is_available:
+		display_adafruit.setup_palette()
 		display_adafruit.setup_for_n_m_plots(1, 1, [["indoor", "temperature", "humidity", "pressure"]])
 		display_adafruit.refresh()
 		#display_adafruit.test_st7789()
@@ -178,9 +180,9 @@ def main():
 	global airlift_is_available
 	if should_use_airlift:
 		if use_built_in_wifi:
-			airlift_is_available = airlift.setup_wifi("indoor")
+			airlift_is_available = airlift.setup_wifi(my_wifi_name)
 		else:
-			airlift_is_available = airlift.setup_airlift("indoor", spi, board.D13, board.D11, board.D12)
+			airlift_is_available = airlift.setup_airlift(my_wifi_name, spi, board.D13, board.D11, board.D12)
 		if airlift_is_available:
 			header_string += ", RSSI-dB"
 			airlift.setup_feed("inside-temp")
