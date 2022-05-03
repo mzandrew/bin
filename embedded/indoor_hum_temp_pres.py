@@ -8,30 +8,6 @@
 # cd ~/build/adafruit-circuitpython/bundle/lib
 # rsync -r adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
 
-MIN_TEMP_TO_PLOT = 10.0
-MAX_TEMP_TO_PLOT = 80.0
-MIN_HUM_TO_PLOT = 40.0
-MAX_HUM_TO_PLOT = 100.0
-MIN_PRES_TO_PLOT = 0.997
-MAX_PRES_TO_PLOT = 1.008
-
-header_string = "date/time"
-mydir = "/logs"
-should_use_airlift = True
-if 1: # bme680 temp/hum/pressure/alt/gas on feather tft esp32-s2
-	my_wifi_name = "indoor2"
-	FEATHER_ESP32S2 = True
-	use_pwm_status_leds = False
-	should_use_sdcard = False
-	should_use_RTC = False
-	should_use_gps = False
-	N = 32
-	delay_between_acquisitions = 1.5
-	gps_delay_in_ms = 2000
-	delay_between_posting_and_next_acquisition = 1.0
-	use_built_in_wifi = True
-	should_use_display = True
-
 import sys
 import time
 import atexit
@@ -47,6 +23,34 @@ import gps_adafruit
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 import generic
 import display_adafruit
+
+MIN_TEMP_TO_PLOT = 10.0
+MAX_TEMP_TO_PLOT = 80.0
+MIN_HUM_TO_PLOT = 40.0
+MAX_HUM_TO_PLOT = 100.0
+MIN_PRES_TO_PLOT = 0.997
+MAX_PRES_TO_PLOT = 1.008
+
+header_string = "date/time"
+mydir = "/logs"
+board_id = board.board_id
+info("we are " + board_id)
+if 'adafruit_feather_esp32s2_tft'==board_id: # bme680 temp/hum/pressure/alt/gas on feather tft esp32-s2
+	my_wifi_name = "indoor2"
+	FEATHER_ESP32S2 = True
+	use_pwm_status_leds = False
+	should_use_sdcard = False
+	should_use_RTC = False
+	should_use_gps = False
+	N = 32
+	delay_between_acquisitions = 1.5
+	gps_delay_in_ms = 2000
+	delay_between_posting_and_next_acquisition = 1.0
+	should_use_airlift = True
+	use_built_in_wifi = True
+	should_use_display = True
+else:
+	error("what kind of board am I?")
 
 def print_header():
 	info("" + header_string)
@@ -96,8 +100,10 @@ def main():
 	global spi
 	try:
 		spi = board.SPI
+		info("builtin SPI (1)")
 	except:
 		spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO) # this line stops the builtin from working
+		info("builtin SPI (2)")
 	display_is_available = False
 	if should_use_display:
 		if board.DISPLAY:
@@ -140,9 +146,9 @@ def main():
 	if not sdcard_is_available:
 		mydir = "/"
 	if RTC_is_available:
-		create_new_logfile_with_string_embedded(mydir, "indoor", pcf8523_adafruit.get_timestring2())
+		create_new_logfile_with_string_embedded(mydir, my_wifi_name, pcf8523_adafruit.get_timestring2())
 	else:
-		create_new_logfile_with_string_embedded(mydir, "indoor")
+		create_new_logfile_with_string_embedded(mydir, my_wifi_name)
 	global gps_is_available
 	if should_use_gps:
 		if 1:
@@ -185,9 +191,9 @@ def main():
 			airlift_is_available = airlift.setup_airlift(my_wifi_name, spi, board.D13, board.D11, board.D12)
 		if airlift_is_available:
 			header_string += ", RSSI-dB"
-			airlift.setup_feed("inside-temp")
-			airlift.setup_feed("inside-hum")
-			airlift.setup_feed("pressure")
+			airlift.setup_feed(my_wifi_name + "-temp")
+			airlift.setup_feed(my_wifi_name + "-hum")
+			airlift.setup_feed(my_wifi_name + "-pressure")
 			#airlift.setup_feed("indoor-altitude")
 			#airlift.setup_feed("indoor-gas")
 	else:
@@ -244,9 +250,9 @@ def loop():
 				display_adafruit.update_plot(0, [temperatures_to_plot, humidities_to_plot, pressures_to_plot])
 				if airlift_is_available:
 					try:
-						airlift.post_data("inside-temp", bme680_adafruit.get_average_values()[0])
-						airlift.post_data("inside-hum",  bme680_adafruit.get_average_values()[1])
-						airlift.post_data("pressure",    bme680_adafruit.get_average_values()[2])
+						airlift.post_data(my_wifi_name + "-temp",     bme680_adafruit.get_average_values()[0])
+						airlift.post_data(my_wifi_name + "-hum",      bme680_adafruit.get_average_values()[1])
+						airlift.post_data(my_wifi_name + "-pressure", bme680_adafruit.get_average_values()[2])
 						#airlift.post_data("indoor-altitude", bme680_adafruit.get_average_values()[3])
 						#airlift.post_data("indoor-gas", bme680_adafruit.get_average_values()[4])
 					except:
