@@ -58,11 +58,17 @@ def scan_networks():
 	return networks
 
 def connect_wifi(hostname):
-	import wifi
-	import ssl
-	import socketpool
-	import adafruit_requests as requests
-	from adafruit_io.adafruit_io import IO_HTTP
+	try:
+		import wifi
+		import ssl
+		import socketpool
+		import adafruit_requests as requests
+		from adafruit_io.adafruit_io import IO_HTTP
+	except KeyboardInterrupt:
+		raise
+	except:
+		print("can't import wifi, ssl, socketpool, adafruit_requests or adafruit_io")
+		raise
 	global io
 	if 0:
 		try:
@@ -76,23 +82,52 @@ def connect_wifi(hostname):
 		except:
 			pass
 	try:
-		wifi.radio.hostname = hostname
+		info("Connecting to " + secrets["ssid"] + "...")
+		try:
+			wifi.radio.hostname = hostname
+		except KeyboardInterrupt:
+			raise
+		except:
+			warning("couldn't set hostname")
 		#wifi.radio.mac_address = bytes((0x7E, 0xDF, 0xA1, 0xFF, 0xFF, 0xFF))
 		#networks = scan_networks()
 		#show_networks(networks)
-		info("Connecting to " + secrets["ssid"] + "...")
-		wifi.radio.connect(ssid=secrets["ssid"], password=secrets["password"])
+		try:
+			wifi.radio.connect(ssid=secrets["ssid"], password=secrets["password"])
+		except KeyboardInterrupt:
+			raise
+		except:
+			error("couldn't connect")
+			raise
+		show_network_status()
 #		ap_mac = list(wifi.radio.mac_address_ap)
 #		info(str(ap_mac))
-		pool = socketpool.SocketPool(wifi.radio)
-		requests = adafruit_requests.Session(pool, ssl.create_default_context())
-		io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
-		show_network_status()
+		try:
+			pool = socketpool.SocketPool(wifi.radio)
+		except KeyboardInterrupt:
+			raise
+		except:
+			error("couldn't setup socket")
+			raise
+		try:
+			requests = adafruit_requests.Session(pool, ssl.create_default_context())
+		except KeyboardInterrupt:
+			raise
+		except:
+			error("couldn't setup requests")
+			raise
+		try:
+			io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
+		except KeyboardInterrupt:
+			raise
+		except:
+			error("couldn't setup aio")
+			raise
 		return True
 	except KeyboardInterrupt:
 		raise
 	except:
-		info("could not connect to AP")
+		#info("could not connect to AP")
 		raise
 
 # for esp32-s2 boards
@@ -108,9 +143,12 @@ def setup_wifi(hostname, number_of_retries_remaining=2):
 		except KeyboardInterrupt:
 			raise
 		except:
-			time.sleep(delay)
-			info("trying wifi connection again...")
+			if i<number_of_retries_remaining-1:
+				info("")
+				info("trying wifi connection again...")
+				time.sleep(delay)
 	error("can't initialize built-in wifi")
+	info("")
 	show_network_status()
 	return False
 
