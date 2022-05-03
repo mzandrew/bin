@@ -44,7 +44,7 @@ def setup_i2c_oled_display_ssd1327(i2c, address):
 	global display
 	try:
 		import adafruit_ssd1327 # sudo pip3 install adafruit-circuitpython-ssd1327
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		print("unable to find adafruit_ssd1327 library")
@@ -52,7 +52,7 @@ def setup_i2c_oled_display_ssd1327(i2c, address):
 	try:
 		display_bus = displayio.I2CDisplay(i2c, device_address=address)
 		display = adafruit_ssd1327.SSD1327(display_bus, width=128, height=128)
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		error("can't initialize ssd1327 display over i2c (address " + hex(address) + ")")
@@ -66,7 +66,7 @@ def setup_i2c_oled_display_sh1107(i2c, address):
 	global display
 	try:
 		import adafruit_displayio_sh1107
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		print("unable to find adafruit_displayio_sh1107 library")
@@ -75,7 +75,7 @@ def setup_i2c_oled_display_sh1107(i2c, address):
 		display_bus = displayio.I2CDisplay(i2c, device_address=address)
 		display = adafruit_displayio_sh1107.SH1107(display_bus, width=128, height=64)
 		display.auto_refresh = False
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		error("can't initialize sh1107 display over i2c (address " + hex(address) + ")")
@@ -88,14 +88,14 @@ def setup_builtin_lcd_hx8357():
 	#print("attempting to configure built-in hx8357 lcd...")
 	try:
 		display = board.DISPLAY
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		print("can't initialize hx8357 display")
 		return False
 #	try:
 #		setup_pwm_backlight(backlight_pin, 1.0)
-#	except KeyboardInterrupt:
+#	except (KeyboardInterrupt, ReloadException):
 #		raise
 #	except:
 #		print("can't initialize pwm for display backlight")
@@ -112,14 +112,14 @@ def setup_builtin_epd():
 	#print("attempting to configure built-in epd...")
 	try:
 		display = board.DISPLAY
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		print("can't initialize epd display")
 		return False
 #	try:
 #		setup_pwm_backlight(backlight_pin, 1.0)
-#	except KeyboardInterrupt:
+#	except (KeyboardInterrupt, ReloadException):
 #		raise
 #	except:
 #		print("can't initialize pwm for display backlight")
@@ -260,14 +260,14 @@ def refresh():
 	try:
 		display.refresh()
 		#info("worked immediately")
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		time.sleep(0.05)
 		try:
 			display.refresh()
 			#info("worked after 50 ms")
-		except KeyboardInterrupt:
+		except (KeyboardInterrupt, ReloadException):
 			raise
 		except:
 			pass
@@ -363,7 +363,7 @@ def setup_ili9341(spi, tft_cs, tft_dc):
 	global display
 	try:
 		import adafruit_ili9341
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		print("unable to find adafruit_ili9341 library")
@@ -383,7 +383,7 @@ def setup_ili9341(spi, tft_cs, tft_dc):
 	#	splash = displayio.Group()
 	#	display.show(splash)
 		return True
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		return False
@@ -393,7 +393,7 @@ def setup_st7789(spi, tft_cs, tft_dc, tft_reset):
 	#global backlight_pwm
 	try:
 		import adafruit_st7789
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		print("unable to find adafruit_st7789 library")
@@ -407,7 +407,7 @@ def setup_st7789(spi, tft_cs, tft_dc, tft_reset):
 		#display_bus = displayio.FourWire(spi, chip_select=tft_cs, command=tft_dc)
 		display = adafruit_st7789.ST7789(display_bus, rotation=270, width=240, height=135, rowstart=40, colstart=53)
 		return True
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		raise
@@ -416,7 +416,7 @@ def setup_st7789(spi, tft_cs, tft_dc, tft_reset):
 def setup_pwm_backlight(backlight_pin, backlight_brightness=0.95):
 	try:
 		import pwmio
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		warning("can't find library pwmio; can't control backlight brightness")
@@ -424,7 +424,7 @@ def setup_pwm_backlight(backlight_pin, backlight_brightness=0.95):
 	try:
 		backlight_pwm = pwmio.PWMOut(backlight_pin, frequency=5000, duty_cycle=PWM_MAX)
 		backlight_pwm.duty_cycle = int(backlight_brightness * PWM_MAX)
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		warning("can't initialize display backlight pwm pin")
@@ -432,7 +432,7 @@ def setup_pwm_backlight(backlight_pin, backlight_brightness=0.95):
 def test_st7789():
 	try:
 		display
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		display = board.DISPLAY

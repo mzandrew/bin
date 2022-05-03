@@ -47,7 +47,7 @@ def get_values():
 	try:
 		#values = [ float(bme680.temperature + temperature_offset), bme680.humidity, bme680.pressure, bme680.altitude, bme680.gas ]
 		values = [ float(bme680.temperature + temperature_offset), bme680.humidity, bme680.pressure/hPa_to_atm, bme680.altitude, bme680.gas ]
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		values = [ 0., 0., 0., 0., 0 ]
@@ -70,7 +70,7 @@ def measure_string():
 def print_compact():
 	try:
 		date = time.strftime("%Y-%m-%d+%X")
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		date = ""
@@ -80,7 +80,7 @@ def print_compact():
 def test_if_present():
 	try:
 		bme680.temperature
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		return False
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 	try:
 		i2c = busio.I2C(board.SCL, board.SDA)
 		setup(i2c, 32)
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		error("bme680 not present")
@@ -102,7 +102,7 @@ if __name__ == "__main__":
 		print_compact()
 		try:
 			sys.stdout.flush()
-		except KeyboardInterrupt:
+		except (KeyboardInterrupt, ReloadException):
 			raise
 		except:
 			pass
