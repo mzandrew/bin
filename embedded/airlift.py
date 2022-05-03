@@ -10,6 +10,8 @@ import math
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 try:
 	from secrets import secrets
+except KeyboardInterrupt:
+	raise
 except ImportError:
 	warning("WiFi secrets are kept in secrets.py, please add them there!")
 
@@ -69,6 +71,8 @@ def connect_wifi(hostname):
 				time.sleep(0.25)
 				wifi.radio.enabled = True
 				time.sleep(0.25)
+		except KeyboardInterrupt:
+			raise
 		except:
 			pass
 	try:
@@ -85,6 +89,8 @@ def connect_wifi(hostname):
 		io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
 		show_network_status()
 		return True
+	except KeyboardInterrupt:
+		raise
 	except:
 		info("could not connect to AP")
 		raise
@@ -99,6 +105,8 @@ def setup_wifi(hostname, number_of_retries_remaining=2):
 			if connect_wifi(hostname):
 				#show_network_status()
 				return True
+		except KeyboardInterrupt:
+			raise
 		except:
 			time.sleep(delay)
 			info("trying wifi connection again...")
@@ -131,6 +139,8 @@ def esp32_connect(number_of_retries_remaining=2):
 		try:
 			esp.disconnect()
 			info("disconnected")
+		except KeyboardInterrupt:
+			raise
 		except:
 			warning("can't disconnect")
 		show_network_status()
@@ -138,6 +148,8 @@ def esp32_connect(number_of_retries_remaining=2):
 		info("Connecting to " + secrets["ssid"] + "...")
 		try:
 			esp.connect_AP(secrets["ssid"], secrets["password"])
+		except KeyboardInterrupt:
+			raise
 		except RuntimeError as e:
 			info("could not connect to AP: " + str(e))
 			number_of_retries_remaining -= 1
@@ -168,12 +180,16 @@ def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries
 		esp32_cs = digitalio.DigitalInOut(cs_pin)
 		esp32_ready = digitalio.DigitalInOut(ready_pin)
 		esp32_reset = digitalio.DigitalInOut(reset_pin)
+	except KeyboardInterrupt:
+		raise
 	except:
 		error("can't set up airlift control pins")
 		show_network_status()
 		return False
 	try:
 		esp = adafruit_esp32spi.ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
+	except KeyboardInterrupt:
+		raise
 	except:
 		error("can't set up esp")
 		show_network_status()
@@ -183,6 +199,8 @@ def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries
 			set_hostname(esp, hostname)
 			#import wifi
 			#wifi.radio.hostname = hostname
+		except KeyboardInterrupt:
+			raise
 		except:
 			warning("can't set hostname")
 	for i in range(number_of_retries_remaining):
@@ -190,6 +208,8 @@ def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries
 			if esp32_connect():
 				#show_network_status()
 				return True
+		except KeyboardInterrupt:
+			raise
 		except:
 			time.sleep(delay)
 			info("trying wifi connection again...")
@@ -200,6 +220,8 @@ def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries
 def show_network_status():
 	try:
 		using_builtin_wifi
+	except KeyboardInterrupt:
+		raise
 	except:
 		error("wifi is not setup yet (builtin or esp32spi)")
 		return
@@ -239,6 +261,8 @@ def show_network_status():
 				info("DISCONNECTED")
 			else:
 				info("UNKNOWN STATE")
+	except KeyboardInterrupt:
+		raise
 	except:
 		pass
 
@@ -252,6 +276,8 @@ def setup_io():
 	global io
 	try:
 		io = Client(secrets["aio_username"], secrets["aio_key"])
+	except KeyboardInterrupt:
+		raise
 	except:
 		warning("can't connect to adafruit io")
 
@@ -272,11 +298,15 @@ def setup_feed(feed_name, number_of_retries_remaining=2):
 			myfeed = io.get_feed(feed_name)
 			info("connected to feed " + feed_name)
 			break
+		except KeyboardInterrupt:
+			raise
 		except AdafruitIO_RequestError:
 			try:
 				myfeed = io.create_new_feed(feed_name)
 				info("created new feed " + feed_name + "...")
 				break
+			except KeyboardInterrupt:
+				raise
 			except:
 				error("can't create feed " + feed_name)
 		except ValueError:
@@ -291,6 +321,8 @@ def setup_feed(feed_name, number_of_retries_remaining=2):
 #		myfeed = setup_feed(feed_name, number_of_retries_remaining-1)
 	try:
 		myfeeds.append([ feed_name , myfeed ])
+	except KeyboardInterrupt:
+		raise
 	except:
 		warning("couldn't create/connect feed " + feed_name)
 		show_network_status()
@@ -309,6 +341,8 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 			try:
 				io.send_data(myfeed["key"], value) # sometimes this gives RuntimeError: Sending request failed
 				break
+			except KeyboardInterrupt:
+				raise
 			except:
 				if 0==i:
 					raise
@@ -325,6 +359,8 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 				warning("readback failure " + str(readback) + "!=" + str(value))
 		else:
 			errorcount = 0
+	except KeyboardInterrupt:
+		raise
 	except:
 		errorcount += 1
 		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")
@@ -417,6 +453,8 @@ def post_geolocated_data(feed_name, location, value, perform_readback_and_verify
 				io.send_data(myfeed["key"], value, metadata=metadata) # sometimes this gives RuntimeError: Sending request failed
 				#io.send_data(myfeed["key"], value, metadata=metadata, precision=6) # sometimes this gives RuntimeError: Sending request failed
 				break
+			except KeyboardInterrupt:
+				raise
 			except:
 				if 0==i:
 					raise
@@ -432,6 +470,8 @@ def post_geolocated_data(feed_name, location, value, perform_readback_and_verify
 #			else:
 #				errorcount += 1
 #				warning("readback failure " + str(readback) + "!=" + str(value))
+	except KeyboardInterrupt:
+		raise
 	except:
 		errorcount += 1
 		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")
@@ -445,6 +485,8 @@ def get_most_recent_data(feed):
 		value = float(value)
 		#print(str(value))
 		return value
+	except KeyboardInterrupt:
+		raise
 	except:
 		warning("couldn't get the most recent datapoint for feed " + feed)
 		errorcount += 1
@@ -457,6 +499,8 @@ def add_most_recent_data_to_end_of_array(values, feed):
 		new_value = get_most_recent_data(feed)
 		values.append(new_value)
 		values.pop(0)
+	except KeyboardInterrupt:
+		raise
 	except:
 		warning("couldn't get the most recent datapoint for feed " + feed)
 		errorcount += 1
@@ -482,6 +526,8 @@ def get_some_data(feed_key, start_time, end_time, limit=1):
 		adafruit_io.validate_feed_key(feed_key)
 		path = adafruit_io._compose_path("feeds/{0}/data?start_time={0}&end_time={0}&limit={0}".format(feed_key, start_time, end_time, limit))
 		return adafruit_io._get(path)
+	except KeyboardInterrupt:
+		raise
 	except:
 		raise
 
@@ -510,6 +556,8 @@ def get_all_data(feed, count_desired=None):
 					values.append(DEFAULT_VALUE)
 		#info("done")
 		return values
+	except KeyboardInterrupt:
+		raise
 	except:
 		warning("couldn't fetch feed data from server")
 		#errorcount += 1
@@ -545,6 +593,8 @@ def get_all_data_with_datestamps(feed, count_desired=None):
 					values.append([DEFAULT_DATESTAMP,DEFAULT_VALUE])
 		#info("done")
 		return values
+	except KeyboardInterrupt:
+		raise
 	except:
 		warning("couldn't fetch feed data from server")
 		#errorcount += 1
@@ -561,6 +611,8 @@ def old_post_data(data):
 		response = wifi.post(url, json=payload, headers={"X-AIO-KEY": secrets["aio_key"]})
 		#info(response.json())
 		response.close()
+	except KeyboardInterrupt:
+		raise
 	except:
 		error("couldn't perform POST operation")
 
@@ -571,6 +623,8 @@ def get_time_string_from_server():
 		t = io.receive_time()
 		#info(str(t))
 		string = "%04d-%02d-%02d+%02d:%02d:%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
+	except KeyboardInterrupt:
+		raise
 	except:
 		warning("couldn't get time from server")
 		errorcount += 1
@@ -584,11 +638,15 @@ def update_time_from_server():
 	try:
 		time = io.receive_time()
 		#info(str(time))
+	except KeyboardInterrupt:
+		raise
 	except:
 		warning("couldn't get time from server")
 	try:
 		import pcf8523_adafruit # to set the RTC
 		pcf8523_adafruit.set_from_timestruct(time)
+	except KeyboardInterrupt:
+		raise
 	except:
 		warning("couldn't set RTC")
 		errorcount += 1
@@ -598,15 +656,21 @@ def update_time_from_server():
 def show_signal_strength():
 	try:
 		info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
+	except KeyboardInterrupt:
+		raise
 	except:
 		info("RSSI: " + str(wifi.radio.ap_info.rssi) + " dB") # receiving signal strength indicator
 
 def get_values():
 	try:
 		values = [ esp.rssi ]
+	except KeyboardInterrupt:
+		raise
 	except:
 		try:
 			values = [ wifi.radio.ap_info.rssi ]
+		except KeyboardInterrupt:
+			raise
 		except:
 			values = [ 0. ]
 	return values

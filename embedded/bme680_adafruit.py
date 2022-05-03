@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2020-10-14 by mza
-# last updated 2022-01-18 by mza
+# last updated 2022-05-03 by mza
 
 # from https://learn.adafruit.com/adafruit-bme680-humidity-temperature-barometic-pressure-voc-gas/python-circuitpython
 
@@ -47,6 +47,8 @@ def get_values():
 	try:
 		#values = [ float(bme680.temperature + temperature_offset), bme680.humidity, bme680.pressure, bme680.altitude, bme680.gas ]
 		values = [ float(bme680.temperature + temperature_offset), bme680.humidity, bme680.pressure/hPa_to_atm, bme680.altitude, bme680.gas ]
+	except KeyboardInterrupt:
+		raise
 	except:
 		values = [ 0., 0., 0., 0., 0 ]
 	myboxcar.accumulate(values)
@@ -68,6 +70,8 @@ def measure_string():
 def print_compact():
 	try:
 		date = time.strftime("%Y-%m-%d+%X")
+	except KeyboardInterrupt:
+		raise
 	except:
 		date = ""
 	string = measure_string()
@@ -76,6 +80,8 @@ def print_compact():
 def test_if_present():
 	try:
 		bme680.temperature
+	except KeyboardInterrupt:
+		raise
 	except:
 		return False
 	return True
@@ -84,6 +90,8 @@ if __name__ == "__main__":
 	try:
 		i2c = busio.I2C(board.SCL, board.SDA)
 		setup(i2c, 32)
+	except KeyboardInterrupt:
+		raise
 	except:
 		error("bme680 not present")
 		sys.exit(1)
@@ -94,6 +102,8 @@ if __name__ == "__main__":
 		print_compact()
 		try:
 			sys.stdout.flush()
+		except KeyboardInterrupt:
+			raise
 		except:
 			pass
 		time.sleep(1)
