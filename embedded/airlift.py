@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-04-30 by mza
+# last updated 2022-05-03 by mza
 
 import time
 import busio
@@ -21,6 +21,7 @@ myfeeds = []
 delay = 1.0
 DESIRED_PRECISION_DEGREES = 7
 DESIRED_PRECISION_METERS = 3
+DEFAULT_VALUE = -40
 
 def hex(number, width=1):
 	return "%0*x" % (width, number)
@@ -339,6 +340,9 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 #					errorcount = 0
 #		except:
 #			pass
+	check_error_count_and_reboot_if_too_high()
+
+def check_error_count_and_reboot_if_too_high():
 	if SUPERMAXERRORCOUNT<errorcount:
 		error("too many errors (" + str(errorcount) + "/" + str(SUPERMAXERRORCOUNT) + ")")
 		flush()
@@ -431,8 +435,10 @@ def post_geolocated_data(feed_name, location, value, perform_readback_and_verify
 	except:
 		errorcount += 1
 		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")
+	check_error_count_and_reboot_if_too_high()
 
 def get_most_recent_data(feed):
+	global errorcount
 	try:
 		value = io.receive_data(feed)["value"]
 		#print(str(value))
@@ -440,15 +446,23 @@ def get_most_recent_data(feed):
 		#print(str(value))
 		return value
 	except:
-		raise
+		warning("couldn't get the most recent datapoint for feed " + feed)
+		errorcount += 1
+	check_error_count_and_reboot_if_too_high()
+	return DEFAULT_VALUE
 
 def add_most_recent_data_to_end_of_array(values, feed):
+	global errorcount
 	try:
 		new_value = get_most_recent_data(feed)
 		values.append(new_value)
 		values.pop(0)
 	except:
 		warning("couldn't get the most recent datapoint for feed " + feed)
+		errorcount += 1
+		values.append(DEFAULT_VALUE)
+		values.pop(0)
+	check_error_count_and_reboot_if_too_high()
 	return values
 
 #data_list = [Data(value=10), Data(value=11)]
@@ -464,16 +478,19 @@ def add_most_recent_data_to_end_of_array(values, feed):
 # curl -H "X-AIO-Key: {io_key}" "https://io.adafruit.com/api/v2/{username}/feeds/{feed_key}/data?start_time=2019-05-04T00:00Z&end_time=2019-05-05T00:00Z"
 # Not implemented in Adafruit IO CircuitPython
 def get_some_data(feed_key, start_time, end_time, limit=1):
-	adafruit_io.validate_feed_key(feed_key)
-	path = adafruit_io._compose_path("feeds/{0}/data?start_time={0}&end_time={0}&limit={0}".format(feed_key, start_time, end_time, limit))
-	return adafruit_io._get(path)
+	try:
+		adafruit_io.validate_feed_key(feed_key)
+		path = adafruit_io._compose_path("feeds/{0}/data?start_time={0}&end_time={0}&limit={0}".format(feed_key, start_time, end_time, limit))
+		return adafruit_io._get(path)
+	except:
+		raise
 
 # url -H "X-AIO-Key: {io_key}" "https://io.adafruit.com/api/v2/{username}/feeds/{feed_key}/data?start_time=2019-05-04T00:00Z&end_time=2019-05-05T00:00Z"
 # in blinka/python, this works
 # in circuitpython, we get "AttributeError: 'IO_HTTP' object has no attribute 'data'"
 def get_all_data(feed, count_desired=None):
 	# fetches 100 if count_desired is None
-	DEFAULT_VALUE = -40
+	global errorcount
 	try:
 		VALUE_INDEX = 3 # gotta know that "value" is index #3 in the tuple
 		#info("fetching data from feed " + str(feed) + "...")
@@ -494,7 +511,10 @@ def get_all_data(feed, count_desired=None):
 		#info("done")
 		return values
 	except:
+		warning("couldn't fetch feed data from server")
+		#errorcount += 1
 		raise
+	#check_error_count_and_reboot_if_too_high()
 
 # url -H "X-AIO-Key: {io_key}" "https://io.adafruit.com/api/v2/{username}/feeds/{feed_key}/data?start_time=2019-05-04T00:00Z&end_time=2019-05-05T00:00Z"
 # in blinka/python, this works
@@ -503,8 +523,8 @@ def get_all_data(feed, count_desired=None):
 # Data(created_epoch=1651335357, created_at='2022-04-30T16:15:57Z', updated_at=None, value='77.2382', completed_at=None, feed_id=1785141, expiration='2022-06-29T16:15:57Z', position=None, id='0F0K895WA8728HXVYE37EBD27V', lat=None, lon=None, ele=None)
 def get_all_data_with_datestamps(feed, count_desired=None):
 	# fetches 100 if count_desired is None
+	global errorcount
 	DEFAULT_DATESTAMP = "2020-02-02T22:22:22Z"
-	DEFAULT_VALUE = -40
 	try:
 		VALUE_INDEX = 3 # gotta know that "value" is index #3 in the tuple
 		DATESTAMP_INDEX = 1 # gotta know that "created_at" is index #1 in the tuple
@@ -526,7 +546,10 @@ def get_all_data_with_datestamps(feed, count_desired=None):
 		#info("done")
 		return values
 	except:
+		warning("couldn't fetch feed data from server")
+		#errorcount += 1
 		raise
+	#check_error_count_and_reboot_if_too_high()
 
 def old_post_data(data):
 	import wifi
@@ -542,15 +565,20 @@ def old_post_data(data):
 		error("couldn't perform POST operation")
 
 def get_time_string_from_server():
+	global errorcount
+	string = ""
 	try:
 		t = io.receive_time()
 		#info(str(t))
 		string = "%04d-%02d-%02d+%02d:%02d:%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
-		return string
 	except:
-		return ""
+		warning("couldn't get time from server")
+		errorcount += 1
+	check_error_count_and_reboot_if_too_high()
+	return string
 
 def update_time_from_server():
+	global errorcount
 	info("setting RTC time from server...")
 	time = ""
 	try:
@@ -563,6 +591,8 @@ def update_time_from_server():
 		pcf8523_adafruit.set_from_timestruct(time)
 	except:
 		warning("couldn't set RTC")
+		errorcount += 1
+	check_error_count_and_reboot_if_too_high()
 	return time
 
 def show_signal_strength():
