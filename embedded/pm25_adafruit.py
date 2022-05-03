@@ -10,6 +10,8 @@ import busio
 from adafruit_pm25.i2c import PM25_I2C
 import boxcar
 
+header_string = ", 1p0s, 2p5s, 20p0s, 1p0e, 2p5e, 10p0e, 0p3, 0p5, 1p0, 2p5, 5p0, 10p0"
+
 def setup(i2c, N):
 	global pm25
 	reset_pin = None
