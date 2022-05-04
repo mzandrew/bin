@@ -50,6 +50,8 @@ def adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, desired_lo
 	else:
 		diff = loop_time - desired_loop_time
 		delay_between_acquisitions -= diff / float(N)
+	if delay_between_acquisitions<0.0:
+		delay_between_acquisitions = 0.0
 	info("new delay_between_acquisitions = " + str(delay_between_acquisitions))
 	return delay_between_acquisitions
 
