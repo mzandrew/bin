@@ -1,10 +1,57 @@
 # written 2021-12-28 by mza
-# last updated 2022-04-27 by mza
+# last updated 2022-05-04 by mza
 
 import sys
 import time
 import atexit
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+
+def start_uptime():
+	global initial_time_monotonic
+	global previous_time_monotonic
+	initial_time_monotonic = time.monotonic()
+	previous_time_monotonic = initial_time_monotonic
+
+def get_uptime():
+	global previous_time_monotonic
+	try:
+		initial_time_monotonic
+	except:
+		start_uptime()
+	previous_time_monotonic = time.monotonic()
+	return previous_time_monotonic - initial_time_monotonic
+
+def show_uptime():
+	uptime = get_uptime()
+	info("uptime: " + str(int(uptime + 0.5)) + " s")
+	return uptime
+
+def get_loop_time():
+	global previous_time_monotonic
+	try:
+		previous_time_monotonic
+	except:
+		get_uptime()
+	new = time.monotonic()
+	diff = new - previous_time_monotonic
+	previous_time_monotonic = new
+	return diff
+
+def show_loop_time():
+	loop_time = get_loop_time()
+	info("loop time: " + str(loop_time) + " s")
+	return loop_time
+
+def adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, desired_loop_time):
+	loop_time = show_loop_time()
+	if 1:
+		time_needed_to_do_business = loop_time - float(N)*delay_between_acquisitions
+		delay_between_acquisitions = (desired_loop_time - time_needed_to_do_business) / float(N)
+	else:
+		diff = loop_time - desired_loop_time
+		delay_between_acquisitions -= diff / float(N)
+	info("new delay_between_acquisitions = " + str(delay_between_acquisitions))
+	return delay_between_acquisitions
 
 def register_atexit_handler():
 	atexit.register(reset)

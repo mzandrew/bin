@@ -1,6 +1,6 @@
 # written 2022-01-17 by mza
 # based on outdoor_temp_hum.py
-# last updated 2022-05-03 by mza
+# last updated 2022-05-04 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -11,7 +11,6 @@
 import sys
 import time
 import atexit
-import supervisor
 import board
 import busio
 import simpleio
@@ -43,6 +42,7 @@ if 'adafruit_feather_esp32s2_tft'==board_id: # bme680 temp/hum/pressure/alt/gas 
 	should_use_RTC = False
 	should_use_gps = False
 	N = 32
+	desired_loop_time = 60.0
 	delay_between_acquisitions = 1.5
 	gps_delay_in_ms = 2000
 	delay_between_posting_and_next_acquisition = 1.0
@@ -78,6 +78,7 @@ def print_compact(string):
 	info("%s%s" % (date, string))
 
 def main():
+	generic.start_uptime()
 	global header_string
 	if use_pwm_status_leds:
 		generic.setup_status_leds(red_pin=board.A2, green_pin=board.D9, blue_pin=board.A3)
@@ -144,7 +145,7 @@ def main():
 	else:
 		sdcard_is_available = False
 	if not sdcard_is_available:
-		mydir = "/"
+		mydir = ""
 	if RTC_is_available:
 		create_new_logfile_with_string_embedded(mydir, my_wifi_name, pcf8523_adafruit.get_timestring2())
 	else:
@@ -215,6 +216,8 @@ def loop():
 	temperatures_to_plot = [ -40.0 for i in range(display_adafruit.plot_width) ]
 	humidities_to_plot   = [ -40.0 for i in range(display_adafruit.plot_width) ]
 	pressures_to_plot    = [ -40.0 for i in range(display_adafruit.plot_width) ]
+	generic.get_uptime()
+	global delay_between_acquisitions
 	while bme680_adafruit.test_if_present():
 		neopixel_adafruit.set_color(255, 0, 0)
 		if use_pwm_status_leds:
@@ -259,6 +262,7 @@ def loop():
 						warning("couldn't post data for bme680")
 			info("waiting...")
 			time.sleep(delay_between_posting_and_next_acquisition)
+			delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, desired_loop_time)
 		neopixel_adafruit.set_color(0, 0, 255)
 		if use_pwm_status_leds:
 			generic.set_status_led_color([0, 0, 1])
@@ -268,21 +272,13 @@ def loop():
 		time.sleep(delay_between_acquisitions)
 
 if __name__ == "__main__":
-	#supervisor.disable_autoreload()
 	atexit.register(generic.reset)
 	try:
 		main()
 	except KeyboardInterrupt:
-		info("caught ctrl-c")
-		flush()
-		atexit.unregister(generic.reset)
-		sys.exit(0)
+		generic.keyboard_interrupt_exception_handler()
 	except ReloadException:
-		info("reload exception")
-		flush()
-		atexit.unregister(generic.reset)
-		time.sleep(1)
-		supervisor.reload()
+		generic.reload_exception_handler()
 	info("leaving program...")
 	flush()
 	generic.reset()
