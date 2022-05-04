@@ -251,6 +251,7 @@ def loop():
 				#print(str(humidities_to_plot))
 				#print(str(pressures_to_plot))
 				display_adafruit.update_plot(0, [temperatures_to_plot, humidities_to_plot, pressures_to_plot])
+				display_adafruit.refresh()
 				if airlift_is_available:
 					try:
 						airlift.post_data(my_wifi_name + "-temp",     bme680_adafruit.get_average_values()[0])
