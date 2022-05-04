@@ -2,7 +2,7 @@
 # https://github.com/adafruit/Adafruit_CircuitPython_PM25/blob/main/adafruit_pm25/__init__.py
 # https://github.com/adafruit/Adafruit_CircuitPython_PM25/blob/main/adafruit_pm25/i2c.py
 # written 2021-11-25 by mza
-# last updated 2021-11-25 by mza
+# last updated 2022-05-04 by mza
 
 import time
 import board
@@ -22,7 +22,15 @@ def setup(i2c, N):
 
 def test_if_present():
 	try:
-		pm25.read()
+		try:
+			pm25.read()
+		except KeyboardInterrupt:
+			raise
+		except:
+			time.sleep(0.1)
+			pm25.read()
+	except KeyboardInterrupt:
+		raise
 	except:
 		print("pm25 not present")
 		return False
@@ -36,6 +44,8 @@ def get_values():
 	# "particles 25um" "particles 50um" "particles 100um"
 	try:
 		values = list(pm25.read().values())
+	except KeyboardInterrupt:
+		raise
 	except:
 		values = [ .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0 ]
 	myboxcar.accumulate(values)
