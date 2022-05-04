@@ -62,11 +62,9 @@ def connect_wifi(hostname):
 		import wifi
 		import ssl
 		import socketpool
-		import adafruit_requests as requests
+		import adafruit_requests
 		from adafruit_io.adafruit_io import IO_HTTP
-	except (KeyboardInterrupt, ReloadException):
-		raise
-	except:
+	except ImportError:
 		print("can't import wifi, ssl, socketpool, adafruit_requests or adafruit_io")
 		raise
 	global io
@@ -96,8 +94,8 @@ def connect_wifi(hostname):
 			wifi.radio.connect(ssid=secrets["ssid"], password=secrets["password"])
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
-			error("couldn't connect")
+		except Exception as message:
+			error("couldn't connect: " + message)
 			raise
 		show_network_status()
 #		ap_mac = list(wifi.radio.mac_address_ap)
@@ -106,22 +104,22 @@ def connect_wifi(hostname):
 			pool = socketpool.SocketPool(wifi.radio)
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
-			error("couldn't setup socket")
+		except Exception as message:
+			error("couldn't setup socket: " + message)
 			raise
 		try:
 			requests = adafruit_requests.Session(pool, ssl.create_default_context())
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
-			error("couldn't setup requests")
+		except Exception as message:
+			error("couldn't setup requests: " + message)
 			raise
 		try:
 			io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
-			error("couldn't setup aio")
+		except Exception as message:
+			error("couldn't setup aio: " + message)
 			raise
 		return True
 	except (KeyboardInterrupt, ReloadException):
@@ -149,7 +147,7 @@ def setup_wifi(hostname, number_of_retries_remaining=2):
 				time.sleep(delay)
 	error("can't initialize built-in wifi")
 	info("")
-	show_network_status()
+	#show_network_status()
 	return False
 
 # this function does not work:
@@ -166,7 +164,7 @@ def set_hostname(esp, hostname):
 
 def esp32_connect(number_of_retries_remaining=2):
 	import adafruit_esp32spi.adafruit_esp32spi_socket as socket
-	import adafruit_requests as requests
+	import adafruit_requests
 	from adafruit_io.adafruit_io import IO_HTTP
 	if number_of_retries_remaining<1:
 		return False
@@ -198,8 +196,8 @@ def esp32_connect(number_of_retries_remaining=2):
 				continue
 	#info("Connected to", str(esp.ssid, 'utf-8'), "\tRSSI:", esp.rssi)
 	socket.set_interface(esp)
-	requests.set_socket(socket, esp)
-	io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
+	adafruit_requests.set_socket(socket, esp)
+	io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], adafruit_requests)
 	show_network_status()
 	return True
 
