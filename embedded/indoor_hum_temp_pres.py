@@ -61,18 +61,24 @@ def print_compact(string):
 		try:
 			import time
 			date = time.strftime("%Y-%m-%d+%X")
+		except KeyboardInterrupt:
+			raise
 		except:
 			pass
 	if ""==date and RTC_is_available:
 		try:
 			import pcf8523_adafruit
 			date = pcf8523_adafruit.get_timestring1()
+		except KeyboardInterrupt:
+			raise
 		except:
 			pass
 	if ""==date and gps_is_available:
 		try:
 			import gps_adafruit
 			date = gps_adafruit.get_time()
+		except KeyboardInterrupt:
+			raise
 		except:
 			pass
 	info("%s%s" % (date, string))
@@ -89,6 +95,8 @@ def main():
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
 		string = "using I2C1 "
+	except KeyboardInterrupt:
+		raise
 	except:
 		#i2c = busio.I2C(board.SCL, board.SDA)
 		i2c = board.I2C()
@@ -102,9 +110,12 @@ def main():
 	try:
 		spi = board.SPI
 		info("builtin SPI (1)")
+	except KeyboardInterrupt:
+		raise
 	except:
 		spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO) # this line stops the builtin from working
 		info("builtin SPI (2)")
+	global display_is_available
 	display_is_available = False
 	if should_use_display:
 		if board.DISPLAY:
@@ -134,6 +145,8 @@ def main():
 			i2c_address = pcf8523_adafruit.setup(i2c)
 			prohibited_addresses.append(i2c_address)
 			RTC_is_available = True
+		except KeyboardInterrupt:
+			raise
 		except:
 			RTC_is_available = False
 	else:
@@ -163,6 +176,8 @@ def main():
 	global neopixel_is_available
 	try:
 		neopixel_is_available = neopixel_adafruit.setup_neopixel()
+	except KeyboardInterrupt:
+		raise
 	except:
 		warning("error setting up neopixel")
 	global bme680_is_available
@@ -171,6 +186,8 @@ def main():
 		prohibited_addresses.append(i2c_address)
 		header_string += bme680_adafruit.header_string
 		bme680_is_available = True
+	except KeyboardInterrupt:
+		raise
 	except:
 		error("bme680 not found")
 		sys.exit(1)
@@ -179,6 +196,8 @@ def main():
 	global battery_monitor_is_available
 	try:
 		battery_monitor_is_available = generic.setup_battery_monitor(i2c)
+	except KeyboardInterrupt:
+		raise
 	except:
 		battery_monitor_is_available = False
 		warning("battery monitor is not available")
@@ -259,6 +278,8 @@ def loop():
 						airlift.post_data(my_wifi_name + "-pressure", bme680_adafruit.get_average_values()[2])
 						#airlift.post_data("indoor-altitude", bme680_adafruit.get_average_values()[3])
 						#airlift.post_data("indoor-gas", bme680_adafruit.get_average_values()[4])
+					except KeyboardInterrupt:
+						raise
 					except:
 						warning("couldn't post data for bme680")
 			info("waiting...")
