@@ -1,13 +1,14 @@
 #!/bin/bash -e
 
 # written by mza
-# last updated 2022-05-07 by mza
+# last updated 2022-05-10 by mza
 
 #for i in $(seq 2 253); do sleep 1; ping -c1 -w1 192.168.10.$i >/dev/null; echo "$i $?"; done
 
 declare baseip="192.168"
 
-declare device=$(ifconfig  | grep "inet " -B 1 | grep $baseip -B 1 | grep -v inet | awk '{ print $1 }' | sed -e "s,:$,,")
+declare devices=$(ifconfig  | grep "inet " -B 1 | grep $baseip -B 1 | grep -v inet | awk '{ print $1 }' | sed -e "s,:$,," | grep -v "\-\-")
+declare device=$(echo "$devices" | head -n1)
 echo "using device \"$device\""
 declare self=$(ifconfig $device | grep "inet $baseip" | sed -e "s,[ ]\+inet \([0-9.]\+\) .*,\1,")
 echo "I am \"${self}\""
@@ -15,7 +16,7 @@ baseip=$(ifconfig $device | grep "inet $baseip" | sed -e "s,[ ]\+inet \([0-9.]\+
 echo "baseip is \"${baseip}\""
 declare dir="/tmp"
 
-which arping >/dev/null || echo -e "arping not found.  try:\n  sudo apt install -y arping" || exit 1
+which arping >/dev/null || echo -e "arping not found.  try:\n  sudo apt install -y arping" && exit 1
 
 # this lets it update the arp table:
 echo 1 | sudo tee /proc/sys/net/ipv4/conf/${device}/arp_accept >/dev/null
@@ -37,6 +38,7 @@ if [ $# -eq 2 ]; then
 #range="40 50"
 fi
 dir=$(mktemp -d)
+
 for i in $(seq $range); do
 	sleep 0.01
 	go "${baseip}.${i}" &
