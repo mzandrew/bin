@@ -7,7 +7,10 @@ import storage
 
 try:
 	storage.remount("/", readonly=False)
-	print("storage remount sucessful")
+	m = storage.getmount("/")
+	m.label = "CUSTOM"
+	storage.remount("/", readonly=True)
+	storage.enable_usb_drive()
 except:
-	print("storage remount was NOT successful")
+	print("rename was NOT successful")
 
