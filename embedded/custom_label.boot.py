@@ -10,6 +10,11 @@ try:
 	#m.label = "CUSTOM"
 	#m.label = "CONTINENTAL"
 	m.label = "ELDORADO"
+	#m.label = "ROOF"
+	#m.label = "PYPORTAL"
+	#m.label = "TITANO"
+	#m.label = "MAGTAG"
+	#m.label = "PLOTICLE2"
 	try:
 		import os
 		os.unlink("boot.py")
