@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-05-03 by mza
+# last updated 2022-05-14 by mza
 
 import time
 import busio
@@ -47,6 +47,7 @@ def show_networks(networks):
 
 def scan_networks():
 	networks = []
+	import wifi # needed to call static methods
 	for network in wifi.radio.start_scanning_networks():
 		ssid = str(network.ssid, "utf-8")
 		bssid = list(network.bssid)
@@ -233,7 +234,7 @@ def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries
 	if 0:
 		try:
 			set_hostname(esp, hostname)
-			#import wifi
+			#import wifi # needed to call static methods
 			#wifi.radio.hostname = hostname
 		except (KeyboardInterrupt, ReloadException):
 			raise
@@ -274,6 +275,7 @@ def show_network_status():
 	#info("using builtin wifi = " + str(using_builtin_wifi))
 	try:
 		if using_builtin_wifi:
+			import wifi # needed to call static methods
 			info("using internal wifi")
 			mac_address = list(wifi.radio.mac_address)
 			info("MAC: " + format_MAC(mac_address))
@@ -638,7 +640,7 @@ def get_all_data_with_datestamps(feed, count_desired=None):
 	#check_error_count_and_reboot_if_too_high()
 
 def old_post_data(data):
-	import wifi
+	import wifi # needed to call static methods
 	try:
 		#feed = "heater"
 		feed = "test"
@@ -695,7 +697,12 @@ def show_signal_strength():
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
-		info("RSSI: " + str(wifi.radio.ap_info.rssi) + " dB") # receiving signal strength indicator
+		try:
+			import wifi # needed to call static methods
+			info("RSSI: " + str(wifi.radio.ap_info.rssi) + " dB") # receiving signal strength indicator
+		except:
+			warning("can't get signal strength")
+			pass
 
 def get_values():
 	try:
@@ -704,6 +711,7 @@ def get_values():
 		raise
 	except:
 		try:
+			import wifi # needed to call static methods
 			values = [ wifi.radio.ap_info.rssi ]
 		except (KeyboardInterrupt, ReloadException):
 			raise
