@@ -15,6 +15,7 @@ try:
 	#m.label = "TITANO"
 	#m.label = "MAGTAG"
 	#m.label = "PLOTICLE2"
+	#m.label = "INDOORHUM3"
 	try:
 		import os
 		os.unlink("boot.py")
