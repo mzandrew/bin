@@ -106,9 +106,6 @@ header_string = "heater"
 temperature = 0
 dirname = "/logs"
 
-MAX_COLUMNS_TO_PLOT = 128
-temperatures_to_plot = [ -40.0 for a in range(MAX_COLUMNS_TO_PLOT) ]
-
 def print_header():
 	info("#" + header_string)
 
@@ -153,8 +150,11 @@ def main():
 		neopixel_is_available = False
 	if neopixel_is_available:
 		neopixel_adafruit.set_color(127, 127, 127)
-	global dotstar_matrix_is_available
-	dotstar_matrix_is_available = setup_dotstar_matrix(False)
+	global dotstar_matrix_available
+	if should_use_dotstar_matrix:
+		dotstar_matrix_available = display_adafruit.setup_dotstar_matrix(False)
+	else:
+		dotstar_matrix_available = False
 	global i2c
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
@@ -184,20 +184,26 @@ def main():
 			display_adafruit.clear_display_on_oled_sh1107()
 			prohibited_addresses.append(0x3c)
 	global matrix_backpack_available
-	try:
-		matrix_backpack_available = setup_matrix_backpack()
-		if matrix_backpack_available:
-			prohibited_addresses.append(0x70)
-	except:
-		error("can't find matrix backpack (i2c address 0x70)")
+	if should_use_matrix_backpack:
+		try:
+			matrix_backpack_available = display_adafruit.setup_matrix_backpack()
+			if matrix_backpack_available:
+				prohibited_addresses.append(0x70)
+		except:
+			error("can't find matrix backpack (i2c address 0x70)")
+			matrix_backpack_available = False
+	else:
 		matrix_backpack_available = False
 	global alphanumeric_backpack_available
-	alphanumeric_backpack_available = setup_alphanumeric_backpack(0x77)
+	if should_use_alphanumeric_backpack:
+		alphanumeric_backpack_available = display_adafruit.setup_alphanumeric_backpack(0x77)
+	else:
+		alphanumeric_backpack_available = False
 	if alphanumeric_backpack_available:
 		prohibited_addresses.append(0x77)
 	if display_is_available:
 		display_adafruit.setup_palette()
-		display_adafruit.setup_for_n_m_plots(1, 1, [["indoor", "temperature", "humidity", "pressure"]])
+		display_adafruit.setup_for_n_m_plots(1, 1, [["water heater", "temperature"]])
 		display_adafruit.refresh()
 	global RTC_is_available
 	if should_use_RTC:
@@ -268,7 +274,7 @@ def loop():
 			string += airlift.measure_string()
 		if battery_monitor_is_available:
 			string += generic.get_battery_percentage()
-		#update_temperature_display_on_alphanumeric_backpack(temperature)
+		#display_adafruit.update_temperature_display_on_alphanumeric_backpack(temperature)
 		print_compact(string)
 		flush()
 		neopixel_adafruit.set_color(0, 255, 0)
@@ -292,8 +298,10 @@ def loop():
 						raise
 					except:
 						warning("couldn't post data for pct2075")
-			update_temperature_display_on_dotstar_matrix()
-			update_temperature_display_on_matrix_backpack()
+			if dotstar_matrix_available:
+				display_adafruit.update_temperature_display_on_dotstar_matrix()
+			if matrix_backpack_available:
+				display_adafruit.update_temperature_display_on_matrix_backpack()
 			info("waiting...")
 			time.sleep(delay_between_posting_and_next_acquisition)
 			delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, desired_loop_time)
