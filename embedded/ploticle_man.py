@@ -1,6 +1,6 @@
 # written 2022-01-17 by mza
 # based on indoor_hum_temp_pres.py
-# last updated 2022-05-04 by mza
+# last updated 2022-05-19 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -124,6 +124,7 @@ def main():
 	if should_use_display:
 		if board.DISPLAY:
 			display_is_available = True
+			display_adafruit.setup_builtin_display()
 			board.DISPLAY.brightness = 0.75
 			#display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.5)
 			info("display is available (builtin)")

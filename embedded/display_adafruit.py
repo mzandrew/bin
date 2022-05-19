@@ -1,4 +1,4 @@
-# last updated 2022-05-03 by mza
+# last updated 2022-05-19 by mza
 
 import time
 import math
@@ -82,6 +82,10 @@ def setup_i2c_oled_display_sh1107(i2c, address):
 		return False
 	return True
 
+def setup_builtin_display():
+	global display
+	display = board.DISPLAY
+
 def setup_builtin_lcd_hx8357():
 	setup_palette()
 	global display
@@ -158,8 +162,6 @@ def clear_display_on_oled_sh1107():
 
 def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]]):
 	number_of_plots = number_of_plots_n * number_of_plots_m
-	global display
-	display = board.DISPLAY
 	if display_has_autorefresh:
 		display.auto_refresh = False
 	if 1<number_of_plots_n:
@@ -466,4 +468,108 @@ def test_st7789():
 	text_group.append(text_area)  # Subgroup for text scaling
 	splash.append(text_group)
 	info("splash append text group")
+
+def setup_dotstar_matrix(auto_write = True):
+	if not should_use_dotstar_matrix:
+		return False
+	global dots
+	#dots.deinit()
+	try:
+		dots = dotstar.DotStar(board.D13, board.D11, 72, brightness=0.1)
+		dots.auto_write = False
+		dots.show()
+		dots.auto_write = auto_write
+	except:
+		error("error setting up dotstar matrix")
+		return False
+	return True
+
+def update_temperature_display_on_dotstar_matrix():
+	if not dotstar_matrix_is_available:
+		return
+	dots.auto_write = False
+	rows = 6
+	columns = 12
+	gain_t = (max_t - offset_t) / (rows - 1)
+	for y in range(rows):
+		for x in range(columns):
+			index = y * columns + x
+			dots[index] = (0, 0, 0)
+	for x in range(columns):
+		if 0.0<temperatures_to_plot[x]:
+			y = (temperatures_to_plot[x] - offset_t) / gain_t
+			if y<0.0:
+				y = 0
+			if rows<=y:
+				y = rows - 1
+			index = int(y) * columns + columns - 1 - x
+			red = intensity * y
+			green = 0
+			blue = intensity * (rows-1) - red
+			dots[index] = (red, green, blue)
+	dots.show()
+
+def setup_matrix_backpack():
+	if not should_use_matrix_backpack:
+		return False
+	global matrix_backpack
+	try:
+		matrix_backpack = adafruit_ht16k33.matrix.Matrix16x8(i2c, address=0x70)
+		#matrix_backpack.fill(1)
+		matrix_backpack.auto_write = False
+		#matrix_backpack.brightness = 0.5
+		#matrix_backpack.blink_rate = 0
+	except:
+		return False
+	return True
+
+def setup_alphanumeric_backpack(address=0x70):
+	if not should_use_alphanumeric_backpack:
+		return False
+	global alphanumeric_backpack
+	try:
+		alphanumeric_backpack = adafruit_ht16k33.segments.Seg14x4(i2c, address=address)
+		alphanumeric_backpack.auto_write = False
+		#alphanumeric_backpack.brightness = 0.5
+		#alphanumeric_backpack.blink_rate = 0
+	except:
+		error("can't find alphanumeric backpack (i2c address " + hex(address) + ")")
+		return False
+	return True
+
+def update_temperature_display_on_matrix_backpack():
+	if not matrix_backpack_available:
+		return
+	matrix_backpack.auto_write = False
+	rows = 8
+	columns = 16
+	gain_t = (max_t - offset_t) / (rows - 1)
+	matrix_backpack.fill(0)
+	for x in range(columns):
+		if 0.0<temperatures_to_plot[x]:
+			y = (temperatures_to_plot[x] - offset_t) / gain_t
+			if y<0.0:
+				y = 0
+			if rows<=y:
+				y = rows - 1
+			y = int(y)
+			matrix_backpack[columns - 1 - x, y] = 1
+			#info("matrix_backpack[" + str(x) + ", " + str(y) + "]")
+	matrix_backpack.show()
+
+def update_temperature_display_on_alphanumeric_backpack(temperature):
+	if not alphanumeric_backpack_available:
+		return
+	alphanumeric_backpack.auto_write = False
+	alphanumeric_backpack.fill(0)
+	value = int(10.0*temperature)/10.0
+	#info(str(value))
+	alphanumeric_backpack.print(str(value))
+	#alphanumeric_backpack[0] = '0'
+	#alphanumeric_backpack[1] = '1'
+	#alphanumeric_backpack[2] = '2'
+	#alphanumeric_backpack[3] = '3'
+	#DIGIT_2 = 0b000011111011
+	#alphanumeric_backpack.set_digit_raw(0, DIGIT_2)
+	alphanumeric_backpack.show()
 

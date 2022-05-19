@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2020-11-24 by mza
-# last updated 2021-11-26 by mza
+# last updated 2022-05-19 by mza
 
 # from https://learn.adafruit.com/adafruit-pct2075-temperature-sensor/python-circuitpython
 
@@ -48,7 +48,7 @@ def setup(i2c, prohibited_addresses, N):
 			pass
 	if 0==count:
 		error("pct2075 not present (any i2c address)")
-		raise
+		#raise
 	else:
 		debug("found " + str(count) + " temperature sensor(s)")
 	global myboxcar
