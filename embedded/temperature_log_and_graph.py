@@ -38,7 +38,7 @@ from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3,
 import generic
 import display_adafruit
 
-MIN_TEMP_TO_PLOT = 10.0
+MIN_TEMP_TO_PLOT = 20.0
 MAX_TEMP_TO_PLOT = 80.0
 
 intensity = 8 # brightness of plotted data on dotstar display
@@ -176,12 +176,10 @@ def main():
 	if should_use_ssd1327_oled_display:
 		display_is_available = display_adafruit.setup_i2c_oled_display_ssd1327(i2c, 0x3d)
 		if display_is_available:
-			display_adafruit.clear_display_on_oled_ssd1327()
 			prohibited_addresses.append(0x3d)
 	if should_use_sh1107_oled_display:
 		display_is_available = display_adafruit.setup_i2c_oled_display_sh1107(i2c, 0x3c)
 		if display_is_available:
-			display_adafruit.clear_display_on_oled_sh1107()
 			prohibited_addresses.append(0x3c)
 	global matrix_backpack_available
 	if should_use_matrix_backpack:
@@ -202,7 +200,6 @@ def main():
 	if alphanumeric_backpack_available:
 		prohibited_addresses.append(0x77)
 	if display_is_available:
-		display_adafruit.setup_palette()
 		display_adafruit.setup_for_n_m_plots(1, 1, [["water heater", "temperature"]])
 		display_adafruit.refresh()
 	global RTC_is_available
@@ -228,12 +225,14 @@ def main():
 		#airlift_is_available = airlift.setup_airlift(feed, spi, board.ESP_CS, board.ESP_BUSY, board.ESP_RESET)
 	else:
 		airlift_is_available = False
+	global header_string
 	if airlift_is_available:
 		airlift.setup_feed(feed)
+		header_string += ", RSSI"
 	if 0:
 		print("fetching old data from feed...")
-		global temperatures_to_plot
-		temperatures_to_plot = airlift.get_all_data(MAX_COLUMNS_TO_PLOT)
+		global heater
+		heater = airlift.get_all_data(MAX_COLUMNS_TO_PLOT)
 	global sdcard_is_available
 	global dirname
 	if should_use_sdcard:
@@ -257,7 +256,8 @@ def loop():
 		plot_width = display_adafruit.plot_width
 	else:
 		plot_width = 128
-	temperatures_to_plot = [ -40.0 for i in range(plot_width) ]
+	heater = [ -40.0 for i in range(plot_width) ]
+	laundry_room = [ -40.0 for i in range(plot_width) ]
 	generic.get_uptime()
 	global delay_between_acquisitions
 	i = 0
@@ -284,16 +284,17 @@ def loop():
 		if 0==i%N:
 			if pct2075_is_available:
 				pct2075_adafruit.show_average_values()
-				temperatures_to_plot.append((pct2075_adafruit.get_average_values()[0] - MIN_TEMP_TO_PLOT) / (MAX_TEMP_TO_PLOT-MIN_TEMP_TO_PLOT))
-				temperatures_to_plot.pop(0)
-				#print(str(temperatures_to_plot))
-				#print(str(humidities_to_plot))
-				#print(str(pressures_to_plot))
-				display_adafruit.update_plot(0, [temperatures_to_plot])
+				heater.append((pct2075_adafruit.get_average_values()[0] - MIN_TEMP_TO_PLOT) / (MAX_TEMP_TO_PLOT-MIN_TEMP_TO_PLOT))
+				heater.pop(0)
+				laundry_room.append((pct2075_adafruit.get_average_values()[1] - MIN_TEMP_TO_PLOT) / (MAX_TEMP_TO_PLOT-MIN_TEMP_TO_PLOT))
+				laundry_room.pop(0)
+				#print(str(heater))
+				#print(str(laundry_room))
+				display_adafruit.update_plot(0, [heater, laundry_room])
 				display_adafruit.refresh()
 				if airlift_is_available:
 					try:
-						airlift.post_data(my_wifi_name, pct2075_adafruit.get_average_values()[0])
+						airlift.post_data(my_wifi_name + "", pct2075_adafruit.get_average_values()[0])
 					except KeyboardInterrupt:
 						raise
 					except:

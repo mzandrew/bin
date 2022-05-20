@@ -134,7 +134,6 @@ def main():
 		else:
 			warning("display is not available")
 	if display_is_available:
-		display_adafruit.setup_palette()
 		display_adafruit.setup_for_n_m_plots(1, 1, [["indoor", "temperature", "humidity", "pressure"]])
 		display_adafruit.refresh()
 		#display_adafruit.test_st7789()

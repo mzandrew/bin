@@ -136,7 +136,6 @@ def main():
 		else:
 			warning("display is not available")
 	if display_is_available:
-		display_adafruit.setup_palette()
 		display_adafruit.setup_for_n_m_plots(1, 1, [[my_wifi_name, "0p3", "0p5", "1p0", "2p5", "5p0"]])
 		display_adafruit.refresh()
 		#display_adafruit.test_st7789()
