@@ -60,7 +60,7 @@ def setup_i2c_oled_display_ssd1327(i2c, address):
 
 def setup_i2c_oled_display_sh1107(i2c, address):
 	#oled_reset = board.D9
-	setup_palette(2, True)
+	setup_palette(2)
 	global display
 	try:
 		import adafruit_displayio_sh1107
