@@ -2,7 +2,7 @@
 
 # written 2021-03-02 by mza
 # modified from timelapse.py
-# last updated 2022-02-18 by mza
+# last updated 2022-05-16 by mza
 
 # from https://www.raspberrypi.org/blog/picamera-pure-python-interface-for-camera-module/
 # and https://stackoverflow.com/a/8858026/5728815
@@ -16,9 +16,12 @@ import datetime
 import time
 import shutil
 import sys
+import os
 
+tilde = os.environ['HOME']
 #destination = "/opt/photo/microscope"
-destination = "/opt/data/pictures/microscope"
+#destination = "/opt/data/pictures/microscope"
+destination = tilde + "/microscope/"
 temporary_filename = "/tmp/image.jpg"
 
 # from https://stackoverflow.com/a/6599441/5728815

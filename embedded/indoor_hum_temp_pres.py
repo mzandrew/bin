@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+
 # written 2022-01-17 by mza
 # based on outdoor_temp_hum.py
-# last updated 2022-05-04 by mza
+# last updated 2022-05-19 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -120,6 +122,7 @@ def main():
 	if should_use_display:
 		if board.DISPLAY:
 			display_is_available = True
+			display_adafruit.setup_builtin_display()
 			board.DISPLAY.brightness = 0.75
 			#display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.5)
 			info("display is available (builtin)")
@@ -131,7 +134,6 @@ def main():
 		else:
 			warning("display is not available")
 	if display_is_available:
-		display_adafruit.setup_palette()
 		display_adafruit.setup_for_n_m_plots(1, 1, [["indoor", "temperature", "humidity", "pressure"]])
 		display_adafruit.refresh()
 		#display_adafruit.test_st7789()
@@ -225,18 +227,16 @@ def main():
 	#gnuplot> set style data lines
 	#gnuplot> plot for [i=1:14] "solar_water_heater.log" using 0:i
 	print_header()
-	global i
-	i = 0
 	loop()
 	info("bme680 no longer available; cannot continue")
 
 def loop():
-	global i
 	temperatures_to_plot = [ -40.0 for i in range(display_adafruit.plot_width) ]
 	humidities_to_plot   = [ -40.0 for i in range(display_adafruit.plot_width) ]
 	pressures_to_plot    = [ -40.0 for i in range(display_adafruit.plot_width) ]
 	generic.get_uptime()
 	global delay_between_acquisitions
+	i = 0
 	while bme680_adafruit.test_if_present():
 		neopixel_adafruit.set_color(255, 0, 0)
 		if use_pwm_status_leds:

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 # written 2021-04-21 by mza
-# last updated 2022-04-23 by mza
+# updated from indoor_temp_hum.py
+# last updated 2022-05-19 by mza
 
 # to install on a circuitpython device:
 # rsync -r *.py /media/circuitpython/
@@ -11,15 +12,12 @@
 # rsync -av adafruit_minimqtt adafruit_display_text adafruit_esp32spi adafruit_register adafruit_pcf8523.mpy adafruit_pct2075.mpy adafruit_displayio_sh1107.mpy neopixel.mpy adafruit_rgbled.mpy adafruit_requests.mpy adafruit_sdcard.mpy simpleio.mpy adafruit_io /media/circuitpython/lib/
 # sync
 
-import time
 import sys
+import time
 import atexit
-import supervisor
 import board
 import busio
-import displayio
-import digitalio
-import adafruit_pct2075 # sudo pip3 install adafruit-circuitpython-pct2075
+import pct2075_adafruit
 import airlift
 try:
 	import adafruit_dotstar as dotstar
@@ -40,14 +38,31 @@ from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3,
 import generic
 import display_adafruit
 
+MIN_TEMP_TO_PLOT = 20.0
+MAX_TEMP_TO_PLOT = 80.0
+
 intensity = 8 # brightness of plotted data on dotstar display
+board_id = board.board_id
+info("we are " + board_id)
+if 'sparkfun_samd51_thing_plus'==board_id: # pct2075
+	my_wifi_name = "heater"
+	N = 32
+	desired_loop_time = 60.0
+	delay_between_acquisitions = 1.5
+	gps_delay_in_ms = 2000
+	delay_between_posting_and_next_acquisition = 1.0
+	should_use_airlift = True
+	use_built_in_wifi = True
+	should_use_display = True
+	use_built_in_display = False
+	use_pwm_status_leds = False
+	gps_is_available = False
+	battery_monitor_is_available = False
+else:
+	error("what kind of board am I?")
+
 if 1:
 	feed = "heater"
-	offset_t = 25.0 # min temp we care to plot
-	max_t = 75.0 # max temp we care to plot
-	N = 1*60 # number of samples to average over
-	delay = 1.0 # number of seconds between samples
-	should_use_airlift = True
 	should_use_dotstar_matrix = False
 	should_use_matrix_backpack = False
 	should_use_alphanumeric_backpack = False
@@ -62,7 +77,6 @@ elif 1:
 	max_t = 28.0 # max temp we care to plot
 	N = 13 # number of samples to average over
 	delay = 1.0 # number of seconds between samples
-	should_use_airlift = True
 	should_use_dotstar_matrix = False
 	should_use_matrix_backpack = False
 	should_use_alphanumeric_backpack = False
@@ -92,213 +106,42 @@ header_string = "heater"
 temperature = 0
 dirname = "/logs"
 
-MAX_COLUMNS_TO_PLOT = 128
-temperatures_to_plot = [ -40.0 for a in range(MAX_COLUMNS_TO_PLOT) ]
-
-def setup_temperature_sensor(i2c, address):
-	#i2c.deinit()
-	global temperature_sensors
-	try:
-		pct = adafruit_pct2075.PCT2075(i2c, address=address)
-		pct.temperature
-		temperature_sensors.append(pct)
-	except:
-		raise
-	return 1
-
-def setup_temperature_sensors(i2c):
-	global header_string
-	count = 0
-	#for address in [0x37, 0x36, 0x35, 0x2f, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28, 0x77, 0x76, 0x75, 0x74, 0x73, 0x72, 0x71, 0x70, 0x4f, 0x4e, 0x4d, 0x4c, 0x4b, 0x4a, 0x49, 0x48]:
-	for address in [0x37, 0x36, 0x35, 0x2f, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28, 0x76, 0x75, 0x74, 0x73, 0x72, 0x4f, 0x4e, 0x4d, 0x4c, 0x4b, 0x4a, 0x49, 0x48]: # omit 0x70 and 0x71 and 0x77
-		try:
-			count += setup_temperature_sensor(i2c, address)
-			if 1!=count:
-				header_string += ", other" + str(count)
-		except:
-			pass
-	if 0==count:
-		error("pct2075 not present (any i2c address)")
-	else:
-		info("found " + str(count) + " temperature sensor(s)")
-	return count
-
 def print_header():
 	info("#" + header_string)
 
-def measure():
-	result = []
-	for each in temperature_sensors:
+def print_compact(string):
+	date = ""
+	if ""==date:
 		try:
-			result.append(each.temperature)
+			import time
+			date = time.strftime("%Y-%m-%d+%X")
+		except KeyboardInterrupt:
+			raise
 		except:
 			pass
-	return result
-
-def measure_string():
-	global temperature
-	result = measure()
-	#string = ", ".join(result)
-	temperature = result.pop(0)
-	string = "%.1f" % temperature
-	for each in result:
-		string += ", %.1f" % each
-	return string
-
-def print_compact():
-	try:
-		date = time.strftime("%Y-%m-%d+%X, ")
-	except:
+	if ""==date and RTC_is_available:
 		try:
-			date = pcf8523_adafruit.get_timestring1() + ", "
+			import pcf8523_adafruit
+			date = pcf8523_adafruit.get_timestring1()
+		except KeyboardInterrupt:
+			raise
 		except:
-			date = ""
-	string = measure_string()
+			pass
+	if ""==date and gps_is_available:
+		try:
+			import gps_adafruit
+			date = gps_adafruit.get_time()
+		except KeyboardInterrupt:
+			raise
+		except:
+			pass
 	info("%s%s" % (date, string))
 
-def test_if_present():
-	try:
-		temperature_sensors[0].temperature
-	except:
-		return False
-	return True
-
-def setup_dotstar_matrix(auto_write = True):
-	if not should_use_dotstar_matrix:
-		return False
-	global dots
-	#dots.deinit()
-	try:
-		dots = dotstar.DotStar(board.D13, board.D11, 72, brightness=0.1)
-		dots.auto_write = False
-		dots.show()
-		dots.auto_write = auto_write
-	except:
-		error("error setting up dotstar matrix")
-		return False
-	return True
-
-def update_temperature_display_on_dotstar_matrix():
-	if not dotstar_matrix_is_available:
-		return
-	dots.auto_write = False
-	rows = 6
-	columns = 12
-	gain_t = (max_t - offset_t) / (rows - 1)
-	for y in range(rows):
-		for x in range(columns):
-			index = y * columns + x
-			dots[index] = (0, 0, 0)
-	for x in range(columns):
-		if 0.0<temperatures_to_plot[x]:
-			y = (temperatures_to_plot[x] - offset_t) / gain_t
-			if y<0.0:
-				y = 0
-			if rows<=y:
-				y = rows - 1
-			index = int(y) * columns + columns - 1 - x
-			red = intensity * y
-			green = 0
-			blue = intensity * (rows-1) - red
-			dots[index] = (red, green, blue)
-	dots.show()
-
-def setup_matrix_backpack():
-	if not should_use_matrix_backpack:
-		return False
-	global matrix_backpack
-	try:
-		matrix_backpack = adafruit_ht16k33.matrix.Matrix16x8(i2c, address=0x70)
-		#matrix_backpack.fill(1)
-		matrix_backpack.auto_write = False
-		#matrix_backpack.brightness = 0.5
-		#matrix_backpack.blink_rate = 0
-	except:
-		return False
-	return True
-
-def setup_alphanumeric_backpack(address=0x70):
-	if not should_use_alphanumeric_backpack:
-		return False
-	global alphanumeric_backpack
-	try:
-		alphanumeric_backpack = adafruit_ht16k33.segments.Seg14x4(i2c, address=address)
-		alphanumeric_backpack.auto_write = False
-		#alphanumeric_backpack.brightness = 0.5
-		#alphanumeric_backpack.blink_rate = 0
-	except:
-		error("can't find alphanumeric backpack (i2c address " + hex(address) + ")")
-		return False
-	return True
-
-def update_temperature_display_on_matrix_backpack():
-	if not matrix_backpack_available:
-		return
-	matrix_backpack.auto_write = False
-	rows = 8
-	columns = 16
-	gain_t = (max_t - offset_t) / (rows - 1)
-	matrix_backpack.fill(0)
-	for x in range(columns):
-		if 0.0<temperatures_to_plot[x]:
-			y = (temperatures_to_plot[x] - offset_t) / gain_t
-			if y<0.0:
-				y = 0
-			if rows<=y:
-				y = rows - 1
-			y = int(y)
-			matrix_backpack[columns - 1 - x, y] = 1
-			#info("matrix_backpack[" + str(x) + ", " + str(y) + "]")
-	matrix_backpack.show()
-
-def update_temperature_display_on_alphanumeric_backpack(temperature):
-	if not alphanumeric_backpack_available:
-		return
-	alphanumeric_backpack.auto_write = False
-	alphanumeric_backpack.fill(0)
-	value = int(10.0*temperature)/10.0
-	#info(str(value))
-	alphanumeric_backpack.print(str(value))
-	#alphanumeric_backpack[0] = '0'
-	#alphanumeric_backpack[1] = '1'
-	#alphanumeric_backpack[2] = '2'
-	#alphanumeric_backpack[3] = '3'
-	#DIGIT_2 = 0b000011111011
-	#alphanumeric_backpack.set_digit_raw(0, DIGIT_2)
-	alphanumeric_backpack.show()
-
-def loop():
-	temperature_accumulator = 0.0
-	for i in range(N):
-		if neopixel_is_available:
-			neopixel_adafruit.set_color(255, 0, 0)
-		print_compact()
-		temperature_accumulator += temperature
-		if neopixel_is_available:
-			neopixel_adafruit.set_color(0, 255, 0)
-		flush()
-		time.sleep(delay)
-		update_temperature_display_on_alphanumeric_backpack(temperature)
-	average_temperature = temperature_accumulator/N
-	print("posting " + str(average_temperature))
-	airlift.post_data(feed, average_temperature)
-	temperatures_to_plot.insert(0, average_temperature)
-	temperatures_to_plot.pop()
-	update_temperature_display_on_dotstar_matrix()
-	update_temperature_display_on_matrix_backpack()
-	if should_use_ssd1327_oled_display:
-		if oled_display_is_available and should_plot_temperatures:
-			display_adafruit.update_temperature_display_on_oled_ssd1327(temperatures_to_plot)
-	if should_use_sh1107_oled_display:
-		if oled_display_is_available and should_plot_temperatures:
-			display_adafruit.update_temperature_display_on_oled_sh1107(offset_t, max_t, temperatures_to_plot)
-	flush()
-
 def main():
-	try:
-		displayio.release_displays()
-	except:
-		pass
+#	try:
+#		displayio.release_displays()
+#	except:
+#		pass
 	global neopixel_is_available
 	try:
 		neopixel_is_available = neopixel_adafruit.setup_neopixel()
@@ -307,41 +150,73 @@ def main():
 		neopixel_is_available = False
 	if neopixel_is_available:
 		neopixel_adafruit.set_color(127, 127, 127)
-	global dotstar_matrix_is_available
-	dotstar_matrix_is_available = setup_dotstar_matrix(False)
+	global dotstar_matrix_available
+	if should_use_dotstar_matrix:
+		dotstar_matrix_available = display_adafruit.setup_dotstar_matrix(False)
+	else:
+		dotstar_matrix_available = False
 	global i2c
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
 		info("using I2C1")
+	except KeyboardInterrupt:
+		raise
 	except:
-		i2c = busio.I2C(board.SCL, board.SDA)
+		try:
+			i2c = busio.I2C(board.SCL, board.SDA)
+		except KeyboardInterrupt:
+			raise
+		except:
+			import displayio
+			displayio.release_displays()
+			i2c = busio.I2C(board.SCL, board.SDA)
 		info("using I2C0")
-	try:
-		setup_temperature_sensors(i2c)
-	except:
-		error("can't find any temperature sensors on i2c bus")
-	global oled_display_is_available
+	prohibited_addresses = []
+	global display_is_available
 	if should_use_ssd1327_oled_display:
-		oled_display_is_available = display_adafruit.setup_i2c_oled_display_ssd1327(i2c, 0x3d)
-		if oled_display_is_available:
-			display_adafruit.clear_display_on_oled_ssd1327()
+		display_is_available = display_adafruit.setup_i2c_oled_display_ssd1327(i2c, 0x3d)
+		if display_is_available:
+			prohibited_addresses.append(0x3d)
 	if should_use_sh1107_oled_display:
-		oled_display_is_available = display_adafruit.setup_i2c_oled_display_sh1107(i2c, 0x3c)
-		if oled_display_is_available:
-			display_adafruit.clear_display_on_oled_sh1107()
+		display_is_available = display_adafruit.setup_i2c_oled_display_sh1107(i2c, 0x3c)
+		if display_is_available:
+			prohibited_addresses.append(0x3c)
 	global matrix_backpack_available
-	try:
-		matrix_backpack_available = setup_matrix_backpack()
-	except:
-		error("can't find matrix backpack (i2c address 0x70)")
+	if should_use_matrix_backpack:
+		try:
+			matrix_backpack_available = display_adafruit.setup_matrix_backpack()
+			if matrix_backpack_available:
+				prohibited_addresses.append(0x70)
+		except:
+			error("can't find matrix backpack (i2c address 0x70)")
+			matrix_backpack_available = False
+	else:
 		matrix_backpack_available = False
 	global alphanumeric_backpack_available
-	alphanumeric_backpack_available = setup_alphanumeric_backpack(0x77)
+	if should_use_alphanumeric_backpack:
+		alphanumeric_backpack_available = display_adafruit.setup_alphanumeric_backpack(0x77)
+	else:
+		alphanumeric_backpack_available = False
+	if alphanumeric_backpack_available:
+		prohibited_addresses.append(0x77)
+	if display_is_available:
+		display_adafruit.setup_for_n_m_plots(1, 1, [["water heater", "temperature"]])
+		display_adafruit.refresh()
 	global RTC_is_available
 	if should_use_RTC:
 		RTC_is_available = pcf8523_adafruit.setup(i2c)
+		if RTC_is_available:
+			prohibited_addresses.append(RTC_is_available)
 	else:
 		RTC_is_available = False
+	#print(str(prohibited_addresses))
+	global pct2075_is_available
+	try:
+		pct2075_adafruit.setup(i2c, prohibited_addresses, N)
+		pct2075_is_available = True
+	except:
+		error("can't find any temperature sensors on i2c bus")
+		pct2075_is_available = False
 	global spi
 	spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 	global airlift_is_available
@@ -350,12 +225,14 @@ def main():
 		#airlift_is_available = airlift.setup_airlift(feed, spi, board.ESP_CS, board.ESP_BUSY, board.ESP_RESET)
 	else:
 		airlift_is_available = False
+	global header_string
 	if airlift_is_available:
 		airlift.setup_feed(feed)
+		header_string += ", RSSI"
 	if 0:
 		print("fetching old data from feed...")
-		global temperatures_to_plot
-		temperatures_to_plot = airlift.get_all_data(MAX_COLUMNS_TO_PLOT)
+		global heater
+		heater = airlift.get_all_data(MAX_COLUMNS_TO_PLOT)
 	global sdcard_is_available
 	global dirname
 	if should_use_sdcard:
@@ -365,18 +242,79 @@ def main():
 		sdcard_is_available = False
 		dirname = ""
 	if RTC_is_available:
-		create_new_logfile_with_string_embedded(dirname, "pct2075", pcf8523_adafruit.get_timestring2())
+		create_new_logfile_with_string_embedded(dirname, "heater", pcf8523_adafruit.get_timestring2())
 	else:
-		create_new_logfile_with_string_embedded(dirname, "pct2075")
+		create_new_logfile_with_string_embedded(dirname, "heater")
 	print_header()
-	while test_if_present():
-		loop()
-	error("pct2075 is not present")
+	loop()
+	error("pct2075 is no longer available; cannot continue")
 	if neopixel_is_available:
 		neopixel_adafruit.set_color(0, 255, 255)
 
+def loop():
+	if display_is_available:
+		plot_width = display_adafruit.plot_width
+	else:
+		plot_width = 128
+	heater = [ -40.0 for i in range(plot_width) ]
+	laundry_room = [ -40.0 for i in range(plot_width) ]
+	generic.get_uptime()
+	global delay_between_acquisitions
+	i = 0
+	while pct2075_adafruit.test_if_present():
+		neopixel_adafruit.set_color(255, 0, 0)
+		if use_pwm_status_leds:
+			generic.set_status_led_color([1, 0, 0])
+		string = ""
+		if gps_is_available:
+			string += gps_adafruit.measure_string()
+		if pct2075_is_available:
+			string += pct2075_adafruit.measure_string()
+		if airlift_is_available:
+			string += airlift.measure_string()
+		if battery_monitor_is_available:
+			string += generic.get_battery_percentage()
+		#display_adafruit.update_temperature_display_on_alphanumeric_backpack(temperature)
+		print_compact(string)
+		flush()
+		neopixel_adafruit.set_color(0, 255, 0)
+		if use_pwm_status_leds:
+			generic.set_status_led_color([0, 1, 0])
+		i += 1
+		if 0==i%N:
+			if pct2075_is_available:
+				pct2075_adafruit.show_average_values()
+				heater.append((pct2075_adafruit.get_average_values()[0] - MIN_TEMP_TO_PLOT) / (MAX_TEMP_TO_PLOT-MIN_TEMP_TO_PLOT))
+				heater.pop(0)
+				laundry_room.append((pct2075_adafruit.get_average_values()[1] - MIN_TEMP_TO_PLOT) / (MAX_TEMP_TO_PLOT-MIN_TEMP_TO_PLOT))
+				laundry_room.pop(0)
+				#print(str(heater))
+				#print(str(laundry_room))
+				display_adafruit.update_plot(0, [heater, laundry_room])
+				display_adafruit.refresh()
+				if airlift_is_available:
+					try:
+						airlift.post_data(my_wifi_name + "", pct2075_adafruit.get_average_values()[0])
+					except KeyboardInterrupt:
+						raise
+					except:
+						warning("couldn't post data for pct2075")
+			if dotstar_matrix_available:
+				display_adafruit.update_temperature_display_on_dotstar_matrix()
+			if matrix_backpack_available:
+				display_adafruit.update_temperature_display_on_matrix_backpack()
+			info("waiting...")
+			time.sleep(delay_between_posting_and_next_acquisition)
+			delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, desired_loop_time)
+		neopixel_adafruit.set_color(0, 0, 255)
+		if use_pwm_status_leds:
+			generic.set_status_led_color([0, 0, 1])
+		if airlift_is_available:
+			if 0==i%86300:
+				airlift.update_time_from_server()
+		time.sleep(delay_between_acquisitions)
+
 if __name__ == "__main__":
-	#supervisor.disable_autoreload()
 	atexit.register(generic.reset)
 	try:
 		main()

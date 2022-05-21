@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2020-11-24 by mza
-# last updated 2021-11-26 by mza
+# last updated 2022-05-19 by mza
 
 # from https://learn.adafruit.com/adafruit-pct2075-temperature-sensor/python-circuitpython
 
@@ -22,6 +22,8 @@ def setup_temperature_sensor(i2c, address):
 		pct = adafruit_pct2075.PCT2075(i2c, address=address)
 		pct.temperature
 		temperature_sensors.append(pct)
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		raise
 	#print(address)
@@ -44,11 +46,13 @@ def setup(i2c, prohibited_addresses, N):
 			found_addresses.append(address)
 			if 1!=count:
 				header_string += ", other" + str(count)
+		except (KeyboardInterrupt, ReloadException):
+			raise
 		except:
 			pass
 	if 0==count:
 		error("pct2075 not present (any i2c address)")
-		raise
+		#raise
 	else:
 		debug("found " + str(count) + " temperature sensor(s)")
 	global myboxcar
@@ -65,6 +69,8 @@ def get_values():
 	for each in temperature_sensors:
 		try:
 			values.append(each.temperature)
+		except (KeyboardInterrupt, ReloadException):
+			raise
 		except:
 			values.append(0.)
 	#print(str(values))
@@ -95,9 +101,13 @@ def measure_string():
 def print_compact():
 	try:
 		date = time.strftime("%Y-%m-%d+%X, ")
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		try:
 			date = get_timestring1() + ", "
+		except (KeyboardInterrupt, ReloadException):
+			raise
 		except:
 			date = ""
 	string = measure_string()
@@ -106,6 +116,8 @@ def print_compact():
 def test_if_present():
 	try:
 		temperature_sensors[0].temperature
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		return False
 	return True
@@ -113,10 +125,14 @@ def test_if_present():
 if __name__ == "__main__":
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		i2c = busio.I2C(board.SCL, board.SDA)
 	try:
 		setup(i2c, [])
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		error("no pct2075 sensors present")
 		sys.exit(1)
