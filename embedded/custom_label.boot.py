@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-04-21 by mza
-# last updated 2022-05-13 by mza
+# last updated 2022-05-15 by mza
 
 try:
 	import storage
@@ -16,6 +16,7 @@ try:
 	#m.label = "MAGTAG"
 	#m.label = "PLOTICLE2"
 	#m.label = "INDOORHUM3"
+	#m.label = "INDOOR4"
 	try:
 		import os
 		os.unlink("boot.py")
