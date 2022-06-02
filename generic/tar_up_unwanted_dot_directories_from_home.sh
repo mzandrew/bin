@@ -3,6 +3,7 @@
 # keepers: .bash_history .bashrc .cddb .gaim .purple .purple2 .gnupg .ssh .subversion .profile .mozilla-thunderbird .thunderbird .fluxbox
 
 for each in \
+	.npm .cmake \
 	.gnash .printer-groups.xml .pki .swp .ps .gtk-custom-papers .KoalaNext .eagle .mm3d \
 	.openshot .camstream .install4j .libquicktime_codecs .videoporama .winff .DownloadManager .easyMP3Gain .dvdcss \
 	.chromium-score .gimp-2.6 .googleearth .gtkpod .loki .orca .tomboy .webcamrc .bitpim .cups \
