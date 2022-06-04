@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2020-10-14 by mza
-# last updated 2022-05-03 by mza
+# last updated 2022-06-03 by mza
 
 # from https://learn.adafruit.com/adafruit-bme680-humidity-temperature-barometic-pressure-voc-gas/python-circuitpython
 
@@ -21,9 +21,9 @@ temperature_offset = 0.0
 Pa_to_atm = 101325.0 # Pa / atm
 hPa_to_atm = Pa_to_atm/100.0
 
-def setup(i2c, N):
+def setup(i2c, N, address=0x77):
 	global bme680
-	bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c, debug=False)
+	bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c, address=address, debug=False)
 	# change this to match the location's pressure (hPa) at sea level
 	bme680.sea_level_pressure = 1013.25
 	global myboxcar

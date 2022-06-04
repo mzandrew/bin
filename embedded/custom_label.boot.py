@@ -17,6 +17,8 @@ try:
 	#m.label = "PLOTICLE2"
 	#m.label = "INDOORHUM3"
 	#m.label = "INDOOR4"
+	#m.label = "LASERBOX"
+	#m.label = "CLEANROOM"
 	try:
 		import os
 		os.unlink("boot.py")
