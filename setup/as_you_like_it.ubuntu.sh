@@ -1,8 +1,9 @@
 #!/bin/bash -e
 
-# last updated 2022-01-27 by mza
+# last updated 2022-06-03 by mza
 
-#declare -i debian_only=1
+declare -i debian_only=0
+#debian_only=1
 
 declare package_list_file=""
 function make_dpkg_list_if_necessary {

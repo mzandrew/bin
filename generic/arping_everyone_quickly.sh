@@ -41,11 +41,13 @@ for device in $devices; do
 	if [ $fake_it -eq 0 ]; then
 		# this lets it update the arp table:
 		echo 1 | sudo tee /proc/sys/net/ipv4/conf/${device}/arp_accept >/dev/null
+		echo -n "sending arping(s)..."
 		for i in $(seq $range); do
 			sleep 0.01
 			go "${baseip}.${i}" &
 			#echo -n "$i "
 		done
+		echo " done"
 	fi
 done
 
