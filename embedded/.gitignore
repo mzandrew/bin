@@ -1,3 +1,4 @@
+*.csv
 code.py
 lib
 __pycache__

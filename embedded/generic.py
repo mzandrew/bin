@@ -1,5 +1,5 @@
 # written 2021-12-28 by mza
-# last updated 2022-05-04 by mza
+# last updated 2022-06-16 by mza
 
 import sys
 import time
@@ -187,6 +187,13 @@ def convert_date_to_local_time(datestamp):
 	#print(str(localtime))
 	#datestamp = localtime.strptime(localtime, "%Y-%m-%d %H:%M:S%z")
 	datestamp = localtime.strftime("%Y-%m-%d+%H:%M")
+	#print(str(datestamp))
+	return datestamp
+
+def convert_date_to_UTC_time(datestamp):
+	from datetime import datetime
+	utc = datetime.strptime(datestamp, "%Y-%m-%dT%H:%M:%SZ")
+	datestamp = utc.strftime("%Y-%m-%d %H:%M:%S UTC")
 	#print(str(datestamp))
 	return datestamp
 

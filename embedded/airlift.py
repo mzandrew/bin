@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-05-14 by mza
+# last updated 2022-06-16 by mza
 
 import time
 import busio
@@ -607,10 +607,16 @@ def get_all_data(feed, count_desired=None):
 # in circuitpython, we get "AttributeError: 'IO_HTTP' object has no attribute 'data'"
 # format is:
 # Data(created_epoch=1651335357, created_at='2022-04-30T16:15:57Z', updated_at=None, value='77.2382', completed_at=None, feed_id=1785141, expiration='2022-06-29T16:15:57Z', position=None, id='0F0K895WA8728HXVYE37EBD27V', lat=None, lon=None, ele=None)
+# returns same order as adafruit io csv file downloads
+# "id,value,feed_id,created_at,lat,lon,ele" = 8,3,5,1,9,10,11
 def get_all_data_with_datestamps(feed, count_desired=None):
 	# fetches 100 if count_desired is None
 	global errorcount
 	DEFAULT_DATESTAMP = "2020-02-02T22:22:22Z"
+	DEFAULT_ID = "0F0K8950000000000000000000"
+	DEFAULT_LAT = 0.0
+	DEFAULT_LON = 0.0
+	DEFAULT_ELE = 0.0
 	try:
 		VALUE_INDEX = 3 # gotta know that "value" is index #3 in the tuple
 		DATESTAMP_INDEX = 1 # gotta know that "created_at" is index #1 in the tuple
@@ -620,15 +626,18 @@ def get_all_data_with_datestamps(feed, count_desired=None):
 		else:
 			raw = io.data(feed)
 		count_gotten = len(raw)
+		if count_gotten:
+			FEED_ID = raw[0][5]
 		values = []
 		for i in range(count_gotten):
-			values.insert(0, [raw[i][DATESTAMP_INDEX],raw[i][VALUE_INDEX]])
+			#values.insert(0, [raw[i][DATESTAMP_INDEX],raw[i][VALUE_INDEX]])
+			values.insert(0, [ raw[i][8], raw[i][3], raw[i][5], raw[i][1], raw[i][9], raw[i][10], raw[i][11] ])
 		if count_desired is not None:
 			if count_desired<count_gotten:
 				values = values[:count_desired]
 			elif count_gotten<count_desired:
 				for i in range(count_gotten, count_desired):
-					values.append([DEFAULT_DATESTAMP,DEFAULT_VALUE])
+					values.append([DEFAULT_ID, DEFAULT_VALUE, FEED_ID, DEFAULT_DATESTAMP, DEFAULT_LAT, DEFAULT_LON, DEFAULT_ELE])
 		#info("done")
 		return values
 	except (KeyboardInterrupt, ReloadException):
