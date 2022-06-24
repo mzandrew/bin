@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-06-16 by mza
+# last updated 2022-06-24 by mza
 
 import time
 import busio
@@ -61,12 +61,38 @@ def scan_networks():
 def connect_wifi(hostname):
 	try:
 		import wifi
-		import ssl
-		import socketpool
-		import adafruit_requests
-		from adafruit_io.adafruit_io import IO_HTTP
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except ImportError:
-		print("can't import wifi, ssl, socketpool, adafruit_requests or adafruit_io")
+		print("can't import wifi")
+		raise
+	try:
+		import ssl
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except ImportError:
+		print("can't import ssl")
+		raise
+	try:
+		import socketpool
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except ImportError:
+		print("can't import socketpool")
+		raise
+	try:
+		import adafruit_requests
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except ImportError:
+		print("can't import adafruit_requests")
+		raise
+	try:
+		from adafruit_io.adafruit_io import IO_HTTP
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except ImportError:
+		print("can't import adafruit_io")
 		raise
 	global io
 	if 0:
