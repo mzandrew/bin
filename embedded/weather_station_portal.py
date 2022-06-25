@@ -152,6 +152,8 @@ def main():
 	global neopixel_is_available
 	try:
 		neopixel_is_available = neopixel_adafruit.setup_neopixel()
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		error("error setting up neopixel")
 		neopixel_is_available = False
@@ -160,6 +162,8 @@ def main():
 	global i2c
 	try:
 		i2c = board.I2C
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		try:
 			i2c = busio.I2C(board.SCL1, board.SDA1)
