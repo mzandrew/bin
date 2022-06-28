@@ -2,7 +2,7 @@
 
 # written 2022-06-23 by mza
 # based on indoor_hum_temp_pres.py
-# last updated 2022-06-24 by mza
+# last updated 2022-06-26 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -305,7 +305,9 @@ def loop():
 				#print(str(temperatures_to_plot))
 				#print(str(humidities_to_plot))
 				#print(str(pressures_to_plot))
-				display_adafruit.update_plot(0, [temperatures_to_plot, humidities_to_plot, pressures_to_plot])
+				display_adafruit.update_plot(0, [temperatures_to_plot])
+				display_adafruit.update_plot(1, [humidities_to_plot])
+				display_adafruit.update_plot(2, [pressures_to_plot])
 				display_adafruit.refresh()
 				if airlift_is_available:
 					try:
@@ -323,7 +325,7 @@ def loop():
 				for j in range(5):
 					particle_counts_to_plot[j].append((pm25_adafruit.get_average_values()[6+j] - MIN_PARTICLE_COUNT_TO_PLOT) / (MAX_PARTICLE_COUNT_TO_PLOT-MIN_PARTICLE_COUNT_TO_PLOT))
 					particle_counts_to_plot[j].pop(0)
-				display_adafruit.update_plot(1, particle_counts_to_plot)
+				display_adafruit.update_plot(3, particle_counts_to_plot)
 				display_adafruit.refresh()
 				if airlift_is_available:
 					try:
