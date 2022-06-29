@@ -1,4 +1,4 @@
-# last updated 2022-05-20 by mza
+# last updated 2022-06-29 by mza
 
 import time
 import math
@@ -131,6 +131,7 @@ def setup_builtin_epd():
 
 def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]]):
 	number_of_plots = number_of_plots_n * number_of_plots_m
+	#if not len(list_of_labels) = number_of_plots:
 	if display_has_autorefresh:
 		display.auto_refresh = False
 	if 1<number_of_plots_n:
@@ -199,6 +200,9 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 		FONT_GAP = FONT_SCALE*width_of_single_character
 	#print("font gap: " + str(FONT_GAP))
 	for m in range(len(list_of_labels)):
+		if 8<len(list_of_labels[m]):
+			error("can only plot 8 things at once")
+			continue
 		text_areas = []
 		running_text_width = 0
 		x = (m%2)*tile_width + tile_width//2
