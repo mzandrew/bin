@@ -61,7 +61,7 @@ if board_id=="pyportal_titano" or board_id=="pyportal":
 	use_built_in_wifi = False
 	should_use_display = True
 	number_of_plots = 4
-if board_id=="adafruit_feather_esp32s2_tft" or "adafruit_feather_esp32s3_tft":
+elif board_id=="adafruit_feather_esp32s2_tft" or board_id=="adafruit_feather_esp32s3_tft":
 	my_wifi_name = "part-hum-temp-pres-feather"
 	my_adafruit_io_prefix = "congdon"
 	FEATHER_ESP32S2 = True
