@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-04-21 by mza
-# last updated 2022-05-15 by mza
+# last updated 2022-06-29 by mza
 
 try:
 	import storage
@@ -9,7 +9,7 @@ try:
 	m = storage.getmount("/")
 	#m.label = "CUSTOM"
 	#m.label = "CONTINENTAL"
-	m.label = "ELDORADO"
+	#m.label = "ELDORADO"
 	#m.label = "ROOF"
 	#m.label = "PYPORTAL"
 	#m.label = "TITANO"
@@ -20,6 +20,9 @@ try:
 	#m.label = "LASERBOX"
 	#m.label = "CLEANROOM"
 	#m.label = "PARHUMTEM"
+	#m.label = "PARHUMTEMS3"
+	#m.label = "PARHUMTEMS2"
+	m.label = "ELSEGUNDO"
 	try:
 		import os
 		os.unlink("boot.py")
