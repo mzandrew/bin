@@ -2,7 +2,7 @@
 
 # written 2022-06-23 by mza
 # based on indoor_hum_temp_pres.py
-# last updated 2022-06-26 by mza
+# last updated 2022-06-29 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -36,7 +36,7 @@ MAX_TEMP_TO_PLOT = 80.0
 MIN_HUM_TO_PLOT = 40.0
 MAX_HUM_TO_PLOT = 100.0
 MIN_PRES_TO_PLOT = 0.997
-MAX_PRES_TO_PLOT = 1.008
+MAX_PRES_TO_PLOT = 1.010
 MIN_PARTICLE_COUNT_TO_PLOT = 0.0
 MAX_PARTICLE_COUNT_TO_PLOT = 350.0
 
