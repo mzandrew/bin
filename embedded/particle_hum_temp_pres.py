@@ -78,6 +78,23 @@ elif board_id=="adafruit_feather_esp32s2_tft" or board_id=="adafruit_feather_esp
 	use_built_in_wifi = True
 	should_use_display = True
 	number_of_plots = 1
+elif board_id=="adafruit_qtpy_esp32s2" or board_id=="adafruit_qtpy_esp32s3":
+	my_wifi_name = "part-hum-temp-pres-qtpy"
+	my_adafruit_io_prefix = "congdon"
+	FEATHER_ESP32S2 = False
+	use_pwm_status_leds = False
+	should_use_sdcard = False
+	should_use_RTC = False
+	should_use_gps = False
+	N = 32
+	desired_loop_time = 60.0
+	delay_between_acquisitions = 1.5
+	gps_delay_in_ms = 2000
+	delay_between_posting_and_next_acquisition = 1.0
+	should_use_airlift = True
+	use_built_in_wifi = True
+	should_use_display = False
+	number_of_plots = 1
 else:
 	error("what kind of board am I?")
 
@@ -287,14 +304,15 @@ def main():
 	info("bme680 no longer available; cannot continue")
 
 def loop():
-	info("allocating memory...")
-	if bme680_is_available:
-		temperatures_to_plot = [ -40.0 for i in range(display_adafruit.plot_width) ]
-		humidities_to_plot   = [ -40.0 for i in range(display_adafruit.plot_width) ]
-		pressures_to_plot    = [ -40.0 for i in range(display_adafruit.plot_width) ]
-	if pm25_is_available:
-		particle_counts_to_plot = [ [ -40.0 for i in range(display_adafruit.plot_width) ] for j in range(5) ]
-	info("finished allocating memory")
+	if display_is_available:
+		info("allocating memory...")
+		if bme680_is_available:
+			temperatures_to_plot = [ -40.0 for i in range(display_adafruit.plot_width) ]
+			humidities_to_plot   = [ -40.0 for i in range(display_adafruit.plot_width) ]
+			pressures_to_plot    = [ -40.0 for i in range(display_adafruit.plot_width) ]
+		if pm25_is_available:
+			particle_counts_to_plot = [ [ -40.0 for i in range(display_adafruit.plot_width) ] for j in range(5) ]
+		info("finished allocating memory")
 	generic.get_uptime()
 	global delay_between_acquisitions
 	i = 0
@@ -323,12 +341,13 @@ def loop():
 		if 0==i%N:
 			if bme680_is_available:
 				bme680_adafruit.show_average_values()
-				temperatures_to_plot.append((bme680_adafruit.get_average_values()[0] - MIN_TEMP_TO_PLOT) / (MAX_TEMP_TO_PLOT-MIN_TEMP_TO_PLOT))
-				temperatures_to_plot.pop(0)
-				humidities_to_plot.append(  (bme680_adafruit.get_average_values()[1] - MIN_HUM_TO_PLOT)  / (MAX_HUM_TO_PLOT-MIN_HUM_TO_PLOT))
-				humidities_to_plot.pop(0)
-				pressures_to_plot.append(   (bme680_adafruit.get_average_values()[2] - MIN_PRES_TO_PLOT) / (MAX_PRES_TO_PLOT-MIN_PRES_TO_PLOT))
-				pressures_to_plot.pop(0)
+				if display_is_available:
+					temperatures_to_plot.append((bme680_adafruit.get_average_values()[0] - MIN_TEMP_TO_PLOT) / (MAX_TEMP_TO_PLOT-MIN_TEMP_TO_PLOT))
+					temperatures_to_plot.pop(0)
+					humidities_to_plot.append(  (bme680_adafruit.get_average_values()[1] - MIN_HUM_TO_PLOT)  / (MAX_HUM_TO_PLOT-MIN_HUM_TO_PLOT))
+					humidities_to_plot.pop(0)
+					pressures_to_plot.append(   (bme680_adafruit.get_average_values()[2] - MIN_PRES_TO_PLOT) / (MAX_PRES_TO_PLOT-MIN_PRES_TO_PLOT))
+					pressures_to_plot.pop(0)
 				#print(str(temperatures_to_plot))
 				#print(str(humidities_to_plot))
 				#print(str(pressures_to_plot))
@@ -345,9 +364,10 @@ def loop():
 						warning("couldn't post data for bme680")
 			if pm25_is_available:
 				pm25_adafruit.show_average_values()
-				for j in range(5):
-					particle_counts_to_plot[j].append((pm25_adafruit.get_average_values()[6+j] - MIN_PARTICLE_COUNT_TO_PLOT) / (MAX_PARTICLE_COUNT_TO_PLOT-MIN_PARTICLE_COUNT_TO_PLOT))
-					particle_counts_to_plot[j].pop(0)
+				if display_is_available:
+					for j in range(5):
+						particle_counts_to_plot[j].append((pm25_adafruit.get_average_values()[6+j] - MIN_PARTICLE_COUNT_TO_PLOT) / (MAX_PARTICLE_COUNT_TO_PLOT-MIN_PARTICLE_COUNT_TO_PLOT))
+						particle_counts_to_plot[j].pop(0)
 				if airlift_is_available:
 					try:
 						airlift.post_data(my_adafruit_io_prefix + "-0p3", pm25_adafruit.get_average_values()[6])
@@ -359,21 +379,22 @@ def loop():
 						raise
 					except:
 						warning("couldn't post data for particle count sensor")
-			if 1<number_of_plots:
-				if bme680_is_available:
-					display_adafruit.update_plot(0, [temperatures_to_plot])
-					display_adafruit.update_plot(1, [humidities_to_plot])
-					display_adafruit.update_plot(2, [pressures_to_plot])
-				if pm25_is_available:
-					display_adafruit.update_plot(3, [particle_counts_to_plot[2], particle_counts_to_plot[3]])
-			else:
-				if bme680_is_available and pm25_is_available:
-					display_adafruit.update_plot(0, [temperatures_to_plot, humidities_to_plot, pressures_to_plot, particle_counts_to_plot[2], particle_counts_to_plot[3]])
-				elif bme680_is_available:
-					display_adafruit.update_plot(0, [temperatures_to_plot, humidities_to_plot, pressures_to_plot])
-				elif pm25_is_available:
-					display_adafruit.update_plot(0, [particle_counts_to_plot[2], particle_counts_to_plot[3]])
-			display_adafruit.refresh()
+			if display_is_available:
+				if 1<number_of_plots:
+					if bme680_is_available:
+						display_adafruit.update_plot(0, [temperatures_to_plot])
+						display_adafruit.update_plot(1, [humidities_to_plot])
+						display_adafruit.update_plot(2, [pressures_to_plot])
+					if pm25_is_available:
+						display_adafruit.update_plot(3, [particle_counts_to_plot[2], particle_counts_to_plot[3]])
+				else:
+					if bme680_is_available and pm25_is_available:
+						display_adafruit.update_plot(0, [temperatures_to_plot, humidities_to_plot, pressures_to_plot, particle_counts_to_plot[2], particle_counts_to_plot[3]])
+					elif bme680_is_available:
+						display_adafruit.update_plot(0, [temperatures_to_plot, humidities_to_plot, pressures_to_plot])
+					elif pm25_is_available:
+						display_adafruit.update_plot(0, [particle_counts_to_plot[2], particle_counts_to_plot[3]])
+				display_adafruit.refresh()
 			info("waiting...")
 			time.sleep(delay_between_posting_and_next_acquisition)
 			delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, desired_loop_time)
