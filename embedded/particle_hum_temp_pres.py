@@ -45,7 +45,7 @@ mydir = "/logs"
 board_id = board.board_id
 info("we are " + board_id)
 if board_id=="pyportal_titano" or board_id=="pyportal":
-	my_wifi_name = "part-hum-temp-pres"
+	my_wifi_name = "part-hum-temp-pres-portal"
 	my_adafruit_io_prefix = "congdon"
 	FEATHER_ESP32S2 = False
 	use_pwm_status_leds = False
@@ -60,6 +60,24 @@ if board_id=="pyportal_titano" or board_id=="pyportal":
 	should_use_airlift = False
 	use_built_in_wifi = False
 	should_use_display = True
+	number_of_plots = 4
+if board_id=="adafruit_feather_esp32s2_tft" or "adafruit_feather_esp32s3_tft":
+	my_wifi_name = "part-hum-temp-pres-feather"
+	my_adafruit_io_prefix = "congdon"
+	FEATHER_ESP32S2 = True
+	use_pwm_status_leds = False
+	should_use_sdcard = False
+	should_use_RTC = False
+	should_use_gps = False
+	N = 32
+	desired_loop_time = 60.0
+	delay_between_acquisitions = 1.5
+	gps_delay_in_ms = 2000
+	delay_between_posting_and_next_acquisition = 1.0
+	should_use_airlift = True
+	use_built_in_wifi = True
+	should_use_display = True
+	number_of_plots = 1
 else:
 	error("what kind of board am I?")
 
@@ -130,16 +148,19 @@ def main():
 		pm25_is_available = False
 		#sys.exit(1)
 	global spi
-#	try:
-#		spi = board.SPI
-#		info("builtin SPI (1)")
 	try:
 		spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO) # this line stops the builtin from working
 		info("builtin SPI (2)")
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
-		raise
+		try:
+			spi = board.SPI
+			info("builtin SPI (1)")
+		except (KeyboardInterrupt, ReloadException):
+			raise
+		except:
+			raise
 	global display_is_available
 	display_is_available = False
 	if should_use_display:
@@ -157,7 +178,11 @@ def main():
 		else:
 			warning("display is not available")
 	if display_is_available:
-		display_adafruit.setup_for_n_m_plots(2, 2, [["temperature", "cold"], ["humidity", "under"], ["pressure", "under"], ["particle count", "0.3", "0.5", "1.0", "2.5", "5.0"]])
+		if 1<number_of_plots:
+			display_adafruit.setup_for_n_m_plots(2, 2, [["temperature", "cold"], ["humidity", "under"], ["pressure", "under"], ["particle count", "0.3", "0.5", "1.0", "2.5", "5.0"]])
+		else:
+			display_adafruit.setup_for_n_m_plots(1, 1, [["stuff", "temp", "hum", "press", "1.0", "2.5"]])
+			#display_adafruit.setup_for_n_m_plots(1, 1, [["stuff", "temp", "hum", "press", "0.3", "0.5", "1.0", "2.5", "5.0"]])
 		#display_adafruit.setup_for_n_m_plots(1, 1, [["indoor", "temperature", "humidity", "pressure", "1p0"]])
 		display_adafruit.refresh()
 		#display_adafruit.test_st7789()
@@ -237,16 +262,18 @@ def main():
 			airlift_is_available = airlift.setup_airlift(my_wifi_name, spi, board.ESP_CS, board.ESP_BUSY, board.ESP_RESET)
 		if airlift_is_available:
 			header_string += ", RSSI-dB"
-			#airlift.setup_feed(my_adafruit_io_prefix + "-temp")
-			#airlift.setup_feed(my_adafruit_io_prefix + "-hum")
-			#airlift.setup_feed(my_adafruit_io_prefix + "-pressure")
+			if bme680_is_available:
+				airlift.setup_feed(my_adafruit_io_prefix + "-temp")
+				airlift.setup_feed(my_adafruit_io_prefix + "-hum")
+				airlift.setup_feed(my_adafruit_io_prefix + "-pressure")
 			#airlift.setup_feed("indoor-altitude")
 			#airlift.setup_feed("indoor-gas")
-			#airlift.setup_feed(my_adafruit_io_prefix + "-0p3")
-			#airlift.setup_feed(my_adafruit_io_prefix + "-0p5")
-			#airlift.setup_feed(my_adafruit_io_prefix + "-1p0")
-			#airlift.setup_feed(my_adafruit_io_prefix + "-2p5")
-			#airlift.setup_feed(my_adafruit_io_prefix + "-5p0")
+			if pm25_is_available:
+				airlift.setup_feed(my_adafruit_io_prefix + "-0p3")
+				airlift.setup_feed(my_adafruit_io_prefix + "-0p5")
+				airlift.setup_feed(my_adafruit_io_prefix + "-1p0")
+				airlift.setup_feed(my_adafruit_io_prefix + "-2p5")
+				airlift.setup_feed(my_adafruit_io_prefix + "-5p0")
 	else:
 		airlift_is_available = False
 	if 0:
@@ -305,10 +332,6 @@ def loop():
 				#print(str(temperatures_to_plot))
 				#print(str(humidities_to_plot))
 				#print(str(pressures_to_plot))
-				display_adafruit.update_plot(0, [temperatures_to_plot])
-				display_adafruit.update_plot(1, [humidities_to_plot])
-				display_adafruit.update_plot(2, [pressures_to_plot])
-				display_adafruit.refresh()
 				if airlift_is_available:
 					try:
 						airlift.post_data(my_adafruit_io_prefix + "-temp",     bme680_adafruit.get_average_values()[0])
@@ -325,8 +348,6 @@ def loop():
 				for j in range(5):
 					particle_counts_to_plot[j].append((pm25_adafruit.get_average_values()[6+j] - MIN_PARTICLE_COUNT_TO_PLOT) / (MAX_PARTICLE_COUNT_TO_PLOT-MIN_PARTICLE_COUNT_TO_PLOT))
 					particle_counts_to_plot[j].pop(0)
-				display_adafruit.update_plot(3, particle_counts_to_plot)
-				display_adafruit.refresh()
 				if airlift_is_available:
 					try:
 						airlift.post_data(my_adafruit_io_prefix + "-0p3", pm25_adafruit.get_average_values()[6])
@@ -338,6 +359,21 @@ def loop():
 						raise
 					except:
 						warning("couldn't post data for particle count sensor")
+			if 1<number_of_plots:
+				if bme680_is_available:
+					display_adafruit.update_plot(0, [temperatures_to_plot])
+					display_adafruit.update_plot(1, [humidities_to_plot])
+					display_adafruit.update_plot(2, [pressures_to_plot])
+				if pm25_is_available:
+					display_adafruit.update_plot(3, [particle_counts_to_plot[2], particle_counts_to_plot[3]])
+			else:
+				if bme680_is_available and pm25_is_available:
+					display_adafruit.update_plot(0, [temperatures_to_plot, humidities_to_plot, pressures_to_plot, particle_counts_to_plot[2], particle_counts_to_plot[3]])
+				elif bme680_is_available:
+					display_adafruit.update_plot(0, [temperatures_to_plot, humidities_to_plot, pressures_to_plot])
+				elif pm25_is_available:
+					display_adafruit.update_plot(0, [particle_counts_to_plot[2], particle_counts_to_plot[3]])
+			display_adafruit.refresh()
 			info("waiting...")
 			time.sleep(delay_between_posting_and_next_acquisition)
 			delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, desired_loop_time)
