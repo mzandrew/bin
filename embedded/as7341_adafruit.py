@@ -1,7 +1,7 @@
 # https://learn.adafruit.com/adafruit-as7341-10-channel-light-color-sensor-breakout/python-circuitpython
 # SPDX-FileCopyrightText: 2020 Bryan Siepert, written for Adafruit Industries
 # SPDX-License-Identifier: MIT
-# last updated 2021-11-26 by mza
+# last updated 2022-07-09 by mza
 
 import time
 import board
@@ -20,7 +20,7 @@ def setup(i2c, N):
 	# adc_fullscale = (atime+1)*(astep+1)
 	as7341.gain = 0
 	global myboxcar
-	myboxcar = boxcar.boxcar(8, N, "as7341")
+	myboxcar = boxcar.boxcar(10, N, "as7341")
 	#return as7341.i2c_device.device_address
 	return 0x39
 
@@ -37,10 +37,9 @@ def bar_graph(read_value):
 
 def get_values():
 	try:
-		values = [ as7341.channel_415nm, as7341.channel_445nm, as7341.channel_480nm, as7341.channel_515nm, as7341.channel_555nm, as7341.channel_590nm, as7341.channel_630nm, as7341.channel_680nm ]
-	#, as7341.channel_clear, as7341.channel_nir
+		values = [ as7341.channel_415nm, as7341.channel_445nm, as7341.channel_480nm, as7341.channel_515nm, as7341.channel_555nm, as7341.channel_590nm, as7341.channel_630nm, as7341.channel_680nm, as7341.channel_clear, as7341.channel_nir ]
 	except:
-		values = [ 0, 0, 0, 0, 0, 0, 0, 0  ]
+		values = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ]
 	myboxcar.accumulate(values)
 	return values
 
@@ -55,22 +54,22 @@ def get_previous_values():
 
 def measure_string():
 	values = get_values()
-	return ", %d, %d, %d, %d, %d, %d, %d, %d" % (values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7])
+	return ", %d, %d, %d, %d, %d, %d, %d, %d, %d, %d" % (values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8], values[9])
 
 def compact_output():
-	print(measure_string)
+	print(measure_string())
 
 def verbose_output():
-	print("F1 - 415nm/Violet  %s" % bar_graph(as7341.channel_415nm))
-	print("F2 - 445nm/Indigo  %s" % bar_graph(as7341.channel_445nm))
-	print("F3 - 480nm/Blue    %s" % bar_graph(as7341.channel_480nm))
-	print("F4 - 515nm/Cyan    %s" % bar_graph(as7341.channel_515nm))
-	print("F5 - 555nm/Green   %s" % bar_graph(as7341.channel_555nm))
-	print("F6 - 590nm/Yellow  %s" % bar_graph(as7341.channel_590nm))
-	print("F7 - 630nm/Orange  %s" % bar_graph(as7341.channel_630nm))
-	print("F8 - 680nm/Red     %s" % bar_graph(as7341.channel_680nm))
-	#print("Clear              %s" % bar_graph(as7341.channel_clear))
-	#print("Near-IR (NIR)      %s" % bar_graph(as7341.channel_nir))
+	print("415nm/Violet  %s" % bar_graph(as7341.channel_415nm))
+	print("445nm/Indigo  %s" % bar_graph(as7341.channel_445nm))
+	print("480nm/Blue    %s" % bar_graph(as7341.channel_480nm))
+	print("515nm/Cyan    %s" % bar_graph(as7341.channel_515nm))
+	print("555nm/Green   %s" % bar_graph(as7341.channel_555nm))
+	print("590nm/Yellow  %s" % bar_graph(as7341.channel_590nm))
+	print("630nm/Orange  %s" % bar_graph(as7341.channel_630nm))
+	print("680nm/Red     %s" % bar_graph(as7341.channel_680nm))
+	print("Clear         %s" % bar_graph(as7341.channel_clear))
+	print("Near-IR (NIR) %s" % bar_graph(as7341.channel_nir))
 	print("------------------------------------------------")
 
 if __name__ == "__main__":
