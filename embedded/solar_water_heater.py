@@ -187,7 +187,7 @@ def main():
 		i2c_address = as7341_adafruit.setup(i2c, N)
 		prohibited_addresses.append(i2c_address)
 		as7341_is_available = True
-		header_string += ", as7341-415nm, as7341-445nm, as7341-480nm, as7341-515nm, as7341-555nm, as7341-590nm, as7341-630nm, as7341-680nm"
+		header_string += ", as7341-415nm, as7341-445nm, as7341-480nm, as7341-515nm, as7341-555nm, as7341-590nm, as7341-630nm, as7341-680nm, as7341-clear, as7341-nir"
 	except:
 		warning("as7341 not found")
 		as7341_is_available = False
