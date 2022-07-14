@@ -80,7 +80,8 @@ elif board_id=="adafruit_feather_esp32s2_tft" or board_id=="adafruit_feather_esp
 	number_of_plots = 1
 elif board_id=="adafruit_qtpy_esp32s2" or board_id=="adafruit_qtpy_esp32s3":
 	my_wifi_name = "part-hum-temp-pres-qtpy"
-	my_adafruit_io_prefix = "congdon"
+	#my_adafruit_io_prefix = "congdon"
+	my_adafruit_io_prefix = "russell"
 	FEATHER_ESP32S2 = False
 	use_pwm_status_leds = False
 	should_use_sdcard = False
@@ -91,6 +92,7 @@ elif board_id=="adafruit_qtpy_esp32s2" or board_id=="adafruit_qtpy_esp32s3":
 	delay_between_acquisitions = 1.5
 	gps_delay_in_ms = 2000
 	delay_between_posting_and_next_acquisition = 1.0
+	#should_use_airlift = False
 	should_use_airlift = True
 	use_built_in_wifi = True
 	should_use_display = False

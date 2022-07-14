@@ -1,5 +1,6 @@
 *.csv
 code.py
+*.cap
 lib
 __pycache__
 backup
