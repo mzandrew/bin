@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-# last updated 2019-10-16
+# last updated 2022-08-12
 
 declare name=$(hostname)
 declare configfile="${HOME}/.update-files-lists-rc"
@@ -14,6 +14,7 @@ declare date=$(date +"%Y-%m-%d")
 
 function generate_the_files_list {
 	mkdir -p "${destination}/old"
+	mkdir -p "${destination}/accumulated"
 	cd "${source}"
 	local filename_bare="${date}.${name}.lf-r"
 	local filename="${destination}/${filename_bare}"
