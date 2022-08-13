@@ -8,7 +8,7 @@
 # rsync -av *.py /media/circuitpython/
 # cp -a indoor-hum-temp-pres.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
-# rsync -r adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
+# rsync -r adafruit_max31865.mpy adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
 
 import sys
 import time
@@ -19,6 +19,7 @@ import simpleio
 import microsd_adafruit
 import neopixel_adafruit
 import bme680_adafruit
+import max31865_adafruit # for RTD
 import airlift
 import gps_adafruit
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
@@ -51,6 +52,7 @@ if 'adafruit_feather_esp32s2_tft'==board_id: # bme680 temp/hum/pressure/alt/gas 
 	should_use_airlift = False
 	use_built_in_wifi = False
 	should_use_display = True
+	should_use_RTD = True
 else:
 	error("what kind of board am I?")
 
@@ -110,7 +112,7 @@ def main():
 	#info(string + str(i2c_list))
 	global spi
 	try:
-		spi = board.SPI
+		spi = board.SPI()
 		info("builtin SPI (1)")
 	except KeyboardInterrupt:
 		raise
@@ -182,9 +184,19 @@ def main():
 		raise
 	except:
 		warning("error setting up neopixel")
+	global RTD_is_available
+	RTD_is_available = False
+	if should_use_RTD:
+		try:
+			max31865_adafruit.setup(spi, N, board.A5)
+			header_string += max31865_adafruit.header_string
+			RTD_is_available = True
+		except:
+			warning("can't set up RTD device")
 	global bme680_is_available
 	try:
-		i2c_address = bme680_adafruit.setup(i2c, N, 0x77)
+		#i2c_address = bme680_adafruit.setup(i2c, N, 0x77)
+		i2c_address = bme680_adafruit.setup(i2c, N)
 		prohibited_addresses.append(i2c_address)
 		header_string += bme680_adafruit.header_string
 		bme680_is_available = True
@@ -247,6 +259,8 @@ def loop():
 		if bme680_is_available:
 			#info("bme680")
 			string += bme680_adafruit.measure_string()
+		if RTD_is_available:
+			string += max31865_adafruit.measure_string()
 		if airlift_is_available:
 			string += airlift.measure_string()
 		if battery_monitor_is_available:
