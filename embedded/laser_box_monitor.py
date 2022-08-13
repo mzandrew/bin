@@ -105,6 +105,7 @@ def main():
 		#i2c = busio.I2C(board.SCL, board.SDA)
 		i2c = board.I2C()
 		string = "using I2C0 "
+	prohibited_addresses = []
 	info(string)
 	#i2c.try_lock()
 	#i2c_list = i2c.scan()
@@ -119,6 +120,27 @@ def main():
 	except:
 		spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO) # this line stops the builtin from working
 		info("builtin SPI (2)")
+	global RTD_is_available
+	RTD_is_available = False
+	if should_use_RTD:
+		try:
+			max31865_adafruit.setup(spi, N, board.A5)
+			header_string += max31865_adafruit.header_string
+			RTD_is_available = True
+		except:
+			warning("can't set up RTD device")
+	global bme680_is_available
+	bme680_is_available = False
+	try:
+		#i2c_address = bme680_adafruit.setup(i2c, N, 0x77)
+		i2c_address = bme680_adafruit.setup(i2c, N)
+		prohibited_addresses.append(i2c_address)
+		header_string += bme680_adafruit.header_string
+		bme680_is_available = True
+	except KeyboardInterrupt:
+		raise
+	except:
+		warning("bme680 not found")
 	global display_is_available
 	display_is_available = False
 	if should_use_display:
@@ -136,13 +158,17 @@ def main():
 		else:
 			warning("display is not available")
 	if display_is_available:
-		display_adafruit.setup_for_n_m_plots(1, 1, [["indoor", "temperature", "humidity", "pressure"]])
+		if RTD_is_available and not bme680_is_available:
+			display_adafruit.setup_for_n_m_plots(1, 1, [["laserbox", "RTD"]])
+		elif bme680_is_available and not RTD_is_available:
+			display_adafruit.setup_for_n_m_plots(1, 1, [["laserbox", "temperature", "humidity", "pressure"]])
+		elif bme680_is_available and RTD_is_available:
+			display_adafruit.setup_for_n_m_plots(1, 1, [["laserbox", "RTD", "temperature", "humidity", "pressure"]])
 		display_adafruit.refresh()
 		#display_adafruit.test_st7789()
 		#info("done with st7789 test")
 	#global uart
 	#uart = busio.UART(board.TX, board.RX, baudrate=9600, timeout=10)
-	prohibited_addresses = []
 	global RTC_is_available
 	if should_use_RTC:
 		try:
@@ -184,28 +210,6 @@ def main():
 		raise
 	except:
 		warning("error setting up neopixel")
-	global RTD_is_available
-	RTD_is_available = False
-	if should_use_RTD:
-		try:
-			max31865_adafruit.setup(spi, N, board.A5)
-			header_string += max31865_adafruit.header_string
-			RTD_is_available = True
-		except:
-			warning("can't set up RTD device")
-	global bme680_is_available
-	try:
-		#i2c_address = bme680_adafruit.setup(i2c, N, 0x77)
-		i2c_address = bme680_adafruit.setup(i2c, N)
-		prohibited_addresses.append(i2c_address)
-		header_string += bme680_adafruit.header_string
-		bme680_is_available = True
-	except KeyboardInterrupt:
-		raise
-	except:
-		error("bme680 not found")
-		sys.exit(1)
-		bme680_is_available = False
 	#info("prohibited i2c addresses: " + str(prohibited_addresses)) # disallow treating any devices already discovered as pct2075s
 	global battery_monitor_is_available
 	try:
@@ -243,9 +247,10 @@ def main():
 	info("bme680 no longer available; cannot continue")
 
 def loop():
-	temperatures_to_plot = [ -40.0 for i in range(display_adafruit.plot_width) ]
-	humidities_to_plot   = [ -40.0 for i in range(display_adafruit.plot_width) ]
-	pressures_to_plot    = [ -40.0 for i in range(display_adafruit.plot_width) ]
+	other_temperatures_to_plot = [ -40.0 for i in range(display_adafruit.plot_width) ]
+	temperatures_to_plot       = [ -40.0 for i in range(display_adafruit.plot_width) ]
+	humidities_to_plot         = [ -40.0 for i in range(display_adafruit.plot_width) ]
+	pressures_to_plot          = [ -40.0 for i in range(display_adafruit.plot_width) ]
 	generic.get_uptime()
 	global delay_between_acquisitions
 	i = 0
@@ -272,6 +277,10 @@ def loop():
 			generic.set_status_led_color([0, 1, 0])
 		i += 1
 		if 0==i%N:
+			if RTD_is_available:
+				max31865_adafruit.show_average_values()
+				other_temperatures_to_plot.append((max31865_adafruit.get_average_values()[0] - MIN_TEMP_TO_PLOT) / (MAX_TEMP_TO_PLOT-MIN_TEMP_TO_PLOT))
+				other_temperatures_to_plot.pop(0)
 			if bme680_is_available:
 				bme680_adafruit.show_average_values()
 				temperatures_to_plot.append((bme680_adafruit.get_average_values()[0] - MIN_TEMP_TO_PLOT) / (MAX_TEMP_TO_PLOT-MIN_TEMP_TO_PLOT))
@@ -283,8 +292,6 @@ def loop():
 				#print(str(temperatures_to_plot))
 				#print(str(humidities_to_plot))
 				#print(str(pressures_to_plot))
-				display_adafruit.update_plot(0, [temperatures_to_plot, humidities_to_plot, pressures_to_plot])
-				display_adafruit.refresh()
 				if airlift_is_available:
 					try:
 						airlift.post_data(my_wifi_name + "-temp",     bme680_adafruit.get_average_values()[0])
@@ -296,6 +303,13 @@ def loop():
 						raise
 					except:
 						warning("couldn't post data for bme680")
+			if RTD_is_available and not bme680_is_available:
+				display_adafruit.update_plot(0, [other_temperatures_to_plot])
+			elif bme680_is_available and not RTD_is_available:
+				display_adafruit.update_plot(0, [temperatures_to_plot, humidities_to_plot, pressures_to_plot])
+			elif bme680_is_available and RTD_is_available:
+				display_adafruit.update_plot(0, [other_temperatures_to_plot, temperatures_to_plot, humidities_to_plot, pressures_to_plot])
+			display_adafruit.refresh()
 			info("waiting...")
 			time.sleep(delay_between_posting_and_next_acquisition)
 			delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, desired_loop_time)
