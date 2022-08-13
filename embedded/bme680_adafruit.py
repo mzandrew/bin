@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2020-10-14 by mza
-# last updated 2022-06-03 by mza
+# last updated 2022-08-12 by mza
 
 # from https://learn.adafruit.com/adafruit-bme680-humidity-temperature-barometic-pressure-voc-gas/python-circuitpython
 
@@ -65,7 +65,7 @@ def get_previous_values():
 
 def measure_string():
 	temp, hum, pres, alt, gas = get_values()
-	return "%0.1f, %0.1f, %0.6f, %0.2f, %d" % (temp, hum, pres, alt, gas)
+	return ", %0.1f, %0.1f, %0.6f, %0.2f, %d" % (temp, hum, pres, alt, gas)
 
 def print_compact():
 	try:
