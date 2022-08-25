@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2020-10-14 by mza
-# last updated 2022-08-12 by mza
+# last updated 2022-08-25 by mza
 
 # from https://learn.adafruit.com/adafruit-bme680-humidity-temperature-barometic-pressure-voc-gas/python-circuitpython
 
@@ -13,29 +13,36 @@ import adafruit_bme680 # sudo pip3 install adafruit-circuitpython-bme680
 import boxcar
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string
 
-# You will usually have to add an offset to account for the temperature of
-# the sensor. This is usually around 5 degrees but varies by use. Use a
-# separate temperature sensor to calibrate this one.
-temperature_offset = 0.0
+bme680 = []
+temperature_offset = []
+myboxcar = []
+highest_index = 0
 
 Pa_to_atm = 101325.0 # Pa / atm
 hPa_to_atm = Pa_to_atm/100.0
 
-def setup(i2c, N, address=0x77):
+def setup(i2c, N, address=0x77): # other address is 0x76
 	global bme680
-	bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c, address=address, debug=False)
-	# change this to match the location's pressure (hPa) at sea level
-	bme680.sea_level_pressure = 1013.25
+	global highest_index
+	global temperature_offset
 	global myboxcar
-	myboxcar = boxcar.boxcar(5, N, "bme680")
+	bme680.append(adafruit_bme680.Adafruit_BME680_I2C(i2c, address=address, debug=False))
+	# change this to match the location's pressure (hPa) at sea level
+	bme680[highest_index].sea_level_pressure = 1013.25
+	temperature_offset.append(0.0)
+	myboxcar.append(boxcar.boxcar(5, N, "bme680"))
+	highest_index += 1
+	#info(str(len(bme680)))
+	#info(str(len(temperature_offset)))
+	#info(str(len(myboxcar)))
 
-def print_verbose():
-	info("\nTemperature: %0.1f C" % float(bme680.temperature + temperature_offset))
-	info("Gas: %d ohm" % bme680.gas)
-	info("Humidity: %0.1f %%" % bme680.humidity)
-	#info("Pressure: %0.3f hPa" % bme680.pressure)
-	info("Pressure: %0.6f atm" % bme680.pressure/hPa_to_atm)
-	info("Altitude = %0.2f meters" % bme680.altitude)
+def print_verbose(i=0):
+	info("\nTemperature: %0.1f C" % float(bme680[i].temperature + temperature_offset[i]))
+	info("Gas: %d ohm" % bme680[i].gas)
+	info("Humidity: %0.1f %%" % bme680[i].humidity)
+	#info("Pressure: %0.3f hPa" % bme680[i].pressure)
+	info("Pressure: %0.6f atm" % bme680[i].pressure/hPa_to_atm)
+	info("Altitude = %0.2f meters" % bme680[i].altitude)
 
 #header_string = ", temperature (C), humidity (%RH), pressure (hPa), altitude (m), gas (Ohm)"
 header_string = ", temperature (C), humidity (%RH), pressure (atm), altitude (m), gas (Ohm)"
@@ -43,43 +50,44 @@ header_string = ", temperature (C), humidity (%RH), pressure (atm), altitude (m)
 def print_header():
 	info("#time" + header_string)
 
-def get_values():
+def get_values(i=0):
 	try:
 		#values = [ float(bme680.temperature + temperature_offset), bme680.humidity, bme680.pressure, bme680.altitude, bme680.gas ]
-		values = [ float(bme680.temperature + temperature_offset), bme680.humidity, bme680.pressure/hPa_to_atm, bme680.altitude, bme680.gas ]
+		values = [ float(bme680[i].temperature + temperature_offset[i]), bme680[i].humidity, bme680[i].pressure/hPa_to_atm, bme680[i].altitude, bme680[i].gas ]
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		values = [ 0., 0., 0., 0., 0 ]
-	myboxcar.accumulate(values)
+	#info(str(i))
+	myboxcar[i].accumulate(values)
 	return values
 
-def show_average_values():
-	myboxcar.show_average_values()
+def show_average_values(i=0):
+	myboxcar[i].show_average_values()
 
-def get_average_values():
-	return myboxcar.get_average_values()
+def get_average_values(i=0):
+	return myboxcar[i].get_average_values()
 
-def get_previous_values():
-	return myboxcar.previous_values()
+def get_previous_values(i=0):
+	return myboxcar[i].previous_values()
 
-def measure_string():
-	temp, hum, pres, alt, gas = get_values()
+def measure_string(i=0):
+	temp, hum, pres, alt, gas = get_values(i)
 	return ", %0.1f, %0.1f, %0.6f, %0.2f, %d" % (temp, hum, pres, alt, gas)
 
-def print_compact():
+def print_compact(i=0):
 	try:
 		date = time.strftime("%Y-%m-%d+%X")
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		date = ""
-	string = measure_string()
+	string = measure_string(i)
 	info("%s, %s" % (date, string))
 
-def test_if_present():
+def test_if_present(i=0):
 	try:
-		bme680.temperature
+		bme680[i].temperature
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
