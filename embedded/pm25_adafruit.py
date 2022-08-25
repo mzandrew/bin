@@ -62,7 +62,7 @@ def get_previous_values():
 
 def measure_string():
 	values = get_values()
-	return ", %.1f, %.1f, %.1f, %.1f, %.1f, %.1f, %.1f, %.1f, %.1f, %.1f, %.1f, %.1f" % ( values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8], values[9], values[10], values[11] )
+	return ", %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d" % ( values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8], values[9], values[10], values[11] )
 
 def print_compact():
 	print(measure_string())
