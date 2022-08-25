@@ -2,13 +2,13 @@
 
 # written 2022-06-23 by mza
 # based on indoor_hum_temp_pres.py
-# last updated 2022-06-29 by mza
+# last updated 2022-08-25 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
 # cp -a particle-hum-temp-pres.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
-# rsync -r adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
+# rsync -r adafruit_pm25 adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
 
 import sys
 import time
@@ -19,6 +19,7 @@ import simpleio
 import microsd_adafruit
 import neopixel_adafruit
 import bme680_adafruit
+import pm25_adafruit
 import airlift
 import gps_adafruit
 try:
@@ -158,7 +159,6 @@ def main():
 	try:
 		i2c_address = pm25_adafruit.setup(i2c, N)
 		header_string += pm25_adafruit.header_string
-		prohibited_addresses.append(i2c_address)
 		pm25_is_available = True
 	except (KeyboardInterrupt, ReloadException):
 		raise
@@ -208,12 +208,10 @@ def main():
 		#info("done with st7789 test")
 	#global uart
 	#uart = busio.UART(board.TX, board.RX, baudrate=9600, timeout=10)
-	prohibited_addresses = []
 	global RTC_is_available
 	if should_use_RTC:
 		try:
 			i2c_address = pcf8523_adafruit.setup(i2c)
-			prohibited_addresses.append(i2c_address)
 			RTC_is_available = True
 		except (KeyboardInterrupt, ReloadException):
 			raise
@@ -253,7 +251,6 @@ def main():
 	global bme680_is_available
 	try:
 		i2c_address = bme680_adafruit.setup(i2c, N)
-		prohibited_addresses.append(i2c_address)
 		header_string += bme680_adafruit.header_string
 		bme680_is_available = True
 	except (KeyboardInterrupt, ReloadException):
@@ -262,7 +259,6 @@ def main():
 		error("bme680 not found")
 		sys.exit(1)
 		bme680_is_available = False
-	#info("prohibited i2c addresses: " + str(prohibited_addresses)) # disallow treating any devices already discovered as pct2075s
 	global battery_monitor_is_available
 	try:
 		battery_monitor_is_available = generic.setup_battery_monitor(i2c)
