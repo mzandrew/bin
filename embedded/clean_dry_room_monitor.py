@@ -47,7 +47,7 @@ mydir = "/logs"
 board_id = board.board_id
 info("we are " + board_id)
 if board_id=="pyportal_titano" or board_id=="pyportal":
-	my_wifi_name = "clean_dry"
+	my_wifi_name = "clean_dry_room"
 	my_adafruit_io_prefix = "congdon"
 	FEATHER_ESP32S2 = False
 	use_pwm_status_leds = False
@@ -114,6 +114,7 @@ def main():
 		#i2c = busio.I2C(board.SCL, board.SDA)
 		i2c = board.I2C()
 		string = "using I2C0 "
+	# alti2c = busio.I2C(board.D4, board.D3) # using the other two 3-pin connectors
 	info(string)
 	#i2c.try_lock()
 	#i2c_list = i2c.scan()
@@ -304,6 +305,7 @@ def loop():
 			generic.set_status_led_color([0, 1, 0])
 		i += 1
 		if 0==i%N:
+			microsd_adafruit.print_directory(mydir)
 			if number_of_sensors_available:
 				for j in range(number_of_sensors_available):
 					bme680_adafruit.show_average_values(j)
