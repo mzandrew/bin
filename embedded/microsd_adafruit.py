@@ -1,10 +1,11 @@
-# last updated 2022-04-23 by mza
+# last updated 2022-08-25 by mza
 
 import adafruit_sdcard
 import storage
 import board
 import busio
 import digitalio
+import os
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
 #spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
@@ -21,4 +22,16 @@ def setup_sdcard_for_logging_data(spi, cs_pin, dirname):
 		warning("unable to find/mount sdcard")
 		return False
 	return True
+
+# from https://learn.adafruit.com/adafruit-adalogger-featherwing/circuitpython
+def print_directory(path):
+	for file in os.listdir(path):
+		fullname = path + "/" + file
+		stats = os.stat(fullname)
+		filesize = stats[6]
+		isdir = stats[0] & 0x4000
+		if isdir:
+			print_directory(fullname, tabs + 1)
+		else:
+			print('{0:>12} {1:<40}'.format(str(filesize), fullname))
 
