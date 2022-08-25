@@ -6,6 +6,7 @@ import board
 import busio
 import digitalio
 import os
+import re
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
 #spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
@@ -34,4 +35,14 @@ def print_directory(path):
 			print_directory(fullname, tabs + 1)
 		else:
 			print('{0:>12} {1:<40}'.format(str(filesize), fullname))
+
+def os_path_isfile(dirname, filename):
+	info("checking for file " + filename + "...")
+	for file in os.listdir(dirname):
+		info(file)
+		match = re.search(filename, file)
+		if match:
+			info("match")
+			return True
+	return False
 
