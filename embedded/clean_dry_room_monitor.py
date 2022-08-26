@@ -56,7 +56,7 @@ if board_id=="pyportal_titano" or board_id=="pyportal":
 	should_use_gps = False
 	N = 32
 	desired_loop_time = 60.0
-	delay_between_acquisitions = 1.5
+	delay_between_acquisitions = 0.7
 	gps_delay_in_ms = 2000
 	delay_between_posting_and_next_acquisition = 1.0
 	should_use_airlift = False
@@ -186,10 +186,11 @@ def main():
 		sdcard_is_available = False
 	if not sdcard_is_available:
 		mydir = ""
+	global logfilename
 	if RTC_is_available:
-		create_new_logfile_with_string_embedded(mydir, my_wifi_name, pcf8523_adafruit.get_timestring2())
+		logfilename = create_new_logfile_with_string_embedded(mydir, my_wifi_name, pcf8523_adafruit.get_timestring2())
 	else:
-		create_new_logfile_with_string_embedded(mydir, my_wifi_name)
+		logfilename = create_new_logfile_with_string_embedded(mydir, my_wifi_name)
 	global gps_is_available
 	if should_use_gps:
 		if 1:
@@ -305,7 +306,9 @@ def loop():
 			generic.set_status_led_color([0, 1, 0])
 		i += 1
 		if 0==i%N:
-			microsd_adafruit.print_directory(mydir)
+			#microsd_adafruit.list_files(mydir)
+			#info("----")
+			microsd_adafruit.list_file(mydir, logfilename)
 			if number_of_sensors_available:
 				for j in range(number_of_sensors_available):
 					bme680_adafruit.show_average_values(j)
