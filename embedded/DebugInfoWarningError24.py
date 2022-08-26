@@ -72,16 +72,18 @@ def create_new_logfile_with_string_embedded(dirname, basename, timestring=""):
 			for i in range(2**12):
 				filename = "%04d.%s.log" % (i, basename)
 				fullname = dirname + "/" + filename
-				info(fullname)
+				#info(fullname)
 				#if not os.path.isfile(fullname):
 				if not microsd_adafruit.os_path_isfile(dirname, filename):
 					break
 		else:
-			filename = dirname + "/" + timestring + "." + basename + ".log"
+			filename = timestring + "." + basename + ".log"
+			fullname = dirname + "/" + filename
 		info("logfile filename: " + fullname)
 		logfile = open(fullname, "a")
 		debug("Writing output to logfile: %s" % fullname)
 		logfile_is_open = 1
+		return filename
 	except:
 		warning("Unable to open logfile " + fullname)
 		raise
