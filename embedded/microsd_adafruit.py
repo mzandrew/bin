@@ -24,25 +24,30 @@ def setup_sdcard_for_logging_data(spi, cs_pin, dirname):
 		return False
 	return True
 
-# from https://learn.adafruit.com/adafruit-adalogger-featherwing/circuitpython
-def print_directory(path):
-	for file in os.listdir(path):
-		fullname = path + "/" + file
+# with help from https://learn.adafruit.com/adafruit-adalogger-featherwing/circuitpython
+def list_file(dirname, filename):
+	fullname = dirname + "/" + filename
+	stats = os.stat(fullname)
+	filesize = stats[6]
+	print('{0:>12} {1:<40}'.format(str(filesize), fullname))
+
+def list_files(dirname):
+	for filename in os.listdir(dirname):
+		fullname = dirname + "/" + filename
 		stats = os.stat(fullname)
-		filesize = stats[6]
 		isdir = stats[0] & 0x4000
 		if isdir:
-			print_directory(fullname, tabs + 1)
+			list_files(fullname)
 		else:
-			print('{0:>12} {1:<40}'.format(str(filesize), fullname))
+			list_file(dirname, filename)
 
 def os_path_isfile(dirname, filename):
-	info("checking for file " + filename + "...")
+	#info("checking for file " + filename + "...")
 	for file in os.listdir(dirname):
-		info(file)
+		#info(file)
 		match = re.search(filename, file)
 		if match:
-			info("match")
+			#info("match")
 			return True
 	return False
 
