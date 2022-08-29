@@ -79,6 +79,9 @@ function change_apt_sources_list_if_desired {
 	fi
 }
 
+# undo:
+#sudo sed -i 's,mirror.ancl.hawaii.edu/linux,us.archive.ubuntu.com,' /etc/apt/sources.list
+
 change_apt_sources_list_if_desired
 install_packages
 
