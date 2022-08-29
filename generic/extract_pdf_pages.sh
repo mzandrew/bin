@@ -9,7 +9,7 @@ declare string=""
 declare pagestring=""
 for page; do
 	pagestring="page${page}.pdf"
-	gs -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pdfwrite -sOutputFile=$pagestring -dFirstPage=$page -dLastPage=$page L1_RW_2022_8_19_em.pdf
+	gs -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pdfwrite -sOutputFile=$pagestring -dFirstPage=$page -dLastPage=$page $inputfile
 	string="$string $pagestring"
 done
 gs -dNOPAUSE -dQUIET -dBATCH -sDEVICE=pdfwrite -sOutputFile=pages.pdf $string
