@@ -422,8 +422,6 @@ def setup_matrix_backpack():
 	return True
 
 def setup_alphanumeric_backpack(address=0x70):
-	if not should_use_alphanumeric_backpack:
-		return False
 	global alphanumeric_backpack
 	try:
 		import adafruit_ht16k33.segments
@@ -441,8 +439,6 @@ def setup_alphanumeric_backpack(address=0x70):
 	return True
 
 def update_temperature_display_on_matrix_backpack():
-	if not matrix_backpack_available:
-		return
 	matrix_backpack.auto_write = False
 	rows = 8
 	columns = 16
@@ -461,8 +457,6 @@ def update_temperature_display_on_matrix_backpack():
 	matrix_backpack.show()
 
 def update_temperature_display_on_alphanumeric_backpack(temperature):
-	if not alphanumeric_backpack_available:
-		return
 	alphanumeric_backpack.auto_write = False
 	alphanumeric_backpack.fill(0)
 	value = int(10.0*temperature)/10.0
