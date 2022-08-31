@@ -176,7 +176,7 @@ def main():
 	global matrix_backpack_available
 	if should_use_matrix_backpack:
 		try:
-			matrix_backpack_available = display_adafruit.setup_matrix_backpack()
+			matrix_backpack_available = display_adafruit.setup_matrix_backpack(i2c)
 			if matrix_backpack_available:
 				prohibited_addresses.append(0x70)
 		except:
@@ -186,7 +186,7 @@ def main():
 		matrix_backpack_available = False
 	global alphanumeric_backpack_available
 	if should_use_alphanumeric_backpack:
-		alphanumeric_backpack_available = display_adafruit.setup_alphanumeric_backpack(0x77)
+		alphanumeric_backpack_available = display_adafruit.setup_alphanumeric_backpack(i2c, 0x77)
 	else:
 		alphanumeric_backpack_available = False
 	if alphanumeric_backpack_available:

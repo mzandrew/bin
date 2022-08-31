@@ -402,7 +402,7 @@ def update_temperature_display_on_dotstar_matrix():
 			dots[index] = (red, green, blue)
 	dots.show()
 
-def setup_matrix_backpack():
+def setup_matrix_backpack(i2c, address=0x70):
 	if not should_use_matrix_backpack:
 		return False
 	global matrix_backpack
@@ -412,7 +412,7 @@ def setup_matrix_backpack():
 		error("can't load adafruit_ht16k33 module")
 		return False
 	try:
-		matrix_backpack = adafruit_ht16k33.matrix.Matrix16x8(i2c, address=0x70)
+		matrix_backpack = adafruit_ht16k33.matrix.Matrix16x8(i2c, address)
 		#matrix_backpack.fill(1)
 		matrix_backpack.auto_write = False
 		#matrix_backpack.brightness = 0.5
@@ -421,7 +421,7 @@ def setup_matrix_backpack():
 		return False
 	return True
 
-def setup_alphanumeric_backpack(address=0x70):
+def setup_alphanumeric_backpack(i2c, address=0x70):
 	global alphanumeric_backpack
 	try:
 		import adafruit_ht16k33.segments
