@@ -53,6 +53,7 @@ if 'adafruit_feather_esp32s2_tft'==board_id: # bme680 temp/hum/pressure/alt/gas 
 	use_built_in_wifi = False
 	should_use_display = True
 	should_use_RTD = True
+	should_use_alphanumeric_display = True
 else:
 	error("what kind of board am I?")
 
@@ -167,6 +168,11 @@ def main():
 		display_adafruit.refresh()
 		#display_adafruit.test_st7789()
 		#info("done with st7789 test")
+	global alphanumeric_display_available
+	if should_use_alphanumeric_display:
+		alphanumeric_display_available = display_adafruit.setup_alphanumeric_backpack(i2c, 0x70)
+	else:
+		alphanumeric_display_available = False
 	#global uart
 	#uart = busio.UART(board.TX, board.RX, baudrate=9600, timeout=10)
 	global RTC_is_available
@@ -310,6 +316,9 @@ def loop():
 			elif bme680_is_available and RTD_is_available:
 				display_adafruit.update_plot(0, [other_temperatures_to_plot, temperatures_to_plot, humidities_to_plot, pressures_to_plot])
 			display_adafruit.refresh()
+			if alphanumeric_display_available:
+				temp = max31865_adafruit.get_average_values()[0]
+				display_adafruit.update_temperature_display_on_alphanumeric_backpack(temp)
 			info("waiting...")
 			time.sleep(delay_between_posting_and_next_acquisition)
 			delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, desired_loop_time)
