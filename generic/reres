@@ -1,8 +1,11 @@
 #!/bin/bash
 
+# apt-cyg install ImageMagick
+
 # done properly 2014-07-07 by mza
 # 2015-01-25 updated
 # 2019-10-17 updated
+# 2022-08-31 updated
 
 declare res
 #res="640x480"
@@ -20,7 +23,7 @@ function run {
 			if [ "${each}" -nt "lowres/${each}" ]; then
 				echo "converting ${each} to ${res}"
 				convert "${each}" -geometry ${res} "lowres/${each}"
-				touch "lowres/${each}" --reference="${each}"
+				touch --no-create "lowres/${each}" --reference="${each}"
 			fi
 		done
 		# if it didn't make a lowres/ subdir, then there's no source files and we're done
