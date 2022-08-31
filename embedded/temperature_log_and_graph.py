@@ -2,7 +2,7 @@
 
 # written 2021-04-21 by mza
 # updated from indoor_temp_hum.py
-# last updated 2022-05-19 by mza
+# last updated 2022-08-30 by mza
 
 # to install on a circuitpython device:
 # rsync -r *.py /media/circuitpython/
@@ -21,14 +21,6 @@ import pct2075_adafruit
 import airlift
 try:
 	import adafruit_dotstar as dotstar
-except:
-	pass
-try:
-	import adafruit_ht16k33.matrix
-except:
-	pass
-try:
-	import adafruit_ht16k33.segments
 except:
 	pass
 import microsd_adafruit

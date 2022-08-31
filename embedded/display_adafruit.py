@@ -1,4 +1,4 @@
-# last updated 2022-06-29 by mza
+# last updated 2022-08-30 by mza
 
 import time
 import math
@@ -407,6 +407,11 @@ def setup_matrix_backpack():
 		return False
 	global matrix_backpack
 	try:
+		import adafruit_ht16k33.matrix
+	except:
+		error("can't load adafruit_ht16k33 module")
+		return False
+	try:
 		matrix_backpack = adafruit_ht16k33.matrix.Matrix16x8(i2c, address=0x70)
 		#matrix_backpack.fill(1)
 		matrix_backpack.auto_write = False
@@ -420,6 +425,11 @@ def setup_alphanumeric_backpack(address=0x70):
 	if not should_use_alphanumeric_backpack:
 		return False
 	global alphanumeric_backpack
+	try:
+		import adafruit_ht16k33.segments
+	except:
+		error("can't load adafruit_ht16k33 module")
+		return False
 	try:
 		alphanumeric_backpack = adafruit_ht16k33.segments.Seg14x4(i2c, address=address)
 		alphanumeric_backpack.auto_write = False
