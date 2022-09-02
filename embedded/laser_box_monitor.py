@@ -170,7 +170,8 @@ def main():
 		#info("done with st7789 test")
 	global alphanumeric_display_available
 	if should_use_alphanumeric_display:
-		alphanumeric_display_available = display_adafruit.setup_alphanumeric_backpack(i2c, 0x70)
+		#alphanumeric_display_available = display_adafruit.setup_alphanumeric_backpack(i2c, 0x70)
+		alphanumeric_display_available = display_adafruit.setup_alphanumeric_backpack(i2c, 0x71)
 	else:
 		alphanumeric_display_available = False
 	#global uart
