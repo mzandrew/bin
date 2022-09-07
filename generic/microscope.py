@@ -2,7 +2,7 @@
 
 # written 2021-03-02 by mza
 # modified from timelapse.py
-# last updated 2022-05-16 by mza
+# last updated 2022-09-07 by mza
 
 # from https://www.raspberrypi.org/blog/picamera-pure-python-interface-for-camera-module/
 # and https://stackoverflow.com/a/8858026/5728815
@@ -12,17 +12,28 @@
 # and https://projects.raspberrypi.org/en/projects/getting-started-with-picamera/7
 
 import picamera # sudo apt install -y python3-picamera
+import gpiozero
 import datetime
 import time
 import shutil
-import sys
-import os
+import termios, fcntl, sys, os
 
 tilde = os.environ['HOME']
 #destination = "/opt/photo/microscope"
 #destination = "/opt/data/pictures/microscope"
-destination = tilde + "/microscope/"
+destination = tilde + "/microscope"
 temporary_filename = "/tmp/image.jpg"
+
+lower_left_button  = gpiozero.Button(14, pull_up=True)
+lower_right_button = gpiozero.Button(4,  pull_up=True)
+
+def fix_terminal():
+	termios.tcsetattr(fd, termios.TCSAFLUSH, attrs_save)
+	fcntl.fcntl(fd, fcntl.F_SETFL, flags_save)
+
+def fix_terminal_and_quit():
+	fix_terminal()
+	sys.exit(0)
 
 # from https://stackoverflow.com/a/6599441/5728815
 def read_single_keypress():
@@ -36,10 +47,12 @@ def read_single_keypress():
 	('\x03',) on KeyboardInterrupt which can happen when a signal gets
 	handled.
 	"""
-	import termios, fcntl, sys, os
+	global fd
 	fd = sys.stdin.fileno()
 	# save old state
+	global flags_save
 	flags_save = fcntl.fcntl(fd, fcntl.F_GETFL)
+	global attrs_save
 	attrs_save = termios.tcgetattr(fd)
 	# make raw - the way to do this comes from the termios(3) man page.
 	attrs = list(attrs_save) # copy the stored version to update
@@ -71,8 +84,7 @@ def read_single_keypress():
 		ret.append('\x03')
 	finally:
 		# restore old state
-		termios.tcsetattr(fd, termios.TCSAFLUSH, attrs_save)
-		fcntl.fcntl(fd, fcntl.F_SETFL, flags_save)
+		fix_terminal()
 	return tuple(ret)
 
 def take_one_picture():
@@ -83,11 +95,20 @@ def take_one_picture():
 	#print(filename + " " + is_battery_running_low())
 	print(filename)
 
+def take_one_picture_and_crlf():
+	print("\r")
+	take_one_picture()
+	print("\r")
+
 print("press x or q to exit; any other key to take a(nother) pic")
 sys.stdout.flush()
 time.sleep(1)
+lower_right_button.when_pressed = take_one_picture_and_crlf
+lower_left_button.when_pressed = fix_terminal_and_quit
 try:
+	#print("trying camera instatntiation")
 	camera = picamera.PiCamera()
+	#print("finished camera instatntiation")
 	camera.awb_mode = "fluorescent"
 	camera.rotation = 180
 	camera.framerate = 10
@@ -104,6 +125,7 @@ try:
 	time.sleep(2)
 except:
 	print("try changing gpu_mem from 128 to 192 in /boot/config.txt (or from raspi-config)")
+	print("if that fails, try unplugging/replugging camera cable at both ends")
 	sys.exit(1)
 #take_one_picture()
 while True:
