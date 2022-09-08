@@ -18,18 +18,25 @@ import time
 import shutil
 import termios, fcntl, sys, os
 
-tilde = os.environ['HOME']
+try:
+	tilde = os.environ['HOME']
+except:
+	tilde = os.path.dirname(__file__) + "/../../.."
 #destination = "/opt/photo/microscope"
 #destination = "/opt/data/pictures/microscope"
 destination = tilde + "/microscope"
+print("destination: " + destination)
 temporary_filename = "/tmp/image.jpg"
 
 lower_left_button  = gpiozero.Button(14, pull_up=True)
 lower_right_button = gpiozero.Button(4,  pull_up=True)
 
 def fix_terminal():
-	termios.tcsetattr(fd, termios.TCSAFLUSH, attrs_save)
-	fcntl.fcntl(fd, fcntl.F_SETFL, flags_save)
+	try:
+		termios.tcsetattr(fd, termios.TCSAFLUSH, attrs_save)
+		fcntl.fcntl(fd, fcntl.F_SETFL, flags_save)
+	except:
+		pass
 
 def fix_terminal_and_quit():
 	fix_terminal()
@@ -100,6 +107,12 @@ def take_one_picture_and_crlf():
 	take_one_picture()
 	print("\r")
 
+use_regular_keyboard = True
+try:
+	termios.tcgetattr(sys.stdin.fileno())
+except:
+	use_regular_keyboard = False
+
 print("press x or q to exit; any other key to take a(nother) pic")
 sys.stdout.flush()
 time.sleep(1)
@@ -129,10 +142,13 @@ except:
 	sys.exit(1)
 #take_one_picture()
 while True:
-	keys = read_single_keypress()
-	#print(keys)
-	for key in keys:
-		if key=='x' or key=='q':
-			sys.exit(0)
-	take_one_picture()
+	if use_regular_keyboard:
+		keys = read_single_keypress()
+		#print(keys)
+		for key in keys:
+			if key=='x' or key=='q':
+				sys.exit(0)
+		take_one_picture()
+	else:
+		time.sleep(0.1)
 
