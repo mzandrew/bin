@@ -110,7 +110,7 @@ def take_one_picture():
 	timestring = time.strftime("%Y-%m-%d.%H%M%S")
 	camera.capture(temporary_filename.name)
 	filename = destination + "/" + timestring + ".jpeg"
-	shutil.move(temporary_filename.name, filename)
+	shutil.copy(temporary_filename.name, filename)
 	#print(filename + " " + is_battery_running_low())
 	print(filename)
 
