@@ -2,7 +2,7 @@
 
 # written 2021-03-02 by mza
 # modified from timelapse.py
-# last updated 2022-09-07 by mza
+# last updated 2022-09-09 by mza
 
 # from https://www.raspberrypi.org/blog/picamera-pure-python-interface-for-camera-module/
 # and https://stackoverflow.com/a/8858026/5728815
@@ -17,6 +17,12 @@ import datetime
 import time
 import shutil
 import termios, fcntl, sys, os
+import tempfile
+import atexit
+
+def remove_temporary_file_if_necessary():
+	if os.path.exists(temporary_filename.name):
+		os.remove(temporary_filename.name)
 
 try:
 	tilde = os.environ['HOME']
@@ -26,7 +32,13 @@ except:
 #destination = "/opt/data/pictures/microscope"
 destination = tilde + "/microscope"
 print("destination: " + destination)
-temporary_filename = "/tmp/image.jpg"
+destination = os.path.realpath(destination)
+print("destination: " + destination)
+temporary_filename = tempfile.NamedTemporaryFile(prefix="image", suffix=".jpg", dir="/tmp", delete=False)
+print("temporary_filename: " + temporary_filename.name)
+#temporary_filename = os.mktemp(temporary_filename)
+#print("temporary_filename: " + temporary_filename)
+atexit.register(remove_temporary_file_if_necessary)
 
 lower_left_button  = gpiozero.Button(14, pull_up=True)
 lower_right_button = gpiozero.Button(4,  pull_up=True)
@@ -96,9 +108,9 @@ def read_single_keypress():
 
 def take_one_picture():
 	timestring = time.strftime("%Y-%m-%d.%H%M%S")
-	camera.capture(temporary_filename)
+	camera.capture(temporary_filename.name)
 	filename = destination + "/" + timestring + ".jpeg"
-	shutil.move(temporary_filename, filename)
+	shutil.move(temporary_filename.name, filename)
 	#print(filename + " " + is_battery_running_low())
 	print(filename)
 
