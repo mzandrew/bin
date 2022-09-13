@@ -2,13 +2,13 @@
 
 # written 2022-01-17 by mza
 # based on indoor_hum_temp_pres.py
-# last updated 2022-06-02 by mza
+# last updated 2022-09-13 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
 # cp -a indoor-hum-temp-pres.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
-# rsync -r adafruit_max31865.mpy adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
+# rsync -r adafruit_am2320.mpy adafruit_max31865.mpy adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
 
 import sys
 import time
@@ -19,6 +19,7 @@ import simpleio
 import microsd_adafruit
 import neopixel_adafruit
 import bme680_adafruit
+import am2320_adafruit
 import max31865_adafruit # for RTD
 import airlift
 import gps_adafruit
@@ -53,6 +54,7 @@ if 'adafruit_feather_esp32s2_tft'==board_id: # bme680 temp/hum/pressure/alt/gas 
 	use_built_in_wifi = False
 	should_use_display = True
 	should_use_RTD = True
+	should_use_am2320 = True
 	should_use_alphanumeric_display = True
 else:
 	error("what kind of board am I?")
@@ -130,6 +132,18 @@ def main():
 			RTD_is_available = True
 		except:
 			warning("can't set up RTD device")
+	global am2320_is_available
+	am2320_is_available = False
+	if should_use_am2320:
+		try:
+			i2c_address = am2320_adafruit.setup(i2c, N)
+			am2320_is_available = True
+			header_string += am2320_adafruit.header_string
+		except (KeyboardInterrupt, ReloadException):
+			raise
+		except:
+			raise
+			warning("am2320 not found")
 	global bme680_is_available
 	bme680_is_available = False
 	try:
@@ -268,8 +282,9 @@ def loop():
 		string = ""
 		if gps_is_available:
 			string += gps_adafruit.measure_string()
+		if am2320_is_available:
+			string += am2320_adafruit.measure_string()
 		if bme680_is_available:
-			#info("bme680")
 			string += bme680_adafruit.measure_string()
 		if RTD_is_available:
 			string += max31865_adafruit.measure_string()
@@ -288,6 +303,8 @@ def loop():
 				max31865_adafruit.show_average_values()
 				other_temperatures_to_plot.append((max31865_adafruit.get_average_values()[0] - MIN_TEMP_TO_PLOT) / (MAX_TEMP_TO_PLOT-MIN_TEMP_TO_PLOT))
 				other_temperatures_to_plot.pop(0)
+			if am2320_is_available:
+				am2320_adafruit.show_average_values()
 			if bme680_is_available:
 				bme680_adafruit.show_average_values()
 				temperatures_to_plot.append((bme680_adafruit.get_average_values()[0] - MIN_TEMP_TO_PLOT) / (MAX_TEMP_TO_PLOT-MIN_TEMP_TO_PLOT))
