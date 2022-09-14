@@ -35,13 +35,13 @@ import generic
 import display_adafruit
 
 MIN_TEMP_TO_PLOT = 10.0
-MAX_TEMP_TO_PLOT = 80.0
-MIN_HUM_TO_PLOT = 40.0
-MAX_HUM_TO_PLOT = 100.0
+MAX_TEMP_TO_PLOT = 40.0
+MIN_HUM_TO_PLOT = 20.0
+MAX_HUM_TO_PLOT = 80.0
 MIN_PRES_TO_PLOT = 0.997
 MAX_PRES_TO_PLOT = 1.011
 MIN_PARTICLE_COUNT_TO_PLOT = 0.0
-MAX_PARTICLE_COUNT_TO_PLOT = 350.0
+MAX_PARTICLE_COUNT_TO_PLOT = 200.0
 
 set_verbosity(4)
 header_string = "date/time"
@@ -50,7 +50,7 @@ board_id = board.board_id
 info("we are " + board_id)
 if board_id=="pyportal_titano" or board_id=="pyportal":
 	my_wifi_name = "clean_dry_room"
-	my_adafruit_io_prefix = "congdon"
+	my_adafruit_io_prefix = "idlab"
 	FEATHER_ESP32S2 = False
 	use_pwm_status_leds = False
 	should_use_sdcard = True
@@ -58,7 +58,7 @@ if board_id=="pyportal_titano" or board_id=="pyportal":
 	should_use_gps = False
 	N = 32
 	desired_loop_time = 60.0
-	delay_between_acquisitions = 0.7
+	delay_between_acquisitions = 0.65
 	gps_delay_in_ms = 2000
 	delay_between_posting_and_next_acquisition = 1.0
 	should_use_airlift = False
