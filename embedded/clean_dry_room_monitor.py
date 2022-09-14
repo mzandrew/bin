@@ -2,13 +2,13 @@
 
 # written 2022-08-25 by mza
 # based on particle_hum_temp_pres.py
-# last updated 2022-08-25 by mza
+# last updated 2022-09-14 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
 # cp -a clean_dry_room_monitor.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
-# rsync -r adafruit_pm25 adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
+# rsync -r adafruit_tca9548a.mpy adafruit_pm25 adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
 
 import sys
 import time
@@ -20,6 +20,7 @@ import microsd_adafruit
 import neopixel_adafruit
 import bme680_adafruit
 import pm25_adafruit
+import adafruit_tca9548a
 import airlift
 import gps_adafruit
 try:
@@ -96,6 +97,9 @@ def print_compact(string):
 			pass
 	info("%s%s" % (date, string))
 
+def hex(number, width=1):
+	return "%0*x" % (width, number)
+
 def main():
 	generic.start_uptime()
 	global header_string
@@ -160,11 +164,6 @@ def main():
 			info("display is available (external/spi)")
 		else:
 			warning("display is not available")
-	if display_is_available:
-		display_adafruit.setup_for_n_m_plots(2, 2, [["temperature", "dry1", "dry2"], ["humidity", "dry1", "dry2"], ["pressure", "dry1", "dry2"], ["particle count", "0.3", "0.5", "1.0", "2.5", "5.0"]])
-		display_adafruit.refresh()
-		#display_adafruit.test_st7789()
-		#info("done with st7789 test")
 	#global uart
 	#uart = busio.UART(board.TX, board.RX, baudrate=9600, timeout=10)
 	global RTC_is_available
@@ -208,32 +207,47 @@ def main():
 		raise
 	except:
 		warning("error setting up neopixel")
+	i2c_mux = adafruit_tca9548a.TCA9548A(i2c)
+#	if i2c_mux[0].try_lock():
+#		addresses = i2c_mux[0].scan()
+#		info([hex(address) for address in addresses if address != 0x70])
+#		i2c_mux[0].unlock()
 	global number_of_sensors_available
 	number_of_sensors_available = 0
-	try:
-		i2c_address = bme680_adafruit.setup(i2c, N)
-		header_string += bme680_adafruit.header_string
-		number_of_sensors_available += 1
-	except (KeyboardInterrupt, ReloadException):
-		raise
-	except:
-		error("bme680 0 not found")
-	try:
-		i2c_address = bme680_adafruit.setup(i2c, N, 0x76) # with solder blob
-		header_string += bme680_adafruit.header_string
-		number_of_sensors_available += 1
-	except (KeyboardInterrupt, ReloadException):
-		raise
-	except:
-		error("bme680 1 not found")
-	global battery_monitor_is_available
-	try:
-		battery_monitor_is_available = generic.setup_battery_monitor(i2c)
-	except (KeyboardInterrupt, ReloadException):
-		raise
-	except:
-		battery_monitor_is_available = False
-		warning("battery monitor is not available")
+	for i in range(8):
+		try:
+			i2c_address = bme680_adafruit.setup(i2c_mux[i], N)
+			header_string += bme680_adafruit.header_string
+			number_of_sensors_available += 1
+		except (KeyboardInterrupt, ReloadException):
+			raise
+		except:
+			#error("bme680 " + str(i) + " not found")
+			pass
+	info("found " + str(number_of_sensors_available) + " bme680 sensor(s)")
+	if display_is_available:
+		temp = [ "temperature" ]
+		hum  = [ "humidity" ]
+		pres = [ "pressure" ]
+		for i in range(number_of_sensors_available):
+			temp.append("dry" + str(i+1))
+			hum.append("dry" + str(i+1))
+			pres.append("dry" + str(i+1))
+		#info(str(temp))
+		#info(str(hum))
+		#info(str(pres))
+		display_adafruit.setup_for_n_m_plots(2, 2, [ temp, hum, pres, ["particle count", "0.3", "0.5", "1.0", "2.5", "5.0"]])
+		display_adafruit.refresh()
+		#display_adafruit.test_st7789()
+		#info("done with st7789 test")
+#	global battery_monitor_is_available
+#	try:
+#		battery_monitor_is_available = generic.setup_battery_monitor(i2c)
+#	except (KeyboardInterrupt, ReloadException):
+#		raise
+#	except:
+#		battery_monitor_is_available = False
+#		warning("battery monitor is not available")
 	if use_pwm_status_leds:
 		generic.set_status_led_color([0.5, 0.5, 0.5])
 	global airlift_is_available
@@ -297,8 +311,8 @@ def loop():
 			string += bme680_adafruit.measure_string(j)
 		if airlift_is_available:
 			string += airlift.measure_string()
-		if battery_monitor_is_available:
-			string += generic.get_battery_percentage()
+#		if battery_monitor_is_available:
+#			string += generic.get_battery_percentage()
 		print_compact(string)
 		flush()
 		neopixel_adafruit.set_color(0, 255, 0)
@@ -309,6 +323,7 @@ def loop():
 			#microsd_adafruit.list_files(mydir)
 			#info("----")
 			microsd_adafruit.list_file(mydir, logfilename)
+			info("manipulating data...")
 			if number_of_sensors_available:
 				for j in range(number_of_sensors_available):
 					bme680_adafruit.show_average_values(j)
@@ -340,6 +355,7 @@ def loop():
 					except:
 						warning("couldn't post data for particle count sensor")
 			if display_is_available:
+				info("updating plots...")
 				if number_of_sensors_available:
 					display_adafruit.update_plot(0, temperatures_to_plot)
 					display_adafruit.update_plot(1, humidities_to_plot)
