@@ -1,19 +1,26 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-06-24 by mza
+# last updated 2022-09-14 by mza
 
 import time
 import busio
 import digitalio
 import math
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
-try:
-	from secrets import secrets
-except (KeyboardInterrupt, ReloadException):
-	raise
-except ImportError:
-	warning("WiFi secrets are kept in secrets.py, please add them there!")
+
+secrets_already_imported = False
+def import_secrets_if_necessary():
+	global secrets_already_imported
+	secrets_already_imported = True
+	if secrets_already_imported:
+		return
+	try:
+		from secrets import secrets
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except ImportError:
+		warning("WiFi secrets are kept in secrets.py, please add them there!")
 
 epsilon = 0.000001
 MAXERRORCOUNT = 5
@@ -106,6 +113,7 @@ def connect_wifi(hostname):
 			raise
 		except:
 			pass
+	import_secrets_if_necessary()
 	try:
 		info("Connecting to " + secrets["ssid"] + "...")
 		try:
@@ -207,6 +215,7 @@ def esp32_connect(number_of_retries_remaining=2):
 		except:
 			warning("can't disconnect")
 		show_network_status()
+	import_secrets_if_necessary()
 	while not esp.is_connected:
 		info("Connecting to " + secrets["ssid"] + "...")
 		try:
@@ -338,6 +347,7 @@ def show_network_status():
 def setup_io():
 	from Adafruit_IO import Client
 	global io
+	import_secrets_if_necessary()
 	try:
 		io = Client(secrets["aio_username"], secrets["aio_key"])
 	except (KeyboardInterrupt, ReloadException):
@@ -676,6 +686,7 @@ def get_all_data_with_datestamps(feed, count_desired=None):
 
 def old_post_data(data):
 	import wifi # needed to call static methods
+	import_secrets_if_necessary()
 	try:
 		#feed = "heater"
 		feed = "test"
