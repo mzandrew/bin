@@ -8,7 +8,7 @@
 # rsync -av *.py /media/circuitpython/
 # cp -a clean_dry_room_monitor.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
-# rsync -r adafruit_tca9548a.mpy adafruit_pm25 adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
+# rsync -r adafruit_ds3231.mpy adafruit_tca9548a.mpy adafruit_pm25 adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
 
 import sys
 import time
@@ -20,6 +20,7 @@ import microsd_adafruit
 import neopixel_adafruit
 import bme680_adafruit
 import pm25_adafruit
+import ds3231_adafruit
 import adafruit_tca9548a
 import airlift
 import gps_adafruit
@@ -53,7 +54,7 @@ if board_id=="pyportal_titano" or board_id=="pyportal":
 	FEATHER_ESP32S2 = False
 	use_pwm_status_leds = False
 	should_use_sdcard = True
-	should_use_RTC = False
+	should_use_RTC = True
 	should_use_gps = False
 	N = 32
 	desired_loop_time = 60.0
@@ -81,8 +82,10 @@ def print_compact(string):
 			pass
 	if ""==date and RTC_is_available:
 		try:
-			import pcf8523_adafruit
-			date = pcf8523_adafruit.get_timestring1()
+			#import pcf8523_adafruit
+			#date = pcf8523_adafruit.get_timestring1()
+			import ds3231_adafruit
+			date = ds3231_adafruit.get_timestring1()
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except:
@@ -167,16 +170,16 @@ def main():
 	#global uart
 	#uart = busio.UART(board.TX, board.RX, baudrate=9600, timeout=10)
 	global RTC_is_available
+	RTC_is_available = False
 	if should_use_RTC:
 		try:
-			i2c_address = pcf8523_adafruit.setup(i2c)
+			#i2c_address = pcf8523_adafruit.setup(i2c)
+			i2c_address = ds3231_adafruit.setup(i2c)
 			RTC_is_available = True
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except:
 			RTC_is_available = False
-	else:
-		RTC_is_available = False
 	global sdcard_is_available
 	global mydir
 	if should_use_sdcard:
@@ -187,7 +190,8 @@ def main():
 		mydir = ""
 	global logfilename
 	if RTC_is_available:
-		logfilename = create_new_logfile_with_string_embedded(mydir, my_wifi_name, pcf8523_adafruit.get_timestring2())
+		#logfilename = create_new_logfile_with_string_embedded(mydir, my_wifi_name, pcf8523_adafruit.get_timestring2())
+		logfilename = create_new_logfile_with_string_embedded(mydir, my_wifi_name, ds3231_adafruit.get_timestring2())
 	else:
 		logfilename = create_new_logfile_with_string_embedded(mydir, my_wifi_name)
 	global gps_is_available
