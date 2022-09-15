@@ -5,7 +5,6 @@
 import sys # stderr.write()
 import time # strftime
 import os # os.path.isfile() os.path.isdir() os.path.mkdir()
-import microsd_adafruit
 try:
 	import atexit
 except:
@@ -74,6 +73,7 @@ def create_new_logfile_with_string_embedded(dirname, basename, timestring=""):
 				fullname = dirname + "/" + filename
 				#info(fullname)
 				#if not os.path.isfile(fullname):
+				import microsd_adafruit
 				if not microsd_adafruit.os_path_isfile(dirname, filename):
 					break
 		else:
