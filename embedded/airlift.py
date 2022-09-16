@@ -12,11 +12,12 @@ from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3,
 secrets_already_imported = False
 def import_secrets_if_necessary():
 	global secrets_already_imported
-	secrets_already_imported = True
+	global secrets
 	if secrets_already_imported:
 		return
 	try:
 		from secrets import secrets
+		secrets_already_imported = True
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except ImportError:
