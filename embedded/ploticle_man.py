@@ -1,6 +1,6 @@
 # written 2022-01-17 by mza
 # based on indoor_hum_temp_pres.py
-# last updated 2022-05-19 by mza
+# last updated 2022-09-18 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -168,17 +168,17 @@ def main():
 	else:
 		RTC_is_available = False
 	global sdcard_is_available
+	sdcard_is_available = False
 	global mydir
 	if should_use_sdcard:
 		sdcard_is_available = microsd_adafruit.setup_sdcard_for_logging_data(spi, board.D10, mydir) # D10 = adalogger featherwing
-	else:
-		sdcard_is_available = False
 	if not sdcard_is_available:
 		mydir = ""
-	if RTC_is_available:
-		create_new_logfile_with_string_embedded(mydir, my_wifi_name, pcf8523_adafruit.get_timestring2())
-	else:
-		create_new_logfile_with_string_embedded(mydir, my_wifi_name)
+	if sdcard_is_available:
+		if RTC_is_available:
+			create_new_logfile_with_string_embedded(mydir, my_wifi_name, pcf8523_adafruit.get_timestring2())
+		else:
+			create_new_logfile_with_string_embedded(mydir, my_wifi_name)
 	global gps_is_available
 	if should_use_gps:
 		if 1:

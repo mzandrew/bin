@@ -2,7 +2,7 @@
 
 # written 2022-04-23 by mza
 # based on temperature_log_and_graph.py
-# last updated 2022-04-27 by mza
+# last updated 2022-09-18 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/mza/CIRCUITPY/; cp -a weather_station_portal.py /media/mza/CIRCUITPY/code.py ; sync
@@ -75,9 +75,9 @@ def loop():
 		lcm4 = loop_counter%4
 		if 0==lcm4:
 			update_plot[0] = True
-			if airlift_is_available:
-				string = airlift.get_time_string_from_server()
-				info(string)
+#			if airlift_is_available:
+#				string = airlift.get_time_string_from_server()
+#				info(string)
 		elif 1==lcm4:
 			update_plot[1] = True
 		elif 2==lcm4:
@@ -86,9 +86,9 @@ def loop():
 			update_plot[3] = True
 	else:
 		update_plot = [ True, True, True, True ]
-		if airlift_is_available:
-			string = airlift.get_time_string_from_server()
-			info(string)
+#		if airlift_is_available:
+#			string = airlift.get_time_string_from_server()
+#			info(string)
 	if update_plot[0]:
 		info("updating temperatures...")
 		global ds18b20
@@ -207,16 +207,17 @@ def main():
 		time.sleep(10)
 		generic.reset()
 	global sdcard_is_available
+	sdcard_is_available = False
 	global dirname
 	if should_use_sdcard:
 		sdcard_is_available = microsd_adafruit.setup_sdcard_for_logging_data(spi, board.SD_CS, dirname)
 	else:
-		sdcard_is_available = False
 		dirname = ""
-	if RTC_is_available:
-		create_new_logfile_with_string_embedded(dirname, "weather_station", pcf8523_adafruit.get_timestring2())
-	else:
-		create_new_logfile_with_string_embedded(dirname, "weather_station")
+	if sdcard_is_available:
+		if RTC_is_available:
+			create_new_logfile_with_string_embedded(dirname, "weather_station", pcf8523_adafruit.get_timestring2())
+		else:
+			create_new_logfile_with_string_embedded(dirname, "weather_station")
 	display_adafruit.setup_for_n_m_plots(2, 2, [["temperature", "indoor", "outdoor", "roof", "heater"], ["humidity", "indoor", "outdoor", "roof"], ["pressure", "indoor"], ["particle count", "0.3", "0.5", "1.0", "2.5", "5.0"]])
 	display_adafruit.refresh()
 	array_size = display_adafruit.plot_width
