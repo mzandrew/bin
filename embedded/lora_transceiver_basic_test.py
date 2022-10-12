@@ -1,21 +1,22 @@
 # basic bits taken from adafruit's rfm9x_simpletest.py by Tony DiCola and rfm9x_node1_ack.py by Jerry Needell
-# last updated 2022-07-14 by mza
+# last updated 2022-10-11 by mza
 
 # rsync -a *.py /media/mza/LORASEND/; rsync -a *.py /media/mza/LORARECEIVE/
 # cd lib
 # rsync -r adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORASEND/lib/; rsync -r adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORARECEIVE/lib/
-# cp -a rfm9x_simpletest.py /media/mza/LORASEND/lib/; cp -a rfm9x_simpletest.py /media/mza/LORARECEIVE/lib/
+# cp -a lora_transceiver_basic_test.py /media/mza/LORASEND/code.py; cp -a lora_transceiver_basic_test.py /media/mza/LORARECEIVE/code.py
 # sync
 
 BAUD_RATE = 1000000
-TIMEOUT = 0.5
+TIMEOUT = 0.25
 PREFIX = "SCOOPY"
 SUFFIX = "BOOPS"
 N = 32
 USE_ACKNOWLEDGE = False
 RADIO_FREQ_MHZ = 915.0 # Must match your module!
 #RADIO_FREQ_MHZ = 868.0 # Must match your module!
-TX_POWER_DBM = 23 # default 13; maximum 23
+#TX_POWER_DBM = 23 # default 13; maximum 23
+TX_POWER_DBM = 20 # default 13; maximum 23
 #TX_POWER_DBM = 13 # default 13; maximum 23
 
 # RX_POWER
@@ -40,7 +41,8 @@ import airlift
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string
 
 def setup():
-	print("we are " + board.board_id)
+	set_verbosity(4)
+	info("we are " + board.board_id)
 	global dotstar_is_available
 	dotstar_is_available = False
 	if 'unexpectedmaker_feathers2'==board.board_id: # for uf2 boot, click [RESET], then about a second later click [BOOT]
@@ -50,27 +52,30 @@ def setup():
 		r = 25
 		g = 50
 		b = 100
-		dotstar_brightness = 0.125
+		dotstar_brightness = 0.05
 		global dotstar
 		dotstar = adafruit_dotstar.DotStar(board.APA102_SCK, board.APA102_MOSI, 1, brightness=dotstar_brightness, auto_write=True)
 		dotstar[0] = (r, g, b, dotstar_brightness)
 		dotstar_is_available = True
 	#else:
 	m = storage.getmount("/")
+	global label
 	label = m.label
-	print("our label is " + label)
+	info("our label is " + label)
 	if "LORARECEIVE"==label:
 		should_use_bme680 = False
 		should_use_as7341 = False
 		should_use_RTC = False
 		should_use_airlift = False
 		use_built_in_wifi = True
-	else:
+	elif "LORASEND"==label:
 		should_use_bme680 = True
 		should_use_as7341 = True
 		should_use_RTC = True
 		should_use_airlift = False
 		use_built_in_wifi = True
+	else:
+		warning("board filesystem has no label")
 	global LED
 	LED = digitalio.DigitalInOut(board.D13)
 	LED.direction = digitalio.Direction.OUTPUT
@@ -123,7 +128,8 @@ def setup():
 		CS = digitalio.DigitalInOut(board.D5)
 		RESET = digitalio.DigitalInOut(board.D6)
 	global rfm9x
-	rfm9x = adafruit_rfm9x.RFM9x(spi=spi, cs=CS, reset=RESET, frequency=RADIO_FREQ_MHZ, baudrate=BAUD_RATE)
+	#rfm9x = adafruit_rfm9x.RFM9x(spi=spi, cs=CS, reset=RESET, frequency=RADIO_FREQ_MHZ, baudrate=BAUD_RATE)
+	rfm9x = adafruit_rfm9x.RFM9x(spi=spi, cs=CS, reset=RESET, frequency=RADIO_FREQ_MHZ)
 	rfm9x.tx_power = TX_POWER_DBM
 	#rfm9x.signal_bandwidth = 62500
 	#rfm9x.coding_rate = 6
@@ -138,7 +144,7 @@ def setup():
 			time.sleep(2)
 			rfm9x.node = 1
 			rfm9x.destination = 2
-		print("we are node " + str(rfm9x.node))
+		info("we are node " + str(rfm9x.node))
 	global RTC_is_available
 	if should_use_RTC:
 		try:
@@ -166,12 +172,12 @@ def send_a_message(message):
 	message_with_prefix_and_suffix = PREFIX + message + SUFFIX
 	if 252<len(message_with_prefix_and_suffix):
 		warning("should truncate or parcel message because it is too long")
-	print("sending: " + message)
+	info("sending: " + message)
 	if USE_ACKNOWLEDGE:
 		if rfm9x.send_with_ack(bytes(message_with_prefix_and_suffix, "utf-8")):
-			print("ack received")
+			info("ack received")
 		else:
-			print("no ack received")
+			info("no ack received")
 	else:
 		rfm9x.send(bytes(message_with_prefix_and_suffix, "utf-8"))
 
@@ -183,44 +189,51 @@ def send_a_message_with_timestamp(message):
 
 def decode_a_message(packet):
 	rssi = rfm9x.last_rssi
-	#print("Received signal strength: {0} dBm".format(rssi))
+	#info("Received signal strength: {0} dBm".format(rssi))
 	try:
 		packet_text = str(packet, "ascii")
 		match = re.search("^(" + PREFIX + ")(.*)(" + SUFFIX + ")$", packet_text)
 		if match:
 			message = match.group(2)
-			#print("Received (raw bytes): {0}".format(packet))
-			print("received: " + message + " RSSI=" + str(rssi) + "dBm")
+			#info("Received (raw bytes): {0}".format(packet))
+			info("received: " + message + " RSSI=" + str(rssi) + "dBm")
+		else:
+			debug("received: " + message + " RSSI=" + str(rssi) + "dBm")
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
-		print("warning:  message garbled RSSI=" + str(rssi) + "dBm")
+		info("warning:  message garbled RSSI=" + str(rssi) + "dBm")
 
 setup()
-send_a_message("Hello world!")
-
 i = 0
 j = 0
-should_send_a_message = False
-print("Waiting for packets...")
+button_was_pressed = False
+info("Waiting for packets...")
+first_time_through = True
 while True:
+	LED.value = False
+	button_was_pressed = False
+	if not button.value:
+		button_was_pressed = True
+	if first_time_through:
+		first_time_through = False
+		if "LORASEND"==label:
+			time.sleep(1)
+		send_a_message_with_timestamp("lora node coming online")
 	if dotstar_is_available:
 		dotstar[0] = (0, 0, 255)
-	LED.value = False
-	should_send_a_message = False
-	if not button.value:
-		should_send_a_message = True
-	if should_send_a_message:
-		should_send_a_message = False
-		send_a_message("the eating is good " + str(i))
-		i += 1
 	if USE_ACKNOWLEDGE:
 		packet = rfm9x.receive(with_ack=True, timeout=TIMEOUT)
 	else:
 		packet = rfm9x.receive(timeout=TIMEOUT)
 	if packet is not None:
+		#info(str(len(packet)))
 		LED.value = True
 		decode_a_message(packet)
+	if button_was_pressed:
+		button_was_pressed = False
+		send_a_message_with_timestamp("button was pressed " + str(i))
+		i += 1
 	if dotstar_is_available:
 		dotstar[0] = (255, 0, 0)
 	if bme680_is_available:
@@ -237,8 +250,8 @@ while True:
 		if bme680_is_available:
 			values = bme680_adafruit.get_average_values()
 			string = str(values)
-			#print(string)
-			#print(len(string))
+			#info(string)
+			#info(len(string))
 			send_a_message_with_timestamp("bme680 " + string)
 			#if airlift_is_available:
 
