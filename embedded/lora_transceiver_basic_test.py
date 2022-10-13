@@ -3,7 +3,7 @@
 
 # rsync -a *.py /media/mza/LORASEND/; rsync -a *.py /media/mza/LORARECEIVE/
 # cd lib
-# rsync -r adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORASEND/lib/; rsync -r adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORARECEIVE/lib/
+# rsync -r adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORASEND/lib/; rsync -r adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_io adafruit_minimqtt adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORARECEIVE/lib/
 # cp -a lora_transceiver_basic_test.py /media/mza/LORASEND/code.py; cp -a lora_transceiver_basic_test.py /media/mza/LORARECEIVE/code.py
 # sync
 
@@ -52,15 +52,20 @@ def setup():
 		r = 25
 		g = 50
 		b = 100
+		global dotstar_brightness
 		dotstar_brightness = 0.05
 		global dotstar
 		dotstar = adafruit_dotstar.DotStar(board.APA102_SCK, board.APA102_MOSI, 1, brightness=dotstar_brightness, auto_write=True)
 		dotstar[0] = (r, g, b, dotstar_brightness)
 		dotstar_is_available = True
 	#else:
-	m = storage.getmount("/")
 	global label
-	label = m.label
+	label = "unknown"
+	try:
+		m = storage.getmount("/")
+		label = m.label
+	except:
+		pass
 	info("our label is " + label)
 	if "LORARECEIVE"==label:
 		should_use_bme680 = False
@@ -146,6 +151,7 @@ def setup():
 			rfm9x.destination = 2
 		info("we are node " + str(rfm9x.node))
 	global RTC_is_available
+	RTC_is_available = False
 	if should_use_RTC:
 		try:
 			i2c_address = pcf8523_adafruit.setup(i2c)
@@ -153,26 +159,30 @@ def setup():
 			RTC_is_available = True
 		except:
 			RTC_is_available = False
-	else:
-		RTC_is_available = False
 	global airlift_is_available
+	airlift_is_available = False
 	if should_use_airlift:
 		if use_built_in_wifi:
 			airlift_is_available = airlift.setup_wifi("russell")
 		else:
 			airlift_is_available = airlift.setup_airlift("russell", spi, board.D13, board.D11, board.D12)
 		#header_string += ", RSSI-dB"
-	else:
-		airlift_is_available = False
 	if 1:
 		if airlift_is_available:
-			airlift.update_time_from_server()
+			if RTC_is_available:
+				airlift.update_time_from_server()
 
 def send_a_message(message):
-	message_with_prefix_and_suffix = PREFIX + message + SUFFIX
+	global message_id
+	try:
+		message_id += 1
+	except:
+		message_id = 1
+	message_id_string = "[" + str(message_id) + "] "
+	message_with_prefix_and_suffix = PREFIX + message_id_string + message + SUFFIX
 	if 252<len(message_with_prefix_and_suffix):
 		warning("should truncate or parcel message because it is too long")
-	info("sending: " + message)
+	info("sending: " + message_id_string + message)
 	if USE_ACKNOWLEDGE:
 		if rfm9x.send_with_ack(bytes(message_with_prefix_and_suffix, "utf-8")):
 			info("ack received")
@@ -183,7 +193,7 @@ def send_a_message(message):
 
 def send_a_message_with_timestamp(message):
 	if RTC_is_available:
-		timestring = pcf8523_adafruit.get_timestring2()
+		timestring = pcf8523_adafruit.get_timestring3()
 		message = timestring + " " + message
 	send_a_message(message)
 
@@ -218,10 +228,10 @@ while True:
 	if first_time_through:
 		first_time_through = False
 		if "LORASEND"==label:
-			time.sleep(1)
+			time.sleep(3)
 		send_a_message_with_timestamp("lora node coming online")
 	if dotstar_is_available:
-		dotstar[0] = (0, 0, 255)
+		dotstar[0] = (0, 0, 255, dotstar_brightness)
 	if USE_ACKNOWLEDGE:
 		packet = rfm9x.receive(with_ack=True, timeout=TIMEOUT)
 	else:
@@ -235,7 +245,7 @@ while True:
 		send_a_message_with_timestamp("button was pressed " + str(i))
 		i += 1
 	if dotstar_is_available:
-		dotstar[0] = (255, 0, 0)
+		dotstar[0] = (255, 0, 0, dotstar_brightness)
 	if bme680_is_available:
 		#bme680_adafruit.print_compact()
 		bme680_adafruit.get_values()
@@ -246,7 +256,7 @@ while True:
 	j += 1
 	if 0==j%N:
 		if dotstar_is_available:
-			dotstar[0] = (0, 255, 0)
+			dotstar[0] = (0, 255, 0, dotstar_brightness)
 		if bme680_is_available:
 			values = bme680_adafruit.get_average_values()
 			string = str(values)
