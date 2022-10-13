@@ -32,7 +32,20 @@ def get_timestring2():
 	t = rtc.datetime
 	return "%04d-%02d-%02d.%02d%02d%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
 
+def get_timestring3():
+	# https://en.wikipedia.org/wiki/ISO_8601
+	t = rtc.datetime
+	#info(str(t))
+	#u = time.mktime(t)
+	#info(str(u))
+	#v = time.localtime(u)
+	#info(str(v))
+	return "%04d-%02d-%02dT%02d:%02d:%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
+
 def set_from_timestruct(time):
-	#info("setting time to " + str(time))
-	rtc.datetime = time
+	info("setting time to " + str(time))
+	try:
+		rtc.datetime = time
+	except:
+		warning("couldn't set RTC time")
 
