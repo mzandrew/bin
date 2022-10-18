@@ -1,5 +1,5 @@
 # basic bits taken from adafruit's rfm9x_simpletest.py by Tony DiCola and rfm9x_node1_ack.py by Jerry Needell
-# last updated 2022-10-11 by mza
+# last updated 2022-10-18 by mza
 
 # rsync -a *.py /media/mza/LORASEND/; rsync -a *.py /media/mza/LORARECEIVE/
 # cd lib
@@ -7,8 +7,8 @@
 # cp -a lora_transceiver_basic_test.py /media/mza/LORASEND/code.py; cp -a lora_transceiver_basic_test.py /media/mza/LORARECEIVE/code.py
 # sync
 
-BAUD_RATE = 1000000
-TIMEOUT = 0.25
+BAUD_RATE = 4*57600
+TIMEOUT = 0.5
 PREFIX = "SCOOPY"
 SUFFIX = "BOOPS"
 N = 32
@@ -133,8 +133,8 @@ def setup():
 		CS = digitalio.DigitalInOut(board.D5)
 		RESET = digitalio.DigitalInOut(board.D6)
 	global rfm9x
-	#rfm9x = adafruit_rfm9x.RFM9x(spi=spi, cs=CS, reset=RESET, frequency=RADIO_FREQ_MHZ, baudrate=BAUD_RATE)
-	rfm9x = adafruit_rfm9x.RFM9x(spi=spi, cs=CS, reset=RESET, frequency=RADIO_FREQ_MHZ)
+	rfm9x = adafruit_rfm9x.RFM9x(spi=spi, cs=CS, reset=RESET, frequency=RADIO_FREQ_MHZ, baudrate=BAUD_RATE)
+	#rfm9x = adafruit_rfm9x.RFM9x(spi=spi, cs=CS, reset=RESET, frequency=RADIO_FREQ_MHZ)
 	rfm9x.tx_power = TX_POWER_DBM
 	#rfm9x.signal_bandwidth = 62500
 	#rfm9x.coding_rate = 6
@@ -198,21 +198,49 @@ def send_a_message_with_timestamp(message):
 	send_a_message(message)
 
 def decode_a_message(packet):
-	rssi = rfm9x.last_rssi
-	#info("Received signal strength: {0} dBm".format(rssi))
+	global previously_received_message_id
 	try:
-		packet_text = str(packet, "ascii")
-		match = re.search("^(" + PREFIX + ")(.*)(" + SUFFIX + ")$", packet_text)
-		if match:
-			message = match.group(2)
-			#info("Received (raw bytes): {0}".format(packet))
-			info("received: " + message + " RSSI=" + str(rssi) + "dBm")
-		else:
-			debug("received: " + message + " RSSI=" + str(rssi) + "dBm")
+		previously_received_message_id
+	except:
+		previously_received_message_id = 0
+	global total_skipped_messages
+	try:
+		total_skipped_messages
+	except:
+		total_skipped_messages = 0
+	this_message_id = 0
+	try:
+		rssi = rfm9x.last_rssi
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
-		info("warning:  message garbled RSSI=" + str(rssi) + "dBm")
+		rssi = 0
+	#info("Received signal strength: {0} dBm".format(rssi))
+	try:
+		packet_text = str(packet, "ascii")
+		match = re.search("^" + PREFIX + "\[([0-9]+)\](.*)" + SUFFIX + "$", packet_text)
+		if match:
+			this_message_id = match.group(1)
+			message = match.group(2)
+			this_message_id = int(this_message_id)
+			#info("Received (raw bytes): {0}".format(packet))
+			skipped_messages = this_message_id - previously_received_message_id - 1
+			#debug("previously_received_message_id: " + str(previously_received_message_id))
+			#debug("this_message_id: " + str(this_message_id))
+			#debug("skipped_messages: " + str(skipped_messages))
+			if 0<skipped_messages:
+				warning("skipped " + str(skipped_messages) + " message(s)")
+			total_skipped_messages += skipped_messages
+			info("received: [" + str(this_message_id) + "]" + message + " RSSI=" + str(rssi) + "dBm")
+			previously_received_message_id = this_message_id
+		else:
+			debug("received: " + packet_text + " RSSI=" + str(rssi) + "dBm")
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except:
+		warning("message garbled RSSI=" + str(rssi) + "dBm")
+		info("total skipped messages: " + str(total_skipped_messages))
+	return this_message_id
 
 setup()
 i = 0
