@@ -1,5 +1,5 @@
 # basic bits taken from adafruit's rfm9x_simpletest.py by Tony DiCola and rfm9x_node1_ack.py by Jerry Needell
-# last updated 2022-10-18 by mza
+# last updated 2022-10-29 by mza
 
 # rsync -a *.py /media/mza/LORASEND/; rsync -a *.py /media/mza/LORARECEIVE/
 # cd lib
@@ -18,6 +18,8 @@ RADIO_FREQ_MHZ = 915.0 # Must match your module!
 #TX_POWER_DBM = 23 # default 13; maximum 23
 TX_POWER_DBM = 20 # default 13; maximum 23
 #TX_POWER_DBM = 13 # default 13; maximum 23
+
+# failure rate for 4*57600, timeout=0.5 TX_POWER=20 is 2844/14262
 
 # RX_POWER
 # [-49,-48] dBm when the tx and rx are in the same spot
@@ -229,8 +231,13 @@ def decode_a_message(packet):
 			#debug("this_message_id: " + str(this_message_id))
 			#debug("skipped_messages: " + str(skipped_messages))
 			if 0<skipped_messages:
-				warning("skipped " + str(skipped_messages) + " message(s)")
-			total_skipped_messages += skipped_messages
+				total_skipped_messages += skipped_messages
+				#warning("skipped " + str(skipped_messages) + " message(s)")
+				if this_message_id:
+					percentage = int(1000.0 * total_skipped_messages / this_message_id)/10.0
+				else:
+					percentage = "?"
+				warning("skipped " + str(skipped_messages) + " message(s); total skipped: " + str(total_skipped_messages) + "/" + str(this_message_id) + " = " + str(percentage) + "%")
 			info("received: [" + str(this_message_id) + "]" + message + " RSSI=" + str(rssi) + "dBm")
 			previously_received_message_id = this_message_id
 		else:
@@ -239,7 +246,7 @@ def decode_a_message(packet):
 		raise
 	except:
 		warning("message garbled RSSI=" + str(rssi) + "dBm")
-		info("total skipped messages: " + str(total_skipped_messages))
+		#info("total skipped messages: " + str(total_skipped_messages))
 	return this_message_id
 
 setup()
