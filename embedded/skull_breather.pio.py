@@ -29,6 +29,7 @@ start:
 	pull noblock ; pull from fifo into osr (or from register x if there is no data waiting in fifo)
 	mov x, osr ; save the pulse duty cycle for next time the fifo is empty
 	mov y, isr side 0b1010 ; fetch the period that we saved from the above code; set the sideset pins
+	jmp x-- countloop ; decrement x so that duty_cycle=0 means off
 countloop:
 	jmp x!=y nochange ; jump if x != y to nochange
 	jmp donewithchange side 0b0101 ; jump to donewithchange; set the sideset pins
@@ -51,6 +52,7 @@ start:
 	pull noblock ; pull from fifo into osr (or from register x if there is no data waiting in fifo)
 	mov x, osr ; save the pulse duty cycle for next time the fifo is empty
 	mov y, isr side 0b1010 ; fetch the period that we saved from the above code; set the sideset pins
+	jmp x-- countloop ; decrement x so that duty_cycle=0 means off
 countloop:
 	jmp x!=y nochange ; jump if x != y to nochange
 	jmp donewithchange side 0b0101 ; jump to donewithchange; set the sideset pins
