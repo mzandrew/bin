@@ -84,7 +84,7 @@ else:
 	MAX_PWM_VALUE = 30
 
 #with rp2pio.StateMachine(state_machine, frequency=20000, sideset_enable=True, first_sideset_pin=board.D10, sideset_pin_count=4, initial_sideset_pin_state=0b0000) as sm:
-with rp2pio.StateMachine(state_machine, frequency=200000, sideset_enable=True, first_sideset_pin=board.D0, sideset_pin_count=4, initial_sideset_pin_state=0b0000) as sm:
+with rp2pio.StateMachine(state_machine, frequency=1250000, sideset_enable=True, first_sideset_pin=board.D0, sideset_pin_count=4, initial_sideset_pin_state=0b0000) as sm:
 	#sm.clear_rxfifo()
 	print(str(sm.frequency))
 	if should_write_period:
