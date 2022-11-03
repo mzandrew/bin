@@ -1,5 +1,5 @@
 # written 2022-10-31 by mza
-# last updated 2022-10-31 by mza
+# last updated 2022-11-03 by mza
 
 import time
 import board
@@ -22,38 +22,25 @@ def on():
 	pio2A.value = 0
 	pio2B.value = 1
 
-delta = 0.01
-duty_cycle = 0.05
-
 def cycle():
 	on()
-	time.sleep(delta * duty_cycle)
+	time.sleep(delta_t * duty_cycle)
 	off()
-	time.sleep(delta * (1.0-duty_cycle))
+	time.sleep(delta_t * (1.0-duty_cycle))
 
 import math
 pi = 3.14159
-i = 0.0
+deg = 0.0
+delta_t = 0.01
+delta_deg = 0.05
 while True:
-	i += 0.05
-	rad = 2.0*pi*i/180.0
+	deg += delta_deg
+	rad = pi*deg/180.0
 	duty_cycle = math.sin(rad)
-	print(str(i) + " " + str(rad) + " " + str(duty_cycle))
+	print(str(deg) + "deg " + str(rad) + "rad " + str(duty_cycle))
 	if duty_cycle<0.0:
 		off()
-		time.sleep(delta)
+		time.sleep(delta_t)
 	else:
 		cycle()
 
-#import pwmio
-#PWM_MAX = 65535
-#pwm = []
-#pwm.append(pwmio.PWMOut(board.D1, frequency=5000, duty_cycle=0))
-#pwm.append(pwmio.PWMOut(board.D0, frequency=5000, duty_cycle=0))
-#pwm.append(pwmio.PWMOut(board.SCL, frequency=5000, duty_cycle=0))
-#pwm.append(pwmio.PWMOut(board.SDA, frequency=5000, duty_cycle=0))
-#
-#while True:
-#	for i in range(100):
-#		pwm[2].duty_cycle
-#		time.sleep(0.01)
