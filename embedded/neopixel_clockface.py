@@ -10,14 +10,14 @@ import neopixel
 
 #brightness = 0.04
 brightness = 1.0
-MAX_MINUTE = 59
-MAX_HOUR = 11
-if 1:
-	hours = neopixel.NeoPixel(board.A3, 12, pixel_order=(1, 0, 2, 3), brightness=brightness, auto_write=False)
-else:
-	hours = neopixel.NeoPixel(board.A3, 24, pixel_order=(1, 0, 2, 3), brightness=brightness, auto_write=False)
-	MAX_HOUR = 23
-minutes = neopixel.NeoPixel(board.D2, 60, pixel_order=(1, 0, 2, 3), brightness=brightness, auto_write=False)
+NUMBER_OF_MINUTE_PIXELS = 60
+NUMBER_OF_HOUR_PIXELS = 12
+#NUMBER_OF_HOUR_PIXELS = 24
+
+MAX_HOUR = NUMBER_OF_HOUR_PIXELS - 1
+hours = neopixel.NeoPixel(board.A3, NUMBER_OF_HOUR_PIXELS, pixel_order=(1, 0, 2, 3), brightness=brightness, auto_write=False)
+MAX_MINUTE = NUMBER_OF_MINUTE_PIXELS - 1
+minutes = neopixel.NeoPixel(board.D2, NUMBER_OF_MINUTE_PIXELS, pixel_order=(1, 0, 2, 3), brightness=brightness, auto_write=False)
 BLACK = (0, 0, 0, 0)
 PURPLE = (180, 0, 255, 0)
 GREEN = (0, 255, 128, 0)
