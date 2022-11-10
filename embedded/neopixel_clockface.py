@@ -39,5 +39,6 @@ while True:
 		m = 0
 	hours.show()
 	minutes.show()
+	#time.sleep(1/60)
 	time.sleep(1)
 
