@@ -88,8 +88,7 @@ def setup_neopixel_clockface():
 	hours = neopixel.NeoPixel(hours_neopixel_pin, NUMBER_OF_HOUR_PIXELS, pixel_order=(1, 0, 2, 3), brightness=1.0, auto_write=False)
 	minutes = neopixel.NeoPixel(minutes_neopixel_pin, NUMBER_OF_MINUTE_PIXELS, pixel_order=(1, 0, 2, 3), brightness=1.0, auto_write=False)
 
-def draw_clockface():
-	info("updating clockface...")
+def check_ambient_brightness():
 	global n
 	try:
 		n
@@ -109,6 +108,9 @@ def draw_clockface():
 		info("new brightness = " + str(brightness))
 		n = 0
 	n += 1
+
+def draw_clockface():
+	info("updating clockface...")
 	global h
 	global m
 	hours.fill(list(map(lambda x: int(x*brightness), BLACK)))
@@ -136,6 +138,7 @@ if __name__ == "__main__":
 	m = 0
 	should_update_clockface = True
 	while True:
+		check_ambient_brightness()
 		if RTC_is_available:
 			string = ds3231_adafruit.get_timestring2()
 			info(string)
