@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-09-16 by mza
+# last updated 2022-11-10 by mza
 
 import time
 import busio
@@ -741,8 +741,14 @@ def update_time_from_server():
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
-		warning("couldn't set RTC")
-		errorcount += 1
+		try:
+			import ds3231_adafruit # to set the RTC
+			ds3231_adafruit.set_from_timestruct(time)
+		except (KeyboardInterrupt, ReloadException):
+			raise
+		except:
+			warning("couldn't set RTC")
+			errorcount += 1
 	check_error_count_and_reboot_if_too_high()
 	return time
 
