@@ -111,8 +111,6 @@ def check_ambient_brightness():
 
 def draw_clockface():
 	info("updating clockface...")
-	global h
-	global m
 	hours.fill(list(map(lambda x: int(x*brightness), BLACK)))
 	for hh in range(0, NUMBER_OF_HOUR_PIXELS, NUMBER_OF_HOUR_PIXELS//4):
 		hours[hh] = list(map(lambda x: int(x*brightness), DOT_HOUR))
@@ -121,44 +119,49 @@ def draw_clockface():
 	for mm in range(0, NUMBER_OF_MINUTE_PIXELS, NUMBER_OF_MINUTE_PIXELS//12):
 		minutes[mm] = list(map(lambda x: int(x*brightness), DOT_MINUTE))
 	minutes[m] = list(map(lambda x: int(x*brightness), minute_color))
-	if 0: # fake it
-		info(str(h) + ":" + str(m))
-		h += 1
-		if NUMBER_OF_HOUR_PIXELS<=h:
-			h = 0
-		m += 1
-		if NUMBER_OF_MINUTE_PIXELS<=m:
-			m = 0
 	hours.show()
 	minutes.show()
+
+def parse_RTC():
+	global h
+	global m
+	global old_minute
+	global should_update_clockface
+	if RTC_is_available:
+		string = ds3231_adafruit.get_timestring2()
+		info(string)
+		match = re.search("[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\.([0-9][0-9])([0-9][0-9])([0-9][0-9])", string)
+		if match:
+			h = match.group(1)
+			m = match.group(2)
+			s = match.group(3)
+			h = int(h)
+			m = int(m)
+			s = int(s)
+			h = h % 12
+			#if 0==s:
+			if not old_minute==m:
+				should_update_clockface = True
+				#info("hour = " + str(h))
+				#info("minute = " + str(m))
+				#info("second = " + str(s))
+			old_minute = m
+
+def loop():
+	check_ambient_brightness()
+	parse_RTC()
+	global should_update_clockface
+	if should_update_clockface:
+		draw_clockface()
+		should_update_clockface = False
+	time.sleep(1)
 
 if __name__ == "__main__":
 	setup()
 	h = 0
 	m = 0
+	old_minute = 0
 	should_update_clockface = True
 	while True:
-		check_ambient_brightness()
-		if RTC_is_available:
-			string = ds3231_adafruit.get_timestring2()
-			info(string)
-			match = re.search("[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\.([0-9][0-9])([0-9][0-9])([0-9][0-9])", string)
-			if match:
-				h = match.group(1)
-				m = match.group(2)
-				s = match.group(3)
-				h = int(h)
-				m = int(m)
-				s = int(s)
-				h = h % 12
-				if 0==s:
-					should_update_clockface = True
-					#info("hour = " + str(h))
-					#info("minute = " + str(m))
-					#info("second = " + str(s))
-		if should_update_clockface:
-			draw_clockface()
-			should_update_clockface = False
-		#time.sleep(1/60)
-		time.sleep(1)
+		loop()
 
