@@ -5,15 +5,18 @@
 # last updated 2022-11-10 by mza
 
 # cd lib
-# rsync -r adafruit_as7341.mpy adafruit_register /media/mza/CIRCUITPY/lib/
-# cp -a as7341.py boxcar.py /media/mza/CIRCUITPY/
+# rsync -r adafruit_ds3231.mpy adafruit_as7341.mpy adafruit_register /media/mza/CIRCUITPY/lib/
+# cd ..
+# rsync -av *.py /media/mza/CIRCUITPY/
 # cp -a neopixel_clockface.py /media/mza/CIRCUITPY/code.py; sync
 
 import time
+import re
 import board
 import busio
 import neopixel
 import as7341_adafruit
+import ds3231_adafruit
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
 NEOPIXEL_BRIGHTNESS_MIN = 1
@@ -36,7 +39,7 @@ DOT_MINUTE = ( 1,  1,  1, 0)
 minute_color = RED
 hour_color = BLUE
 
-N = 15
+N = 15 # average this many sensor readings before acting on it
 
 if "adafruit_qtpy_esp32s2"==board.board_id:
 	hours_neopixel_pin = board.A0
@@ -50,7 +53,7 @@ def setup():
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
 		string = "using I2C1 "
-	except KeyboardInterrupt:
+	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		#i2c = busio.I2C(board.SCL, board.SDA)
@@ -64,6 +67,16 @@ def setup():
 		as7341_is_available = True
 	except:
 		warning("as7341 not found")
+	global RTC_is_available
+	RTC_is_available = False
+	try:
+		#i2c_address = pcf8523_adafruit.setup(i2c)
+		i2c_address = ds3231_adafruit.setup(i2c)
+		RTC_is_available = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except:
+		RTC_is_available = False
 	setup_neopixel_clockface()
 
 def setup_neopixel_clockface():
@@ -76,6 +89,7 @@ def setup_neopixel_clockface():
 	minutes = neopixel.NeoPixel(minutes_neopixel_pin, NUMBER_OF_MINUTE_PIXELS, pixel_order=(1, 0, 2, 3), brightness=1.0, auto_write=False)
 
 def draw_clockface():
+	info("updating clockface...")
 	global n
 	try:
 		n
@@ -105,7 +119,7 @@ def draw_clockface():
 	for mm in range(0, NUMBER_OF_MINUTE_PIXELS, NUMBER_OF_MINUTE_PIXELS//12):
 		minutes[mm] = list(map(lambda x: int(x*brightness), DOT_MINUTE))
 	minutes[m] = list(map(lambda x: int(x*brightness), minute_color))
-	if 1:
+	if 0: # fake it
 		info(str(h) + ":" + str(m))
 		h += 1
 		if NUMBER_OF_HOUR_PIXELS<=h:
@@ -120,8 +134,28 @@ if __name__ == "__main__":
 	setup()
 	h = 0
 	m = 0
+	should_update_clockface = True
 	while True:
-		draw_clockface()
+		if RTC_is_available:
+			string = ds3231_adafruit.get_timestring2()
+			info(string)
+			match = re.search("[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\.([0-9][0-9])([0-9][0-9])([0-9][0-9])", string)
+			if match:
+				h = match.group(1)
+				m = match.group(2)
+				s = match.group(3)
+				h = int(h)
+				m = int(m)
+				s = int(s)
+				h = h % 12
+				if 0==s:
+					should_update_clockface = True
+					#info("hour = " + str(h))
+					#info("minute = " + str(m))
+					#info("second = " + str(s))
+		if should_update_clockface:
+			draw_clockface()
+			should_update_clockface = False
 		#time.sleep(1/60)
 		time.sleep(1)
 
