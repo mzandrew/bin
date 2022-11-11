@@ -97,29 +97,31 @@ def draw_clockface():
 	n += 1
 	global h
 	global m
-	info(str(h) + ":" + str(m))
 	hours.fill(list(map(lambda x: int(x*brightness), BLACK)))
 	for hh in range(0, NUMBER_OF_HOUR_PIXELS, NUMBER_OF_HOUR_PIXELS//4):
 		hours[hh] = list(map(lambda x: int(x*brightness), DOT_HOUR))
 	hours[h] = list(map(lambda x: int(x*brightness), hour_color))
-	h += 1
-	if NUMBER_OF_HOUR_PIXELS<=h:
-		h = 0
 	minutes.fill(list(map(lambda x: int(x*brightness), BLACK)))
 	for mm in range(0, NUMBER_OF_MINUTE_PIXELS, NUMBER_OF_MINUTE_PIXELS//12):
 		minutes[mm] = list(map(lambda x: int(x*brightness), DOT_MINUTE))
 	minutes[m] = list(map(lambda x: int(x*brightness), minute_color))
-	m += 1
-	if NUMBER_OF_MINUTE_PIXELS<=m:
-		m = 0
+	if 1:
+		info(str(h) + ":" + str(m))
+		h += 1
+		if NUMBER_OF_HOUR_PIXELS<=h:
+			h = 0
+		m += 1
+		if NUMBER_OF_MINUTE_PIXELS<=m:
+			m = 0
 	hours.show()
 	minutes.show()
-	#time.sleep(1/60)
-	time.sleep(1)
 
-setup()
-h = 0
-m = 0
-while True:
-	draw_clockface()
+if __name__ == "__main__":
+	setup()
+	h = 0
+	m = 0
+	while True:
+		draw_clockface()
+		#time.sleep(1/60)
+		time.sleep(1)
 
