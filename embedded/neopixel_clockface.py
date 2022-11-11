@@ -5,7 +5,7 @@
 # last updated 2022-11-10 by mza
 
 # cd lib
-# rsync -r adafruit_ds3231.mpy adafruit_as7341.mpy adafruit_register /media/mza/CIRCUITPY/lib/
+# rsync -r adafruit_ds3231.mpy adafruit_as7341.mpy neopixel.mpy adafruit_minimqtt simpleio.mpy adafruit_esp32spi adafruit_register adafruit_io adafruit_requests.mpy adafruit_bus_device /media/mza/CIRCUITPY/lib/
 # cd ..
 # rsync -av *.py /media/mza/CIRCUITPY/
 # cp -a neopixel_clockface.py /media/mza/CIRCUITPY/code.py; sync
@@ -17,6 +17,7 @@ import busio
 import neopixel
 import as7341_adafruit
 import ds3231_adafruit
+import airlift
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
 NEOPIXEL_BRIGHTNESS_MIN = 1
@@ -40,6 +41,7 @@ minute_color = RED
 hour_color = BLUE
 
 N = 15 # average this many sensor readings before acting on it
+my_wifi_name = "neopixelclock"
 
 if "adafruit_qtpy_esp32s2"==board.board_id:
 	hours_neopixel_pin = board.A0
@@ -78,6 +80,11 @@ def setup():
 	except:
 		RTC_is_available = False
 	setup_neopixel_clockface()
+	global airlift_is_available
+	airlift_is_available = airlift.setup_wifi(my_wifi_name)
+	if 0:
+		if airlift_is_available:
+			airlift.update_time_from_server()
 
 def setup_neopixel_clockface():
 	global hours
@@ -97,20 +104,24 @@ def check_ambient_brightness():
 	as7341_adafruit.get_values()
 	if as7341_is_available and N<=n:
 		global brightness
+		global old_brightness
+		global should_update_clockface
 		values = as7341_adafruit.get_average_values()
-		info("ch[" + str(AMBIENT_CHANNEL) + "] = " + str(values[AMBIENT_CHANNEL]))
 		if values[AMBIENT_CHANNEL]<AMBIENT_BRIGHTNESS_FOR_MIN_NEOPIXEL_BRIGHTNESS:
 			brightness = NEOPIXEL_BRIGHTNESS_MIN
 		elif AMBIENT_BRIGHTNESS_FOR_MAX_NEOPIXEL_BRIGHTNESS<values[AMBIENT_CHANNEL]:
 			brightness = NEOPIXEL_BRIGHTNESS_MAX
 		else:
 			brightness = NEOPIXEL_BRIGHTNESS_MIN + (NEOPIXEL_BRIGHTNESS_MAX-NEOPIXEL_BRIGHTNESS_MIN)*(values[AMBIENT_CHANNEL]-AMBIENT_BRIGHTNESS_FOR_MIN_NEOPIXEL_BRIGHTNESS)/(AMBIENT_BRIGHTNESS_FOR_MAX_NEOPIXEL_BRIGHTNESS-AMBIENT_BRIGHTNESS_FOR_MIN_NEOPIXEL_BRIGHTNESS)
-		info("new brightness = " + str(brightness))
+		info("ch[" + str(AMBIENT_CHANNEL) + "] = " + str(values[AMBIENT_CHANNEL]) + "; new brightness = " + str(brightness))
 		n = 0
+		if not old_brightness==brightness:
+			should_update_clockface = True
+		old_brightness = brightness
 	n += 1
 
 def draw_clockface():
-	info("updating clockface...")
+	#info("updating clockface...")
 	hours.fill(list(map(lambda x: int(x*brightness), BLACK)))
 	for hh in range(0, NUMBER_OF_HOUR_PIXELS, NUMBER_OF_HOUR_PIXELS//4):
 		hours[hh] = list(map(lambda x: int(x*brightness), DOT_HOUR))
@@ -125,11 +136,13 @@ def draw_clockface():
 def parse_RTC():
 	global h
 	global m
+	global old_hour
 	global old_minute
 	global should_update_clockface
+	global should_check_network_time
 	if RTC_is_available:
 		string = ds3231_adafruit.get_timestring2()
-		info(string)
+		#info(string)
 		match = re.search("[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\.([0-9][0-9])([0-9][0-9])([0-9][0-9])", string)
 		if match:
 			h = match.group(1)
@@ -138,8 +151,12 @@ def parse_RTC():
 			h = int(h)
 			m = int(m)
 			s = int(s)
+			if not old_hour==h:
+				if 0==h:
+					should_check_network_time = True
+					info(string)
+			old_hour = h
 			h = h % 12
-			#if 0==s:
 			if not old_minute==m:
 				should_update_clockface = True
 				#info("hour = " + str(h))
@@ -148,6 +165,11 @@ def parse_RTC():
 			old_minute = m
 
 def loop():
+	global should_check_network_time
+	if should_check_network_time:
+		if airlift_is_available:
+			airlift.update_time_from_server()
+		should_check_network_time = False
 	check_ambient_brightness()
 	parse_RTC()
 	global should_update_clockface
@@ -161,7 +183,10 @@ if __name__ == "__main__":
 	h = 0
 	m = 0
 	old_minute = 0
+	old_hour = 0
+	old_brightness = 0
 	should_update_clockface = True
+	should_check_network_time = False
 	while True:
 		loop()
 
