@@ -143,7 +143,7 @@ def draw_clockface():
 	hours.fill(list(map(lambda x: int(x*brightness), BLACK)))
 	for hh in range(0, NUMBER_OF_HOUR_PIXELS, NUMBER_OF_HOUR_PIXELS//4):
 		hours[hh] = list(map(lambda x: int(x*brightness), DOT_HOUR))
-	hours[h] = list(map(lambda x: int(x*brightness), hour_color))
+	hours[h12] = list(map(lambda x: int(x*brightness), hour_color))
 	minutes.fill(list(map(lambda x: int(x*brightness), BLACK)))
 	for mm in range(0, NUMBER_OF_MINUTE_PIXELS, NUMBER_OF_MINUTE_PIXELS//12):
 		minutes[mm] = list(map(lambda x: int(x*brightness), DOT_MINUTE))
@@ -152,7 +152,8 @@ def draw_clockface():
 	minutes.show()
 
 def parse_RTC():
-	global h
+	global h12
+	global h24
 	global m
 	global old_hour
 	global old_minute
@@ -163,24 +164,25 @@ def parse_RTC():
 		debug(string)
 		match = re.search("[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\.([0-9][0-9])([0-9][0-9])([0-9][0-9])", string)
 		if match:
-			h = match.group(1)
+			h24 = match.group(1)
 			m = match.group(2)
 			s = match.group(3)
-			h = int(h)
+			h24 = int(h24)
+			h12 = h24 % 12
 			m = int(m)
 			s = int(s)
-			if not old_hour==h:
-				info(string + " " + brightness_string)
-				if 0==h:
+			hms = str(h12) + ":" + "%0*d"%(2,m) + ":" + "%0*d"%(2,s)
+			if not old_hour==h24:
+				info(string + " " + hms + " " + brightness_string)
+				if 0==h24:
 					should_check_network_time = True
 					debug("just past midnight - need to update RTC from network time")
 			else:
 				debug(brightness_string)
-			old_hour = h
-			h = h % 12
+			old_hour = h24
 			if not old_minute==m:
 				should_update_clockface = True
-				debug("hour = " + str(h))
+				debug("hour = " + str(h12))
 				debug("minute = " + str(m))
 				debug("second = " + str(s))
 			old_minute = m
@@ -201,7 +203,8 @@ def loop():
 
 if __name__ == "__main__":
 	setup()
-	h = 0
+	h12 = 0
+	h24 = 0
 	m = 0
 	old_minute = 0
 	old_hour = 0
