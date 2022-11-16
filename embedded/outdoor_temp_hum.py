@@ -1,6 +1,6 @@
 # written 2022-01-12 by mza
 # based on indoor_temp_hum.py
-# last updated 2022-05-14 by mza
+# last updated 2022-09-18 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -27,7 +27,7 @@ mydir = "/logs"
 board_id = board.board_id
 info("we are " + board_id)
 if 'adafruit_qtpy_esp32s2'==board_id: # sht31 on qtpy esp32-s2
-	my_wifi_name = "indoor3"
+	my_wifi_name = "outdoor"
 	FEATHER_ESP32S2 = True
 	use_pwm_status_leds = False
 	should_use_sdcard = False
@@ -140,10 +140,11 @@ def main():
 		sdcard_is_available = False
 	if not sdcard_is_available:
 		mydir = ""
-	if RTC_is_available:
-		create_new_logfile_with_string_embedded(mydir, my_wifi_name, pcf8523_adafruit.get_timestring2())
-	else:
-		create_new_logfile_with_string_embedded(mydir, my_wifi_name)
+	if should_use_sdcard:
+		if RTC_is_available:
+			create_new_logfile_with_string_embedded(mydir, my_wifi_name, pcf8523_adafruit.get_timestring2())
+		else:
+			create_new_logfile_with_string_embedded(mydir, my_wifi_name)
 	global gps_is_available
 	if should_use_gps:
 		if 1:
@@ -182,7 +183,7 @@ def main():
 			airlift_is_available = airlift.setup_airlift(my_wifi_name, spi, board.D13, board.D11, board.D12)
 		if airlift_is_available:
 			header_string += ", RSSI-dB"
-			#airlift.setup_feed(my_wifi_name + "-temp")
+			airlift.setup_feed(my_wifi_name + "-temp")
 			airlift.setup_feed(my_wifi_name + "-hum")
 			#airlift.setup_feed(my_wifi_name + "-pressure")
 			#airlift.setup_feed("indoor-altitude")
@@ -228,8 +229,8 @@ def loop():
 				sht31d_adafruit.show_average_values()
 				if airlift_is_available:
 					try:
-						#airlift.post_data(my_wifi_name + "-temp",     sht31d_adafruit.get_average_values()[1])
-						airlift.post_data(my_wifi_name + "-hum",      sht31d_adafruit.get_average_values()[0])
+						airlift.post_data(my_wifi_name + "-temp", sht31d_adafruit.get_average_values()[1])
+						airlift.post_data(my_wifi_name + "-hum",  sht31d_adafruit.get_average_values()[0])
 					except KeyboardInterrupt:
 						raise
 					except:

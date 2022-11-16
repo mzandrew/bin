@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-09-14 by mza
+# last updated 2022-11-10 by mza
 
 import time
 import busio
@@ -545,6 +545,8 @@ def post_geolocated_data(feed_name, location, value, perform_readback_and_verify
 #			else:
 #				errorcount += 1
 #				warning("readback failure " + str(readback) + "!=" + str(value))
+		else:
+			errorcount = 0
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
@@ -559,6 +561,7 @@ def get_most_recent_data(feed):
 		#print(str(value))
 		value = float(value)
 		#print(str(value))
+		errorcount = 0
 		return value
 	except (KeyboardInterrupt, ReloadException):
 		raise
@@ -574,6 +577,7 @@ def add_most_recent_data_to_end_of_array(values, feed):
 		new_value = get_most_recent_data(feed)
 		values.append(new_value)
 		values.pop(0)
+		errorcount = 0
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
@@ -630,12 +634,13 @@ def get_all_data(feed, count_desired=None):
 				for i in range(count_gotten, count_desired):
 					values.append(DEFAULT_VALUE)
 		#info("done")
+		errorcount = 0
 		return values
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		warning("couldn't fetch feed data from server")
-		#errorcount += 1
+		errorcount += 1
 		raise
 	#check_error_count_and_reboot_if_too_high()
 
@@ -676,12 +681,13 @@ def get_all_data_with_datestamps(feed, count_desired=None):
 				for i in range(count_gotten, count_desired):
 					values.append([DEFAULT_ID, DEFAULT_VALUE, FEED_ID, DEFAULT_DATESTAMP, DEFAULT_LAT, DEFAULT_LON, DEFAULT_ELE])
 		#info("done")
+		errorcount = 0
 		return values
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
 		warning("couldn't fetch feed data from server")
-		#errorcount += 1
+		errorcount += 1
 		raise
 	#check_error_count_and_reboot_if_too_high()
 
@@ -708,6 +714,7 @@ def get_time_string_from_server():
 		t = io.receive_time()
 		#info(str(t))
 		string = "%04d-%02d-%02d+%02d:%02d:%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
+		errorcount = 0
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
@@ -723,6 +730,7 @@ def update_time_from_server():
 	try:
 		time = io.receive_time()
 		#info(str(time))
+		errorcount = 0
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
@@ -733,8 +741,14 @@ def update_time_from_server():
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
-		warning("couldn't set RTC")
-		errorcount += 1
+		try:
+			import ds3231_adafruit # to set the RTC
+			ds3231_adafruit.set_from_timestruct(time)
+		except (KeyboardInterrupt, ReloadException):
+			raise
+		except:
+			warning("couldn't set RTC")
+			errorcount += 1
 	check_error_count_and_reboot_if_too_high()
 	return time
 

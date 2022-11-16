@@ -2,7 +2,7 @@
 
 # written 2022-01-17 by mza
 # based on outdoor_temp_hum.py
-# last updated 2022-05-19 by mza
+# last updated 2022-09-18 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -161,10 +161,11 @@ def main():
 		sdcard_is_available = False
 	if not sdcard_is_available:
 		mydir = ""
-	if RTC_is_available:
-		create_new_logfile_with_string_embedded(mydir, my_wifi_name, pcf8523_adafruit.get_timestring2())
-	else:
-		create_new_logfile_with_string_embedded(mydir, my_wifi_name)
+	if should_use_sdcard:
+		if RTC_is_available:
+			create_new_logfile_with_string_embedded(mydir, my_wifi_name, pcf8523_adafruit.get_timestring2())
+		else:
+			create_new_logfile_with_string_embedded(mydir, my_wifi_name)
 	global gps_is_available
 	if should_use_gps:
 		if 1:
