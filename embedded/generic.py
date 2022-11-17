@@ -1,5 +1,5 @@
 # written 2021-12-28 by mza
-# last updated 2022-06-16 by mza
+# last updated 2022-09-21 by mza
 
 import sys
 import time
@@ -86,11 +86,11 @@ def reset():
 #	except:
 #		pass
 	try:
-		time.sleep(10)
+		time.sleep(60)
 	except KeyboardInterrupt:
 		keyboard_interrupt_exception_handler()
 	except:
-		info("couldn't sleep (10), sorry!")
+		info("couldn't sleep (60), sorry!")
 		flush()
 	try:
 		info("")
