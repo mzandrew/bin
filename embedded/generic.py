@@ -1,9 +1,10 @@
 # written 2021-12-28 by mza
-# last updated 2022-09-21 by mza
+# last updated 2022-11-17 by mza
 
 import sys
 import time
 import atexit
+import gc
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
 def start_uptime():
@@ -196,4 +197,15 @@ def convert_date_to_UTC_time(datestamp):
 	datestamp = utc.strftime("%Y-%m-%d %H:%M:%S UTC")
 	#print(str(datestamp))
 	return datestamp
+
+def show_memory_situation():
+	print("gc.mem_alloc(): " + str(gc.mem_alloc()))
+	print("gc.mem_free(): " + str(gc.mem_free()))
+	print("gc.collect()")
+	gc.collect()
+	print("gc.mem_alloc(): " + str(gc.mem_alloc()))
+	print("gc.mem_free(): " + str(gc.mem_free()))
+
+def collect_garbage():
+	gc.collect()
 
