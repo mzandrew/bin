@@ -1,5 +1,5 @@
 # written 2021-09-10 by mza
-# last updated 2022-04-27 by mza
+# last updated 2022-11-17 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -7,6 +7,8 @@
 # cd ~/build/adafruit-circuitpython/bundle/lib
 # rsync -r adafruit_minimqtt simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy adafruit_pct2075.mpy adafruit_bh1750.mpy adafruit_vcnl4040.mpy adafruit_ltr390.mpy neopixel.mpy adafruit_as7341.mpy adafruit_pcf8523.mpy adafruit_tsl2591.mpy adafruit_onewire adafruit_ds18x20.mpy adafruit_pm25 adafruit_gps.mpy adafruit_sht31d.mpy adafruit_io adafruit_ili9341.mpy adafruit_requests.mpy /media/circuitpython/lib/
 
+import generic
+#generic.show_memory_situation() # 17k allocated
 import sys
 import time
 import atexit
@@ -16,21 +18,23 @@ import busio
 import pwmio
 import simpleio
 from adafruit_onewire.bus import OneWireBus
+#generic.show_memory_situation() # 22k allocated
 import pct2075_adafruit
-import bh1750_adafruit
-import ltr390_adafruit
-import vcnl4040_adafruit
+#import bh1750_adafruit
+#import ltr390_adafruit
+#import vcnl4040_adafruit # uses 6k
 import as7341_adafruit
 import pcf8523_adafruit
+#generic.show_memory_situation() # 67k allocated
 import microsd_adafruit
 import neopixel_adafruit
 import ds18b20_adafruit
-import tsl2591_adafruit
+#import tsl2591_adafruit
 import anemometer
 import sht31d_adafruit
 import airlift
-from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
-import generic
+from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush # uses 1k
+#generic.show_memory_situation() # 106k allocated
 
 header_string = "date/time"
 mydir = "/logs"
@@ -38,6 +42,8 @@ should_use_airlift = True
 board_id = board.board_id
 info("we are " + board_id)
 if board_id=="ASDF": # for the one with the TFT and GPS but no adalogger
+	my_wifi_name = "gpsmap"
+	my_adafruit_io_prefix = "gpsmap"
 	FEATHER_ESP32S2 = True
 	use_pwm_status_leds = False
 	should_use_sdcard = False
@@ -55,6 +61,8 @@ if board_id=="ASDF": # for the one with the TFT and GPS but no adalogger
 	import gps_adafruit
 	import display_adafruit
 elif board_id=="adafruit_feather_rp2040": # cat on a hot tin roof
+	my_wifi_name = "rooftop"
+	my_adafruit_io_prefix = "roof"
 	FEATHER_ESP32S2 = False
 	use_pwm_status_leds = True
 	should_use_sdcard = True
@@ -146,6 +154,7 @@ def main():
 	else:
 		create_new_logfile_with_string_embedded(mydir, "solar_water_heater")
 	global gps_is_available
+	gps_is_available = False
 	if should_use_gps:
 		if 1:
 			gps_adafruit.setup_uart(uart, N, gps_delay_in_ms)
@@ -153,35 +162,33 @@ def main():
 			gps_adafruit.setup_i2c(i2c, N, gps_delay_in_ms)
 		gps_is_available = True
 		header_string += gps_adafruit.header_string()
-	else:
-		gps_is_available = False
 	global bh1750_is_available
-	try:
-		i2c_address = bh1750_adafruit.setup(i2c, N)
-		prohibited_addresses.append(i2c_address)
-		bh1750_is_available = True
-		header_string += ", bh1750-lux"
-	except:
-		warning("bh1750 not found")
-		bh1750_is_available = False
+	bh1750_is_available = False
+#	try:
+#		i2c_address = bh1750_adafruit.setup(i2c, N)
+#		prohibited_addresses.append(i2c_address)
+#		bh1750_is_available = True
+#		header_string += ", bh1750-lux"
+#	except:
+#		warning("bh1750 not found")
 	global ltr390_is_available
-	try:
-		i2c_address = ltr390_adafruit.setup(i2c, N)
-		prohibited_addresses.append(i2c_address)
-		ltr390_is_available = True
-		header_string += ", ltr390-uvs, ltr390-uvi, ltr390-light, ltr390-lux"
-	except:
-		warning("ltr390 not found")
-		ltr390_is_available = False
+	ltr390_is_available = False
+#	try:
+#		i2c_address = ltr390_adafruit.setup(i2c, N)
+#		prohibited_addresses.append(i2c_address)
+#		ltr390_is_available = True
+#		header_string += ", ltr390-uvs, ltr390-uvi, ltr390-light, ltr390-lux"
+#	except:
+#		warning("ltr390 not found")
 	global vcnl4040_is_available
-	try:
-		i2c_address = vcnl4040_adafruit.setup(i2c, N)
-		prohibited_addresses.append(i2c_address)
-		vcnl4040_is_available = True
-		header_string += ", vcnl4040-proximity, vcnl4040-lux"
-	except:
-		warning("vcnl4040 not found")
-		vcnl4040_is_available = False
+	vcnl4040_is_available = False
+#	try:
+#		i2c_address = vcnl4040_adafruit.setup(i2c, N)
+#		prohibited_addresses.append(i2c_address)
+#		vcnl4040_is_available = True
+#		header_string += ", vcnl4040-proximity, vcnl4040-lux"
+#	except:
+#		warning("vcnl4040 not found")
 	global as7341_is_available
 	try:
 		i2c_address = as7341_adafruit.setup(i2c, N)
@@ -192,14 +199,14 @@ def main():
 		warning("as7341 not found")
 		as7341_is_available = False
 	global tsl2591_is_available
-	try:
-		i2c_address = tsl2591_adafruit.setup(i2c, N)
-		prohibited_addresses.append(i2c_address)
-		tsl2591_is_available = True
-		header_string += ", tsl2591.lux, tsl2591.infrared, tsl2591.visible, tsl2591.full-spectrum"
-	except:
-		warning("tsl2591 not found")
-		tsl2591_is_available = False
+	tsl2591_is_available = False
+#	try:
+#		i2c_address = tsl2591_adafruit.setup(i2c, N)
+#		prohibited_addresses.append(i2c_address)
+#		tsl2591_is_available = True
+#		header_string += ", tsl2591.lux, tsl2591.infrared, tsl2591.visible, tsl2591.full-spectrum"
+#	except:
+#		warning("tsl2591 not found")
 	global neopixel_is_available
 	try:
 		neopixel_is_available = neopixel_adafruit.setup_neopixel()
@@ -213,14 +220,14 @@ def main():
 		warning("anemometer not found")
 		anemometer_is_available = False
 	global pm25_is_available
-	try:
-		i2c_address = pm25_adafruit.setup(i2c, N)
-		prohibited_addresses.append(i2c_address)
-		pm25_is_available = True
-		header_string += ", pm10s, pm25s, pm100s, pm10e, pm25e, pm100e, 3um, 5um, 10um, 25um, 50um, 100um"
-	except:
-		warning("pm25 not found")
-		pm25_is_available = False
+	pm25_is_available = False
+#	try:
+#		i2c_address = pm25_adafruit.setup(i2c, N)
+#		prohibited_addresses.append(i2c_address)
+#		pm25_is_available = True
+#		header_string += ", pm10s, pm25s, pm100s, pm10e, pm25e, pm100e, 3um, 5um, 10um, 25um, 50um, 100um"
+#	except:
+#		warning("pm25 not found")
 	global ow_bus
 	global ds18b20_is_available
 	try:
@@ -255,13 +262,42 @@ def main():
 		if use_built_in_wifi:
 			airlift_is_available = airlift.setup_wifi()
 		else:
-			airlift_is_available = airlift.setup_airlift("rooftop", spi, board.D13, board.D11, board.D12)
+			airlift_is_available = airlift.setup_airlift(my_wifi_name, spi, board.D13, board.D11, board.D12)
 		header_string += ", RSSI-dB"
 	else:
 		airlift_is_available = False
 	if 0:
 		if airlift_is_available:
 			airlift.update_time_from_server()
+	generic.collect_garbage()
+	#generic.show_memory_situation() # 89k allocated
+	if airlift_is_available:
+		airlift.setup_feed(my_adafruit_io_prefix + "-anemometer")
+		time.sleep(1)
+		airlift.setup_feed(my_adafruit_io_prefix + "-hum")
+		time.sleep(1)
+		airlift.setup_feed(my_adafruit_io_prefix + "-temp")
+		time.sleep(1)
+		#airlift.setup_feed(my_adafruit_io_prefix + "-bh1750")
+		#time.sleep(1)
+		airlift.setup_feed(my_adafruit_io_prefix + "-415nm")
+		time.sleep(1)
+		airlift.setup_feed(my_adafruit_io_prefix + "-445nm")
+		time.sleep(1)
+		airlift.setup_feed(my_adafruit_io_prefix + "-480nm")
+		time.sleep(1)
+		airlift.setup_feed(my_adafruit_io_prefix + "-515nm")
+		time.sleep(1)
+		airlift.setup_feed(my_adafruit_io_prefix + "-555nm")
+		time.sleep(1)
+		airlift.setup_feed(my_adafruit_io_prefix + "-590nm")
+		time.sleep(1)
+		airlift.setup_feed(my_adafruit_io_prefix + "-630nm")
+		time.sleep(1)
+		airlift.setup_feed(my_adafruit_io_prefix + "-680nm")
+		time.sleep(1)
+	generic.collect_garbage()
+	#generic.show_memory_situation() # 160k allocated
 	#gnuplot> set key autotitle columnheader
 	#gnuplot> set style data lines
 	#gnuplot> plot for [i=1:14] "solar_water_heater.log" using 0:i
@@ -269,7 +305,7 @@ def main():
 	global i
 	i = 0
 	loop()
-	info("pct2075 no longer available; cannot continue")
+	#info("pct2075 no longer available; cannot continue")
 
 def loop():
 	global i
@@ -341,28 +377,29 @@ def loop():
 					bh1750_adafruit.show_average_values()
 					if airlift_is_available:
 						try:
-							airlift.post_data("roof-bh1750", bh1750_adafruit.get_average_values()[0])
+							#airlift.post_data(my_adafruit_io_prefix + "-bh1750", bh1750_adafruit.get_average_values()[0])
+							pass
 						except:
 							warning("couldn't post data for bh1750")
 				if anemometer_is_available:
 					anemometer.show_average_values()
 					if airlift_is_available:
 						try:
-							airlift.post_data("anemometer", anemometer.get_average_values()[0])
+							airlift.post_data(my_adafruit_io_prefix + "-anemometer", anemometer.get_average_values()[0])
 						except:
 							warning("couldn't post data for anemometer")
 				if sht31d_is_available:
 					sht31d_adafruit.show_average_values()
 					if airlift_is_available:
 						try:
-							airlift.post_data("roof-hum", sht31d_adafruit.get_average_values()[0])
+							airlift.post_data(my_adafruit_io_prefix + "-hum", sht31d_adafruit.get_average_values()[0])
 						except:
 							warning("couldn't post data for sht31d")
 				if ds18b20_is_available:
 					ds18b20_adafruit.show_average_values()
 					if airlift_is_available:
 						try:
-							airlift.post_data("roof-ds18b20", ds18b20_adafruit.get_average_values()[0])
+							airlift.post_data(my_adafruit_io_prefix + "-temp", ds18b20_adafruit.get_average_values()[0])
 						except:
 							warning("couldn't post data for ds18b20")
 			if ltr390_is_available:
@@ -373,14 +410,14 @@ def loop():
 				as7341_adafruit.show_average_values()
 				if airlift_is_available:
 					try:
-						airlift.post_data("as7341-415nm", as7341_adafruit.get_average_values()[0])
-						airlift.post_data("as7341-445nm", as7341_adafruit.get_average_values()[1])
-						airlift.post_data("as7341-480nm", as7341_adafruit.get_average_values()[2])
-						airlift.post_data("as7341-515nm", as7341_adafruit.get_average_values()[3])
-						airlift.post_data("as7341-555nm", as7341_adafruit.get_average_values()[4])
-						airlift.post_data("as7341-590nm", as7341_adafruit.get_average_values()[5])
-						airlift.post_data("as7341-630nm", as7341_adafruit.get_average_values()[6])
-						airlift.post_data("as7341-680nm", as7341_adafruit.get_average_values()[7])
+						airlift.post_data(my_adafruit_io_prefix + "-415nm", as7341_adafruit.get_average_values()[0])
+						airlift.post_data(my_adafruit_io_prefix + "-445nm", as7341_adafruit.get_average_values()[1])
+						airlift.post_data(my_adafruit_io_prefix + "-480nm", as7341_adafruit.get_average_values()[2])
+						airlift.post_data(my_adafruit_io_prefix + "-515nm", as7341_adafruit.get_average_values()[3])
+						airlift.post_data(my_adafruit_io_prefix + "-555nm", as7341_adafruit.get_average_values()[4])
+						airlift.post_data(my_adafruit_io_prefix + "-590nm", as7341_adafruit.get_average_values()[5])
+						airlift.post_data(my_adafruit_io_prefix + "-630nm", as7341_adafruit.get_average_values()[6])
+						airlift.post_data(my_adafruit_io_prefix + "-680nm", as7341_adafruit.get_average_values()[7])
 					except:
 						warning("couldn't post data for as7341")
 			if tsl2591_is_available:
@@ -396,18 +433,24 @@ def loop():
 		if airlift_is_available:
 			if 0==i%86300:
 				airlift.update_time_from_server()
+		generic.collect_garbage()
+		#generic.show_memory_situation() # 180k allocated
 		time.sleep(delay_between_acquisitions)
 
 if __name__ == "__main__":
 	#supervisor.disable_autoreload()
 	atexit.register(generic.reset)
 	try:
+		#generic.show_memory_situation() # 106k allocated
 		main()
 	except KeyboardInterrupt:
 		info("caught ctrl-c")
 		flush()
 		atexit.unregister(generic.reset)
 		sys.exit(0)
+	except MemoryError:
+		#generic.show_memory_situation()
+		raise
 	except ReloadException:
 		info("reload exception")
 		flush()
