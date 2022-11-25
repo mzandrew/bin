@@ -126,7 +126,6 @@ else:
 
 if should_write_the_files:
 	import storage
-	#storage.disable_usb_drive() # too late to do this after REPL active
 	try:
 		storage.remount("/", False)
 	except:
@@ -172,5 +171,7 @@ for filename in files_list:
 		warning("can't find file " + filename)
 
 info("OTA update successful")
+storage.enable_usb_drive()
+storage.remount("/", readonly=True)
 sys.exit(0)
 

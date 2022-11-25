@@ -29,7 +29,7 @@ def list_file(dirname, filename):
 	fullname = dirname + "/" + filename
 	stats = os.stat(fullname)
 	filesize = stats[6]
-	print('{0:>12} {1:<40}'.format(str(filesize), fullname))
+	info('{0:>12} {1:<40}'.format(str(filesize), fullname))
 
 def list_files(dirname):
 	for filename in os.listdir(dirname):
