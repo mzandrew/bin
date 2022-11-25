@@ -147,24 +147,25 @@ generic.collect_garbage()
 
 files_list = [ "boot.OTAupdate.py" ]
 files_list += [ "airlift.py", "generic.py", "DebugInfoWarningError24.py", "boxcar.py" ]
-files_list += [ "am2320_adafruit.py" "as7341_adafruit.py" "aw9523_adafruit.py" "bh1750_adafruit.py" "ble_adafruit.py" "bme680_adafruit.py" "display_adafruit.py" "ds18b20_adafruit.py" "ds3231_adafruit.py" "gps_adafruit.py" "ina260_adafruit.py" "ltr390_adafruit.py" "max31865_adafruit.py" "microsd_adafruit.py" "neopixel_adafruit.py" "pcf8523_adafruit.py" "pct2075_adafruit.py" "pm25_adafruit.py" "sht31d_adafruit.py" "si5351_adafruit.py" "tsl2591_adafruit.py" "vcnl4040_adafruit.py" ]
+files_list += [ "am2320_adafruit.py", "as7341_adafruit.py", "aw9523_adafruit.py", "bh1750_adafruit.py", "bme680_adafruit.py", "display_adafruit.py", "ds18b20_adafruit.py", "ds3231_adafruit.py", "gps_adafruit.py", "ina260_adafruit.py", "ltr390_adafruit.py", "max31865_adafruit.py", "microsd_adafruit.py", "neopixel_adafruit.py", "pcf8523_adafruit.py", "pct2075_adafruit.py", "pm25_adafruit.py", "sht31d_adafruit.py", "si5351_adafruit.py", "tsl2591_adafruit.py", "vcnl4040_adafruit.py" ]
 #files_list += [ "purple.py", "orange_flicker.py", "console.py" ]
+# "ble_adafruit.py", 
 for filename in files_list:
 	if should_download_the_files:
 		try:
 			file_contents = requests.get(f"https://raw.githubusercontent.com/mzandrew/bin/master/embedded/" + filename).text
 			info(filename + " " + str(len(file_contents)) + " bytes")
+			try:
+				#info(file_contents)
+				if 0<len(file_contents) and filename != "boot.py":
+					if should_write_the_files:
+						with open(filename, "w") as code:
+							code.write(file_contents)
+							code.flush()
+			except:
+				error("couldn't write " + filename)
 		except:
 			error("couldn't download " + filename)
-		try:
-			#info(file_contents)
-			if 0<len(file_contents) and filename != "boot.py":
-				if should_write_the_files:
-					with open(filename, "w") as code:
-						code.write(file_contents)
-						code.flush()
-		except:
-			error("couldn't write " + filename)
 	try:
 		microsd_adafruit.list_file("", filename)
 	except:
