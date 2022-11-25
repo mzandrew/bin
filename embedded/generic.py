@@ -1,5 +1,5 @@
 # written 2021-12-28 by mza
-# last updated 2022-11-17 by mza
+# last updated 2022-11-24 by mza
 
 import sys
 import time
@@ -205,6 +205,18 @@ def show_memory_situation():
 	gc.collect()
 	print("gc.mem_alloc(): " + str(gc.mem_alloc()))
 	print("gc.mem_free(): " + str(gc.mem_free()))
+
+def show_memory_difference():
+	global previous_allocated_memory
+	try:
+		previous_allocated_memory
+	except:
+		previous_allocated_memory = gc.mem_alloc()
+	current_allocated_memory = gc.mem_alloc()
+	difference = current_allocated_memory - previous_allocated_memory
+	print("difference: " + str((difference)))
+	previous_allocated_memory = current_allocated_memory
+	return difference
 
 def collect_garbage():
 	gc.collect()
