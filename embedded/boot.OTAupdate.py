@@ -8,16 +8,30 @@ should_write_the_files = True
 
 # to install:
 # rsync -r adafruit_minimqtt simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy adafruit_io adafruit_requests.mpy /media/mza/CIRCUITPY/lib/
+# rsync -a generic.py airlift.py DebugInfoWarningError24.py /media/mza/CIRCUITPY/
+# cp -a boot.OTAupdate.py /media/mza/CIRCUITPY/boot.py; sync
 
 import sys
+import re
+import storage
+import os
+import board
+import digitalio
 
+print("")
 print("boot.py started")
 
-#if no button pressed:
-#print("boot.py quitting")
-#sys.exit(0)
+OTAjumper = digitalio.DigitalInOut(board.GP17)
+OTAjumper.pull = digitalio.Pull.UP
 
-print("boot.py attempting OTA update...")
+if OTAjumper.value:
+	print("no jumper installed between GP17 and GND")
+	print("not doing OTAupdate")
+	print("boot.py quitting")
+	sys.exit(0)
+else:
+	print("jumper installed between GP17 and GND")
+	print("boot.py attempting OTA update...")
 
 try:
 	import generic
@@ -68,10 +82,6 @@ if should_use_airlift:
 		airlift_is_available = airlift.setup_wifi()
 	else:
 		try:
-			import os
-		except:
-			error("can't import os")
-		try:
 			import ipaddress
 		except:
 			error("can't import ipaddress")
@@ -93,7 +103,6 @@ if should_use_airlift:
 			error("can't import ssl")
 		try:
 			wifi.radio.hostname = my_wifi_name
-			import re
 			match = re.search("^[8]", os.uname().release)
 			if match:
 				wifi.radio.connect(ssid=os.getenv('CIRCUITPY_WIFI_SSID'), password=os.getenv('CIRCUITPY_WIFI_PASSWORD')) # os.getenv is a circuitpython 8 thing (see file .env)
@@ -125,7 +134,6 @@ else:
 #generic.show_memory_difference() # 12k
 
 if should_write_the_files:
-	import storage
 	try:
 		storage.remount("/", False)
 	except:
