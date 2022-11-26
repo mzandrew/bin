@@ -190,6 +190,7 @@ def main():
 #	except:
 #		warning("vcnl4040 not found")
 	global as7341_is_available
+	as7341_is_available = False
 	try:
 		i2c_address = as7341_adafruit.setup(i2c, N)
 		prohibited_addresses.append(i2c_address)
@@ -197,7 +198,6 @@ def main():
 		header_string += ", as7341-415nm, as7341-445nm, as7341-480nm, as7341-515nm, as7341-555nm, as7341-590nm, as7341-630nm, as7341-680nm, as7341-clear, as7341-nir"
 	except:
 		warning("as7341 not found")
-		as7341_is_available = False
 	global tsl2591_is_available
 	tsl2591_is_available = False
 #	try:
@@ -295,6 +295,12 @@ def main():
 		airlift.setup_feed(my_adafruit_io_prefix + "-630nm")
 		time.sleep(1)
 		airlift.setup_feed(my_adafruit_io_prefix + "-680nm")
+		time.sleep(1)
+		airlift.setup_feed(my_adafruit_io_prefix + "-clear")
+		time.sleep(1)
+		airlift.setup_feed(my_adafruit_io_prefix + "-nir")
+		time.sleep(1)
+		airlift.setup_feed(my_adafruit_io_prefix + "-rssi")
 		time.sleep(1)
 	generic.collect_garbage()
 	#generic.show_memory_situation() # 160k allocated
@@ -418,8 +424,12 @@ def loop():
 						airlift.post_data(my_adafruit_io_prefix + "-590nm", as7341_adafruit.get_average_values()[5])
 						airlift.post_data(my_adafruit_io_prefix + "-630nm", as7341_adafruit.get_average_values()[6])
 						airlift.post_data(my_adafruit_io_prefix + "-680nm", as7341_adafruit.get_average_values()[7])
+						airlift.post_data(my_adafruit_io_prefix + "-clear", as7341_adafruit.get_average_values()[8])
+						airlift.post_data(my_adafruit_io_prefix + "-nir", as7341_adafruit.get_average_values()[9])
 					except:
 						warning("couldn't post data for as7341")
+			#airlift.post_data(my_adafruit_io_prefix + "-rssi", airlift.get_rssi())
+			airlift.post_data(my_adafruit_io_prefix + "-rssi", airlift.get_average_values()[0])
 			if tsl2591_is_available:
 				tsl2591_adafruit.show_average_values()
 			if pm25_is_available:
