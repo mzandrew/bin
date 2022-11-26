@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-11-10 by mza
+# last updated 2022-11-25 by mza
 
 import time
 import busio
 import digitalio
 import math
+import boxcar
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
 secrets_already_imported = False
@@ -66,7 +67,9 @@ def scan_networks():
 	networks.sort(key=lambda farquar:farquar[3], reverse=True) # sort by signal strength
 	return networks
 
-def connect_wifi(hostname):
+def connect_wifi(hostname, N=10):
+	global myboxcar
+	myboxcar = boxcar.boxcar(1, N, "wifi")
 	try:
 		import wifi
 	except (KeyboardInterrupt, ReloadException):
@@ -244,6 +247,9 @@ def esp32_connect(number_of_retries_remaining=2):
 	# and https://github.com/adafruit/Adafruit_CircuitPython_ESP32SPI/blob/main/adafruit_esp32spi/adafruit_esp32spi.py
 #spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining=2):
+	N = 10
+	global myboxcar
+	myboxcar = boxcar.boxcar(1, N, "wifi")
 	#from adafruit_esp32spi import PWMOut
 	from adafruit_esp32spi import adafruit_esp32spi
 	global esp
@@ -290,6 +296,21 @@ def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries
 	show_network_status()
 	return False
 
+def get_rssi():
+	rssi = 0
+	if using_builtin_wifi:
+		try:
+			import wifi # needed to call static methods
+			rssi = wifi.radio.ap_info.rssi
+		except:
+			pass
+	else:
+		try:
+			rssi = esp.rssi
+		except:
+			pass
+	return rssi
+
 def show_network_status():
 	try:
 		using_builtin_wifi
@@ -316,11 +337,11 @@ def show_network_status():
 			mac_address = list(wifi.radio.mac_address)
 			info("MAC: " + format_MAC(mac_address))
 			info("My IP address is " + str(wifi.radio.ipv4_address))
-			info("RSSI: " + str(wifi.radio.ap_info.rssi) + " dB") # receiving signal strength indicator
+			info("RSSI: " + str(get_rssi()) + " dB") # receiving signal strength indicator
 		else:
 			info("using external/spi wifi")
 			info("My IP address is " + esp.pretty_ip(esp.ip_address))
-			info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
+			info("RSSI: " + str(get_rssi()) + " dB") # receiving signal strength indicator
 			if esp.status == adafruit_esp32spi.WL_IDLE_STATUS:
 				info("IDLE")
 			elif esp.status == adafruit_esp32spi.WL_NO_SSID_AVAIL:
@@ -753,34 +774,31 @@ def update_time_from_server():
 	return time
 
 def show_signal_strength():
+	rssi = get_values()[0]
 	try:
-		info("RSSI: " + str(esp.rssi) + " dB") # receiving signal strength indicator
+		info("RSSI: " + str(rssi) + " dB") # receiving signal strength indicator
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
-		try:
-			import wifi # needed to call static methods
-			info("RSSI: " + str(wifi.radio.ap_info.rssi) + " dB") # receiving signal strength indicator
-		except:
-			warning("can't get signal strength")
-			pass
+		warning("can't get signal strength")
 
 def get_values():
 	try:
-		values = [ esp.rssi ]
+		values = [ get_rssi() ]
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
-		try:
-			import wifi # needed to call static methods
-			values = [ wifi.radio.ap_info.rssi ]
-		except (KeyboardInterrupt, ReloadException):
-			raise
-		except:
-			values = [ 0. ]
+		values = [ 0. ]
+	myboxcar.accumulate(values)
 	return values
 
 def measure_string():
 	values = get_values()
 	return ", " + str(values[0])
+
+def show_average_values():
+	myboxcar.show_average_values()
+
+def get_average_values():
+	return myboxcar.get_average_values()
 
