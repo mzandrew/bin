@@ -2,7 +2,7 @@
 
 # written 2021-04-21 by mza
 # updated from indoor_temp_hum.py
-# last updated 2022-08-30 by mza
+# last updated 2022-11-25 by mza
 
 # to install on a circuitpython device:
 # rsync -r *.py /media/circuitpython/
@@ -233,10 +233,11 @@ def main():
 	else:
 		sdcard_is_available = False
 		dirname = ""
-	if RTC_is_available:
-		create_new_logfile_with_string_embedded(dirname, "heater", pcf8523_adafruit.get_timestring2())
-	else:
-		create_new_logfile_with_string_embedded(dirname, "heater")
+	if sdcard_is_available:
+		if RTC_is_available:
+			create_new_logfile_with_string_embedded(dirname, "heater", pcf8523_adafruit.get_timestring2())
+		else:
+			create_new_logfile_with_string_embedded(dirname, "heater")
 	print_header()
 	loop()
 	error("pct2075 is no longer available; cannot continue")
