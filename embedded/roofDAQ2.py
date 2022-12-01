@@ -100,28 +100,11 @@ def setup():
 		neopixel_adafruit.set_color(0, 127, 127)
 	if airlift_is_available:
 		header_string += ", rssi-dB"
-		airlift.setup_feed(my_adafruit_io_prefix + "-415nm")
-		time.sleep(1)
-		airlift.setup_feed(my_adafruit_io_prefix + "-445nm")
-		time.sleep(1)
-		airlift.setup_feed(my_adafruit_io_prefix + "-480nm")
-		time.sleep(1)
-		airlift.setup_feed(my_adafruit_io_prefix + "-515nm")
-		time.sleep(1)
-		airlift.setup_feed(my_adafruit_io_prefix + "-555nm")
-		time.sleep(1)
-		airlift.setup_feed(my_adafruit_io_prefix + "-590nm")
-		time.sleep(1)
-		airlift.setup_feed(my_adafruit_io_prefix + "-630nm")
-		time.sleep(1)
-		airlift.setup_feed(my_adafruit_io_prefix + "-680nm")
-		time.sleep(1)
-		airlift.setup_feed(my_adafruit_io_prefix + "-clear")
-		time.sleep(1)
-		airlift.setup_feed(my_adafruit_io_prefix + "-nir")
-		time.sleep(1)
-		airlift.setup_feed(my_adafruit_io_prefix + "-rssi")
-		time.sleep(1)
+		feed_suffixes = [ "415nm", "445nm", "480nm", "515nm", "555nm", "590nm", "630nm", "680nm", "clear", "nir", "rssi" ]
+		feed_names = []
+		for feed_suffix in feed_suffixes:
+			feed_names.append(my_adafruit_io_prefix + "-" + feed_suffix)
+		airlift.setup_feeds(feed_names)
 	if neopixel_is_available:
 		neopixel_adafruit.set_color(127, 127, 127)
 	airlift.show_network_status()

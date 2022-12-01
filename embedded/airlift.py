@@ -30,7 +30,7 @@ SUPERMAXERRORCOUNT = 10
 errorcount = 0
 myfeeds = []
 mydesiredfeeds = []
-delay = 1.0
+DELAY = 1.0
 DESIRED_PRECISION_DEGREES = 7
 DESIRED_PRECISION_METERS = 3
 DEFAULT_VALUE = -40
@@ -234,7 +234,7 @@ def setup_wifi(hostname, number_of_retries_remaining=2):
 			if i<number_of_retries_remaining-1:
 				info("")
 				info("trying wifi connection again...")
-				time.sleep(delay)
+				time.sleep(DELAY)
 	error("can't initialize built-in wifi")
 	info("")
 	#show_network_status()
@@ -283,7 +283,7 @@ def esp32_connect(number_of_retries_remaining=2):
 			if 0==number_of_retries_remaining:
 				return False
 			else:
-				time.sleep(delay)
+				time.sleep(DELAY)
 				continue
 	#info("Connected to", str(esp.ssid, 'utf-8'), "\tRSSI:", esp.rssi)
 	try:
@@ -375,7 +375,7 @@ def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except:
-			time.sleep(delay)
+			time.sleep(DELAY)
 			info("trying wifi connection again...")
 	error("can't initialize airlift wifi")
 	show_network_status()
@@ -500,7 +500,7 @@ def setup_feed(feed_name, number_of_retries_remaining=2):
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except AdafruitIO_RequestError:
-			time.sleep(delay)
+			time.sleep(DELAY)
 			try:
 				myfeed = io.create_new_feed(feed_name)
 				info("created new feed " + feed_name + "...")
@@ -526,11 +526,19 @@ def setup_feed(feed_name, number_of_retries_remaining=2):
 			show_network_status()
 			raise
 		#info(str(myfeed["key"]))
-		time.sleep(delay)
+		time.sleep(DELAY)
 #	except:
 #		myfeed = setup_feed(feed_name, number_of_retries_remaining-1)
 	myfeeds.append([ feed_name , myfeed ])
 	return myfeed
+
+def setup_feeds(list_of_feeds, interstitial_delay=0.1):
+	info("attempting to set up feeds: " + str(list_of_feeds))
+	for feed_name in list_of_feeds:
+		setup_feed(feed_name)
+		time.sleep(interstitial_delay)
+		debug2("successfully set up feed " + feed_name)
+	info("successfully set up feeds: " + str(list_of_feeds))
 
 def setup_feeds_again():
 	global myfeeds
@@ -538,7 +546,7 @@ def setup_feeds_again():
 	info("attempting to set up all feeds again...")
 	for feed_name in mydesiredfeeds:
 		setup_feed(feed_name)
-		debug("successfully set up feed " + feed_name + " again")
+		debug2("successfully set up feed " + feed_name + " again")
 	info("successfully set up all feeds again")
 
 def post_data(feed_name, value, perform_readback_and_verify=False):
@@ -560,7 +568,7 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 				if 0==i:
 					raise
 				else:
-					time.sleep(delay)
+					time.sleep(DELAY)
 		#info("done")
 		if perform_readback_and_verify:
 			received_data = io.receive_data(myfeed["key"])
@@ -672,7 +680,7 @@ def post_geolocated_data(feed_name, location, value, perform_readback_and_verify
 				if 0==i:
 					raise
 				else:
-					time.sleep(delay)
+					time.sleep(DELAY)
 		#perform_readback_and_verify = True
 		if perform_readback_and_verify:
 			received_data = io.receive_data(myfeed["key"])
