@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-11-25 by mza
+# last updated 2022-12-01 by mza
 
 import time
 import busio
@@ -29,10 +29,15 @@ MAXERRORCOUNT = 5
 SUPERMAXERRORCOUNT = 10
 errorcount = 0
 myfeeds = []
+mydesiredfeeds = []
 delay = 1.0
 DESIRED_PRECISION_DEGREES = 7
 DESIRED_PRECISION_METERS = 3
 DEFAULT_VALUE = -40
+mydesiredhostname = "samwise"
+airlift_pins_already_setup = False
+esp_already_setup = False
+myboxcar_already_setup = False
 
 def hex(number, width=1):
 	return "%0*x" % (width, number)
@@ -67,9 +72,44 @@ def scan_networks():
 	networks.sort(key=lambda farquar:farquar[3], reverse=True) # sort by signal strength
 	return networks
 
-def connect_wifi(hostname, N=10):
-	global myboxcar
-	myboxcar = boxcar.boxcar(1, N, "wifi")
+def turn_off_wifi():
+	show_network_status()
+	try:
+		if using_builtin_wifi:
+			import wifi # needed to call static methods
+			wifi.radio.enabled = False
+		else:
+			esp.disconnect()
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except:
+		error("can't turn off/disconnect wifi")
+	global myfeeds
+	myfeeds = []
+	show_network_status()
+
+def turn_on_wifi():
+	show_network_status()
+	try:
+		if using_builtin_wifi:
+			import wifi # needed to call static methods
+			wifi.radio.enabled = True
+			setup_wifi(mydesiredhostname)
+		else:
+			setup_airlift(mydesiredhostname, None, None, None)
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except:
+		error("can't turn on/reconnect wifi")
+	try:
+		setup_feeds_again()
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except:
+		error("can't setup feeds again")
+	show_network_status()
+
+def connect_wifi(hostname):
 	try:
 		import wifi
 	except (KeyboardInterrupt, ReloadException):
@@ -103,7 +143,7 @@ def connect_wifi(hostname, N=10):
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except ImportError:
-		print("can't import adafruit_io")
+		print("can't import adafruit_io (HTTP)")
 		raise
 	global io
 	if 0:
@@ -141,6 +181,7 @@ def connect_wifi(hostname, N=10):
 #		info(str(ap_mac))
 		try:
 			pool = socketpool.SocketPool(wifi.radio)
+			debug("successfully set up pool")
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except Exception as message:
@@ -148,6 +189,7 @@ def connect_wifi(hostname, N=10):
 			raise
 		try:
 			requests = adafruit_requests.Session(pool, ssl.create_default_context())
+			debug("successfully set up requests")
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except Exception as message:
@@ -155,6 +197,7 @@ def connect_wifi(hostname, N=10):
 			raise
 		try:
 			io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], requests)
+			debug("successfully set up aio")
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except Exception as message:
@@ -170,7 +213,15 @@ def connect_wifi(hostname, N=10):
 # for esp32-s2 boards
 # from https://learn.adafruit.com/adafruit-metro-esp32-s2/circuitpython-internet-test
 def setup_wifi(hostname, number_of_retries_remaining=2):
+	global mydesiredhostname
+	global myboxcar
 	global using_builtin_wifi
+	global myboxcar_already_setup
+	mydesiredhostname = hostname 
+	if not myboxcar_already_setup:
+		N = 10
+		myboxcar = boxcar.boxcar(1, N, "wifi")
+		myboxcar_already_setup = True
 	using_builtin_wifi = True
 	for i in range(number_of_retries_remaining):
 		try:
@@ -235,9 +286,33 @@ def esp32_connect(number_of_retries_remaining=2):
 				time.sleep(delay)
 				continue
 	#info("Connected to", str(esp.ssid, 'utf-8'), "\tRSSI:", esp.rssi)
-	socket.set_interface(esp)
-	adafruit_requests.set_socket(socket, esp)
-	io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], adafruit_requests)
+	try:
+		socket.set_interface(esp)
+		debug("successfully set up socket")
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except:
+		error("couln't set up socket")
+		show_network_status()
+		return False
+	try:
+		adafruit_requests.set_socket(socket, esp)
+		debug("successfully set up requests")
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except:
+		error("couln't set up requests")
+		show_network_status()
+		return False
+	try:
+		io = IO_HTTP(secrets["aio_username"], secrets["aio_key"], adafruit_requests)
+		debug("successfully set up aio (HTTP)")
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except:
+		error("couln't set up aio")
+		show_network_status()
+		return False
 	show_network_status()
 	return True
 
@@ -247,32 +322,42 @@ def esp32_connect(number_of_retries_remaining=2):
 	# and https://github.com/adafruit/Adafruit_CircuitPython_ESP32SPI/blob/main/adafruit_esp32spi/adafruit_esp32spi.py
 #spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining=2):
-	N = 10
+	global mydesiredhostname
 	global myboxcar
-	myboxcar = boxcar.boxcar(1, N, "wifi")
-	#from adafruit_esp32spi import PWMOut
-	from adafruit_esp32spi import adafruit_esp32spi
 	global esp
 	global using_builtin_wifi
+	global airlift_pins_already_setup
+	global esp_already_setup
+	global myboxcar_already_setup
+	mydesiredhostname = hostname
+	if not myboxcar_already_setup:
+		N = 10
+		myboxcar = boxcar.boxcar(1, N, "wifi")
+		myboxcar_already_setup = True
+	#from adafruit_esp32spi import PWMOut
+	from adafruit_esp32spi import adafruit_esp32spi
 	using_builtin_wifi = False
-	try:
-		esp32_cs = digitalio.DigitalInOut(cs_pin)
-		esp32_ready = digitalio.DigitalInOut(ready_pin)
-		esp32_reset = digitalio.DigitalInOut(reset_pin)
-	except (KeyboardInterrupt, ReloadException):
-		raise
-	except:
-		error("can't set up airlift control pins")
-		show_network_status()
-		return False
-	try:
-		esp = adafruit_esp32spi.ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
-	except (KeyboardInterrupt, ReloadException):
-		raise
-	except:
-		error("can't set up esp")
-		show_network_status()
-		return False
+	if not airlift_pins_already_setup:
+		try:
+			esp32_cs = digitalio.DigitalInOut(cs_pin)
+			esp32_ready = digitalio.DigitalInOut(ready_pin)
+			esp32_reset = digitalio.DigitalInOut(reset_pin)
+			airlift_pins_already_setup = True
+		except (KeyboardInterrupt, ReloadException):
+			raise
+		except:
+			error("can't set up airlift control pins")
+			show_network_status()
+			return False
+	if not esp_already_setup:
+		try:
+			esp = adafruit_esp32spi.ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
+		except (KeyboardInterrupt, ReloadException):
+			raise
+		except:
+			error("can't set up esp")
+			show_network_status()
+			return False
 	if 0:
 		try:
 			set_hostname(esp, hostname)
@@ -331,31 +416,32 @@ def show_network_status():
 #		pass
 	#info("using builtin wifi = " + str(using_builtin_wifi))
 	try:
+		string = ""
 		if using_builtin_wifi:
 			import wifi # needed to call static methods
-			info("using internal wifi")
-			mac_address = list(wifi.radio.mac_address)
-			info("MAC: " + format_MAC(mac_address))
-			info("My IP address is " + str(wifi.radio.ipv4_address))
-			info("RSSI: " + str(get_rssi()) + " dB") # receiving signal strength indicator
+			string += "using internal wifi"
+			string += "; MAC: " + format_MAC(list(wifi.radio.mac_address))
+			string += "; IP: " + str(wifi.radio.ipv4_address)
+			string += "; RSSI: " + str(get_rssi()) + " dB" # receiving signal strength indicator
 		else:
-			info("using external/spi wifi")
-			info("My IP address is " + esp.pretty_ip(esp.ip_address))
-			info("RSSI: " + str(get_rssi()) + " dB") # receiving signal strength indicator
+			string += "using external/spi wifi"
+			string += "; IP: " + esp.pretty_ip(esp.ip_address)
+			string += "; RSSI: " + str(get_rssi()) + " dB" # receiving signal strength indicator
 			if esp.status == adafruit_esp32spi.WL_IDLE_STATUS:
-				info("IDLE")
+				string += "; IDLE"
 			elif esp.status == adafruit_esp32spi.WL_NO_SSID_AVAIL:
-				info("NO_SSID_AVAILABLE")
+				string += "; NO_SSID_AVAILABLE"
 			elif esp.status == adafruit_esp32spi.WL_CONNECTED:
-				info("CONNECTED")
+				string += "; CONNECTED"
 			elif esp.status == adafruit_esp32spi.WL_CONNECT_FAILED:
-				info("CONNECT_FAILED")
+				string += "; CONNECT_FAILED"
 			elif esp.status == adafruit_esp32spi.WL_CONNECTION_LOST:
-				info("CONNECTION_LOST")
+				string += "; CONNECTION_LOST"
 			elif esp.status == adafruit_esp32spi.WL_DISCONNECTED:
-				info("DISCONNECTED")
+				string += "; DISCONNECTED"
 			else:
-				info("UNKNOWN STATE")
+				string += "; UNKNOWN STATE"
+		info(string)
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
@@ -378,25 +464,43 @@ def setup_io():
 		warning("can't connect to adafruit io")
 
 def setup_feed(feed_name, number_of_retries_remaining=2):
-	from adafruit_io.adafruit_io import AdafruitIO_RequestError
 	global myfeeds
-	for feed in myfeeds:
+	for feed in myfeeds: # list of lists, where each entry is: [ feed_name, feed ]
 		if feed_name==feed[0]:
 			return feed[1]
+	debug2("initial len(mydesiredfeeds): " + str(len(mydesiredfeeds)))
+	match = False
+	for already_added_feed_name in mydesiredfeeds:
+		if feed_name == already_added_feed_name:
+			match = True
+	if not match:
+		debug2("adding " + feed_name + " to list of desired feeds")
+		mydesiredfeeds.append(feed_name)
+	debug2("final len(mydesiredfeeds): " + str(len(mydesiredfeeds)))
 	if 0==number_of_retries_remaining:
 		show_network_status()
 		#esp.reset()
 		return False
+	from adafruit_io.adafruit_io import AdafruitIO_RequestError, AdafruitIO_MQTTError, AdafruitIO_ThrottleError
 	myfeed = False
+	try:
+		io
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except:
+		error("can't talk to aio")
+		raise
 	for i in range(number_of_retries_remaining):
 		info("attempting to connect to feed " + feed_name + "...")
 		try:
+			# could try create_and_get_feed() here instead:
 			myfeed = io.get_feed(feed_name)
 			info("connected to feed " + feed_name)
 			break
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except AdafruitIO_RequestError:
+			time.sleep(delay)
 			try:
 				myfeed = io.create_new_feed(feed_name)
 				info("created new feed " + feed_name + "...")
@@ -405,8 +509,18 @@ def setup_feed(feed_name, number_of_retries_remaining=2):
 				raise
 			except:
 				error("can't create feed " + feed_name)
+		except AdafruitIO_MQTTError:
+			error("aio MQTT error")
+		except AdafruitIO_ThrottleError:
+			error("aio throttle error")
 		except ValueError:
 			error("invalid feed name: " + feed_name)
+		except RuntimeError as e:
+			error(e)
+			raise
+		except Exception as message:
+			error(message)
+			raise
 		except:
 			error("some other problem")
 			show_network_status()
@@ -415,14 +529,17 @@ def setup_feed(feed_name, number_of_retries_remaining=2):
 		time.sleep(delay)
 #	except:
 #		myfeed = setup_feed(feed_name, number_of_retries_remaining-1)
-	try:
-		myfeeds.append([ feed_name , myfeed ])
-	except (KeyboardInterrupt, ReloadException):
-		raise
-	except:
-		warning("couldn't create/connect feed " + feed_name)
-		show_network_status()
+	myfeeds.append([ feed_name , myfeed ])
 	return myfeed
+
+def setup_feeds_again():
+	global myfeeds
+	myfeeds = []
+	info("attempting to set up all feeds again...")
+	for feed_name in mydesiredfeeds:
+		setup_feed(feed_name)
+		debug("successfully set up feed " + feed_name + " again")
+	info("successfully set up all feeds again")
 
 def post_data(feed_name, value, perform_readback_and_verify=False):
 	global errorcount
