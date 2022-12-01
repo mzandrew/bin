@@ -1,6 +1,6 @@
 # written 2022-10-29 by mza
 # based on neopixel_clockface.py
-# last updated 2022-11-25 by mza
+# last updated 2022-12-01 by mza
 
 # to install:
 # cd lib
@@ -16,20 +16,35 @@ import busio
 import neopixel_adafruit
 import as7341_adafruit
 import airlift
+import generic
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+
+# drained a 400 mAh battery in about 4 hours, so draws ~100 mA (at night)
+# drained a 4400 mAh battery in 64 hours, so draws ~68.75 mA (0.6W solar panel connected)
+# assuming fully sunny days, the solar panel got ~12 hours @ 110 mA, so current draw is somewhere around 90 mA
+# ammeter says 30-80 mA while collecting data, and then 50-80 mA while posting data
+# if we do the should_power_down_wifi_when_not_needed mode, the current draw is 80-90 mA while wifiing but 20-30 mA otherwise
 
 my_wifi_name = "roof2"
 my_adafruit_io_prefix = "roof2"
-N = 39 # average this many sensor readings before acting on it
+delay_between_acquisitions = 1.5
+N = 32 # average this many sensor readings before acting on it
 should_use_RTC = False
+should_power_down_wifi_when_not_needed = False
+#NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET = 3600
+DESIRED_NUMBER_OF_SECONDS_BETWEEN_POSTING = 60
+NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET = 5 * DESIRED_NUMBER_OF_SECONDS_BETWEEN_POSTING
 
 eta = 1.0/512.0
 
 def setup():
+	generic.start_uptime()
 	global neopixel_is_available
 	neopixel_is_available = False
 	try:
 		neopixel_is_available = neopixel_adafruit.setup_neopixel()
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		warning("error setting up neopixel")
 	if neopixel_is_available:
@@ -54,6 +69,8 @@ def setup():
 		i2c_address = as7341_adafruit.setup(i2c, N)
 		as7341_is_available = True
 		header_string += ", as7341-415nm, as7341-445nm, as7341-480nm, as7341-515nm, as7341-555nm, as7341-590nm, as7341-630nm, as7341-680nm, as7341-clear, as7341-nir"
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		warning("as7341 not found")
 	if neopixel_is_available:
@@ -107,22 +124,34 @@ def setup():
 		time.sleep(1)
 	if neopixel_is_available:
 		neopixel_adafruit.set_color(127, 127, 127)
+	airlift.show_network_status()
+	global last_good_post_time
+	last_good_post_time = generic.get_uptime()
 	info(header_string)
 
 def loop():
-	if neopixel_is_available:
-		neopixel_adafruit.set_color(255, 0, 0)
+	global delay_between_acquisitions
+	global last_good_post_time
+	global airlift_is_available
 	global n
 	string = ""
+	if neopixel_is_available:
+		neopixel_adafruit.set_color(255, 0, 0)
 	if as7341_is_available:
 		string += as7341_adafruit.measure_string()
 		as7341_adafruit.get_values()
-	string += airlift.measure_string()
+	if airlift_is_available:
+		string += airlift.measure_string()
 	info(string)
 	n += 1
 	if 0==n%N:
 		if neopixel_is_available:
 			neopixel_adafruit.set_color(0, 255, 0)
+		delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, DESIRED_NUMBER_OF_SECONDS_BETWEEN_POSTING)
+		if should_power_down_wifi_when_not_needed and not airlift_is_available:
+			airlift_is_available = True
+			airlift.turn_on_wifi()
+			airlift.get_values()
 		if as7341_is_available:
 			as7341_adafruit.show_average_values()
 			if airlift_is_available:
@@ -137,19 +166,38 @@ def loop():
 					airlift.post_data(my_adafruit_io_prefix + "-680nm", as7341_adafruit.get_average_values()[7])
 					airlift.post_data(my_adafruit_io_prefix + "-clear", as7341_adafruit.get_average_values()[8])
 					airlift.post_data(my_adafruit_io_prefix + "-nir", as7341_adafruit.get_average_values()[9])
+					last_good_post_time = generic.get_uptime()
+				except (KeyboardInterrupt, ReloadException):
+					raise
 				except:
 					warning("couldn't post data for as7341")
-			#airlift.post_data(my_adafruit_io_prefix + "-rssi", airlift.get_rssi())
 			airlift.show_average_values()
-			airlift.post_data(my_adafruit_io_prefix + "-rssi", airlift.get_average_values()[0])
+			try:
+				airlift.post_data(my_adafruit_io_prefix + "-rssi", airlift.get_average_values()[0])
+				#last_good_post_time = generic.get_uptime()
+			except (KeyboardInterrupt, ReloadException):
+				raise
+			except:
+				warning("couldn't post data for rssi")
+			#debug("last good post time: " + str(last_good_post_time) + " s")
+			current_time = generic.get_uptime()
+			time_since_last_good_post = current_time - last_good_post_time
+			info("time since last good post: " + str(time_since_last_good_post) + " s")
+			if NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET < time_since_last_good_post:
+				error("too long since a post operation succeeded")
+				generic.reset()
+		if should_power_down_wifi_when_not_needed:
+			airlift_is_available = False
+			airlift.get_values()
+			airlift.turn_off_wifi()
 	if neopixel_is_available:
 		neopixel_adafruit.set_color(0, 0, 255)
 	#parse_RTC()
-	time.sleep(1)
+	time.sleep(delay_between_acquisitions)
 
 if __name__ == "__main__":
+	set_verbosity(4)
 	setup()
-	info("")
 	n = 0
 	while True:
 		loop()
