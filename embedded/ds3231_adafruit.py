@@ -19,6 +19,8 @@ def setup(i2c):
 			info("%04d-%02d-%02d" % (t.tm_year, t.tm_mon, t.tm_mday))
 		#return rtc.i2c_device.device_address
 		return 0x68
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		warning("unable to set up RTC")
 		raise

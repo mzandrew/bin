@@ -19,6 +19,8 @@ def setup_sdcard_for_logging_data(spi, cs_pin, dirname):
 		storage.mount(vfs, dirname) # this does NOT need an empty dir to mount on
 		#with open("/logs/test.txt", "w") as f:
 		#	f.write("Hello, World!\r\n")
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		warning("unable to find/mount sdcard")
 		return False

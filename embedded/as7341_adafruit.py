@@ -27,6 +27,8 @@ def setup(i2c, N):
 def test_if_present():
 	try:
 		as7341.channel_415nm
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		return False
 	return True
@@ -38,6 +40,8 @@ def bar_graph(read_value):
 def get_values():
 	try:
 		values = [ as7341.channel_415nm, as7341.channel_445nm, as7341.channel_480nm, as7341.channel_515nm, as7341.channel_555nm, as7341.channel_590nm, as7341.channel_630nm, as7341.channel_680nm, as7341.channel_clear, as7341.channel_nir ]
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		values = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  ]
 	myboxcar.accumulate(values)
