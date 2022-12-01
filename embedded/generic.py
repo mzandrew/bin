@@ -1,5 +1,5 @@
 # written 2021-12-28 by mza
-# last updated 2022-11-24 by mza
+# last updated 2022-12-01 by mza
 
 import sys
 import time
@@ -20,22 +20,38 @@ def get_uptime():
 	except:
 		start_uptime()
 	previous_time_monotonic = time.monotonic()
-	return previous_time_monotonic - initial_time_monotonic
+	diff = previous_time_monotonic - initial_time_monotonic
+	debug2("previous_time_monotonic: " + str(previous_time_monotonic) + " s")
+	debug2("diff: " + str(diff) + " s")
+	return diff
 
 def show_uptime():
 	uptime = get_uptime()
 	info("uptime: " + str(int(uptime + 0.5)) + " s")
 	return uptime
 
-def get_loop_time():
-	global previous_time_monotonic
+def start_loop_time():
+	global previous_loop_time_monotonic
+	#previous_loop_time_monotonic = time.monotonic()
 	try:
 		previous_time_monotonic
 	except:
-		get_uptime()
+		start_uptime()
+	previous_loop_time_monotonic = previous_time_monotonic
+	debug2("previous_loop_time_monotonic: " + str(previous_loop_time_monotonic) + " s")
+
+def get_loop_time():
+	global previous_loop_time_monotonic
+	try:
+		previous_loop_time_monotonic
+	except:
+		start_loop_time()
 	new = time.monotonic()
-	diff = new - previous_time_monotonic
-	previous_time_monotonic = new
+	diff = new - previous_loop_time_monotonic
+	previous_loop_time_monotonic = new
+	debug2("new: " + str(new) + " s")
+	debug2("diff: " + str(diff) + " s")
+	debug2("previous_loop_time_monotonic: " + str(previous_loop_time_monotonic) + " s")
 	return diff
 
 def show_loop_time():
