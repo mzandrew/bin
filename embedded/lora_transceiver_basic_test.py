@@ -1,5 +1,7 @@
+# written 2022-07 by mza
 # basic bits taken from adafruit's rfm9x_simpletest.py by Tony DiCola and rfm9x_node1_ack.py by Jerry Needell
-# last updated 2022-10-29 by mza
+# more help from https://learn.adafruit.com/multi-device-lora-temperature-network/using-with-adafruitio
+# last updated 2022-11-26 by mza
 
 # rsync -a *.py /media/mza/LORASEND/; rsync -a *.py /media/mza/LORARECEIVE/
 # cd lib
@@ -11,15 +13,24 @@ BAUD_RATE = 4*57600
 TIMEOUT = 0.5
 PREFIX = "SCOOPY"
 SUFFIX = "BOOPS"
-N = 32
+N = 64
 USE_ACKNOWLEDGE = False
-RADIO_FREQ_MHZ = 915.0 # Must match your module!
-#RADIO_FREQ_MHZ = 868.0 # Must match your module!
-#TX_POWER_DBM = 23 # default 13; maximum 23
-TX_POWER_DBM = 20 # default 13; maximum 23
-#TX_POWER_DBM = 13 # default 13; maximum 23
+RADIO_FREQ_MHZ = 905.0 # 868-915 MHz
+TX_POWER_DBM = 5 # minimum 5; default 13; maximum 23
 
-# failure rate for 4*57600, timeout=0.5 TX_POWER=20 is 2844/14262
+# failure rate for 915 MHz, 4*57600, timeout=0.5 TX_POWER=20 is 2844/14262
+
+# you can put uf2+circuitpython on a radiofruit feather m0 rfm95, but then there's only 45k free for code and libraries:
+# https://learn.adafruit.com/installing-circuitpython-on-samd21-boards/installing-the-uf2-bootloader
+# https://github.com/adafruit/uf2-samdx1/releases
+# https://circuitpython.org/board/feather_m0_rfm9x/
+# https://learn.adafruit.com/adafruit-feather-m0-radio-with-lora-radio-module/circuitpython-for-rfm9x-lora
+# https://learn.adafruit.com/welcome-to-circuitpython/non-uf2-installation
+# installed bossa from package manager:  device is not supported
+# installed bossa from source (need wxgtk3.0-gtk3-dev):  device not supported
+# it has to be in bootloader mode
+# use offset=0x2000
+# but there's no more space free on the drive, so it's flipping useless
 
 # RX_POWER
 # [-49,-48] dBm when the tx and rx are in the same spot
@@ -29,7 +40,6 @@ TX_POWER_DBM = 20 # default 13; maximum 23
 # [-113,-99] dBm when the tx is in Jen's front yard
 
 import time
-import re
 import board
 import busio
 import digitalio
@@ -73,14 +83,20 @@ def setup():
 		should_use_bme680 = False
 		should_use_as7341 = False
 		should_use_RTC = False
-		should_use_airlift = False
+		should_use_airlift = False # for uplink
 		use_built_in_wifi = True
 	elif "LORASEND"==label:
 		should_use_bme680 = True
 		should_use_as7341 = True
 		should_use_RTC = True
 		should_use_airlift = False
-		use_built_in_wifi = True
+		use_built_in_wifi = False
+	elif "LORASEND2"==label: # feather_m0_rfm9x
+		should_use_bme680 = False
+		should_use_as7341 = False
+		should_use_RTC = False
+		should_use_airlift = False
+		use_built_in_wifi = False
 	else:
 		warning("board filesystem has no label")
 	global LED
@@ -218,6 +234,7 @@ def decode_a_message(packet):
 	except:
 		rssi = 0
 	#info("Received signal strength: {0} dBm".format(rssi))
+	import re
 	try:
 		packet_text = str(packet, "ascii")
 		match = re.search("^" + PREFIX + "\[([0-9]+)\](.*)" + SUFFIX + "$", packet_text)
