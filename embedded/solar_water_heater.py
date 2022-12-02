@@ -426,10 +426,18 @@ def loop():
 						airlift.post_data(my_adafruit_io_prefix + "-680nm", as7341_adafruit.get_average_values()[7])
 						airlift.post_data(my_adafruit_io_prefix + "-clear", as7341_adafruit.get_average_values()[8])
 						airlift.post_data(my_adafruit_io_prefix + "-nir", as7341_adafruit.get_average_values()[9])
+					except (KeyboardInterrupt, ReloadException):
+						raise
 					except:
 						warning("couldn't post data for as7341")
-			#airlift.post_data(my_adafruit_io_prefix + "-rssi", airlift.get_rssi())
-			airlift.post_data(my_adafruit_io_prefix + "-rssi", airlift.get_average_values()[0])
+			if airlift_is_available:
+				try:
+					#airlift.post_data(my_adafruit_io_prefix + "-rssi", airlift.get_rssi())
+					airlift.post_data(my_adafruit_io_prefix + "-rssi", airlift.get_average_values()[0])
+				except (KeyboardInterrupt, ReloadException):
+					raise
+				except:
+					warning("couldn't post data for rssi")
 			if tsl2591_is_available:
 				tsl2591_adafruit.show_average_values()
 			if pm25_is_available:
