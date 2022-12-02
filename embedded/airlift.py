@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-12-01 by mza
+# last updated 2022-12-02 by mza
 
 import time
 import busio
@@ -82,8 +82,9 @@ def turn_off_wifi():
 			esp.disconnect()
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
 		error("can't turn off/disconnect wifi")
+		error(str(error_message))
 	global myfeeds
 	myfeeds = []
 	show_network_status()
@@ -99,14 +100,16 @@ def turn_on_wifi():
 			setup_airlift(mydesiredhostname, None, None, None)
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
 		error("can't turn on/reconnect wifi")
+		error(str(error_message))
 	try:
 		setup_feeds_again()
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
 		error("can't setup feeds again")
+		error(str(error_message))
 	show_network_status()
 
 def connect_wifi(hostname):
@@ -155,7 +158,7 @@ def connect_wifi(hostname):
 				time.sleep(0.25)
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
+		except Exception as error_message:
 			pass
 	import_secrets_if_necessary()
 	try:
@@ -164,8 +167,9 @@ def connect_wifi(hostname):
 			wifi.radio.hostname = hostname
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
+		except Exception as error_message:
 			warning("couldn't set hostname")
+			error(str(error_message))
 		#wifi.radio.mac_address = bytes((0x7E, 0xDF, 0xA1, 0xFF, 0xFF, 0xFF))
 		#networks = scan_networks()
 		#show_networks(networks)
@@ -206,8 +210,9 @@ def connect_wifi(hostname):
 		return True
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
 		#info("could not connect to AP")
+		error(str(error_message))
 		raise
 
 # for esp32-s2 boards
@@ -230,7 +235,8 @@ def setup_wifi(hostname, number_of_retries_remaining=2):
 				return True
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
+		except Exception as error_message:
+			error(str(error_message))
 			if i<number_of_retries_remaining-1:
 				info("")
 				info("trying wifi connection again...")
@@ -267,7 +273,8 @@ def esp32_connect(number_of_retries_remaining=2):
 			info("disconnected")
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
+		except Exception as error_message:
+			error(str(error_message))
 			warning("can't disconnect")
 		show_network_status()
 	import_secrets_if_necessary()
@@ -291,7 +298,8 @@ def esp32_connect(number_of_retries_remaining=2):
 		debug("successfully set up socket")
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		error("couln't set up socket")
 		show_network_status()
 		return False
@@ -300,7 +308,8 @@ def esp32_connect(number_of_retries_remaining=2):
 		debug("successfully set up requests")
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		error("couln't set up requests")
 		show_network_status()
 		return False
@@ -309,7 +318,8 @@ def esp32_connect(number_of_retries_remaining=2):
 		debug("successfully set up aio (HTTP)")
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		error("couln't set up aio")
 		show_network_status()
 		return False
@@ -345,7 +355,8 @@ def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries
 			airlift_pins_already_setup = True
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
+		except Exception as error_message:
+			error(str(error_message))
 			error("can't set up airlift control pins")
 			show_network_status()
 			return False
@@ -354,7 +365,8 @@ def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries
 			esp = adafruit_esp32spi.ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
+		except Exception as error_message:
+			error(str(error_message))
 			error("can't set up esp")
 			show_network_status()
 			return False
@@ -365,7 +377,8 @@ def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries
 			#wifi.radio.hostname = hostname
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
+		except Exception as error_message:
+			error(str(error_message))
 			warning("can't set hostname")
 	for i in range(number_of_retries_remaining):
 		try:
@@ -374,7 +387,8 @@ def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries
 				return True
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
+		except Exception as error_message:
+			error(str(error_message))
 			time.sleep(DELAY)
 			info("trying wifi connection again...")
 	error("can't initialize airlift wifi")
@@ -387,12 +401,14 @@ def get_rssi():
 		try:
 			import wifi # needed to call static methods
 			rssi = wifi.radio.ap_info.rssi
-		except:
+		except Exception as error_message:
+			error(str(error_message))
 			pass
 	else:
 		try:
 			rssi = esp.rssi
-		except:
+		except Exception as error_message:
+			error(str(error_message))
 			pass
 	return rssi
 
@@ -401,18 +417,19 @@ def show_network_status():
 		using_builtin_wifi
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		error("wifi is not setup yet (builtin or esp32spi)")
 		return
 #	try:
 #		esp
 #		using_builtin_wifi = False
-#	except:
+#	except Exception as error_message:
 #		pass
 #	try:
 #		wifi
 #		using_builtin_wifi = True
-#	except:
+#	except Exception as error_message:
 #		pass
 	#info("using builtin wifi = " + str(using_builtin_wifi))
 	try:
@@ -444,7 +461,8 @@ def show_network_status():
 		info(string)
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		pass
 
 # adafruit io blinka:
@@ -460,7 +478,8 @@ def setup_io():
 		io = Client(secrets["aio_username"], secrets["aio_key"])
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		warning("can't connect to adafruit io")
 
 def setup_feed(feed_name, number_of_retries_remaining=2):
@@ -477,58 +496,58 @@ def setup_feed(feed_name, number_of_retries_remaining=2):
 		debug2("adding " + feed_name + " to list of desired feeds")
 		mydesiredfeeds.append(feed_name)
 	debug2("final len(mydesiredfeeds): " + str(len(mydesiredfeeds)))
-	if 0==number_of_retries_remaining:
-		show_network_status()
-		#esp.reset()
-		return False
 	from adafruit_io.adafruit_io import AdafruitIO_RequestError, AdafruitIO_MQTTError, AdafruitIO_ThrottleError
-	myfeed = False
 	try:
 		io
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		error("can't talk to aio")
 		raise
+	myfeed = False
 	for i in range(number_of_retries_remaining):
 		info("attempting to connect to feed " + feed_name + "...")
 		try:
-			# could try create_and_get_feed() here instead:
 			myfeed = io.get_feed(feed_name)
+			#myfeed = io.create_and_get_feed(feed_name) # only creates if it isn't already there
 			info("connected to feed " + feed_name)
 			break
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except AdafruitIO_RequestError:
+		except AdafruitIO_RequestError as error_message:
+			#error(str(error_message))
 			time.sleep(DELAY)
 			try:
 				myfeed = io.create_new_feed(feed_name)
-				info("created new feed " + feed_name + "...")
+				info("created new feed " + feed_name)
 				break
 			except (KeyboardInterrupt, ReloadException):
 				raise
-			except:
+			except AdafruitIO_RequestError as error_message:
+				error(str(error_message))
+			except Exception as error_message:
 				error("can't create feed " + feed_name)
-		except AdafruitIO_MQTTError:
+				error(str(error_message))
+		except AdafruitIO_MQTTError as error_message:
 			error("aio MQTT error")
-		except AdafruitIO_ThrottleError:
+			error(str(error_message))
+		except AdafruitIO_ThrottleError as error_message:
 			error("aio throttle error")
-		except ValueError:
+			error(str(error_message))
+		except ValueError as error_message:
 			error("invalid feed name: " + feed_name)
-		except RuntimeError as e:
-			error(e)
+			error(str(error_message))
+		except RuntimeError as error_message:
+			error(str(error_message))
 			raise
-		except Exception as message:
-			error(message)
-			raise
-		except:
+		except Exception as error_message:
 			error("some other problem")
+			error(str(error_message))
 			show_network_status()
 			raise
 		#info(str(myfeed["key"]))
 		time.sleep(DELAY)
-#	except:
-#		myfeed = setup_feed(feed_name, number_of_retries_remaining-1)
 	myfeeds.append([ feed_name , myfeed ])
 	return myfeed
 
@@ -551,10 +570,12 @@ def setup_feeds_again():
 
 def post_data(feed_name, value, perform_readback_and_verify=False):
 	global errorcount
+	#debug("attempting to connect to feed " + feed_name + "...")
 	myfeed = setup_feed(feed_name)
 	if not myfeed:
 		warning("feed " + feed_name + " not connected")
 		return False
+	#debug("attempting to post value " + str(value))
 	try:
 		value = float(value)
 		info("publishing " + str(value) + " to feed " + feed_name)
@@ -564,7 +585,8 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 				break
 			except (KeyboardInterrupt, ReloadException):
 				raise
-			except:
+			except Exception as error_message:
+				error(str(error_message))
 				if 0==i:
 					raise
 				else:
@@ -582,7 +604,8 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 			errorcount = 0
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		errorcount += 1
 		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")
 		show_network_status()
@@ -595,7 +618,7 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 #			else:
 #				if esp32_connect():
 #					errorcount = 0
-#		except:
+#		except Exception as error_message:
 #			pass
 	check_error_count_and_reboot_if_too_high()
 
@@ -676,7 +699,8 @@ def post_geolocated_data(feed_name, location, value, perform_readback_and_verify
 				break
 			except (KeyboardInterrupt, ReloadException):
 				raise
-			except:
+			except Exception as error_message:
+				error(str(error_message))
 				if 0==i:
 					raise
 				else:
@@ -695,7 +719,8 @@ def post_geolocated_data(feed_name, location, value, perform_readback_and_verify
 			errorcount = 0
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		errorcount += 1
 		error("couldn't publish data (" + str(errorcount) + "/" + str(MAXERRORCOUNT) + ")")
 	check_error_count_and_reboot_if_too_high()
@@ -711,7 +736,8 @@ def get_most_recent_data(feed):
 		return value
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		warning("couldn't get the most recent datapoint for feed " + feed)
 		errorcount += 1
 	check_error_count_and_reboot_if_too_high()
@@ -726,7 +752,8 @@ def add_most_recent_data_to_end_of_array(values, feed):
 		errorcount = 0
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		warning("couldn't get the most recent datapoint for feed " + feed)
 		errorcount += 1
 		values.append(DEFAULT_VALUE)
@@ -739,7 +766,7 @@ def add_most_recent_data_to_end_of_array(values, feed):
 #def get_previous():
 #	try:
 #		value = io.receive_previous(myfeed["key"]) # the circuitpython library can't do this
-#	except:
+#	except Exception as error_message:
 #		raise
 #	return value
 
@@ -753,7 +780,8 @@ def get_some_data(feed_key, start_time, end_time, limit=1):
 		return adafruit_io._get(path)
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		raise
 
 # url -H "X-AIO-Key: {io_key}" "https://io.adafruit.com/api/v2/{username}/feeds/{feed_key}/data?start_time=2019-05-04T00:00Z&end_time=2019-05-05T00:00Z"
@@ -784,7 +812,8 @@ def get_all_data(feed, count_desired=None):
 		return values
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		warning("couldn't fetch feed data from server")
 		errorcount += 1
 		raise
@@ -831,7 +860,8 @@ def get_all_data_with_datestamps(feed, count_desired=None):
 		return values
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		warning("couldn't fetch feed data from server")
 		errorcount += 1
 		raise
@@ -850,7 +880,8 @@ def old_post_data(data):
 		response.close()
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		error("couldn't perform POST operation")
 
 def get_time_string_from_server():
@@ -863,7 +894,8 @@ def get_time_string_from_server():
 		errorcount = 0
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		warning("couldn't get time from server")
 		errorcount += 1
 	check_error_count_and_reboot_if_too_high()
@@ -879,20 +911,22 @@ def update_time_from_server():
 		errorcount = 0
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		warning("couldn't get time from server")
 	try:
 		import pcf8523_adafruit # to set the RTC
 		pcf8523_adafruit.set_from_timestruct(time)
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
 		try:
 			import ds3231_adafruit # to set the RTC
 			ds3231_adafruit.set_from_timestruct(time)
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
+		except Exception as error_message:
+			error(str(error_message))
 			warning("couldn't set RTC")
 			errorcount += 1
 	check_error_count_and_reboot_if_too_high()
@@ -904,7 +938,8 @@ def show_signal_strength():
 		info("RSSI: " + str(rssi) + " dB") # receiving signal strength indicator
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		warning("can't get signal strength")
 
 def get_values():
@@ -912,7 +947,8 @@ def get_values():
 		values = [ get_rssi() ]
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
+		error(str(error_message))
 		values = [ 0. ]
 	myboxcar.accumulate(values)
 	return values
