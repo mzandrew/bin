@@ -4,7 +4,7 @@
 
 # to install:
 # cd lib
-# rsync -r adafruit_as7341.mpy neopixel.mpy adafruit_minimqtt simpleio.mpy adafruit_esp32spi adafruit_register adafruit_io adafruit_requests.mpy adafruit_bus_device /media/mza/CIRCUITPY/lib/
+# rsync -r adafruit_lc709203f.mpy adafruit_as7341.mpy neopixel.mpy adafruit_minimqtt simpleio.mpy adafruit_esp32spi adafruit_register adafruit_io adafruit_requests.mpy adafruit_bus_device /media/mza/CIRCUITPY/lib/
 # cd ..
 # rsync -av *.py /media/mza/CIRCUITPY/
 # cp -a roofDAQ2.py /media/mza/CIRCUITPY/code.py; sync
@@ -15,6 +15,7 @@ import board
 import busio
 import neopixel_adafruit
 import as7341_adafruit
+import lc709203f_adafruit
 import airlift
 import generic
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
@@ -34,6 +35,7 @@ should_power_down_wifi_when_not_needed = False
 #NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET = 3600
 DESIRED_NUMBER_OF_SECONDS_BETWEEN_POSTING = 60
 NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET = 5 * DESIRED_NUMBER_OF_SECONDS_BETWEEN_POSTING
+should_use_fuel_gauge = True
 
 eta = 1.0/512.0
 
@@ -89,6 +91,8 @@ def setup():
 	if RTC_is_available:
 		string = ds3231_adafruit.get_timestring2()
 		info(string)
+	global fuel_gauge_is_available
+	fuel_gauge_is_available = False
 	if neopixel_is_available:
 		neopixel_adafruit.set_color(255, 0, 255)
 	global airlift_is_available
@@ -100,7 +104,12 @@ def setup():
 		neopixel_adafruit.set_color(0, 127, 127)
 	if airlift_is_available:
 		header_string += ", rssi-dB"
-		feed_suffixes = [ "415nm", "445nm", "480nm", "515nm", "555nm", "590nm", "630nm", "680nm", "clear", "nir", "rssi" ]
+	if should_use_fuel_gauge:
+		lc709203f_adafruit.setup(i2c, N)
+		header_string += ", batt-V, batt-%"
+		fuel_gauge_is_available = True
+	if airlift_is_available:
+		feed_suffixes = [ "415nm", "445nm", "480nm", "515nm", "555nm", "590nm", "630nm", "680nm", "clear", "nir", "rssi", "batt" ]
 		feed_names = []
 		for feed_suffix in feed_suffixes:
 			feed_names.append(my_adafruit_io_prefix + "-" + feed_suffix)
@@ -125,6 +134,8 @@ def loop():
 		as7341_adafruit.get_values()
 	if airlift_is_available:
 		string += airlift.measure_string()
+	if fuel_gauge_is_available:
+		string += lc709203f_adafruit.measure_string()
 	info(string)
 	n += 1
 	if 0==n%N:
@@ -154,6 +165,7 @@ def loop():
 					raise
 				except:
 					warning("couldn't post data for as7341")
+		if airlift_is_available:
 			airlift.show_average_values()
 			try:
 				airlift.post_data(my_adafruit_io_prefix + "-rssi", airlift.get_average_values()[0])
@@ -169,6 +181,17 @@ def loop():
 			if NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET < time_since_last_good_post:
 				error("too long since a post operation succeeded")
 				generic.reset()
+		if fuel_gauge_is_available:
+			#info(fuel_gauge.power_mode)
+			lc709203f_adafruit.show_average_values()
+			#info("battery: " + str() + " V (" + str(fuel_gauge.cell_percent) + "%)")
+			if airlift_is_available:
+				try:
+					airlift.post_data(my_adafruit_io_prefix + "-batt", lc709203f_adafruit.get_average_values()[0])
+				except (KeyboardInterrupt, ReloadException):
+					raise
+				except:
+					warning("couldn't post data for batt")
 		if should_power_down_wifi_when_not_needed:
 			airlift_is_available = False
 			airlift.get_values()
