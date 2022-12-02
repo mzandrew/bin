@@ -7,6 +7,9 @@ import atexit
 import gc
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
+def fround(value, precision):
+	return precision*int(value/precision+0.5)
+
 def start_uptime():
 	global initial_time_monotonic
 	global previous_time_monotonic

@@ -187,7 +187,8 @@ def loop():
 			#info("battery: " + str() + " V (" + str(fuel_gauge.cell_percent) + "%)")
 			if airlift_is_available:
 				try:
-					airlift.post_data(my_adafruit_io_prefix + "-batt", lc709203f_adafruit.get_average_values()[0])
+					cell_voltage = generic.fround(lc709203f_adafruit.get_average_values()[0], 0.001)
+					airlift.post_data(my_adafruit_io_prefix + "-batt", cell_voltage)
 				except (KeyboardInterrupt, ReloadException):
 					raise
 				except:
