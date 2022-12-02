@@ -1,11 +1,12 @@
 # written 2022-07 by mza
 # basic bits taken from adafruit's rfm9x_simpletest.py by Tony DiCola and rfm9x_node1_ack.py by Jerry Needell
 # more help from https://learn.adafruit.com/multi-device-lora-temperature-network/using-with-adafruitio
-# last updated 2022-11-26 by mza
+# last updated 2022-12-02 by mza
 
 # rsync -a *.py /media/mza/LORASEND/; rsync -a *.py /media/mza/LORARECEIVE/
 # cd lib
-# rsync -r adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORASEND/lib/; rsync -r adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_io adafruit_minimqtt adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORARECEIVE/lib/
+# rsync -r adafruit_onewire adafruit_esp32spi adafruit_bus_device adafruit_display_text simpleio.mpy adafruit_gps.mpy neopixel.mpy adafruit_sdcard.mpy adafruit_datetime.mpy adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_io adafruit_minimqtt adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORARECEIVE/lib/
+# rsync -r adafruit_onewire adafruit_esp32spi adafruit_bus_device adafruit_display_text simpleio.mpy adafruit_gps.mpy neopixel.mpy adafruit_sdcard.mpy adafruit_datetime.mpy adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_io adafruit_minimqtt adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORASEND/lib/
 # cp -a lora_transceiver_basic_test.py /media/mza/LORASEND/code.py; cp -a lora_transceiver_basic_test.py /media/mza/LORARECEIVE/code.py
 # sync
 
@@ -40,6 +41,7 @@ TX_POWER_DBM = 5 # minimum 5; default 13; maximum 23
 # [-113,-99] dBm when the tx is in Jen's front yard
 
 import time
+import re
 import board
 import busio
 import digitalio
@@ -54,8 +56,10 @@ from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3,
 
 def setup():
 	set_verbosity(4)
-	info("we are " + board.board_id)
+	global label
+	global my_adafruit_io_prefix
 	global dotstar_is_available
+	info("we are " + board.board_id)
 	dotstar_is_available = False
 	if 'unexpectedmaker_feathers2'==board.board_id: # for uf2 boot, click [RESET], then about a second later click [BOOT]
 		import feathers2
@@ -71,23 +75,27 @@ def setup():
 		dotstar[0] = (r, g, b, dotstar_brightness)
 		dotstar_is_available = True
 	#else:
-	global label
 	label = "unknown"
 	try:
 		m = storage.getmount("/")
 		label = m.label
-	except:
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as error_message:
+		error(str(error_message))
 		pass
 	info("our label is " + label)
 	if "LORARECEIVE"==label:
 		should_use_bme680 = False
 		should_use_as7341 = False
 		should_use_RTC = False
-		should_use_airlift = False # for uplink
+		should_use_airlift = True # for uplink
 		use_built_in_wifi = True
+		my_wifi_name = "loratransponder"
+		my_adafruit_io_prefix = "lora"
 	elif "LORASEND"==label:
 		should_use_bme680 = True
-		should_use_as7341 = True
+		should_use_as7341 = False
 		should_use_RTC = True
 		should_use_airlift = False
 		use_built_in_wifi = False
@@ -114,14 +122,14 @@ def setup():
 		spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
 		spi = board.SPI()
 	global i2c
 	try:
 		i2c = board.I2C()
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
 		i2c = busio.I2C(board.SCL, board.SDA)
 	global bme680_is_available
 	bme680_is_available = False
@@ -131,8 +139,9 @@ def setup():
 			bme680_is_available = True
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
+		except Exception as error_message:
 			warning("bme680 not present")
+			error(str(error_message))
 	global as7341_is_available
 	as7341_is_available = False
 	if should_use_as7341:
@@ -142,8 +151,9 @@ def setup():
 			as7341_is_available = True
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
+		except Exception as error_message:
 			warning("as7341 not present")
+			error(str(error_message))
 	if 'unexpectedmaker_feathers2'==board.board_id:
 		CS = digitalio.DigitalInOut(board.D20)
 		RESET = digitalio.DigitalInOut(board.D21)
@@ -175,16 +185,30 @@ def setup():
 			i2c_address = pcf8523_adafruit.setup(i2c)
 			#prohibited_addresses.append(i2c_address)
 			RTC_is_available = True
-		except:
+		except (KeyboardInterrupt, ReloadException):
+			raise
+		except Exception as error_message:
 			RTC_is_available = False
+			error(str(error_message))
 	global airlift_is_available
 	airlift_is_available = False
 	if should_use_airlift:
 		if use_built_in_wifi:
-			airlift_is_available = airlift.setup_wifi("russell")
+			airlift_is_available = airlift.setup_wifi(my_wifi_name)
 		else:
-			airlift_is_available = airlift.setup_airlift("russell", spi, board.D13, board.D11, board.D12)
+			airlift_is_available = airlift.setup_airlift(my_wifi_name, spi, board.D13, board.D11, board.D12)
 		#header_string += ", RSSI-dB"
+	if airlift_is_available:
+		try:
+			airlift.setup_feed(my_adafruit_io_prefix + "-temp")
+			airlift.setup_feed(my_adafruit_io_prefix + "-hum")
+			airlift.setup_feed(my_adafruit_io_prefix + "-pres")
+			airlift.setup_feed(my_adafruit_io_prefix + "-skipped")
+			airlift.setup_feed(my_adafruit_io_prefix + "-garb-rssi")
+		except (KeyboardInterrupt, ReloadException):
+			raise
+		except Exception as error_message:
+			error(str(error_message))
 	if 1:
 		if airlift_is_available:
 			if RTC_is_available:
@@ -194,7 +218,9 @@ def send_a_message(message):
 	global message_id
 	try:
 		message_id += 1
-	except:
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as error_message:
 		message_id = 1
 	message_id_string = "[" + str(message_id) + "] "
 	message_with_prefix_and_suffix = PREFIX + message_id_string + message + SUFFIX
@@ -219,22 +245,25 @@ def decode_a_message(packet):
 	global previously_received_message_id
 	try:
 		previously_received_message_id
-	except:
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as error_message:
 		previously_received_message_id = 0
 	global total_skipped_messages
 	try:
 		total_skipped_messages
-	except:
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as error_message:
 		total_skipped_messages = 0
 	this_message_id = 0
 	try:
 		rssi = rfm9x.last_rssi
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
 		rssi = 0
 	#info("Received signal strength: {0} dBm".format(rssi))
-	import re
 	try:
 		packet_text = str(packet, "ascii")
 		match = re.search("^" + PREFIX + "\[([0-9]+)\](.*)" + SUFFIX + "$", packet_text)
@@ -255,16 +284,59 @@ def decode_a_message(packet):
 				else:
 					percentage = "?"
 				warning("skipped " + str(skipped_messages) + " message(s); total skipped: " + str(total_skipped_messages) + "/" + str(this_message_id) + " = " + str(percentage) + "%")
+				if airlift_is_available:
+					try:
+						airlift.post_data(my_adafruit_io_prefix + "-skipped", skipped_messages)
+					except (KeyboardInterrupt, ReloadException):
+						raise
+					except Exception as error_message:
+						warning("unable to post skipped data")
+						airlift.show_network_status()
+						error(str(error_message))
 			info("received: [" + str(this_message_id) + "]" + message + " RSSI=" + str(rssi) + "dBm")
 			previously_received_message_id = this_message_id
+			if "LORARECEIVE"==label:
+				predicate(message)
 		else:
 			debug("received: " + packet_text + " RSSI=" + str(rssi) + "dBm")
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as error_message:
 		warning("message garbled RSSI=" + str(rssi) + "dBm")
+		error(str(error_message))
+		if airlift_is_available:
+			try:
+				airlift.post_data(my_adafruit_io_prefix + "-garb-rssi", rssi)
+			except (KeyboardInterrupt, ReloadException):
+				raise
+			except Exception as error_message:
+				warning("unable to post garb_rssi data")
+				airlift.show_network_status()
+				error(str(error_message))
 		#info("total skipped messages: " + str(total_skipped_messages))
 	return this_message_id
+
+def predicate(message):
+	info(message)
+	match = re.search("bme680 \[([0-9.]+), ([0-9.]+), ([0-9.]+),", message)
+	if match:
+		temp = float(match.group(1))
+		hum = float(match.group(2))
+		pres = float(match.group(3))
+		info("temperature: " + str(temp) + " C")
+		info("humidity: " + str(hum) + " %RH")
+		info("presure: " + str(pres) + " ATM")
+		if airlift_is_available:
+			try:
+				airlift.post_data(my_adafruit_io_prefix + "-temp", temp)
+				airlift.post_data(my_adafruit_io_prefix + "-hum", hum)
+				airlift.post_data(my_adafruit_io_prefix + "-pres", pres)
+			except (KeyboardInterrupt, ReloadException):
+				raise
+			except Exception as error_message:
+				warning("couldn't post data for remote bme680")
+				airlift.show_network_status()
+				error(str(error_message))
 
 setup()
 i = 0
@@ -273,6 +345,8 @@ button_was_pressed = False
 info("Waiting for packets...")
 first_time_through = True
 while True:
+	#if airlift_is_available:
+		#airlift.get_values()
 	LED.value = False
 	button_was_pressed = False
 	if not button.value:
@@ -280,7 +354,7 @@ while True:
 	if first_time_through:
 		first_time_through = False
 		if "LORASEND"==label:
-			time.sleep(3)
+			time.sleep(10)
 		send_a_message_with_timestamp("lora node coming online")
 	if dotstar_is_available:
 		dotstar[0] = (0, 0, 255, dotstar_brightness)
@@ -291,6 +365,7 @@ while True:
 	if packet is not None:
 		#info(str(len(packet)))
 		LED.value = True
+		#airlift.show_average_values()
 		decode_a_message(packet)
 	if button_was_pressed:
 		button_was_pressed = False
@@ -315,5 +390,4 @@ while True:
 			#info(string)
 			#info(len(string))
 			send_a_message_with_timestamp("bme680 " + string)
-			#if airlift_is_available:
 
