@@ -1,6 +1,7 @@
-# last updated 2022-08-25 by mza
+# last updated 2022-12-03 by mza
 
 import adafruit_sdcard
+import adafruit_datetime
 import storage
 import board
 import busio
@@ -31,10 +32,20 @@ def list_file(dirname, filename):
 	fullname = dirname + "/" + filename
 	stats = os.stat(fullname)
 	filesize = stats[6]
-	info('{0:>12} {1:<40}'.format(str(filesize), fullname))
+	modificationdate = stats[8]
+	modificationdate = adafruit_datetime.datetime.fromtimestamp(modificationdate).isoformat()
+	info('{0:>19} {1:>12} {2:<40}'.format(str(modificationdate), str(filesize), fullname))
 
 def list_files(dirname):
+	mylist = []
 	for filename in os.listdir(dirname):
+		fullname = dirname + "/" + filename
+		stats = os.stat(fullname)
+		modificationdate = stats[8]
+		mylist.append([modificationdate, filename])
+	mylist.sort()
+	for item in mylist:
+		filename = item[1]
 		fullname = dirname + "/" + filename
 		stats = os.stat(fullname)
 		isdir = stats[0] & 0x4000
