@@ -1,6 +1,6 @@
 # written 2022-10-29 by mza
 # based on neopixel_clockface.py
-# last updated 2022-12-01 by mza
+# last updated 2022-12-03 by mza
 
 # to install:
 # cd lib
@@ -16,6 +16,7 @@ import busio
 import neopixel_adafruit
 import as7341_adafruit
 import lc709203f_adafruit
+import ina260_adafruit
 import airlift
 import generic
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
@@ -25,6 +26,7 @@ from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3,
 # assuming fully sunny days, the solar panel got ~12 hours @ 110 mA, so current draw is somewhere around 90 mA
 # ammeter says 30-80 mA while collecting data, and then 50-80 mA while posting data
 # if we do the should_power_down_wifi_when_not_needed mode, the current draw is 80-90 mA while wifiing but 20-30 mA otherwise
+# ina260 says we're drawing 99.7656 mA during acquisition
 
 my_wifi_name = "roof2"
 my_adafruit_io_prefix = "roof2"
@@ -36,6 +38,8 @@ should_power_down_wifi_when_not_needed = False
 DESIRED_NUMBER_OF_SECONDS_BETWEEN_POSTING = 60
 NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET = 5 * DESIRED_NUMBER_OF_SECONDS_BETWEEN_POSTING
 should_use_fuel_gauge = True
+should_use_ina260 = True
+ina260_address = 0x40
 
 eta = 1.0/512.0
 
@@ -108,8 +112,17 @@ def setup():
 		lc709203f_adafruit.setup(i2c, N)
 		header_string += ", batt-V, batt-%"
 		fuel_gauge_is_available = True
+	global ina260_is_available
+	ina260_is_available = False
+	if should_use_ina260:
+		try:
+			ina260_adafruit.setup(i2c, N, ina260_address)
+			header_string += ina260_adafruit.header_string
+			ina260_is_available = True
+		except:
+			warning("can't talk to ina260 at address " + generic.hex(ina260_address))
 	if airlift_is_available:
-		feed_suffixes = [ "415nm", "445nm", "480nm", "515nm", "555nm", "590nm", "630nm", "680nm", "clear", "nir", "rssi", "batt" ]
+		feed_suffixes = [ "415nm", "445nm", "480nm", "515nm", "555nm", "590nm", "630nm", "680nm", "clear", "nir", "rssi", "batt", "current" ]
 		feed_names = []
 		for feed_suffix in feed_suffixes:
 			feed_names.append(my_adafruit_io_prefix + "-" + feed_suffix)
@@ -136,6 +149,8 @@ def loop():
 		string += airlift.measure_string()
 	if fuel_gauge_is_available:
 		string += lc709203f_adafruit.measure_string()
+	if ina260_is_available:
+		string += ina260_adafruit.measure_string()
 	info(string)
 	n += 1
 	if 0==n%N:
@@ -193,6 +208,16 @@ def loop():
 					raise
 				except:
 					warning("couldn't post data for batt")
+		if ina260_is_available:
+			ina260_adafruit.show_average_values()
+			if airlift_is_available:
+				try:
+					airlift.post_data(my_adafruit_io_prefix + "-current", ina260_adafruit.get_average_values()[0])
+					#last_good_post_time = generic.get_uptime()
+				except (KeyboardInterrupt, ReloadException):
+					raise
+				except:
+					warning("couldn't post data for ina260")
 		if should_power_down_wifi_when_not_needed:
 			airlift_is_available = False
 			airlift.get_values()
