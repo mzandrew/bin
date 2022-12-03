@@ -1,14 +1,14 @@
 # written 2022-11-24 by mza
 # idea from https://github.com/KTibow/fridge/blob/main/boot.py
 # with help from https://learn.adafruit.com/pico-w-wifi-with-circuitpython/pico-w-basic-wifi-test
-# last updated 2022-11-25 by mza
+# last updated 2022-12-03 by mza
 
 should_download_the_files = True
 should_write_the_files = True
 
 # to install:
-# rsync -r adafruit_minimqtt simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy adafruit_io adafruit_requests.mpy /media/mza/CIRCUITPY/lib/
-# rsync -a generic.py airlift.py DebugInfoWarningError24.py /media/mza/CIRCUITPY/
+# rsync -r adafruit_requests.mpy /media/mza/CIRCUITPY/lib/
+# rsync -a generic.py DebugInfoWarningError24.py /media/mza/CIRCUITPY/
 # cp -a boot.OTAupdate.py /media/mza/CIRCUITPY/boot.py; sync
 
 import sys
@@ -37,33 +37,50 @@ try:
 	import generic
 except:
 	print("can't import generic")
-	sys.exit(1)
 
-generic.collect_garbage()
-#generic.show_memory_difference()
+try:
+	generic.collect_garbage()
+	#generic.show_memory_difference()
+except:
+	pass
 
 try:
 	from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush # uses 1k
 except:
 	print("can't import DebugInfoWarningError24")
-	sys.exit(2)
-
-generic.collect_garbage()
-#generic.show_memory_difference()
+	def debug(message):
+		print("  DEBUG: " + message)
+	def debug2(message):
+		print(" DEBUG2: " + message)
+	def info(message):
+		print(message)
+	def warning(message):
+		print("WARNING: " + message)
+	def error(message):
+		print("  ERROR: " + message)
 
 try:
-	import airlift # uses 15k
+	generic.collect_garbage()
+	#generic.show_memory_difference()
 except:
-	error("can't import airlift")
-	sys.exit(3)
+	pass
 
-generic.collect_garbage()
-#generic.show_memory_difference()
+#try:
+#	import airlift # uses 15k
+#except:
+#	error("can't import airlift")
+#	sys.exit(3)
+
+try:
+	generic.collect_garbage()
+	#generic.show_memory_difference()
+except:
+	pass
 
 my_wifi_name = "OTAboot.py"
 #if board_id=="raspberry_pi_pico_w":
 should_use_airlift = True
-use_built_in_wifi = False
+#use_built_in_wifi = False
 #FEATHER_ESP32S2 = True
 
 def format_MAC(MAC):
@@ -71,13 +88,17 @@ def format_MAC(MAC):
 	for byte in MAC:
 		if len(string):
 			string += "-"
-		string += generic.hex(byte, 2)
+		try:
+			string += generic.hex(byte, 2)
+		except:
+			string += "%0*x" % (2, byte)
 	return string
 
 if should_use_airlift:
-	if use_built_in_wifi:
-		airlift_is_available = airlift.setup_wifi()
-	else:
+#	if use_built_in_wifi:
+#		airlift_is_available = airlift.setup_wifi()
+#	else:
+	if 1:
 		try:
 			import ipaddress
 		except:
@@ -102,10 +123,20 @@ if should_use_airlift:
 			wifi.radio.hostname = my_wifi_name
 			match = re.search("^[8]", os.uname().release)
 			if match:
-				wifi.radio.connect(ssid=os.getenv('CIRCUITPY_WIFI_SSID'), password=os.getenv('CIRCUITPY_WIFI_PASSWORD')) # os.getenv is a circuitpython 8 thing (see file .env)
+				should_use_env_instead_of_secrets = True
+			if 1:
+				should_use_env_instead_of_secrets = False
+			if should_use_env_instead_of_secrets:
+				try:
+					wifi.radio.connect(ssid=os.getenv('CIRCUITPY_WIFI_SSID'), password=os.getenv('CIRCUITPY_WIFI_PASSWORD')) # os.getenv is a circuitpython 8 thing (see file .env)
+				except:
+					error("can't find file .env")
 			else:
-				import secrets
-				wifi.radio.connect(ssid=secrets.secrets["ssid"], password=secrets.secrets["password"])
+				try:
+					import secrets
+					wifi.radio.connect(ssid=secrets.secrets["ssid"], password=secrets.secrets["password"])
+				except:
+					error("can't import from secrets.py - make sure the file exists and has a dict called secrets with ssid/password") # and aio_username/aio_key
 			mac_address = list(wifi.radio.mac_address)
 			info("MAC: " + format_MAC(mac_address))
 			info("My IP address is " + str(wifi.radio.ipv4_address))
@@ -136,18 +167,24 @@ if should_write_the_files:
 	except:
 		error("can't remount / when visible via USB")
 		sys.exit(8)
-	create_new_logfile_with_string_embedded("/", "logfile.txt")
+	try:
+		create_new_logfile_with_string_embedded("/", "logfile.txt")
+	except:
+		pass
 
 try:
 	import microsd_adafruit
 except:
 	error("can't import microsd_adafruit")
-	sys.exit(9)
 
 #generic.show_memory_difference()
 
-generic.collect_garbage()
-#generic.show_memory_situation()
+try:
+	generic.collect_garbage()
+	#generic.show_memory_situation()
+except:
+	import gc
+	gc.collect()
 
 files_list = [ "boot.OTAupdate.py" ]
 files_list += [ "airlift.py", "generic.py", "DebugInfoWarningError24.py", "boxcar.py" ]
