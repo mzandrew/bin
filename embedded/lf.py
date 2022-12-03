@@ -5,5 +5,6 @@
 # cp -a lf.py /media/mza/CIRCUITPY/code.py; sync
 
 import microsd_adafruit
+print("")
 microsd_adafruit.list_files("")
 
