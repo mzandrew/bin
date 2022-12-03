@@ -1,6 +1,6 @@
 # to install:
 # cd lib
-# rsync -av adafruit_sdcard.mpy /media/mza/CIRCUITPY/lib/
+# rsync -av adafruit_datetime.mpy adafruit_sdcard.mpy /media/mza/CIRCUITPY/lib/
 # cd ..
 # cp -a lf.py /media/mza/CIRCUITPY/code.py; sync
 
