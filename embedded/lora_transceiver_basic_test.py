@@ -1,7 +1,7 @@
 # written 2022-07 by mza
 # basic bits taken from adafruit's rfm9x_simpletest.py by Tony DiCola and rfm9x_node1_ack.py by Jerry Needell
 # more help from https://learn.adafruit.com/multi-device-lora-temperature-network/using-with-adafruitio
-# last updated 2022-12-02 by mza
+# last updated 2022-12-03 by mza
 
 # rsync -a *.py /media/mza/LORASEND/; rsync -a *.py /media/mza/LORARECEIVE/
 # cd lib
@@ -95,7 +95,7 @@ def setup():
 		my_adafruit_io_prefix = "lora"
 	elif "LORASEND"==label:
 		should_use_bme680 = True
-		should_use_as7341 = False
+		should_use_as7341 = True
 		should_use_RTC = True
 		should_use_airlift = False
 		use_built_in_wifi = False
@@ -203,6 +203,7 @@ def setup():
 			airlift.setup_feed(my_adafruit_io_prefix + "-temp")
 			airlift.setup_feed(my_adafruit_io_prefix + "-hum")
 			airlift.setup_feed(my_adafruit_io_prefix + "-pres")
+			airlift.setup_feed(my_adafruit_io_prefix + "-clear")
 			airlift.setup_feed(my_adafruit_io_prefix + "-skipped")
 			airlift.setup_feed(my_adafruit_io_prefix + "-garb-rssi")
 		except (KeyboardInterrupt, ReloadException):
@@ -296,7 +297,7 @@ def decode_a_message(packet):
 			info("received: [" + str(this_message_id) + "]" + message + " RSSI=" + str(rssi) + "dBm")
 			previously_received_message_id = this_message_id
 			if "LORARECEIVE"==label:
-				predicate(message)
+				parse(message)
 		else:
 			debug("received: " + packet_text + " RSSI=" + str(rssi) + "dBm")
 	except (KeyboardInterrupt, ReloadException):
@@ -316,8 +317,7 @@ def decode_a_message(packet):
 		#info("total skipped messages: " + str(total_skipped_messages))
 	return this_message_id
 
-def predicate(message):
-	info(message)
+def parse_bme680(message):
 	match = re.search("bme680 \[([0-9.]+), ([0-9.]+), ([0-9.]+),", message)
 	if match:
 		temp = float(match.group(1))
@@ -337,6 +337,54 @@ def predicate(message):
 				warning("couldn't post data for remote bme680")
 				airlift.show_network_status()
 				error(str(error_message))
+		return True
+	else:
+		return False
+
+def parse_as7341(message):
+	match = re.search("as7341 \[([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+)\]", message)
+	if match:
+		nm415 = float(match.group(1))
+		nm445 = float(match.group(2))
+		nm480 = float(match.group(3))
+		nm515 = float(match.group(4))
+		nm555 = float(match.group(5))
+		nm590 = float(match.group(6))
+		nm630 = float(match.group(7))
+		nm680 = float(match.group(8))
+		clear = float(match.group(9))
+		nir   = float(match.group(10))
+		info("nm415: " + str(nm415))
+		info("nm445: " + str(nm445))
+		info("nm480: " + str(nm480))
+		info("nm515: " + str(nm515))
+		info("nm555: " + str(nm555))
+		info("nm590: " + str(nm590))
+		info("nm630: " + str(nm630))
+		info("nm680: " + str(nm680))
+		info("clear: " + str(clear))
+		info("nir: " + str(nir))
+		if airlift_is_available:
+			try:
+				pass
+				airlift.post_data(my_adafruit_io_prefix + "-clear", clear)
+			except (KeyboardInterrupt, ReloadException):
+				raise
+			except Exception as error_message:
+				warning("couldn't post data for remote as7341")
+				airlift.show_network_status()
+				error(str(error_message))
+		return True
+	else:
+		return False
+
+def parse(message):
+	info(message)
+	if parse_bme680(message):
+		return True
+	if parse_as7341(message):
+		return True
+	return False
 
 setup()
 i = 0
@@ -387,7 +435,9 @@ while True:
 		if bme680_is_available:
 			values = bme680_adafruit.get_average_values()
 			string = str(values)
-			#info(string)
-			#info(len(string))
 			send_a_message_with_timestamp("bme680 " + string)
+		if as7341_is_available:
+			values = as7341_adafruit.get_average_values()
+			string = str(values)
+			send_a_message_with_timestamp("as7341 " + string)
 
