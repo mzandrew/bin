@@ -100,9 +100,6 @@ def print_compact(string):
 			pass
 	info("%s%s" % (date, string))
 
-def hex(number, width=1):
-	return "%0*x" % (width, number)
-
 def main():
 	generic.start_uptime()
 	global header_string
@@ -214,7 +211,7 @@ def main():
 	i2c_mux = adafruit_tca9548a.TCA9548A(i2c)
 #	if i2c_mux[0].try_lock():
 #		addresses = i2c_mux[0].scan()
-#		info([hex(address) for address in addresses if address != 0x70])
+#		info([generic.hex(address) for address in addresses if address != 0x70])
 #		i2c_mux[0].unlock()
 	global number_of_sensors_available
 	number_of_sensors_available = 0

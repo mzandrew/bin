@@ -66,15 +66,12 @@ should_use_airlift = True
 use_built_in_wifi = False
 #FEATHER_ESP32S2 = True
 
-def hex(number, width=1):
-	return "%0*x" % (width, number)
-
 def format_MAC(MAC):
 	string = ""
 	for byte in MAC:
 		if len(string):
 			string += "-"
-		string += hex(byte, 2)
+		string += generic.hex(byte, 2)
 	return string
 
 if should_use_airlift:

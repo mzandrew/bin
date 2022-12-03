@@ -8,6 +8,7 @@ import busio
 import digitalio
 import math
 import boxcar
+import generic
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
 secrets_already_imported = False
@@ -39,15 +40,12 @@ airlift_pins_already_setup = False
 esp_already_setup = False
 myboxcar_already_setup = False
 
-def hex(number, width=1):
-	return "%0*x" % (width, number)
-
 def format_MAC(MAC):
 	string = ""
 	for byte in MAC:
 		if len(string):
 			string += "-"
-		string += hex(byte, 2)
+		string += generic.hex(byte, 2)
 	return string
 
 def show_networks(networks):

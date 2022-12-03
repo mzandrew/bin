@@ -7,6 +7,9 @@ import atexit
 import gc
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
+def hex(number, width=1):
+	return "%0*x" % (width, number)
+
 def fround(value, precision):
 	return precision*int(value/precision+0.5)
 
