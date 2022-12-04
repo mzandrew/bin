@@ -43,24 +43,22 @@ TX_POWER_DBM = 5 # minimum 5; default 13; maximum 23
 # [-113,-99] dBm when the tx is in Jen's front yard
 
 import time
-import re
 import board
 import busio
-import digitalio
 import storage
 import adafruit_rfm9x
-import adafruit_dotstar
-import bme680_adafruit
-import as7341_adafruit
-import pcf8523_adafruit
+#import lora
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string
+
+#def setup_lora_send_node():
+
+#def setup_lora_receive_and_uplink_node():
 
 def setup():
 	set_verbosity(4)
 	global label
 	global my_adafruit_io_prefix
 	global dotstar_is_available
-	global airlift
 	info("we are " + board.board_id)
 	dotstar_is_available = False
 	if 'unexpectedmaker_feathers2'==board.board_id: # for uf2 boot, click [RESET], then about a second later click [BOOT]
@@ -72,6 +70,7 @@ def setup():
 		b = 100
 		global dotstar_brightness
 		dotstar_brightness = 0.05
+		import adafruit_dotstar
 		global dotstar
 		dotstar = adafruit_dotstar.DotStar(board.APA102_SCK, board.APA102_MOSI, 1, brightness=dotstar_brightness, auto_write=True)
 		dotstar[0] = (r, g, b, dotstar_brightness)
@@ -87,6 +86,11 @@ def setup():
 		error(str(error_message))
 		pass
 	info("our label is " + label)
+	should_use_bme680 = False
+	should_use_as7341 = False
+	should_use_RTC = False
+	should_use_airlift = False
+	use_built_in_wifi = False
 	if "LORARECEIVE"==label:
 		should_use_bme680 = False
 		should_use_as7341 = False
@@ -95,6 +99,8 @@ def setup():
 		use_built_in_wifi = True
 		my_wifi_name = "loratransponder"
 		my_adafruit_io_prefix = "lora"
+		global re
+		import re
 	elif "LORASEND"==label:
 		should_use_bme680 = True
 		should_use_as7341 = True
@@ -109,12 +115,8 @@ def setup():
 		use_built_in_wifi = False
 	else:
 		warning("board filesystem has no label")
-		should_use_bme680 = False
-		should_use_as7341 = False
-		should_use_RTC = False
-		should_use_airlift = False
-		use_built_in_wifi = False
 	global LED
+	import digitalio
 	LED = digitalio.DigitalInOut(board.D13)
 	LED.direction = digitalio.Direction.OUTPUT
 	global button
@@ -141,6 +143,8 @@ def setup():
 	global bme680_is_available
 	bme680_is_available = False
 	if should_use_bme680:
+		global bme680_adafruit
+		import bme680_adafruit
 		try:
 			bme680_adafruit.setup(i2c, N)
 			bme680_is_available = True
@@ -152,6 +156,8 @@ def setup():
 	global as7341_is_available
 	as7341_is_available = False
 	if should_use_as7341:
+		global as7341_adafruit
+		import as7341_adafruit
 		try:
 			i2c_address = as7341_adafruit.setup(i2c, N)
 			#prohibited_addresses.append(i2c_address)
@@ -188,6 +194,8 @@ def setup():
 	global RTC_is_available
 	RTC_is_available = False
 	if should_use_RTC:
+		global pcf8523_adafruit
+		import pcf8523_adafruit
 		try:
 			i2c_address = pcf8523_adafruit.setup(i2c)
 			#prohibited_addresses.append(i2c_address)
@@ -200,6 +208,7 @@ def setup():
 	global airlift_is_available
 	airlift_is_available = False
 	if should_use_airlift:
+		global airlift
 		import airlift
 		if use_built_in_wifi:
 			airlift_is_available = airlift.setup_wifi(my_wifi_name)
