@@ -16,10 +16,12 @@ PREFIX = "SCOOPY"
 SUFFIX = "BOOPS"
 N = 64
 USE_ACKNOWLEDGE = False
-RADIO_FREQ_MHZ = 905.0 # 868-915 MHz
+RADIO_FREQ_MHZ = 905.0 # 868-915 MHz (902-928 MHz is the allowed band in US/MEX/CAN)
 TX_POWER_DBM = 5 # minimum 5; default 13; maximum 23
 
 # failure rate for 915 MHz, 4*57600, timeout=0.5 TX_POWER=20 is 2844/14262
+
+# started 400 mAh battery drain at 7:13am; stopped at 3pm; 467 minutes (7.78 hours) -> 51 mA; with a Adalogger_FeatherWing and a rfm95w and an unexpectedmaker_feathers2 and a bme680 and an as7341
 
 # you can put uf2+circuitpython on a radiofruit feather m0 rfm95, but then there's only 45k free for code and libraries:
 # https://learn.adafruit.com/installing-circuitpython-on-samd21-boards/installing-the-uf2-bootloader
@@ -51,7 +53,6 @@ import adafruit_dotstar
 import bme680_adafruit
 import as7341_adafruit
 import pcf8523_adafruit
-import airlift
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string
 
 def setup():
@@ -59,6 +60,7 @@ def setup():
 	global label
 	global my_adafruit_io_prefix
 	global dotstar_is_available
+	global airlift
 	info("we are " + board.board_id)
 	dotstar_is_available = False
 	if 'unexpectedmaker_feathers2'==board.board_id: # for uf2 boot, click [RESET], then about a second later click [BOOT]
@@ -107,6 +109,11 @@ def setup():
 		use_built_in_wifi = False
 	else:
 		warning("board filesystem has no label")
+		should_use_bme680 = False
+		should_use_as7341 = False
+		should_use_RTC = False
+		should_use_airlift = False
+		use_built_in_wifi = False
 	global LED
 	LED = digitalio.DigitalInOut(board.D13)
 	LED.direction = digitalio.Direction.OUTPUT
@@ -193,6 +200,7 @@ def setup():
 	global airlift_is_available
 	airlift_is_available = False
 	if should_use_airlift:
+		import airlift
 		if use_built_in_wifi:
 			airlift_is_available = airlift.setup_wifi(my_wifi_name)
 		else:
@@ -297,7 +305,7 @@ def decode_a_message(packet):
 			info("received: [" + str(this_message_id) + "]" + message + " RSSI=" + str(rssi) + "dBm")
 			previously_received_message_id = this_message_id
 			if "LORARECEIVE"==label:
-				parse(message)
+				parse(message, rssi)
 		else:
 			debug("received: " + packet_text + " RSSI=" + str(rssi) + "dBm")
 	except (KeyboardInterrupt, ReloadException):
@@ -317,7 +325,17 @@ def decode_a_message(packet):
 		#info("total skipped messages: " + str(total_skipped_messages))
 	return this_message_id
 
-def parse_bme680(message):
+def post_rssi(rssi):
+	try:
+		airlift.post_data(my_adafruit_io_prefix + "-rssi", rssi)
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as error_message:
+		warning("couldn't post data for lora rssi")
+		airlift.show_network_status()
+		error(str(error_message))
+
+def parse_bme680(message, rssi):
 	match = re.search("bme680 \[([0-9.]+), ([0-9.]+), ([0-9.]+),", message)
 	if match:
 		temp = float(match.group(1))
@@ -337,11 +355,12 @@ def parse_bme680(message):
 				warning("couldn't post data for remote bme680")
 				airlift.show_network_status()
 				error(str(error_message))
+			post_rssi(rssi)
 		return True
 	else:
 		return False
 
-def parse_as7341(message):
+def parse_as7341(message, rssi):
 	match = re.search("as7341 \[([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+)\]", message)
 	if match:
 		nm415 = float(match.group(1))
@@ -374,15 +393,16 @@ def parse_as7341(message):
 				warning("couldn't post data for remote as7341")
 				airlift.show_network_status()
 				error(str(error_message))
+			post_rssi(rssi)
 		return True
 	else:
 		return False
 
-def parse(message):
+def parse(message, rssi):
 	info(message)
-	if parse_bme680(message):
+	if parse_bme680(message, rssi):
 		return True
-	if parse_as7341(message):
+	if parse_as7341(message, rssi):
 		return True
 	return False
 
