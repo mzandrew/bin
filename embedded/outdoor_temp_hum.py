@@ -1,12 +1,12 @@
 # written 2022-01-12 by mza
 # based on indoor_temp_hum.py
-# last updated 2022-09-18 by mza
+# last updated 2022-12-03 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
 # cp -a outdoor_temp_hum.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
-# rsync -r adafruit_minimqtt adafruit_sdcard.mpy adafruit_sht31d.mpy simpleio.mpy adafruit_esp32spi adafruit_register neopixel.mpy adafruit_io adafruit_requests.mpy adafruit_bus_device /media/circuitpython/lib/
+# rsync -r adafruit_datetime.mpy adafruit_minimqtt adafruit_sdcard.mpy adafruit_sht31d.mpy simpleio.mpy adafruit_esp32spi adafruit_register neopixel.mpy adafruit_io adafruit_requests.mpy adafruit_bus_device /media/circuitpython/lib/
 
 import sys
 import time
@@ -22,22 +22,25 @@ import gps_adafruit
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 import generic
 
+DESIRED_NUMBER_OF_SECONDS_BETWEEN_POSTING = 60
+NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET = 5 * DESIRED_NUMBER_OF_SECONDS_BETWEEN_POSTING
+
 header_string = "date/time"
 mydir = "/logs"
 board_id = board.board_id
 info("we are " + board_id)
 if 'adafruit_qtpy_esp32s2'==board_id: # sht31 on qtpy esp32-s2
 	my_wifi_name = "outdoor"
+	my_adafruit_io_prefix = "outdoor"
 	FEATHER_ESP32S2 = True
 	use_pwm_status_leds = False
 	should_use_sdcard = False
 	should_use_RTC = False
 	should_use_gps = False
 	N = 32
-	desired_loop_time = 60.0
-	delay_between_acquisitions = 1.5
+	delay_between_acquisitions = 1.7
 	gps_delay_in_ms = 2000
-	delay_between_posting_and_next_acquisition = 1.0
+	#delay_between_posting_and_next_acquisition = 1.0
 	should_use_airlift = True
 	use_built_in_wifi = True
 	should_use_display = False
@@ -176,20 +179,20 @@ def main():
 	if use_pwm_status_leds:
 		generic.set_status_led_color([0.5, 0.5, 0.5])
 	global airlift_is_available
+	airlift_is_available = False
 	if should_use_airlift:
 		if use_built_in_wifi:
 			airlift_is_available = airlift.setup_wifi(my_wifi_name)
 		else:
 			airlift_is_available = airlift.setup_airlift(my_wifi_name, spi, board.D13, board.D11, board.D12)
-		if airlift_is_available:
-			header_string += ", RSSI-dB"
-			airlift.setup_feed(my_wifi_name + "-temp")
-			airlift.setup_feed(my_wifi_name + "-hum")
-			#airlift.setup_feed(my_wifi_name + "-pressure")
-			#airlift.setup_feed("indoor-altitude")
-			#airlift.setup_feed("indoor-gas")
-	else:
-		airlift_is_available = False
+	if airlift_is_available:
+		header_string += ", RSSI-dB"
+		airlift.setup_feed(my_adafruit_io_prefix + "-temp")
+		airlift.setup_feed(my_adafruit_io_prefix + "-hum")
+		#airlift.setup_feed(my_adafruit_io_prefix + "-pressure")
+		airlift.setup_feed(my_adafruit_io_prefix + "-rssi")
+		#airlift.setup_feed("indoor-altitude")
+		#airlift.setup_feed("indoor-gas")
 	if 0:
 		if airlift_is_available:
 			airlift.update_time_from_server()
@@ -204,7 +207,7 @@ def main():
 
 def loop():
 	global i
-	generic.get_uptime()
+	last_good_post_time = generic.get_uptime()
 	global delay_between_acquisitions
 	while sht31d_adafruit.test_if_present():
 		neopixel_adafruit.set_color(255, 0, 0)
@@ -225,19 +228,35 @@ def loop():
 			generic.set_status_led_color([0, 1, 0])
 		i += 1
 		if 0==i%N:
+			delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, DESIRED_NUMBER_OF_SECONDS_BETWEEN_POSTING)
 			if sht31d_is_available:
 				sht31d_adafruit.show_average_values()
 				if airlift_is_available:
 					try:
-						airlift.post_data(my_wifi_name + "-temp", sht31d_adafruit.get_average_values()[1])
-						airlift.post_data(my_wifi_name + "-hum",  sht31d_adafruit.get_average_values()[0])
+						airlift.post_data(my_adafruit_io_prefix + "-temp", sht31d_adafruit.get_average_values()[1])
+						airlift.post_data(my_adafruit_io_prefix + "-hum",  sht31d_adafruit.get_average_values()[0])
+						last_good_post_time = generic.get_uptime()
 					except KeyboardInterrupt:
 						raise
 					except:
 						warning("couldn't post data for sht31d")
+			if airlift_is_available:
+				airlift.show_average_values()
+				try:
+					airlift.post_data(my_adafruit_io_prefix + "-rssi", airlift.get_average_values()[0])
+					#last_good_post_time = generic.get_uptime()
+				except (KeyboardInterrupt, ReloadException):
+					raise
+				except:
+					warning("couldn't post data for rssi")
+				current_time = generic.get_uptime()
+				time_since_last_good_post = current_time - last_good_post_time
+				info("time since last good post: " + str(time_since_last_good_post) + " s")
+				if NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET < time_since_last_good_post:
+					error("too long since a post operation succeeded")
+					generic.reset()
 			info("waiting...")
-			time.sleep(delay_between_posting_and_next_acquisition)
-			delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, desired_loop_time)
+			#time.sleep(delay_between_posting_and_next_acquisition)
 		neopixel_adafruit.set_color(0, 0, 255)
 		if use_pwm_status_leds:
 			generic.set_status_led_color([0, 0, 1])

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-04-21 by mza
-# last updated 2022-06-29 by mza
+# last updated 2022-12-03 by mza
 
 try:
 	import storage
@@ -24,7 +24,8 @@ try:
 	#m.label = "PARHUMTEMS2"
 	#m.label = "ELSEGUNDO"
 	#m.label = "roof2"
-	m.label = "LORASEND2"
+	#m.label = "LORASEND2"
+	m.label = "OUTDOOR"
 	try:
 		import os
 		os.unlink("boot.py")
