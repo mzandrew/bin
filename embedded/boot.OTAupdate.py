@@ -1,7 +1,7 @@
 # written 2022-11-24 by mza
 # idea from https://github.com/KTibow/fridge/blob/main/boot.py
 # with help from https://learn.adafruit.com/pico-w-wifi-with-circuitpython/pico-w-basic-wifi-test
-# last updated 2022-12-03 by mza
+# last updated 2022-12-04 by mza
 
 should_download_the_files = True
 should_write_the_files = True
@@ -187,7 +187,7 @@ except:
 	gc.collect()
 
 files_list = [ "boot.OTAupdate.py" ]
-files_list += [ "airlift.py", "generic.py", "DebugInfoWarningError24.py", "boxcar.py" ]
+files_list += [ "airlift.py", "lora.py", "generic.py", "DebugInfoWarningError24.py", "boxcar.py" ]
 files_list += [ "am2320_adafruit.py", "as7341_adafruit.py", "aw9523_adafruit.py", "bh1750_adafruit.py", "bme680_adafruit.py", "display_adafruit.py", "ds18b20_adafruit.py", "ds3231_adafruit.py", "gps_adafruit.py", "ina260_adafruit.py", "ltr390_adafruit.py", "max31865_adafruit.py", "microsd_adafruit.py", "neopixel_adafruit.py", "pcf8523_adafruit.py", "pct2075_adafruit.py", "pm25_adafruit.py", "sht31d_adafruit.py", "si5351_adafruit.py", "tsl2591_adafruit.py", "vcnl4040_adafruit.py" ]
 #files_list += [ "purple.py", "orange_flicker.py", "console.py" ]
 # "ble_adafruit.py", 
