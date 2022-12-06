@@ -122,11 +122,15 @@ def setup():
 		except:
 			warning("can't talk to ina260 at address " + generic.hex(ina260_address))
 	if airlift_is_available:
+		if ina260_is_available:
+			ina260_adafruit.get_values(1)
 		feed_suffixes = [ "415nm", "445nm", "480nm", "515nm", "555nm", "590nm", "630nm", "680nm", "clear", "nir", "rssi", "batt", "current0", "current1" ]
 		feed_names = []
 		for feed_suffix in feed_suffixes:
 			feed_names.append(my_adafruit_io_prefix + "-" + feed_suffix)
 		airlift.setup_feeds(feed_names)
+		if ina260_is_available:
+			ina260_adafruit.get_values(1)
 	if neopixel_is_available:
 		neopixel_adafruit.set_color(127, 127, 127)
 	airlift.show_network_status()
