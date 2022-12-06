@@ -35,8 +35,8 @@ N = 32 # average this many sensor readings before acting on it
 should_use_RTC = False
 should_power_down_wifi_when_not_needed = False
 #NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET = 3600
-DESIRED_NUMBER_OF_SECONDS_BETWEEN_POSTING = 60
-NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET = 5 * DESIRED_NUMBER_OF_SECONDS_BETWEEN_POSTING
+target_period = 60
+NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET = 5 * target_period
 should_use_fuel_gauge = True
 should_use_ina260 = True
 ina260_address = 0x40
@@ -156,15 +156,18 @@ def loop():
 	if ina260_is_available:
 		string += ina260_adafruit.measure_string(0)
 	info(string)
+	global target_period
 	n += 1
 	if 0==n%N:
 		if neopixel_is_available:
 			neopixel_adafruit.set_color(0, 255, 0)
-		delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, DESIRED_NUMBER_OF_SECONDS_BETWEEN_POSTING)
 		if should_power_down_wifi_when_not_needed and not airlift_is_available:
 			airlift_is_available = True
 			airlift.turn_on_wifi()
 			airlift.get_values()
+		target_period = airlift.get_most_recent_data("target-period")
+		info("target_period = " + str(target_period))
+		delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, target_period)
 		if ina260_is_available:
 			ina260_adafruit.get_values(1)
 		if as7341_is_available:
