@@ -1,6 +1,6 @@
 # written 2022-10-29 by mza
 # based on neopixel_clockface.py
-# last updated 2022-12-03 by mza
+# last updated 2022-12-05 by mza
 
 # to install:
 # cd lib
@@ -116,13 +116,13 @@ def setup():
 	ina260_is_available = False
 	if should_use_ina260:
 		try:
-			ina260_adafruit.setup(i2c, N, ina260_address)
+			ina260_adafruit.setup(i2c, N, ina260_address, 2)
 			header_string += ina260_adafruit.header_string
 			ina260_is_available = True
 		except:
 			warning("can't talk to ina260 at address " + generic.hex(ina260_address))
 	if airlift_is_available:
-		feed_suffixes = [ "415nm", "445nm", "480nm", "515nm", "555nm", "590nm", "630nm", "680nm", "clear", "nir", "rssi", "batt", "current" ]
+		feed_suffixes = [ "415nm", "445nm", "480nm", "515nm", "555nm", "590nm", "630nm", "680nm", "clear", "nir", "rssi", "batt", "current0", "current1" ]
 		feed_names = []
 		for feed_suffix in feed_suffixes:
 			feed_names.append(my_adafruit_io_prefix + "-" + feed_suffix)
@@ -150,7 +150,7 @@ def loop():
 	if fuel_gauge_is_available:
 		string += lc709203f_adafruit.measure_string()
 	if ina260_is_available:
-		string += ina260_adafruit.measure_string()
+		string += ina260_adafruit.measure_string(0)
 	info(string)
 	n += 1
 	if 0==n%N:
@@ -161,6 +161,8 @@ def loop():
 			airlift_is_available = True
 			airlift.turn_on_wifi()
 			airlift.get_values()
+		if ina260_is_available:
+			ina260_adafruit.get_values(1)
 		if as7341_is_available:
 			as7341_adafruit.show_average_values()
 			if airlift_is_available:
@@ -180,6 +182,8 @@ def loop():
 					raise
 				except:
 					warning("couldn't post data for as7341")
+		if ina260_is_available:
+			ina260_adafruit.get_values(1)
 		if airlift_is_available:
 			airlift.show_average_values()
 			try:
@@ -209,10 +213,13 @@ def loop():
 				except:
 					warning("couldn't post data for batt")
 		if ina260_is_available:
-			ina260_adafruit.show_average_values()
+			ina260_adafruit.get_values(1)
+			ina260_adafruit.show_average_values(0)
+			ina260_adafruit.show_average_values(1)
 			if airlift_is_available:
 				try:
-					airlift.post_data(my_adafruit_io_prefix + "-current", ina260_adafruit.get_average_values()[0])
+					airlift.post_data(my_adafruit_io_prefix + "-current0", ina260_adafruit.get_average_values(0)[0])
+					airlift.post_data(my_adafruit_io_prefix + "-current1", ina260_adafruit.get_average_values(1)[0])
 					#last_good_post_time = generic.get_uptime()
 				except (KeyboardInterrupt, ReloadException):
 					raise
