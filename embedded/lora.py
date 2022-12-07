@@ -1,7 +1,7 @@
 # written 2022-07 by mza
 # basic bits taken from adafruit's rfm9x_simpletest.py by Tony DiCola and rfm9x_node1_ack.py by Jerry Needell
 # more help from https://learn.adafruit.com/multi-device-lora-temperature-network/using-with-adafruitio
-# last updated 2022-12-06 by mza
+# last updated 2022-12-07 by mza
 
 import time
 import board
@@ -46,6 +46,12 @@ def setup(spi, cs, reset, frequency, baudrate, tx_power_dbm, airlift_available, 
 	node_type = type_of_node
 	global my_adafruit_io_prefix
 	my_adafruit_io_prefix = adafruit_io_prefix
+
+def idle():
+	rfm9x.idle()
+
+def sleep():
+	rfm9x.sleep()
 
 def receive(timeout):
 	if USE_ACKNOWLEDGE:

@@ -1,5 +1,5 @@
 # written 2022-07 by mza
-# last updated 2022-12-06 by mza
+# last updated 2022-12-07 by mza
 
 # rsync -a *.py /media/mza/LORASEND/; rsync -a *.py /media/mza/LORARECEIVE/
 # cd lib
@@ -251,6 +251,8 @@ def loop():
 			lora.send_a_message_with_timestamp("lora node coming online")
 			if ina260_is_available:
 				ina260_adafruit.get_values(1)
+			if "gathering"==node_type:
+				lora.idle()
 		if dotstar_is_available:
 			dotstar[0] = (0, 0, 255, dotstar_brightness)
 		if "uplink"==node_type:
@@ -272,6 +274,8 @@ def loop():
 			lora.send_a_message_with_timestamp("button was pressed " + str(i))
 			if ina260_is_available:
 				ina260_adafruit.get_values(1)
+			if "gathering"==node_type:
+				lora.idle()
 			i += 1
 		if dotstar_is_available:
 			dotstar[0] = (255, 0, 0, dotstar_brightness)
@@ -318,6 +322,7 @@ def loop():
 					lora.send_a_message_with_timestamp("ina260bin1 " + string)
 					ina260_adafruit.get_values(1)
 					time.sleep(delay)
+				lora.idle()
 
 if __name__ == "__main__":
 	set_verbosity(4)
