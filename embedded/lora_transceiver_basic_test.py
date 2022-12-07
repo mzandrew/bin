@@ -252,7 +252,7 @@ def loop():
 			if ina260_is_available:
 				ina260_adafruit.get_values(1)
 			if "gathering"==node_type:
-				lora.idle()
+				lora.sleep()
 		if dotstar_is_available:
 			dotstar[0] = (0, 0, 255, dotstar_brightness)
 		if "uplink"==node_type:
@@ -275,7 +275,7 @@ def loop():
 			if ina260_is_available:
 				ina260_adafruit.get_values(1)
 			if "gathering"==node_type:
-				lora.idle()
+				lora.sleep()
 			i += 1
 		if dotstar_is_available:
 			dotstar[0] = (255, 0, 0, dotstar_brightness)
@@ -322,7 +322,7 @@ def loop():
 					lora.send_a_message_with_timestamp("ina260bin1 " + string)
 					ina260_adafruit.get_values(1)
 					time.sleep(delay)
-				lora.idle()
+				lora.sleep()
 
 if __name__ == "__main__":
 	set_verbosity(4)
