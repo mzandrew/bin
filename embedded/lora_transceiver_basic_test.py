@@ -8,9 +8,10 @@
 # cp -a lora_transceiver_basic_test.py /media/mza/LORASEND/code.py; cp -a lora_transceiver_basic_test.py /media/mza/LORARECEIVE/code.py
 # sync
 
-target_period = 80
+target_period = 90
 N = 64
-delay_between_acquisitions = target_period / N
+ina260_N = 4
+delay_between_acquisitions = 0.875
 BAUD_RATE = 4*57600
 RADIO_FREQ_MHZ = 905.0 # 868-915 MHz (902-928 MHz is the allowed band in US/MEX/CAN)
 TX_POWER_DBM = 5 # minimum 5; default 13; maximum 23
@@ -160,7 +161,7 @@ def setup():
 	ina260_is_available = False
 	if should_use_ina260:
 		try:
-			ina260_adafruit.setup(i2c, N, ina260_address, 2)
+			ina260_adafruit.setup(i2c, ina260_N, ina260_address, 2)
 			ina260_is_available = True
 		except (KeyboardInterrupt, ReloadException):
 			raise
@@ -232,6 +233,7 @@ def setup():
 				airlift.update_time_from_server()
 
 def loop():
+	generic.get_uptime()
 	global delay_between_acquisitions
 	global target_period
 	i = 0
@@ -247,27 +249,41 @@ def loop():
 		if first_time_through:
 			first_time_through = False
 			lora.send_a_message_with_timestamp("lora node coming online")
+			if ina260_is_available:
+				ina260_adafruit.get_values(1)
 		if dotstar_is_available:
 			dotstar[0] = (0, 0, 255, dotstar_brightness)
-		packet = lora.receive(delay_between_acquisitions)
-		if ina260_is_available:
-			ina260_adafruit.get_values(1)
-		if packet is not None:
-			LED.value = True
-			lora.decode_a_message(packet)
+		if "uplink"==node_type:
+			packet = lora.receive(delay_between_acquisitions)
+			if ina260_is_available:
+				ina260_adafruit.get_values(1)
+			if packet is not None:
+				LED.value = True
+				lora.decode_a_message(packet)
+		else:
+			time.sleep(delay_between_acquisitions/2)
+			if ina260_is_available:
+				ina260_adafruit.get_values(0)
+			time.sleep(delay_between_acquisitions/2)
+			if ina260_is_available:
+				ina260_adafruit.get_values(0)
 		if button_was_pressed:
 			button_was_pressed = False
 			lora.send_a_message_with_timestamp("button was pressed " + str(i))
+			if ina260_is_available:
+				ina260_adafruit.get_values(1)
 			i += 1
 		if dotstar_is_available:
 			dotstar[0] = (255, 0, 0, dotstar_brightness)
 		if "gathering"==node_type:
 			if bme680_is_available:
 				bme680_adafruit.get_values()
+			if ina260_is_available:
+				ina260_adafruit.get_values(0)
 			if as7341_is_available: 
 				as7341_adafruit.get_values()
-		if ina260_is_available:
-			ina260_adafruit.get_values(0)
+			if ina260_is_available:
+				ina260_adafruit.get_values(0)
 		j += 1
 		if 0==j%N:
 			if "gathering"==node_type:
@@ -281,23 +297,26 @@ def loop():
 					values = bme680_adafruit.get_average_values()
 					string = str(values)
 					lora.send_a_message_with_timestamp("bme680 " + string)
+					ina260_adafruit.get_values(1)
 					time.sleep(delay)
 				if as7341_is_available:
 					values = as7341_adafruit.get_average_values()
 					string = str(values)
 					lora.send_a_message_with_timestamp("as7341 " + string)
+					ina260_adafruit.get_values(1)
 					time.sleep(delay)
 				if ina260_is_available:
-					ina260_adafruit.get_values(1)
 					ina260_adafruit.show_average_values(0)
-					ina260_adafruit.show_average_values(1)
 					values = ina260_adafruit.get_average_values(0)
 					string = str(values)
 					lora.send_a_message_with_timestamp("ina260bin0 " + string)
+					ina260_adafruit.get_values(1)
 					time.sleep(delay)
+					ina260_adafruit.show_average_values(1)
 					values = ina260_adafruit.get_average_values(1)
 					string = str(values)
 					lora.send_a_message_with_timestamp("ina260bin1 " + string)
+					ina260_adafruit.get_values(1)
 					time.sleep(delay)
 
 if __name__ == "__main__":
