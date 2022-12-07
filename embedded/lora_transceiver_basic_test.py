@@ -1,5 +1,5 @@
 # written 2022-07 by mza
-# last updated 2022-12-04 by mza
+# last updated 2022-12-06 by mza
 
 # rsync -a *.py /media/mza/LORASEND/; rsync -a *.py /media/mza/LORARECEIVE/
 # cd lib
@@ -8,11 +8,13 @@
 # cp -a lora_transceiver_basic_test.py /media/mza/LORASEND/code.py; cp -a lora_transceiver_basic_test.py /media/mza/LORARECEIVE/code.py
 # sync
 
-TIMEOUT = 0.5
+target_period = 80
 N = 64
+delay_between_acquisitions = target_period / N
 BAUD_RATE = 4*57600
 RADIO_FREQ_MHZ = 905.0 # 868-915 MHz (902-928 MHz is the allowed band in US/MEX/CAN)
 TX_POWER_DBM = 5 # minimum 5; default 13; maximum 23
+delay = 2.0
 
 # failure rate for 915 MHz, 4*57600, timeout=0.5 TX_POWER=20 is 2844/14262
 
@@ -23,6 +25,8 @@ import board
 import busio
 import storage
 import adafruit_rfm9x
+import ina260_adafruit
+import generic
 #import gc
 #print(str(gc.mem_free()))
 try:
@@ -34,11 +38,15 @@ except MemoryError as error_message:
 #print(str(gc.mem_free()))
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string
 
+ina260_address = 0x40
+
 def setup():
+	generic.start_uptime()
 	global node_type
 	global label
 	global my_adafruit_io_prefix
 	global dotstar_is_available
+	global should_use_airlift
 	info("we are " + board.board_id)
 	dotstar_is_available = False
 	if 'unexpectedmaker_feathers2'==board.board_id: # for uf2 boot, click [RESET], then about a second later click [BOOT]
@@ -76,6 +84,7 @@ def setup():
 		use_built_in_wifi = True
 		my_wifi_name = "loratransponder"
 		my_adafruit_io_prefix = "lora"
+		should_use_ina260 = False
 	elif "LORASEND"==label:
 		node_type = "gathering"
 		should_use_bme680 = True
@@ -83,6 +92,7 @@ def setup():
 		should_use_RTC = True
 		should_use_airlift = False
 		use_built_in_wifi = False
+		should_use_ina260 = True
 	elif "LORASEND2"==label: # feather_m0_rfm9x
 		node_type = "gathering"
 		should_use_bme680 = False
@@ -90,6 +100,7 @@ def setup():
 		should_use_RTC = False
 		should_use_airlift = False
 		use_built_in_wifi = False
+		should_use_ina260 = False
 	else:
 		warning("board filesystem has no label")
 	global LED
@@ -145,6 +156,17 @@ def setup():
 		except Exception as error_message:
 			warning("as7341 not present")
 			error(str(error_message))
+	global ina260_is_available
+	ina260_is_available = False
+	if should_use_ina260:
+		try:
+			ina260_adafruit.setup(i2c, N, ina260_address, 2)
+			ina260_is_available = True
+		except (KeyboardInterrupt, ReloadException):
+			raise
+		except:
+			warning("can't talk to ina260 at address " + generic.hex(ina260_address))
+			raise
 	global spi
 	try:
 		spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
@@ -196,6 +218,7 @@ def setup():
 			airlift.setup_feed(my_adafruit_io_prefix + "-clear")
 			airlift.setup_feed(my_adafruit_io_prefix + "-skipped")
 			airlift.setup_feed(my_adafruit_io_prefix + "-garb-rssi")
+			airlift.setup_feed(my_adafruit_io_prefix + "-rssi")
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except Exception as error_message:
@@ -206,6 +229,8 @@ def setup():
 				airlift.update_time_from_server()
 
 def loop():
+	global delay_between_acquisitions
+	global target_period
 	i = 0
 	j = 0
 	button_was_pressed = False
@@ -221,7 +246,9 @@ def loop():
 			lora.send_a_message_with_timestamp("lora node coming online")
 		if dotstar_is_available:
 			dotstar[0] = (0, 0, 255, dotstar_brightness)
-		packet = lora.receive(TIMEOUT)
+		packet = lora.receive(delay_between_acquisitions)
+		if ina260_is_available:
+			ina260_adafruit.get_values(1)
 		if packet is not None:
 			LED.value = True
 			lora.decode_a_message(packet)
@@ -231,22 +258,44 @@ def loop():
 			i += 1
 		if dotstar_is_available:
 			dotstar[0] = (255, 0, 0, dotstar_brightness)
-		if bme680_is_available:
-			bme680_adafruit.get_values()
-		if as7341_is_available: 
-			as7341_adafruit.get_values()
+		if "gathering"==node_type:
+			if bme680_is_available:
+				bme680_adafruit.get_values()
+			if as7341_is_available: 
+				as7341_adafruit.get_values()
+		if ina260_is_available:
+			ina260_adafruit.get_values(0)
 		j += 1
 		if 0==j%N:
-			if dotstar_is_available:
-				dotstar[0] = (0, 255, 0, dotstar_brightness)
-			if bme680_is_available:
-				values = bme680_adafruit.get_average_values()
-				string = str(values)
-				lora.send_a_message_with_timestamp("bme680 " + string)
-			if as7341_is_available:
-				values = as7341_adafruit.get_average_values()
-				string = str(values)
-				lora.send_a_message_with_timestamp("as7341 " + string)
+			if "gathering"==node_type:
+				if dotstar_is_available:
+					dotstar[0] = (0, 255, 0, dotstar_brightness)
+				if should_use_airlift:
+					target_period = airlift.get_most_recent_data("target-period")
+					info("target_period = " + str(target_period))
+				delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, target_period)
+				if bme680_is_available:
+					values = bme680_adafruit.get_average_values()
+					string = str(values)
+					lora.send_a_message_with_timestamp("bme680 " + string)
+					time.sleep(delay)
+				if as7341_is_available:
+					values = as7341_adafruit.get_average_values()
+					string = str(values)
+					lora.send_a_message_with_timestamp("as7341 " + string)
+					time.sleep(delay)
+				if ina260_is_available:
+					ina260_adafruit.get_values(1)
+					ina260_adafruit.show_average_values(0)
+					ina260_adafruit.show_average_values(1)
+					values = ina260_adafruit.get_average_values(0)
+					string = str(values)
+					lora.send_a_message_with_timestamp("ina260bin0 " + string)
+					time.sleep(delay)
+					values = ina260_adafruit.get_average_values(1)
+					string = str(values)
+					lora.send_a_message_with_timestamp("ina260bin1 " + string)
+					time.sleep(delay)
 
 if __name__ == "__main__":
 	set_verbosity(4)

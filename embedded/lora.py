@@ -226,11 +226,39 @@ def parse_as7341(message, rssi):
 	else:
 		return False
 
+def parse_ina260(message, rssi):
+	match = re.search("ina260bin([0-9]+) \[([-0-9.]+), ([-0-9.]+),", message)
+	if match:
+		mybin = int(match.group(1))
+		current = float(match.group(2))
+		voltage = float(match.group(3))
+		info("bin: " + str(mybin))
+		info("current: " + str(current) + " mA")
+		info("voltage: " + str(voltage) + " V")
+		if airlift_is_available:
+			try:
+				pass
+				airlift.post_data(my_adafruit_io_prefix + "-current" + str(mybin), current)
+				if 0==bin:
+					airlift.post_data(my_adafruit_io_prefix + "-batt", voltage)
+			except (KeyboardInterrupt, ReloadException):
+				raise
+			except Exception as error_message:
+				warning("couldn't post data for remote ina260")
+				airlift.show_network_status()
+				error(str(error_message))
+			post_rssi(rssi)
+		return True
+	else:
+		return False
+
 def parse(message, rssi):
 	info(message)
 	if parse_bme680(message, rssi):
 		return True
 	if parse_as7341(message, rssi):
+		return True
+	if parse_ina260(message, rssi):
 		return True
 	return False
 
