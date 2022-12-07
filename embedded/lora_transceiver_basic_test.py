@@ -219,6 +219,9 @@ def setup():
 			airlift.setup_feed(my_adafruit_io_prefix + "-skipped")
 			airlift.setup_feed(my_adafruit_io_prefix + "-garb-rssi")
 			airlift.setup_feed(my_adafruit_io_prefix + "-rssi")
+			airlift.setup_feed(my_adafruit_io_prefix + "-batt")
+			airlift.setup_feed(my_adafruit_io_prefix + "-current0")
+			airlift.setup_feed(my_adafruit_io_prefix + "-current1")
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except Exception as error_message:

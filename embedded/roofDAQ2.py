@@ -119,6 +119,8 @@ def setup():
 			ina260_adafruit.setup(i2c, N, ina260_address, 2)
 			header_string += ina260_adafruit.header_string
 			ina260_is_available = True
+		except (KeyboardInterrupt, ReloadException):
+			raise
 		except:
 			warning("can't talk to ina260 at address " + generic.hex(ina260_address))
 	if airlift_is_available:

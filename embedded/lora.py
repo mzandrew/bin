@@ -1,7 +1,7 @@
 # written 2022-07 by mza
 # basic bits taken from adafruit's rfm9x_simpletest.py by Tony DiCola and rfm9x_node1_ack.py by Jerry Needell
 # more help from https://learn.adafruit.com/multi-device-lora-temperature-network/using-with-adafruitio
-# last updated 2022-12-04 by mza
+# last updated 2022-12-06 by mza
 
 import time
 import board
@@ -183,7 +183,7 @@ def parse_bme680(message, rssi):
 				warning("couldn't post data for remote bme680")
 				airlift.show_network_status()
 				error(str(error_message))
-			post_rssi(rssi)
+			#post_rssi(rssi)
 		return True
 	else:
 		return False
@@ -221,7 +221,7 @@ def parse_as7341(message, rssi):
 				warning("couldn't post data for remote as7341")
 				airlift.show_network_status()
 				error(str(error_message))
-			post_rssi(rssi)
+			#post_rssi(rssi)
 		return True
 	else:
 		return False
@@ -232,14 +232,14 @@ def parse_ina260(message, rssi):
 		mybin = int(match.group(1))
 		current = float(match.group(2))
 		voltage = float(match.group(3))
-		info("bin: " + str(mybin))
+		#info("bin: " + str(mybin))
 		info("current: " + str(current) + " mA")
 		info("voltage: " + str(voltage) + " V")
 		if airlift_is_available:
 			try:
 				pass
 				airlift.post_data(my_adafruit_io_prefix + "-current" + str(mybin), current)
-				if 0==bin:
+				if 0==mybin:
 					airlift.post_data(my_adafruit_io_prefix + "-batt", voltage)
 			except (KeyboardInterrupt, ReloadException):
 				raise
@@ -247,7 +247,8 @@ def parse_ina260(message, rssi):
 				warning("couldn't post data for remote ina260")
 				airlift.show_network_status()
 				error(str(error_message))
-			post_rssi(rssi)
+			if 0==mybin:
+				post_rssi(rssi)
 		return True
 	else:
 		return False
