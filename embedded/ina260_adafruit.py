@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 # written 2020-11-25 by mza
-# last updated 2022-12-05 by mza
+# last updated 2022-12-10 by mza
 
 # from https://learn.adafruit.com/adafruit-ina260-current-voltage-power-sensor-breakout/python-circuitpython
+# and https://github.com/adafruit/Adafruit_CircuitPython_INA260/blob/main/adafruit_ina260.py
 # and https://github.com/mzandrew/XRM/blob/master/predator/IV.py
 
 import time
@@ -20,6 +21,10 @@ default_address = 0x40
 def setup(i2c, N, address=default_address, bins=1):
 	global ina260
 	ina260 = adafruit_ina260.INA260(i2c_bus=i2c, address=address)
+	adafruit_ina260.INA260.mode = adafruit_ina260.Mode.TRIGGERED
+	adafruit_ina260.INA260.current_conversion_time = adafruit_ina260.ConversionTime.TIME_8_244_ms
+	adafruit_ina260.INA260.voltage_conversion_time = adafruit_ina260.ConversionTime.TIME_8_244_ms
+	adafruit_ina260.INA260.averaging_count = adafruit_ina260.AveragingCount.COUNT_1024
 	global myboxcar
 	myboxcar = boxcar.boxcar(3, N, "ina260", bins)
 	return address
