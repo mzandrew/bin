@@ -34,9 +34,8 @@ delay_between_acquisitions = 1.5
 N = 32 # average this many sensor readings before acting on it
 should_use_RTC = False
 should_power_down_wifi_when_not_needed = False
-#NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET = 3600
-target_period = 60
-NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET = 5 * target_period
+ORIGINAL_TARGET_PERIOD = 90
+target_period = ORIGINAL_TARGET_PERIOD
 should_use_fuel_gauge = False
 should_use_ina260 = True
 ina260_address = 0x40
@@ -171,6 +170,8 @@ def loop():
 			airlift.turn_on_wifi()
 			airlift.get_values()
 		target_period = airlift.get_most_recent_data("target-period")
+		if target_period<10:
+			target_period = ORIGINAL_TARGET_PERIOD
 		info("target_period = " + str(target_period))
 		delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, target_period)
 		if ina260_is_available:
@@ -209,7 +210,7 @@ def loop():
 			current_time = generic.get_uptime()
 			time_since_last_good_post = current_time - last_good_post_time
 			info("time since last good post: " + str(time_since_last_good_post) + " s")
-			if NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET < time_since_last_good_post:
+			if 5 * target_period < time_since_last_good_post:
 				error("too long since a post operation succeeded")
 				generic.reset()
 		if fuel_gauge_is_available:
