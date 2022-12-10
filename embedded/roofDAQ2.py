@@ -1,6 +1,6 @@
 # written 2022-10-29 by mza
 # based on neopixel_clockface.py
-# last updated 2022-12-05 by mza
+# last updated 2022-12-10 by mza
 
 # to install:
 # cd lib
@@ -37,7 +37,7 @@ should_power_down_wifi_when_not_needed = False
 #NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET = 3600
 target_period = 60
 NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET = 5 * target_period
-should_use_fuel_gauge = True
+should_use_fuel_gauge = False
 should_use_ina260 = True
 ina260_address = 0x40
 
@@ -95,8 +95,6 @@ def setup():
 	if RTC_is_available:
 		string = ds3231_adafruit.get_timestring2()
 		info(string)
-	global fuel_gauge_is_available
-	fuel_gauge_is_available = False
 	if neopixel_is_available:
 		neopixel_adafruit.set_color(255, 0, 255)
 	global airlift_is_available
@@ -108,10 +106,15 @@ def setup():
 		neopixel_adafruit.set_color(0, 127, 127)
 	if airlift_is_available:
 		header_string += ", rssi-dB"
+	global fuel_gauge_is_available
+	fuel_gauge_is_available = False
 	if should_use_fuel_gauge:
-		lc709203f_adafruit.setup(i2c, N)
-		header_string += ", batt-V, batt-%"
-		fuel_gauge_is_available = True
+		try:
+			lc709203f_adafruit.setup(i2c, N)
+			header_string += ", batt-V, batt-%"
+			fuel_gauge_is_available = True
+		except:
+			warning("can't connect to fuel gauge")
 	global ina260_is_available
 	ina260_is_available = False
 	if should_use_ina260:
@@ -229,6 +232,8 @@ def loop():
 				try:
 					airlift.post_data(my_adafruit_io_prefix + "-current0", ina260_adafruit.get_average_values(0)[0])
 					airlift.post_data(my_adafruit_io_prefix + "-current1", ina260_adafruit.get_average_values(1)[0])
+					cell_voltage = generic.fround(ina260_adafruit.get_average_values(0)[1], 0.001)
+					airlift.post_data(my_adafruit_io_prefix + "-batt", cell_voltage)
 					#last_good_post_time = generic.get_uptime()
 				except (KeyboardInterrupt, ReloadException):
 					raise
