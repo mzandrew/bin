@@ -39,6 +39,7 @@ target_period = ORIGINAL_TARGET_PERIOD
 should_use_fuel_gauge = False
 should_use_ina260 = True
 ina260_address = 0x40
+ina260_N = 4
 
 eta = 1.0/512.0
 
@@ -118,7 +119,7 @@ def setup():
 	ina260_is_available = False
 	if should_use_ina260:
 		try:
-			ina260_adafruit.setup(i2c, N, ina260_address, 2)
+			ina260_adafruit.setup(i2c, ina260_N, ina260_address, 2)
 			header_string += ina260_adafruit.header_string
 			ina260_is_available = True
 		except (KeyboardInterrupt, ReloadException):
