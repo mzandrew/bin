@@ -1,13 +1,14 @@
 # written 2022-07 by mza
 # basic bits taken from adafruit's rfm9x_simpletest.py by Tony DiCola and rfm9x_node1_ack.py by Jerry Needell
 # more help from https://learn.adafruit.com/multi-device-lora-temperature-network/using-with-adafruitio
-# last updated 2022-12-07 by mza
+# last updated 2022-12-11 by mza
 
 import time
 import board
 import busio
 import adafruit_rfm9x
 import re
+import generic
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string
 
 PREFIX = "SCOOPY"
@@ -245,6 +246,7 @@ def parse_ina260(message, rssi):
 			try:
 				pass
 				airlift.post_data(my_adafruit_io_prefix + "-current" + str(mybin), current)
+				voltage = generic.fround(voltage, 0.001)
 				if 0==mybin:
 					airlift.post_data(my_adafruit_io_prefix + "-batt", voltage)
 			except (KeyboardInterrupt, ReloadException):
