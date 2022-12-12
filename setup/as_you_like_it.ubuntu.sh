@@ -47,7 +47,7 @@ function install_packages {
 	list="$list mlocate build-essential openssh-server net-tools nfs-common"
 	list="$list dfu-util gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib" # tomu
 	list="$list synaptic gnuplot ntp meld doublecmd-gtk zip unzip dbus-x11 gimp inkscape xsane"
-	list="$list texlive-science" # latex
+	list="$list texlive-science texlive-latex-extra" # latex
 	list="$list libgsl-dev" # root
 	list="$list ffmpeg mplayer" # making/playing videos
 	list="$list network-manager-openconnect-gnome" # for VPN
