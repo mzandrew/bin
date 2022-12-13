@@ -15,7 +15,7 @@ PREFIX = "SCOOPY"
 SUFFIX = "BOOPS"
 USE_ACKNOWLEDGE = False
 
-def setup(spi, cs, reset, frequency, baudrate, tx_power_dbm, airlift_available, RTC_available, type_of_node, adafruit_io_prefix):
+def setup(spi, cs, reset, frequency, baudrate, tx_power_dbm, airlift_available, RTC_available, type_of_node, adafruit_io_prefix, mynodeid):
 	global rfm9x
 	rfm9x = adafruit_rfm9x.RFM9x(spi=spi, cs=cs, reset=reset, frequency=frequency, baudrate=baudrate)
 	rfm9x.tx_power = tx_power_dbm
@@ -47,6 +47,8 @@ def setup(spi, cs, reset, frequency, baudrate, tx_power_dbm, airlift_available, 
 	node_type = type_of_node
 	global my_adafruit_io_prefix
 	my_adafruit_io_prefix = adafruit_io_prefix
+	global nodeid
+	nodeid = mynodeid
 
 def idle():
 	rfm9x.idle()
@@ -69,7 +71,7 @@ def send_a_message(message):
 		raise
 	except Exception as error_message:
 		message_id = 1
-	message_id_string = "[" + str(message_id) + "] "
+	message_id_string = "node" + str(nodeid) + "[" + str(message_id) + "] "
 	message_with_prefix_and_suffix = PREFIX + message_id_string + message + SUFFIX
 	if 252<len(message_with_prefix_and_suffix):
 		warning("should truncate or parcel message because it is too long")
@@ -88,22 +90,14 @@ def send_a_message_with_timestamp(message):
 		message = timestring + " " + message
 	send_a_message(message)
 
+previously_received_message_id = {}
+total_skipped_messages = {}
+skipped_messages = {}
 def decode_a_message(packet):
 	global previously_received_message_id
-	try:
-		previously_received_message_id
-	except (KeyboardInterrupt, ReloadException):
-		raise
-	except Exception as error_message:
-		previously_received_message_id = 0
 	global total_skipped_messages
-	try:
-		total_skipped_messages
-	except (KeyboardInterrupt, ReloadException):
-		raise
-	except Exception as error_message:
-		total_skipped_messages = 0
-	this_message_id = 0
+	global skipped_messages
+	current_message_id = 0
 	try:
 		rssi = rfm9x.last_rssi
 	except (KeyboardInterrupt, ReloadException):
@@ -112,33 +106,51 @@ def decode_a_message(packet):
 		rssi = 0
 	try:
 		packet_text = str(packet, "ascii")
-		match = re.search("^" + PREFIX + "\[([0-9]+)\](.*)" + SUFFIX + "$", packet_text)
+		match = re.search("^" + PREFIX + "node([0-9]+)\[([0-9]+)\](.*)" + SUFFIX + "$", packet_text)
 		if match:
-			this_message_id = match.group(1)
-			message = match.group(2)
-			this_message_id = int(this_message_id)
-			skipped_messages = this_message_id - previously_received_message_id - 1
-			#debug("previously_received_message_id: " + str(previously_received_message_id))
-			#debug("this_message_id: " + str(this_message_id))
-			if 0<skipped_messages:
-				total_skipped_messages += skipped_messages
-				#warning("skipped " + str(skipped_messages) + " message(s)")
-				if this_message_id:
-					percentage = int(1000.0 * total_skipped_messages / this_message_id)/10.0
+			mynodeid = match.group(1)
+			try:
+				previously_received_message_id[mynodeid]
+			except (KeyboardInterrupt, ReloadException):
+				raise
+			except Exception as error_message:
+				previously_received_message_id[mynodeid] = 0
+			try:
+				total_skipped_messages[mynodeid]
+			except (KeyboardInterrupt, ReloadException):
+				raise
+			except Exception as error_message:
+				total_skipped_messages[mynodeid] = 0
+			try:
+				skipped_messages[mynodeid]
+			except (KeyboardInterrupt, ReloadException):
+				raise
+			except Exception as error_message:
+				skipped_messages[mynodeid] = 0
+			current_message_id = int(match.group(2))
+			message = match.group(3)
+			skipped_messages[mynodeid] = current_message_id - previously_received_message_id[mynodeid] - 1
+			#debug("previously_received_message_id[" + str(mynodeid) + "]: " + str(previously_received_message_id[mynodeid]))
+			#debug("current_message_id: " + str(current_message_id))
+			if 0<skipped_messages[mynodeid]:
+				total_skipped_messages[mynodeid] += skipped_messages[mynodeid]
+				#warning("skipped[" + str(mynodeid) + "] " + str(skipped_messages[mynodeid]) + " message(s)")
+				if current_message_id:
+					percentage = int(1000.0 * total_skipped_messages[mynodeid] / current_message_id)/10.0
 				else:
 					percentage = "?"
-				warning("skipped " + str(skipped_messages) + " message(s); total skipped: " + str(total_skipped_messages) + "/" + str(this_message_id) + " = " + str(percentage) + "%")
+				warning("skipped " + str(skipped_messages[mynodeid]) + " message(s); total skipped: " + str(total_skipped_messages[mynodeid]) + "/" + str(current_message_id) + " = " + str(percentage) + "%")
 				if airlift_is_available:
 					try:
-						airlift.post_data(my_adafruit_io_prefix + "-skipped", skipped_messages)
+						airlift.post_data(my_adafruit_io_prefix + "-skipped", skipped_messages[mynodeid])
 					except (KeyboardInterrupt, ReloadException):
 						raise
 					except Exception as error_message:
 						warning("unable to post skipped data")
 						airlift.show_network_status()
 						error(str(error_message))
-			info("received: [" + str(this_message_id) + "]" + message + " RSSI=" + str(rssi) + "dBm")
-			previously_received_message_id = this_message_id
+			info("received: node" + str(mynodeid) + "[" + str(current_message_id) + "]" + message + " RSSI=" + str(rssi) + "dBm")
+			previously_received_message_id[mynodeid] = current_message_id
 			if "uplink"==node_type:
 				parse(message, rssi)
 		else:
@@ -157,8 +169,8 @@ def decode_a_message(packet):
 				warning("unable to post garb_rssi data")
 				airlift.show_network_status()
 				error(str(error_message))
-		#info("total skipped messages: " + str(total_skipped_messages))
-	return this_message_id
+		#info("total skipped messages: " + str(total_skipped_messages[mynodeid]))
+	return current_message_id
 
 def post_rssi(rssi):
 	try:
