@@ -1,13 +1,13 @@
 # written 2022-12-07 to 2022-12-13 by mza
 import time, board, busio, digitalio, adafruit_rfm9x, gc
 
-PREFIX = "SCOOPY"
-SUFFIX = "BOOPS"
+PRE = "SCOOPY"
+SUF = "BOOPS"
 BAUD = 4*57600
 RF = 905.0 # [902,928]
 TXDBM = 5 # [5, 23]
-N = 6
-ina_N = 4
+N = 9
+ina_N = 8
 delay = 10
 ina_bins = 2
 nodeid = 3
@@ -64,10 +64,33 @@ def send(msg):
 	msgid += 1
 	msgid_str = "node" + str(nodeid) + "[" + str(msgid) + "] "
 	print(msgid_str + msg)
-	rfm9x.send(bytes(PREFIX + msgid_str + msg + SUFFIX, "utf-8"))
+	rfm9x.send(bytes(PRE + msgid_str + msg + SUF, "utf-8"))
 
-def loop():
-	i = 0
+if __name__ == "__main__":
+	rfm9x = adafruit_rfm9x.RFM9x(spi=busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO), cs=digitalio.DigitalInOut(board.RFM9X_CS), reset=digitalio.DigitalInOut(board.RFM9X_RST), frequency=RF, baudrate=BAUD)
+	rfm9x.tx_power = TXDBM
+	gc.collect()
+	i2c = busio.I2C(board.SCL, board.SDA)
+	gc.collect()
+	ina_exists = False
+	try:
+		import adafruit_ina260
+		gc.collect()
+		global ina
+		ina = adafruit_ina260.INA260(i2c_bus=i2c, address=0x40)
+		gc.collect()
+		ina_exists = True
+	except:
+		print("can't setup ina260")
+	try:
+		gc.collect()
+		bc_setup(3, ina_bins)
+		gc.collect()
+	except:
+		print("can't setup boxcar")
+	if ina_exists:
+		ina_get_vals(1)
+	i = 1
 	while True:
 		if ina_exists:
 			ina_get_vals(0)
@@ -85,31 +108,4 @@ def loop():
 			print("nope")
 		i += 1
 		time.sleep(delay)
-
-if __name__ == "__main__":
-	rfm9x = adafruit_rfm9x.RFM9x(spi=busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO), cs=digitalio.DigitalInOut(board.RFM9X_CS), reset=digitalio.DigitalInOut(board.RFM9X_RST), frequency=RF, baudrate=BAUD)
-	rfm9x.tx_power = TXDBM
-	gc.collect()
-	i2c = busio.I2C(board.SCL, board.SDA)
-	ina_exists = False
-	try:
-		import adafruit_ina260
-		gc.collect()
-		global ina
-		ina = adafruit_ina260.INA260(i2c_bus=i2c, address=0x40)
-		gc.collect()
-		ina_exists = True
-	except:
-		print("can't setup ina260")
-		raise
-	try:
-		gc.collect()
-		bc_setup(3, ina_bins)
-		gc.collect()
-	except:
-		print("can't setup boxcar")
-		raise
-	if ina_exists:
-		ina_get_vals(1)
-	loop()
 
