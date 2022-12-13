@@ -86,6 +86,7 @@ def setup():
 		my_wifi_name = "loratransponder"
 		my_adafruit_io_prefix = "lora"
 		should_use_ina260 = False
+		nodeid = 1
 	elif "LORASEND"==label:
 		node_type = "gathering"
 		should_use_bme680 = True
@@ -94,7 +95,8 @@ def setup():
 		should_use_airlift = False
 		use_built_in_wifi = False
 		should_use_ina260 = True
-	elif "LORASEND2"==label: # feather_m0_rfm9x
+		nodeid = 2
+	elif "LORASEND2"==label: # feather_m0_rfm9x - needs loralight.py
 		node_type = "gathering"
 		should_use_bme680 = False
 		should_use_as7341 = False
@@ -102,6 +104,7 @@ def setup():
 		should_use_airlift = False
 		use_built_in_wifi = False
 		should_use_ina260 = False
+		nodeid = 3
 	else:
 		warning("board filesystem has no label")
 	global LED
@@ -204,7 +207,7 @@ def setup():
 		else:
 			airlift_is_available = airlift.setup_airlift(my_wifi_name, spi, board.D13, board.D11, board.D12)
 	try:
-		lora.setup(spi, CS, RESET, RADIO_FREQ_MHZ, BAUD_RATE, TX_POWER_DBM, airlift_is_available, RTC_is_available, node_type, my_adafruit_io_prefix)
+		lora.setup(spi, CS, RESET, RADIO_FREQ_MHZ, BAUD_RATE, TX_POWER_DBM, airlift_is_available, RTC_is_available, node_type, my_adafruit_io_prefix, nodeid)
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except MemoryError as error_message:
@@ -213,16 +216,16 @@ def setup():
 		error(str(error_message))
 	if airlift_is_available:
 		try:
-			airlift.setup_feed(my_adafruit_io_prefix + "-temp")
-			airlift.setup_feed(my_adafruit_io_prefix + "-hum")
-			airlift.setup_feed(my_adafruit_io_prefix + "-pres")
-			airlift.setup_feed(my_adafruit_io_prefix + "-clear")
-			airlift.setup_feed(my_adafruit_io_prefix + "-skipped")
+			#airlift.setup_feed(my_adafruit_io_prefix + "-temp")
+			#airlift.setup_feed(my_adafruit_io_prefix + "-hum")
+			#airlift.setup_feed(my_adafruit_io_prefix + "-pres")
+			#airlift.setup_feed(my_adafruit_io_prefix + "-clear")
+			#airlift.setup_feed(my_adafruit_io_prefix + "-skipped")
 			airlift.setup_feed(my_adafruit_io_prefix + "-garb-rssi")
-			airlift.setup_feed(my_adafruit_io_prefix + "-rssi")
-			airlift.setup_feed(my_adafruit_io_prefix + "-batt")
-			airlift.setup_feed(my_adafruit_io_prefix + "-current0")
-			airlift.setup_feed(my_adafruit_io_prefix + "-current1")
+			#airlift.setup_feed(my_adafruit_io_prefix + "-rssi")
+			#airlift.setup_feed(my_adafruit_io_prefix + "-batt")
+			#airlift.setup_feed(my_adafruit_io_prefix + "-current0")
+			#airlift.setup_feed(my_adafruit_io_prefix + "-current1")
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except Exception as error_message:

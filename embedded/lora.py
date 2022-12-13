@@ -142,7 +142,7 @@ def decode_a_message(packet):
 				warning("skipped " + str(skipped_messages[mynodeid]) + " message(s); total skipped: " + str(total_skipped_messages[mynodeid]) + "/" + str(current_message_id) + " = " + str(percentage) + "%")
 				if airlift_is_available:
 					try:
-						airlift.post_data(my_adafruit_io_prefix + "-skipped", skipped_messages[mynodeid])
+						airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "skipped", skipped_messages[mynodeid])
 					except (KeyboardInterrupt, ReloadException):
 						raise
 					except Exception as error_message:
@@ -152,7 +152,7 @@ def decode_a_message(packet):
 			info("received: node" + str(mynodeid) + "[" + str(current_message_id) + "]" + message + " RSSI=" + str(rssi) + "dBm")
 			previously_received_message_id[mynodeid] = current_message_id
 			if "uplink"==node_type:
-				parse(message, rssi)
+				parse(mynodeid, message, rssi)
 		else:
 			debug("received: " + packet_text + " RSSI=" + str(rssi) + "dBm")
 	except (KeyboardInterrupt, ReloadException):
@@ -172,9 +172,9 @@ def decode_a_message(packet):
 		#info("total skipped messages: " + str(total_skipped_messages[mynodeid]))
 	return current_message_id
 
-def post_rssi(rssi):
+def post_rssi(mynodeid, rssi):
 	try:
-		airlift.post_data(my_adafruit_io_prefix + "-rssi", rssi)
+		airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "rssi", rssi)
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except Exception as error_message:
@@ -182,7 +182,7 @@ def post_rssi(rssi):
 		airlift.show_network_status()
 		error(str(error_message))
 
-def parse_bme680(message, rssi):
+def parse_bme680(mynodeid, message, rssi):
 	match = re.search("bme680 \[([0-9.]+), ([0-9.]+), ([0-9.]+),", message)
 	if match:
 		temp = float(match.group(1))
@@ -193,21 +193,21 @@ def parse_bme680(message, rssi):
 		info("presure: " + str(pres) + " ATM")
 		if airlift_is_available:
 			try:
-				airlift.post_data(my_adafruit_io_prefix + "-temp", temp)
-				airlift.post_data(my_adafruit_io_prefix + "-hum", hum)
-				airlift.post_data(my_adafruit_io_prefix + "-pres", pres)
+				airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "temp", temp)
+				airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "hum", hum)
+				airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "pres", pres)
 			except (KeyboardInterrupt, ReloadException):
 				raise
 			except Exception as error_message:
 				warning("couldn't post data for remote bme680")
 				airlift.show_network_status()
 				error(str(error_message))
-			#post_rssi(rssi)
+			#post_rssi(mynodeid, rssi)
 		return True
 	else:
 		return False
 
-def parse_as7341(message, rssi):
+def parse_as7341(mynodeid, message, rssi):
 	match = re.search("as7341 \[([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+)\]", message)
 	if match:
 		nm415 = float(match.group(1))
@@ -233,19 +233,19 @@ def parse_as7341(message, rssi):
 		if airlift_is_available:
 			try:
 				pass
-				airlift.post_data(my_adafruit_io_prefix + "-clear", clear)
+				airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "clear", clear)
 			except (KeyboardInterrupt, ReloadException):
 				raise
 			except Exception as error_message:
 				warning("couldn't post data for remote as7341")
 				airlift.show_network_status()
 				error(str(error_message))
-			#post_rssi(rssi)
+			#post_rssi(mynodeid, rssi)
 		return True
 	else:
 		return False
 
-def parse_ina260(message, rssi):
+def parse_ina260(mynodeid, message, rssi):
 	match = re.search("ina260bin([0-9]+) \[([-0-9.]+), ([-0-9.]+),", message)
 	if match:
 		mybin = int(match.group(1))
@@ -257,10 +257,10 @@ def parse_ina260(message, rssi):
 		if airlift_is_available:
 			try:
 				pass
-				airlift.post_data(my_adafruit_io_prefix + "-current" + str(mybin), current)
+				airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "current" + str(mybin), current)
 				voltage = generic.fround(voltage, 0.001)
 				if 0==mybin:
-					airlift.post_data(my_adafruit_io_prefix + "-batt", voltage)
+					airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "batt", voltage)
 			except (KeyboardInterrupt, ReloadException):
 				raise
 			except Exception as error_message:
@@ -268,18 +268,18 @@ def parse_ina260(message, rssi):
 				airlift.show_network_status()
 				error(str(error_message))
 			if 0==mybin:
-				post_rssi(rssi)
+				post_rssi(mynodeid, rssi)
 		return True
 	else:
 		return False
 
-def parse(message, rssi):
+def parse(mynodeid, message, rssi):
 	info(message)
-	if parse_bme680(message, rssi):
+	if parse_bme680(mynodeid, message, rssi):
 		return True
-	if parse_as7341(message, rssi):
+	if parse_as7341(mynodeid, message, rssi):
 		return True
-	if parse_ina260(message, rssi):
+	if parse_ina260(mynodeid, message, rssi):
 		return True
 	return False
 
