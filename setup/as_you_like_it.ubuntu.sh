@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-# last updated 2022-06-03 by mza
+# last updated 2022-12-13 by mza
 
 declare -i debian_only=0
 #debian_only=1
@@ -48,6 +48,7 @@ function install_packages {
 	list="$list dfu-util gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib" # tomu
 	list="$list synaptic gnuplot ntp meld doublecmd-gtk zip unzip dbus-x11 gimp inkscape xsane"
 	list="$list texlive-science texlive-latex-extra" # latex
+	list="$list cups paps" # cups and utf-8 to postscript converter
 	list="$list libgsl-dev" # root
 	list="$list ffmpeg mplayer" # making/playing videos
 	list="$list network-manager-openconnect-gnome" # for VPN
