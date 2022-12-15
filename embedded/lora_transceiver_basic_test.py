@@ -1,10 +1,10 @@
 # written 2022-07 by mza
-# last updated 2022-12-07 by mza
+# last updated 2022-12-15 by mza
 
 # rsync -a *.py /media/mza/LORASEND/; rsync -a *.py /media/mza/LORARECEIVE/
 # cd lib
-# rsync -r adafruit_onewire adafruit_esp32spi adafruit_bus_device adafruit_display_text simpleio.mpy adafruit_gps.mpy neopixel.mpy adafruit_sdcard.mpy adafruit_datetime.mpy adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_io adafruit_minimqtt adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORARECEIVE/lib/
-# rsync -r adafruit_onewire adafruit_esp32spi adafruit_bus_device adafruit_display_text simpleio.mpy adafruit_gps.mpy neopixel.mpy adafruit_sdcard.mpy adafruit_datetime.mpy adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_io adafruit_minimqtt adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORASEND/lib/
+# rsync -r adafruit_ina260.mpy adafruit_onewire adafruit_esp32spi adafruit_bus_device adafruit_display_text simpleio.mpy adafruit_gps.mpy neopixel.mpy adafruit_sdcard.mpy adafruit_datetime.mpy adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_io adafruit_minimqtt adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORARECEIVE/lib/
+# rsync -r adafruit_ina260.mpy adafruit_onewire adafruit_esp32spi adafruit_bus_device adafruit_display_text simpleio.mpy adafruit_gps.mpy neopixel.mpy adafruit_sdcard.mpy adafruit_datetime.mpy adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_io adafruit_minimqtt adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORASEND/lib/
 # cp -a lora_transceiver_basic_test.py /media/mza/LORASEND/code.py; cp -a lora_transceiver_basic_test.py /media/mza/LORARECEIVE/code.py
 # sync
 
@@ -26,6 +26,7 @@ import board
 import busio
 import storage
 import adafruit_rfm9x
+import neopixel_adafruit
 import ina260_adafruit
 import generic
 #import gc
@@ -47,9 +48,11 @@ def setup():
 	global label
 	global my_adafruit_io_prefix
 	global dotstar_is_available
+	global neopixel_is_available
 	global should_use_airlift
 	info("we are " + board.board_id)
 	dotstar_is_available = False
+	neopixel_is_available = False
 	if 'unexpectedmaker_feathers2'==board.board_id: # for uf2 boot, click [RESET], then about a second later click [BOOT]
 		import feathers2
 		feathers2.enable_LDO2(True)
@@ -87,7 +90,8 @@ def setup():
 		my_adafruit_io_prefix = "lora"
 		should_use_ina260 = False
 		nodeid = 1
-	elif "LORASEND"==label:
+		should_use_neopixel = False
+	elif "LORASEND2"==label: # rp2040 feather
 		node_type = "gathering"
 		should_use_bme680 = True
 		should_use_as7341 = True
@@ -96,7 +100,8 @@ def setup():
 		use_built_in_wifi = False
 		should_use_ina260 = True
 		nodeid = 2
-	elif "LORASEND2"==label: # feather_m0_rfm9x - needs loralight.py
+		should_use_neopixel = True
+	elif "LORASEND3"==label: # feather_m0_rfm9x - needs loralight.py
 		node_type = "gathering"
 		should_use_bme680 = False
 		should_use_as7341 = False
@@ -105,8 +110,16 @@ def setup():
 		use_built_in_wifi = False
 		should_use_ina260 = False
 		nodeid = 3
+		should_use_neopixel = False
 	else:
 		warning("board filesystem has no label")
+	if should_use_neopixel:
+		try:
+			neopixel_is_available = neopixel_adafruit.setup_neopixel()
+		except:
+			warning("can't set up neopixel")
+	if neopixel_is_available:
+		neopixel_adafruit.set_color(255, 255, 255)
 	global LED
 	import digitalio
 	LED = digitalio.DigitalInOut(board.D13)
@@ -197,6 +210,8 @@ def setup():
 		except Exception as error_message:
 			RTC_is_available = False
 			error(str(error_message))
+	if neopixel_is_available:
+		neopixel_adafruit.set_color(255, 0, 255)
 	global airlift_is_available
 	airlift_is_available = False
 	if should_use_airlift:
@@ -206,6 +221,8 @@ def setup():
 			airlift_is_available = airlift.setup_wifi(my_wifi_name)
 		else:
 			airlift_is_available = airlift.setup_airlift(my_wifi_name, spi, board.D13, board.D11, board.D12)
+	if neopixel_is_available:
+		neopixel_adafruit.set_color(255, 255, 0)
 	try:
 		lora.setup(spi, CS, RESET, RADIO_FREQ_MHZ, BAUD_RATE, TX_POWER_DBM, airlift_is_available, RTC_is_available, node_type, my_adafruit_io_prefix, nodeid)
 	except (KeyboardInterrupt, ReloadException):
@@ -245,6 +262,8 @@ def loop():
 	info("Waiting for packets...")
 	first_time_through = True
 	while True:
+		if neopixel_is_available:
+			neopixel_adafruit.set_color(255, 0, 0)
 		LED.value = False
 		button_was_pressed = False
 		if not button.value:
@@ -283,6 +302,8 @@ def loop():
 		if dotstar_is_available:
 			dotstar[0] = (255, 0, 0, dotstar_brightness)
 		if "gathering"==node_type:
+			if neopixel_is_available:
+				neopixel_adafruit.set_color(0, 0, 255)
 			if bme680_is_available:
 				bme680_adafruit.get_values()
 			if ina260_is_available:
@@ -294,6 +315,8 @@ def loop():
 		j += 1
 		if 0==j%N:
 			if "gathering"==node_type:
+				if neopixel_is_available:
+					neopixel_adafruit.set_color(0, 255, 0)
 				if dotstar_is_available:
 					dotstar[0] = (0, 255, 0, dotstar_brightness)
 				if should_use_airlift:
