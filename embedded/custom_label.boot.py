@@ -24,10 +24,12 @@ try:
 	#m.label = "PARHUMTEMS2"
 	#m.label = "ELSEGUNDO"
 	#m.label = "roof2"
-	m.label = "LORASEND2"
+	#m.label = "LORASEND2"
 	#m.label = "LORASEND3"
 	#m.label = "CIRCUITPY"
 	#m.label = "OUTDOOR"
+	#m.label = "NEOCLOCK1"
+	m.label = "GEOdataLOG"
 	try:
 		import os
 		os.unlink("boot.py")
