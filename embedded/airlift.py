@@ -401,13 +401,13 @@ def get_rssi():
 			rssi = wifi.radio.ap_info.rssi
 		except Exception as error_message:
 			error(str(error_message))
-			pass
+			increment_error_count_and_check_error_count_and_reboot_if_too_high()
 	else:
 		try:
 			rssi = esp.rssi
 		except Exception as error_message:
 			error(str(error_message))
-			pass
+			increment_error_count_and_check_error_count_and_reboot_if_too_high()
 	return rssi
 
 def show_network_status():
@@ -461,7 +461,7 @@ def show_network_status():
 		raise
 	except Exception as error_message:
 		error(str(error_message))
-		pass
+		increment_error_count_and_check_error_count_and_reboot_if_too_high()
 
 # adafruit io blinka:
 # https://learn.adafruit.com/adafruit-io-basics-digital-input/python-setup
@@ -479,6 +479,7 @@ def setup_io():
 	except Exception as error_message:
 		error(str(error_message))
 		warning("can't connect to adafruit io")
+		increment_error_count_and_check_error_count_and_reboot_if_too_high()
 
 def setup_feed(feed_name, number_of_retries_remaining=2):
 	global myfeeds
@@ -618,6 +619,11 @@ def post_data(feed_name, value, perform_readback_and_verify=False):
 #					errorcount = 0
 #		except Exception as error_message:
 #			pass
+	check_error_count_and_reboot_if_too_high()
+
+def increment_error_count_and_check_error_count_and_reboot_if_too_high():
+	global errorcount
+	errorcount += 1
 	check_error_count_and_reboot_if_too_high()
 
 def check_error_count_and_reboot_if_too_high():
