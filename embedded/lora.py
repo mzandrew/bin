@@ -1,7 +1,7 @@
 # written 2022-07 by mza
 # basic bits taken from adafruit's rfm9x_simpletest.py by Tony DiCola and rfm9x_node1_ack.py by Jerry Needell
 # more help from https://learn.adafruit.com/multi-device-lora-temperature-network/using-with-adafruitio
-# last updated 2022-12-11 by mza
+# last updated 2022-12-21 by mza
 
 import time
 import board
@@ -273,6 +273,24 @@ def parse_ina260(mynodeid, message, rssi):
 	else:
 		return False
 
+def parse_ping_and_respond(mynodeid, message, rssi):
+	match = re.search(" ping", message)
+	if match:
+		send_a_message_with_timestamp("pong rssi=" + str(rssi))
+		if airlift_is_available:
+			try:
+				airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "ping", rssi)
+				#post_rssi(mynodeid, rssi)
+			except (KeyboardInterrupt, ReloadException):
+				raise
+			except Exception as error_message:
+				warning("couldn't post data for received ping")
+				airlift.show_network_status()
+				error(str(error_message))
+		return True
+	else:
+		return False
+
 def parse(mynodeid, message, rssi):
 	info(message)
 	if parse_bme680(mynodeid, message, rssi):
@@ -280,6 +298,8 @@ def parse(mynodeid, message, rssi):
 	if parse_as7341(mynodeid, message, rssi):
 		return True
 	if parse_ina260(mynodeid, message, rssi):
+		return True
+	if parse_ping_and_respond(mynodeid, message, rssi):
 		return True
 	return False
 
