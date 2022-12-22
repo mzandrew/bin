@@ -300,9 +300,40 @@ def parse_lora_rssi_pingpong(mynodeid, message, rssi):
 		lora_pingpong_rssi = match.group(2)
 		lora_pingpong_rssi = int(lora_pingpong_rssi)
 		#info(str(lora_pingpong_rssi))
+		if "pong"==pingpong:
+			return True
 		if airlift_is_available:
 			try:
-				airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + pingpong + "-rssi", lora_pingpong_rssi)
+				pass
+				#airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + pingpong + "-rssi", lora_pingpong_rssi)
+				#post_rssi(mynodeid, rssi)
+			except (KeyboardInterrupt, ReloadException):
+				raise
+			except Exception as error_message:
+				warning("couldn't post data for received " + pingpong + " rssi")
+				airlift.show_network_status()
+				error(str(error_message))
+		return True
+	else:
+		return False
+
+def parse_geotagged_lora_rssi_pingpong(mynodeid, message, rssi):
+	#info(message)
+	match = re.search(" lora-rssi-(ping|pong) \[([-0-9.]+),([-0-9.]+),([-0-9.]+),([-0-9.]+)\]", message)
+	if match:
+		pingpong = match.group(1)
+		lora_pingpong_rssi = match.group(2)
+		lora_pingpong_rssi = int(lora_pingpong_rssi)
+		lat = float(match.group(3))
+		lon = float(match.group(4))
+		ele = float(match.group(5))
+		location = [ lat, lon, ele ]
+		#info(str(lora_pingpong_rssi))
+		if "pong"==pingpong:
+			return True
+		if airlift_is_available:
+			try:
+				airlift.post_geolocated_data(my_adafruit_io_prefix + "-" + str(mynodeid) + pingpong + "-rssi", location, lora_pingpong_rssi)
 				#post_rssi(mynodeid, rssi)
 			except (KeyboardInterrupt, ReloadException):
 				raise
@@ -325,6 +356,8 @@ def parse(mynodeid, message, rssi):
 	if parse_ping_and_respond(mynodeid, message, rssi):
 		return True
 	if parse_lora_rssi_pingpong(mynodeid, message, rssi):
+		return True
+	if parse_geotagged_lora_rssi_pingpong(mynodeid, message, rssi):
 		return True
 	return False
 
