@@ -139,7 +139,7 @@ def decode_a_message(packet):
 					percentage = int(1000.0 * total_skipped_messages[mynodeid] / current_message_id)/10.0
 				else:
 					percentage = "?"
-				warning("skipped " + str(skipped_messages[mynodeid]) + " message(s); total skipped: " + str(total_skipped_messages[mynodeid]) + "/" + str(current_message_id) + " = " + str(percentage) + "%")
+				warning("for node" + str(mynodeid) + ": skipped " + str(skipped_messages[mynodeid]) + " message(s); total skipped: " + str(total_skipped_messages[mynodeid]) + "/" + str(current_message_id) + " = " + str(percentage) + "%")
 				if airlift_is_available:
 					try:
 						airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "skipped", skipped_messages[mynodeid])
@@ -279,12 +279,35 @@ def parse_ping_and_respond(mynodeid, message, rssi):
 		send_a_message_with_timestamp("pong rssi=" + str(rssi))
 		if airlift_is_available:
 			try:
-				airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "ping", rssi)
+				pass
+				#airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "ping", rssi)
 				#post_rssi(mynodeid, rssi)
 			except (KeyboardInterrupt, ReloadException):
 				raise
 			except Exception as error_message:
 				warning("couldn't post data for received ping")
+				airlift.show_network_status()
+				error(str(error_message))
+		return True
+	else:
+		return False
+
+def parse_lora_rssi_pingpong(mynodeid, message, rssi):
+	#info(message)
+	match = re.search(" lora-rssi-(ping|pong) \[([-0-9.]+)\]", message)
+	if match:
+		pingpong = match.group(1)
+		lora_pingpong_rssi = match.group(2)
+		lora_pingpong_rssi = int(lora_pingpong_rssi)
+		#info(str(lora_pingpong_rssi))
+		if airlift_is_available:
+			try:
+				airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + pingpong + "-rssi", lora_pingpong_rssi)
+				#post_rssi(mynodeid, rssi)
+			except (KeyboardInterrupt, ReloadException):
+				raise
+			except Exception as error_message:
+				warning("couldn't post data for received " + pingpong + " rssi")
 				airlift.show_network_status()
 				error(str(error_message))
 		return True
@@ -300,6 +323,8 @@ def parse(mynodeid, message, rssi):
 	if parse_ina260(mynodeid, message, rssi):
 		return True
 	if parse_ping_and_respond(mynodeid, message, rssi):
+		return True
+	if parse_lora_rssi_pingpong(mynodeid, message, rssi):
 		return True
 	return False
 
