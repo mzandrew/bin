@@ -346,7 +346,7 @@ def parse_geotagged_lora_rssi_pingpong(mynodeid, message, rssi):
 		return False
 
 def parse(mynodeid, message, rssi):
-	info(message)
+	#info(message)
 	if parse_bme680(mynodeid, message, rssi):
 		return True
 	if parse_as7341(mynodeid, message, rssi):
