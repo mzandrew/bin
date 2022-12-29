@@ -2,7 +2,7 @@
 # with help from https://learn.adafruit.com/adafruit-circuit-playground-express/circuitpython-neopixel
 # and from https://learn.adafruit.com/adafruit-circuit-playground-express/circuitpython-digital-in-out
 # and from https://learn.adafruit.com/circuitpython-essentials/circuitpython-neopixel
-# last updated 2022-11-11 by mza
+# last updated 2022-12-29 by mza
 
 # to install:
 # cd lib
@@ -80,6 +80,8 @@ def setup():
 	try:
 		i2c_address = as7341_adafruit.setup(i2c, N)
 		as7341_is_available = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		warning("as7341 not found")
 	global RTC_is_available
@@ -114,6 +116,8 @@ def check_ambient_brightness():
 	global n
 	try:
 		n
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		n = 0
 	as7341_adafruit.get_values()
@@ -152,6 +156,7 @@ def draw_clockface():
 	minutes.show()
 
 def parse_RTC():
+	# "2000-01-01.001146"
 	global h12
 	global h24
 	global m
@@ -162,11 +167,14 @@ def parse_RTC():
 	if RTC_is_available:
 		string = ds3231_adafruit.get_timestring2()
 		debug(string)
-		match = re.search("[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\.([0-9][0-9])([0-9][0-9])([0-9][0-9])", string)
+		match = re.search("([0-9][0-9][0-9][0-9])-([0-9][0-9])-([0-9][0-9])\.([0-9][0-9])([0-9][0-9])([0-9][0-9])", string)
 		if match:
-			h24 = match.group(1)
-			m = match.group(2)
-			s = match.group(3)
+			yyyy = int(match.group(1))
+			mm = int(match.group(2))
+			dd = int(match.group(3))
+			h24 = match.group(4)
+			m = match.group(5)
+			s = match.group(6)
 			h24 = int(h24)
 			h12 = h24 % 12
 			m = int(m)
@@ -186,6 +194,11 @@ def parse_RTC():
 				debug("minute = " + str(m))
 				debug("second = " + str(s))
 			old_minute = m
+			if 2000==yyyy and 1==mm and 1==dd:
+				debug("need to update RTC from network time")
+				if airlift_is_available:
+					airlift.update_time_from_server()
+					parse_RTC()
 
 def loop():
 	global should_check_network_time
