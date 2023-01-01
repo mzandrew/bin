@@ -251,9 +251,13 @@ def setup():
 		if airlift_is_available:
 			if RTC_is_available:
 				airlift.update_time_from_server()
+	global old_t
+	if RTC_is_available:
+		old_t = pcf8523_adafruit.get_struct_time()
 
 def loop():
 	generic.get_uptime()
+	global old_t
 	global delay_between_acquisitions
 	global target_period
 	i = 0
@@ -313,6 +317,12 @@ def loop():
 			if ina260_is_available:
 				ina260_adafruit.get_values(0)
 		j += 1
+		if RTC_is_available:
+			if airlift_is_available:
+				t = pcf8523_adafruit.get_struct_time()
+				if old_t.tm_mday != t.tm_mday:
+					airlift.update_time_from_server()
+				old_t = t
 		if "uplink"==node_type:
 			if RTC_is_available:
 				t = pcf8523_adafruit.get_struct_time()
