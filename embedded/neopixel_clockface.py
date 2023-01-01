@@ -30,8 +30,8 @@ AMBIENT_CHANNEL = 5
 
 NUMBER_OF_MINUTE_PIXELS = 60
 OFFSET_FOR_MINUTE_HAND = 7
-NUMBER_OF_HOUR_PIXELS = 12
-#NUMBER_OF_HOUR_PIXELS = 24
+NUMBER_OF_PIXELS_PER_HOUR = 1 # 1=ring_of_12; 2=ring_of_24; 8=12_sticks
+NUMBER_OF_HOUR_PIXELS = 12*NUMBER_OF_PIXELS_PER_HOUR
 
 BLACK      = ( 0,  0,  0, 0)
 WHITE      = ( 0,  0,  0, 1)
@@ -146,9 +146,11 @@ def check_ambient_brightness():
 def draw_clockface():
 	debug("updating clockface...")
 	hours.fill(list(map(lambda x: int(x*brightness), BLACK)))
-	for hh in range(0, NUMBER_OF_HOUR_PIXELS, NUMBER_OF_HOUR_PIXELS//4):
-		hours[hh] = list(map(lambda x: int(x*brightness), DOT_HOUR))
-	hours[h12] = list(map(lambda x: int(x*brightness), hour_color))
+	for hh in range(0, 12, 3): # 0,3,6,9
+		for i in range(NUMBER_OF_PIXELS_PER_HOUR): # [0] or [0,1] or [0,7]
+			hours[hh*NUMBER_OF_PIXELS_PER_HOUR+i] = list(map(lambda x: int(x*brightness), DOT_HOUR)) # 0,3,... or 0,1,6,7,... or 0,1,2,3,4,5,6,7,24,25,26,27,28,29,30,31,...
+	for i in range(NUMBER_OF_PIXELS_PER_HOUR): # [0] or [0,1] or [0,7]
+		hours[h12*NUMBER_OF_PIXELS_PER_HOUR+i] = list(map(lambda x: int(x*brightness), hour_color))
 	minutes.fill(list(map(lambda x: int(x*brightness), BLACK))) # [0,59]
 	for mm in range(OFFSET_FOR_MINUTE_HAND, OFFSET_FOR_MINUTE_HAND+NUMBER_OF_MINUTE_PIXELS, NUMBER_OF_MINUTE_PIXELS//12): # [7,66]
 		minutes[mm%NUMBER_OF_MINUTE_PIXELS] = list(map(lambda x: int(x*brightness), DOT_MINUTE)) # [7,59],[0,6]
