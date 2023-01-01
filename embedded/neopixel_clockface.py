@@ -2,7 +2,7 @@
 # with help from https://learn.adafruit.com/adafruit-circuit-playground-express/circuitpython-neopixel
 # and from https://learn.adafruit.com/adafruit-circuit-playground-express/circuitpython-digital-in-out
 # and from https://learn.adafruit.com/circuitpython-essentials/circuitpython-neopixel
-# last updated 2022-12-29 by mza
+# last updated 2023-01-01 by mza
 
 # to install:
 # cd lib
@@ -29,6 +29,7 @@ AMBIENT_BRIGHTNESS_FOR_MAX_NEOPIXEL_BRIGHTNESS = 10.0
 AMBIENT_CHANNEL = 5
 
 NUMBER_OF_MINUTE_PIXELS = 60
+OFFSET_FOR_MINUTE_HAND = 7
 NUMBER_OF_HOUR_PIXELS = 12
 #NUMBER_OF_HOUR_PIXELS = 24
 
@@ -148,10 +149,10 @@ def draw_clockface():
 	for hh in range(0, NUMBER_OF_HOUR_PIXELS, NUMBER_OF_HOUR_PIXELS//4):
 		hours[hh] = list(map(lambda x: int(x*brightness), DOT_HOUR))
 	hours[h12] = list(map(lambda x: int(x*brightness), hour_color))
-	minutes.fill(list(map(lambda x: int(x*brightness), BLACK)))
-	for mm in range(0, NUMBER_OF_MINUTE_PIXELS, NUMBER_OF_MINUTE_PIXELS//12):
-		minutes[mm] = list(map(lambda x: int(x*brightness), DOT_MINUTE))
-	minutes[m] = list(map(lambda x: int(x*brightness), minute_color))
+	minutes.fill(list(map(lambda x: int(x*brightness), BLACK))) # [0,59]
+	for mm in range(OFFSET_FOR_MINUTE_HAND, OFFSET_FOR_MINUTE_HAND+NUMBER_OF_MINUTE_PIXELS, NUMBER_OF_MINUTE_PIXELS//12): # [7,66]
+		minutes[mm%NUMBER_OF_MINUTE_PIXELS] = list(map(lambda x: int(x*brightness), DOT_MINUTE)) # [7,59],[0,6]
+	minutes[(m+OFFSET_FOR_MINUTE_HAND)%NUMBER_OF_MINUTE_PIXELS] = list(map(lambda x: int(x*brightness), minute_color))
 	hours.show()
 	minutes.show()
 
