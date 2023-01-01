@@ -1,7 +1,7 @@
 # written 2022-07 by mza
 # basic bits taken from adafruit's rfm9x_simpletest.py by Tony DiCola and rfm9x_node1_ack.py by Jerry Needell
 # more help from https://learn.adafruit.com/multi-device-lora-temperature-network/using-with-adafruitio
-# last updated 2022-12-21 by mza
+# last updated 2023-01-01 by mza
 
 import time
 import board
@@ -173,6 +173,7 @@ def decode_a_message(packet):
 	return current_message_id
 
 def post_rssi(mynodeid, rssi):
+	rssi = generic.fround(rssi, 0.1)
 	try:
 		airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "rssi", rssi)
 	except (KeyboardInterrupt, ReloadException):
@@ -191,6 +192,9 @@ def parse_bme680(mynodeid, message, rssi):
 		info("temperature: " + str(temp) + " C")
 		info("humidity: " + str(hum) + " %RH")
 		info("presure: " + str(pres) + " ATM")
+		temp = generic.fround(temp, 0.1)
+		hum = generic.fround(hum, 0.1)
+		#pres = generic.fround(pres, 0.00001)
 		if airlift_is_available:
 			try:
 				airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "temp", temp)
@@ -230,6 +234,7 @@ def parse_as7341(mynodeid, message, rssi):
 		info("nm680: " + str(nm680))
 		info("clear: " + str(clear))
 		info("nir: " + str(nir))
+		clear = generic.fround(clear, 0.1)
 		if airlift_is_available:
 			try:
 				pass
@@ -254,6 +259,8 @@ def parse_ina260(mynodeid, message, rssi):
 		#info("bin: " + str(mybin))
 		info("current: " + str(current) + " mA")
 		info("voltage: " + str(voltage) + " V")
+		current = generic.fround(current, 0.001)
+		voltage = generic.fround(voltage, 0.001)
 		if airlift_is_available:
 			try:
 				pass

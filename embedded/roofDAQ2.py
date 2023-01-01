@@ -1,6 +1,6 @@
 # written 2022-10-29 by mza
 # based on neopixel_clockface.py
-# last updated 2022-12-10 by mza
+# last updated 2023-01-01 by mza
 
 # to install:
 # cd lib
@@ -232,8 +232,10 @@ def loop():
 			ina260_adafruit.show_average_values(1)
 			if airlift_is_available:
 				try:
-					airlift.post_data(my_adafruit_io_prefix + "-current0", ina260_adafruit.get_average_values(0)[0])
-					airlift.post_data(my_adafruit_io_prefix + "-current1", ina260_adafruit.get_average_values(1)[0])
+					current = generic.fround(ina260_adafruit.get_average_values(0)[0], 0.001)
+					airlift.post_data(my_adafruit_io_prefix + "-current0", current)
+					current = generic.fround(ina260_adafruit.get_average_values(1)[0], 0.001)
+					airlift.post_data(my_adafruit_io_prefix + "-current1", current)
 					cell_voltage = generic.fround(ina260_adafruit.get_average_values(0)[1], 0.001)
 					airlift.post_data(my_adafruit_io_prefix + "-batt", cell_voltage)
 					#last_good_post_time = generic.get_uptime()
