@@ -1,4 +1,4 @@
-# last updated 2022-01-08 by mza
+# last updated 2022-12-31 by mza
 
 import time
 import adafruit_pcf8523
@@ -25,6 +25,10 @@ def setup(i2c):
 	except:
 		warning("unable to set up RTC")
 		raise
+
+def get_struct_time():
+	t = rtc.datetime
+	return t
 
 def get_timestring1():
 	t = rtc.datetime

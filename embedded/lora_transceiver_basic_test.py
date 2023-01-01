@@ -1,5 +1,5 @@
 # written 2022-07 by mza
-# last updated 2022-12-15 by mza
+# last updated 2022-12-31 by mza
 
 # rsync -a *.py /media/mza/LORASEND/; rsync -a *.py /media/mza/LORARECEIVE/
 # cd lib
@@ -83,7 +83,7 @@ def setup():
 		node_type = "uplink"
 		should_use_bme680 = False
 		should_use_as7341 = False
-		should_use_RTC = False
+		should_use_RTC = True
 		should_use_airlift = True # for uplink
 		use_built_in_wifi = True
 		my_wifi_name = "loratransponder"
@@ -95,7 +95,7 @@ def setup():
 		node_type = "gathering"
 		should_use_bme680 = True
 		should_use_as7341 = True
-		should_use_RTC = True
+		should_use_RTC = False
 		should_use_airlift = False
 		use_built_in_wifi = False
 		should_use_ina260 = True
@@ -247,7 +247,7 @@ def setup():
 			raise
 		except Exception as error_message:
 			error(str(error_message))
-	if 1:
+	if 0:
 		if airlift_is_available:
 			if RTC_is_available:
 				airlift.update_time_from_server()
@@ -313,6 +313,12 @@ def loop():
 			if ina260_is_available:
 				ina260_adafruit.get_values(0)
 		j += 1
+		if "uplink"==node_type:
+			if RTC_is_available:
+				t = pcf8523_adafruit.get_struct_time()
+				debug2(str(t.tm_sec))
+				if 0==t.tm_sec:
+					lora.send_a_message_with_timestamp("the current time")
 		if 0==j%N:
 			if "gathering"==node_type:
 				if neopixel_is_available:
