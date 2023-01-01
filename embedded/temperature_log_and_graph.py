@@ -2,7 +2,7 @@
 
 # written 2021-04-21 by mza
 # updated from indoor_temp_hum.py
-# last updated 2022-11-25 by mza
+# last updated 2023-01-01 by mza
 
 # to install on a circuitpython device:
 # rsync -r *.py /media/circuitpython/
@@ -286,8 +286,9 @@ def loop():
 				display_adafruit.update_plot(0, [heater, laundry_room])
 				display_adafruit.refresh()
 				if airlift_is_available:
+					temp = generic.fround(pct2075_adafruit.get_average_values()[0], 0.1)
 					try:
-						airlift.post_data(my_wifi_name + "", pct2075_adafruit.get_average_values()[0])
+						airlift.post_data(my_wifi_name + "", temp)
 					except KeyboardInterrupt:
 						raise
 					except:

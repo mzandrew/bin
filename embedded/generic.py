@@ -1,5 +1,5 @@
 # written 2021-12-28 by mza
-# last updated 2022-12-01 by mza
+# last updated 2023-01-01 by mza
 
 import sys
 import time
