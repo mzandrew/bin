@@ -276,7 +276,8 @@ def parse_ina260(mynodeid, message, rssi):
 def parse_ping_and_respond(mynodeid, message, rssi):
 	match = re.search(" ping", message)
 	if match:
-		send_a_message_with_timestamp("pong rssi=" + str(rssi))
+		#send_a_message_with_timestamp("pong rssi=" + str(rssi))
+		send_a_message("pong rssi=" + str(rssi))
 		if airlift_is_available:
 			try:
 				pass
