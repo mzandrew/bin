@@ -11,7 +11,16 @@ def hex(number, width=1):
 	return "%0*x" % (width, number)
 
 def fround(value, precision):
-	return precision*int(value/precision+0.5)
+	if value<0.0:
+		extra = -0.5
+	else:
+		extra = 0.5
+	debug2(str(value))
+	debug2(str(value/precision))
+	debug2(str(value/precision+extra))
+	debug2(str(int(value/precision+extra)))
+	debug2(str(precision*int(value/precision+extra)))
+	return precision*int(value/precision+extra)
 
 def start_uptime():
 	global initial_time_monotonic
