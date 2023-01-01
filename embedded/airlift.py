@@ -442,6 +442,7 @@ def show_network_status():
 			string += "using external/spi wifi"
 			string += "; IP: " + esp.pretty_ip(esp.ip_address)
 			string += "; RSSI: " + str(get_rssi()) + " dB" # receiving signal strength indicator
+			from adafruit_esp32spi import adafruit_esp32spi
 			if esp.status == adafruit_esp32spi.WL_IDLE_STATUS:
 				string += "; IDLE"
 			elif esp.status == adafruit_esp32spi.WL_NO_SSID_AVAIL:
