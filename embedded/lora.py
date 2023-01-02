@@ -1,7 +1,7 @@
 # written 2022-07 by mza
 # basic bits taken from adafruit's rfm9x_simpletest.py by Tony DiCola and rfm9x_node1_ack.py by Jerry Needell
 # more help from https://learn.adafruit.com/multi-device-lora-temperature-network/using-with-adafruitio
-# last updated 2023-01-01 by mza
+# last updated 2023-01-02 by mza
 
 import time
 import board
@@ -18,7 +18,7 @@ USE_ACKNOWLEDGE = False
 def setup(spi, cs, reset, frequency, baudrate, tx_power_dbm, airlift_available, RTC_available, type_of_node, adafruit_io_prefix, mynodeid):
 	global rfm9x
 	rfm9x = adafruit_rfm9x.RFM9x(spi=spi, cs=cs, reset=reset, frequency=frequency, baudrate=baudrate)
-	rfm9x.tx_power = tx_power_dbm
+	change_tx_power_dbm(tx_power_dbm)
 	#rfm9x.signal_bandwidth = 62500
 	#rfm9x.coding_rate = 6
 	#rfm9x.spreading_factor = 8
@@ -49,6 +49,16 @@ def setup(spi, cs, reset, frequency, baudrate, tx_power_dbm, airlift_available, 
 	my_adafruit_io_prefix = adafruit_io_prefix
 	global nodeid
 	nodeid = mynodeid
+
+def change_tx_power_dbm(new_tx_power_dbm):
+	if new_tx_power_dbm<5:
+		new_tx_power_dbm = 5
+	if 23<new_tx_power_dbm:
+		new_tx_power_dbm = 23
+	rfm9x.tx_power = new_tx_power_dbm
+	new_tx_power_dbm = rfm9x.tx_power
+	info("tx power is now: " + str(new_tx_power_dbm) + " dBm")
+	return new_tx_power_dbm
 
 def idle():
 	rfm9x.idle()
