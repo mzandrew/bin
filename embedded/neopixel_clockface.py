@@ -2,7 +2,7 @@
 # with help from https://learn.adafruit.com/adafruit-circuit-playground-express/circuitpython-neopixel
 # and from https://learn.adafruit.com/adafruit-circuit-playground-express/circuitpython-digital-in-out
 # and from https://learn.adafruit.com/circuitpython-essentials/circuitpython-neopixel
-# last updated 2023-01-01 by mza
+# last updated 2023-01-02 by mza
 
 # to install:
 # cd lib
@@ -30,7 +30,8 @@ AMBIENT_CHANNEL = 5
 
 NUMBER_OF_MINUTE_PIXELS = 60
 OFFSET_FOR_MINUTE_HAND = 7
-NUMBER_OF_PIXELS_PER_HOUR = 1 # 1=ring_of_12; 2=ring_of_24; 8=12_sticks
+NUMBER_OF_PIXELS_PER_HOUR = 8 # 1=ring_of_12; 2=ring_of_24; 8=12_sticks
+NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR = 6 # 1=ring_of_12; 1,2=ring_of_24; [1-8]=12_sticks
 NUMBER_OF_HOUR_PIXELS = 12*NUMBER_OF_PIXELS_PER_HOUR
 
 BLACK      = ( 0,  0,  0, 0)
@@ -110,7 +111,10 @@ def setup_neopixel_clockface():
 	global minutes
 	global brightness
 	brightness = NEOPIXEL_BRIGHTNESS_MIN
-	hours = neopixel.NeoPixel(hours_neopixel_pin, NUMBER_OF_HOUR_PIXELS, pixel_order=(1, 0, 2, 3), brightness=1.0, auto_write=False)
+	if 8==NUMBER_OF_PIXELS_PER_HOUR:
+		hours = neopixel.NeoPixel(hours_neopixel_pin, NUMBER_OF_HOUR_PIXELS, brightness=1.0, auto_write=False)
+	else:
+		hours = neopixel.NeoPixel(hours_neopixel_pin, NUMBER_OF_HOUR_PIXELS, pixel_order=(1, 0, 2, 3), brightness=1.0, auto_write=False)
 	minutes = neopixel.NeoPixel(minutes_neopixel_pin, NUMBER_OF_MINUTE_PIXELS, pixel_order=(1, 0, 2, 3), brightness=1.0, auto_write=False)
 
 def check_ambient_brightness():
@@ -147,9 +151,9 @@ def draw_clockface():
 	debug("updating clockface...")
 	hours.fill(list(map(lambda x: int(x*brightness), BLACK)))
 	for hh in range(0, 12, 3): # 0,3,6,9
-		for i in range(NUMBER_OF_PIXELS_PER_HOUR): # [0] or [0,1] or [0,7]
+		for i in range(NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR): # [0] or [0,1] or [0,7]
 			hours[hh*NUMBER_OF_PIXELS_PER_HOUR+i] = list(map(lambda x: int(x*brightness), DOT_HOUR)) # 0,3,... or 0,1,6,7,... or 0,1,2,3,4,5,6,7,24,25,26,27,28,29,30,31,...
-	for i in range(NUMBER_OF_PIXELS_PER_HOUR): # [0] or [0,1] or [0,7]
+	for i in range(NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR): # [0] or [0,1] or [0,7]
 		hours[h12*NUMBER_OF_PIXELS_PER_HOUR+i] = list(map(lambda x: int(x*brightness), hour_color))
 	minutes.fill(list(map(lambda x: int(x*brightness), BLACK))) # [0,59]
 	for mm in range(OFFSET_FOR_MINUTE_HAND, OFFSET_FOR_MINUTE_HAND+NUMBER_OF_MINUTE_PIXELS, NUMBER_OF_MINUTE_PIXELS//12): # [7,66]
