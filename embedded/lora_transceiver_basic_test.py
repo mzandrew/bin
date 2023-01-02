@@ -1,9 +1,9 @@
 # written 2022-07 by mza
-# last updated 2022-12-31 by mza
+# last updated 2023-01-02 by mza
 
 # rsync -a *.py /media/mza/LORASEND/; rsync -a *.py /media/mza/LORARECEIVE/
 # cd lib
-# rsync -r adafruit_ina260.mpy adafruit_onewire adafruit_esp32spi adafruit_bus_device adafruit_display_text simpleio.mpy adafruit_gps.mpy neopixel.mpy adafruit_sdcard.mpy adafruit_datetime.mpy adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_io adafruit_minimqtt adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORARECEIVE/lib/
+# rsync -r adafruit_seesaw adafruit_ina260.mpy adafruit_onewire adafruit_esp32spi adafruit_bus_device adafruit_display_text simpleio.mpy adafruit_gps.mpy neopixel.mpy adafruit_sdcard.mpy adafruit_datetime.mpy adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_io adafruit_minimqtt adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORARECEIVE/lib/
 # rsync -r adafruit_ina260.mpy adafruit_onewire adafruit_esp32spi adafruit_bus_device adafruit_display_text simpleio.mpy adafruit_gps.mpy neopixel.mpy adafruit_sdcard.mpy adafruit_datetime.mpy adafruit_register adafruit_rfm9x.mpy adafruit_as7341.mpy adafruit_bme680.mpy adafruit_io adafruit_minimqtt adafruit_requests.mpy adafruit_pcf8523.mpy adafruit_dotstar.mpy /media/mza/LORASEND/lib/
 # cp -a lora_transceiver_basic_test.py /media/mza/LORASEND/code.py; cp -a lora_transceiver_basic_test.py /media/mza/LORARECEIVE/code.py
 # sync
@@ -14,7 +14,7 @@ ina260_N = 4
 delay_between_acquisitions = 0.875
 BAUD_RATE = 4*57600
 RADIO_FREQ_MHZ = 905.0 # 868-915 MHz (902-928 MHz is the allowed band in US/MEX/CAN)
-TX_POWER_DBM = 5 # minimum 5; default 13; maximum 23
+current_tx_power_dbm = 5 # minimum 5; default 13; maximum 20
 delay = 2.0
 
 # failure rate for 915 MHz, 4*57600, timeout=0.5 TX_POWER=20 is 2844/14262
@@ -25,9 +25,11 @@ import time
 import board
 import busio
 import storage
+import simpleio
 import adafruit_rfm9x
 import neopixel_adafruit
 import ina260_adafruit
+from adafruit_seesaw import seesaw, rotaryio, neopixel
 import generic
 #import gc
 #print(str(gc.mem_free()))
@@ -91,6 +93,7 @@ def setup():
 		should_use_ina260 = False
 		nodeid = 1
 		should_use_neopixel = False
+		should_use_rotary_encoder = True
 	elif "LORASEND2"==label: # rp2040 feather
 		node_type = "gathering"
 		should_use_bme680 = True
@@ -101,6 +104,7 @@ def setup():
 		should_use_ina260 = True
 		nodeid = 2
 		should_use_neopixel = True
+		should_use_rotary_encoder = False
 	elif "LORASEND3"==label: # feather_m0_rfm9x - needs loralight.py
 		node_type = "gathering"
 		should_use_bme680 = False
@@ -111,6 +115,7 @@ def setup():
 		should_use_ina260 = False
 		nodeid = 3
 		should_use_neopixel = False
+		should_use_rotary_encoder = False
 	else:
 		warning("board filesystem has no label")
 	if should_use_neopixel:
@@ -147,6 +152,25 @@ def setup():
 		raise
 	except Exception as error_message:
 		error(str(error_message))
+	global encoder
+	global last_position
+	global encoder_switch
+	global encoder_pixel
+	if should_use_rotary_encoder:
+		# with help from https://github.com/adafruit/Adafruit_CircuitPython_seesaw/blob/main/examples/seesaw_rotary_neopixel.py
+		myseesaw = seesaw.Seesaw(i2c, 0x36)
+		seesaw_product = (myseesaw.get_version() >> 16) & 0xFFFF
+		#print("Found product {}".format(seesaw_product))
+		if seesaw_product != 4991:
+			error("Wrong firmware loaded?  Expected 4991")
+		encoder = rotaryio.IncrementalEncoder(myseesaw)
+		last_position = -encoder.position
+		#info("encoder position: " + str(last_position))
+		myseesaw.pin_mode(24, myseesaw.INPUT_PULLUP)
+		#encoder_switch = digitalio.DigitalIO(myseesaw, 24)
+		encoder_pixel = neopixel.NeoPixel(myseesaw, 6, 1)
+		encoder_pixel.brightness = 0.5
+		encoder_pixel.fill((0,127,127))
 	global bme680_is_available
 	bme680_is_available = False
 	if should_use_bme680:
@@ -224,7 +248,7 @@ def setup():
 	if neopixel_is_available:
 		neopixel_adafruit.set_color(255, 255, 0)
 	try:
-		lora.setup(spi, CS, RESET, RADIO_FREQ_MHZ, BAUD_RATE, TX_POWER_DBM, airlift_is_available, RTC_is_available, node_type, my_adafruit_io_prefix, nodeid)
+		lora.setup(spi, CS, RESET, RADIO_FREQ_MHZ, BAUD_RATE, current_tx_power_dbm, airlift_is_available, RTC_is_available, node_type, my_adafruit_io_prefix, nodeid)
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except MemoryError as error_message:
@@ -256,6 +280,8 @@ def setup():
 		old_t = pcf8523_adafruit.get_struct_time()
 
 def loop():
+	global last_position
+	global current_tx_power_dbm
 	generic.get_uptime()
 	global old_t
 	global delay_between_acquisitions
@@ -266,6 +292,14 @@ def loop():
 	info("Waiting for packets...")
 	first_time_through = True
 	while True:
+		position = -encoder.position
+		#info("encoder position: " + str(position))
+		if position != last_position:
+			#info("encoder position: " + str(position))
+			current_tx_power_dbm += position - last_position
+			current_tx_power_dbm = lora.change_tx_power_dbm(current_tx_power_dbm)
+		last_position = position
+		encoder_pixel.fill([int(20*(current_tx_power_dbm-3)/20) for a in range(3)])
 		if neopixel_is_available:
 			neopixel_adafruit.set_color(255, 0, 0)
 		LED.value = False
