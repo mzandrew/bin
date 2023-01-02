@@ -31,16 +31,43 @@ AMBIENT_CHANNEL = 5
 NUMBER_OF_MINUTE_PIXELS = 60
 OFFSET_FOR_MINUTE_HAND = 7
 NUMBER_OF_PIXELS_PER_HOUR = 8 # 1=ring_of_12; 2=ring_of_24; 8=12_sticks
-NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR = 6 # 1=ring_of_12; 1,2=ring_of_24; [1-8]=12_sticks
+NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR = 7 # 1=ring_of_12; 1,2=ring_of_24; [1-8]=12_sticks
+FIRST_PIXEL_TO_LIGHT_UP_FOR_HOUR_DOT = 5 # 1=ring_of_12; 1,2=ring_of_24; [1-8]=12_sticks
+NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR_DOT = 2 # 1=ring_of_12; 1,2=ring_of_24; [1-8]=12_sticks
 NUMBER_OF_HOUR_PIXELS = 12*NUMBER_OF_PIXELS_PER_HOUR
 
-BLACK      = ( 0,  0,  0, 0)
-WHITE      = ( 0,  0,  0, 1)
-GREEN      = ( 0, 20,  0, 0)
-BLUE       = ( 0,  0, 10, 0)
-RED        = (10,  0,  0, 0)
-DOT_HOUR   = ( 1,  1,  1, 0)
-DOT_MINUTE = ( 1,  1,  1, 0)
+USE_TRUE_WHITE = False # use special white led or light up red, green and blue [note: the sticks do not have true white]
+ILLUMINATE_EVERY_THREE_HOURS = True # 12, 3, 6, 9
+ILLUMINATE_EVERY_FIVE_MINUTES = False # 0, 5, 10, ..., 55
+ILLUMINATE_EVERY_FIFTEEN_MINUTES = False # 0, 15, 30, 45
+
+BLACK           = ( 0,  0,  0, 0)
+TRUE_WHITE      = ( 0,  0,  0, 1)
+COMPOSITE_WHITE = ( 1,  1,  1, 0)
+GREEN           = ( 0, 20,  0, 0)
+BLUE            = ( 0,  0, 10, 0)
+RED             = (10,  0,  0, 0)
+if ILLUMINATE_EVERY_THREE_HOURS:
+	if USE_TRUE_WHITE:
+		DOT_HOUR   = TRUE_WHITE
+	else:
+		DOT_HOUR   = COMPOSITE_WHITE
+else:
+	DOT_HOUR   = BLACK
+if ILLUMINATE_EVERY_FIVE_MINUTES:
+	if USE_TRUE_WHITE:
+		DOT_MINUTE_FIVE = TRUE_WHITE
+	else:
+		DOT_MINUTE_FIVE = COMPOSITE_WHITE
+else:
+	DOT_MINUTE_FIVE = BLACK
+if ILLUMINATE_EVERY_FIFTEEN_MINUTES:
+	if USE_TRUE_WHITE:
+		DOT_MINUTE_FIFTEEN = TRUE_WHITE
+	else:
+		DOT_MINUTE_FIFTEEN = COMPOSITE_WHITE
+else:
+	DOT_MINUTE_FIFTEEN = BLACK
 minute_color = RED
 hour_color = BLUE
 
@@ -151,13 +178,15 @@ def draw_clockface():
 	debug("updating clockface...")
 	hours.fill(list(map(lambda x: int(x*brightness), BLACK)))
 	for hh in range(0, 12, 3): # 0,3,6,9
-		for i in range(NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR): # [0] or [0,1] or [0,7]
+		for i in range(FIRST_PIXEL_TO_LIGHT_UP_FOR_HOUR_DOT, FIRST_PIXEL_TO_LIGHT_UP_FOR_HOUR_DOT + NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR_DOT): # [0] or [0,1] or [0,7]
 			hours[hh*NUMBER_OF_PIXELS_PER_HOUR+i] = list(map(lambda x: int(x*brightness), DOT_HOUR)) # 0,3,... or 0,1,6,7,... or 0,1,2,3,4,5,6,7,24,25,26,27,28,29,30,31,...
 	for i in range(NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR): # [0] or [0,1] or [0,7]
 		hours[h12*NUMBER_OF_PIXELS_PER_HOUR+i] = list(map(lambda x: int(x*brightness), hour_color))
 	minutes.fill(list(map(lambda x: int(x*brightness), BLACK))) # [0,59]
 	for mm in range(OFFSET_FOR_MINUTE_HAND, OFFSET_FOR_MINUTE_HAND+NUMBER_OF_MINUTE_PIXELS, NUMBER_OF_MINUTE_PIXELS//12): # [7,66]
-		minutes[mm%NUMBER_OF_MINUTE_PIXELS] = list(map(lambda x: int(x*brightness), DOT_MINUTE)) # [7,59],[0,6]
+		minutes[mm%NUMBER_OF_MINUTE_PIXELS] = list(map(lambda x: int(x*brightness), DOT_MINUTE_FIVE)) # [7,59],[0,6]
+	for mm in range(OFFSET_FOR_MINUTE_HAND, OFFSET_FOR_MINUTE_HAND+NUMBER_OF_MINUTE_PIXELS, NUMBER_OF_MINUTE_PIXELS//4): # [7,66]
+		minutes[mm%NUMBER_OF_MINUTE_PIXELS] = list(map(lambda x: int(x*brightness), DOT_MINUTE_FIFTEEN)) # [7,59],[0,6]
 	minutes[(m+OFFSET_FOR_MINUTE_HAND)%NUMBER_OF_MINUTE_PIXELS] = list(map(lambda x: int(x*brightness), minute_color))
 	hours.show()
 	minutes.show()
