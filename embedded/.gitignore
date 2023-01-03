@@ -1,5 +1,6 @@
 .env
 *.csv
+csv
 code.py
 *.cap
 lib
