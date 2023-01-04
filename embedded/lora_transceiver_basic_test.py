@@ -172,7 +172,7 @@ def setup():
 		#encoder_switch = digitalio.DigitalIO(myseesaw, 24)
 		encoder_pixel = neopixel.NeoPixel(myseesaw, 6, 1)
 		encoder_pixel.brightness = 0.5
-		encoder_pixel.fill((0,127,127))
+		encoder_pixel.fill((0,31,31))
 		rotary_encoder_is_available = True
 	global bme680_is_available
 	bme680_is_available = False
@@ -383,12 +383,6 @@ def loop():
 					lora.send_a_message_with_timestamp("bme680 " + string)
 					ina260_adafruit.get_values(1)
 					time.sleep(delay)
-				if as7341_is_available:
-					values = as7341_adafruit.get_average_values()
-					string = str(values)
-					lora.send_a_message_with_timestamp("as7341 " + string)
-					ina260_adafruit.get_values(1)
-					time.sleep(delay)
 				if ina260_is_available:
 					ina260_adafruit.show_average_values(0)
 					values = ina260_adafruit.get_average_values(0)
@@ -400,6 +394,12 @@ def loop():
 					values = ina260_adafruit.get_average_values(1)
 					string = str(values)
 					lora.send_a_message_with_timestamp("ina260bin1 " + string)
+					ina260_adafruit.get_values(1)
+					time.sleep(delay)
+				if as7341_is_available:
+					values = as7341_adafruit.get_average_values()
+					string = str(values)
+					lora.send_a_message_with_timestamp("as7341 " + string)
 					ina260_adafruit.get_values(1)
 					time.sleep(delay)
 				lora.sleep()
