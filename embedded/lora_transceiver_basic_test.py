@@ -52,6 +52,7 @@ def setup():
 	global neopixel_is_available
 	global should_use_airlift
 	info("we are " + board.board_id)
+	generic.print_os_ver()
 	dotstar_is_available = False
 	neopixel_is_available = False
 	if 'unexpectedmaker_feathers2'==board.board_id: # for uf2 boot, click [RESET], then about a second later click [BOOT]

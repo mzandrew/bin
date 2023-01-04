@@ -1,6 +1,7 @@
 # written 2021-12-28 by mza
-# last updated 2023-01-01 by mza
+# last updated 2023-01-04 by mza
 
+import os
 import sys
 import time
 import atexit
@@ -251,4 +252,11 @@ def show_memory_difference():
 
 def collect_garbage():
 	gc.collect()
+
+def os_ver():
+	uname = os.uname()
+	return uname.release
+
+def print_os_ver():
+	print("running on circuitpython " + os_ver())
 
