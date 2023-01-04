@@ -118,30 +118,21 @@ def decode_a_message(packet):
 		packet_text = str(packet, "ascii")
 		match = re.search("^" + PREFIX + "node([0-9]+)\[([0-9]+)\](.*)" + SUFFIX + "$", packet_text)
 		if match:
-			mynodeid = match.group(1)
+			mynodeid = int(match.group(1))
+			current_message_id = int(match.group(2))
+			message = match.group(3)
 			try:
-				previously_received_message_id[mynodeid]
+				#previously_received_message_id[mynodeid]
+				skipped_messages[mynodeid] = current_message_id - previously_received_message_id[mynodeid] - 1
 			except (KeyboardInterrupt, ReloadException):
 				raise
 			except Exception as error_message:
 				previously_received_message_id[mynodeid] = 0
-			try:
-				total_skipped_messages[mynodeid]
-			except (KeyboardInterrupt, ReloadException):
-				raise
-			except Exception as error_message:
 				total_skipped_messages[mynodeid] = 0
-			try:
-				skipped_messages[mynodeid]
-			except (KeyboardInterrupt, ReloadException):
-				raise
-			except Exception as error_message:
 				skipped_messages[mynodeid] = 0
-			current_message_id = int(match.group(2))
-			message = match.group(3)
-			skipped_messages[mynodeid] = current_message_id - previously_received_message_id[mynodeid] - 1
 			#debug("previously_received_message_id[" + str(mynodeid) + "]: " + str(previously_received_message_id[mynodeid]))
 			#debug("current_message_id: " + str(current_message_id))
+			previously_received_message_id[mynodeid] = current_message_id
 			if 0<skipped_messages[mynodeid]:
 				total_skipped_messages[mynodeid] += skipped_messages[mynodeid]
 				#warning("skipped[" + str(mynodeid) + "] " + str(skipped_messages[mynodeid]) + " message(s)")
@@ -160,7 +151,6 @@ def decode_a_message(packet):
 						airlift.show_network_status()
 						error(str(error_message))
 			info("received: node" + str(mynodeid) + "[" + str(current_message_id) + "]" + message + " RSSI=" + str(rssi) + "dBm")
-			previously_received_message_id[mynodeid] = current_message_id
 			if "uplink"==node_type:
 				parse(mynodeid, message, rssi)
 		else:
