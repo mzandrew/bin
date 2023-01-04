@@ -2,7 +2,7 @@
 
 # written 2021-04-21 by mza
 # updated from indoor_temp_hum.py
-# last updated 2023-01-01 by mza
+# last updated 2023-01-04 by mza
 
 # to install on a circuitpython device:
 # rsync -r *.py /media/circuitpython/
@@ -34,9 +34,9 @@ MIN_TEMP_TO_PLOT = 20.0
 MAX_TEMP_TO_PLOT = 80.0
 
 intensity = 8 # brightness of plotted data on dotstar display
-board_id = board.board_id
-info("we are " + board_id)
-if 'sparkfun_samd51_thing_plus'==board_id: # pct2075
+info("we are " + board.board_id)
+generic.print_os_ver()
+if 'sparkfun_samd51_thing_plus'==board.board_id: # pct2075
 	my_wifi_name = "heater"
 	N = 32
 	desired_loop_time = 60.0
