@@ -152,7 +152,7 @@ def decode_a_message(packet):
 				warning("for node" + str(mynodeid) + ": skipped " + str(skipped_messages[mynodeid]) + " message(s); total skipped: " + str(total_skipped_messages[mynodeid]) + "/" + str(current_message_id) + " = " + str(percentage) + "%")
 				if airlift_is_available:
 					try:
-						airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "skipped", skipped_messages[mynodeid])
+						airlift.post_data(my_adafruit_io_prefix + str(mynodeid) + "-" + "skipped", skipped_messages[mynodeid])
 					except (KeyboardInterrupt, ReloadException):
 						raise
 					except Exception as error_message:
@@ -185,7 +185,7 @@ def decode_a_message(packet):
 def post_rssi(mynodeid, rssi):
 	rssi = generic.fround(rssi, 0.1)
 	try:
-		airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "rssi", rssi)
+		airlift.post_data(my_adafruit_io_prefix + str(mynodeid) + "-" + "rssi", rssi)
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except Exception as error_message:
@@ -207,9 +207,9 @@ def parse_bme680(mynodeid, message, rssi):
 		#pres = generic.fround(pres, 0.00001)
 		if airlift_is_available:
 			try:
-				airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "temp", temp)
-				airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "hum", hum)
-				airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "pres", pres)
+				airlift.post_data(my_adafruit_io_prefix + str(mynodeid) + "-" + "temp", temp)
+				airlift.post_data(my_adafruit_io_prefix + str(mynodeid) + "-" + "hum", hum)
+				airlift.post_data(my_adafruit_io_prefix + str(mynodeid) + "-" + "pres", pres)
 			except (KeyboardInterrupt, ReloadException):
 				raise
 			except Exception as error_message:
@@ -224,31 +224,21 @@ def parse_bme680(mynodeid, message, rssi):
 def parse_as7341(mynodeid, message, rssi):
 	match = re.search("as7341 \[([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+), ([0-9.]+)\]", message)
 	if match:
-		nm415 = float(match.group(1))
-		nm445 = float(match.group(2))
-		nm480 = float(match.group(3))
-		nm515 = float(match.group(4))
-		nm555 = float(match.group(5))
-		nm590 = float(match.group(6))
-		nm630 = float(match.group(7))
-		nm680 = float(match.group(8))
-		clear = float(match.group(9))
-		nir   = float(match.group(10))
-		info("nm415: " + str(nm415))
-		info("nm445: " + str(nm445))
-		info("nm480: " + str(nm480))
-		info("nm515: " + str(nm515))
-		info("nm555: " + str(nm555))
-		info("nm590: " + str(nm590))
-		info("nm630: " + str(nm630))
-		info("nm680: " + str(nm680))
-		info("clear: " + str(clear))
-		info("nir: " + str(nir))
-		clear = generic.fround(clear, 0.1)
+		channel_name = [ "415nm", "445nm", "480nm", "515nm", "555nm", "590nm", "630nm", "680nm", "clear", "nir" ]
+		channel_value = [ float(match.group(i+1)) for i in range(len(channel_name)) ]
+		string = ""
+		for i in range(len(channel_name)):
+			string += channel_name[i] + "=" + str(channel_value[i])
+			if i<len(channel_name)-1:
+				string += ", "
+		info(string)
+		for i in range(len(channel_name)):
+			channel_value[i] = generic.fround(channel_value[i], 0.1)
 		if airlift_is_available:
 			try:
-				pass
-				airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "clear", clear)
+				for i in range(len(channel_name)):
+					airlift.post_data(my_adafruit_io_prefix + str(mynodeid) + "-" + channel_name[i], channel_value[i])
+					time.sleep(0.150)
 			except (KeyboardInterrupt, ReloadException):
 				raise
 			except Exception as error_message:
@@ -274,10 +264,10 @@ def parse_ina260(mynodeid, message, rssi):
 		if airlift_is_available:
 			try:
 				pass
-				airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "current" + str(mybin), current)
+				airlift.post_data(my_adafruit_io_prefix + str(mynodeid) + "-" + "current" + str(mybin), current)
 				voltage = generic.fround(voltage, 0.001)
 				if 0==mybin:
-					airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "batt", voltage)
+					airlift.post_data(my_adafruit_io_prefix + str(mynodeid) + "-" + "batt", voltage)
 			except (KeyboardInterrupt, ReloadException):
 				raise
 			except Exception as error_message:
@@ -298,7 +288,7 @@ def parse_ping_and_respond(mynodeid, message, rssi):
 		if airlift_is_available:
 			try:
 				pass
-				#airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + "ping", rssi)
+				#airlift.post_data(my_adafruit_io_prefix + str(mynodeid) + "-" + "ping", rssi)
 				#post_rssi(mynodeid, rssi)
 			except (KeyboardInterrupt, ReloadException):
 				raise
@@ -323,7 +313,7 @@ def parse_lora_rssi_pingpong(mynodeid, message, rssi):
 		if airlift_is_available:
 			try:
 				pass
-				#airlift.post_data(my_adafruit_io_prefix + "-" + str(mynodeid) + pingpong + "-rssi", lora_pingpong_rssi)
+				#airlift.post_data(my_adafruit_io_prefix + str(mynodeid) + "-" + pingpong + "-rssi", lora_pingpong_rssi)
 				#post_rssi(mynodeid, rssi)
 			except (KeyboardInterrupt, ReloadException):
 				raise
