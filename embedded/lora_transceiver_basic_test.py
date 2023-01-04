@@ -1,5 +1,5 @@
 # written 2022-07 by mza
-# last updated 2023-01-02 by mza
+# last updated 2023-01-04 by mza
 
 # rsync -a *.py /media/mza/LORASEND/; rsync -a *.py /media/mza/LORARECEIVE/
 # cd lib
@@ -14,7 +14,7 @@ ina260_N = 4
 delay_between_acquisitions = 0.875
 BAUD_RATE = 4*57600
 RADIO_FREQ_MHZ = 905.0 # 868-915 MHz (902-928 MHz is the allowed band in US/MEX/CAN)
-current_tx_power_dbm = 5 # minimum 5; default 13; maximum 20
+current_tx_power_dbm = 20 # minimum 5; default 13; maximum 20
 delay = 2.0
 
 # failure rate for 915 MHz, 4*57600, timeout=0.5 TX_POWER=20 is 2844/14262
@@ -29,7 +29,6 @@ import simpleio
 import adafruit_rfm9x
 import neopixel_adafruit
 import ina260_adafruit
-from adafruit_seesaw import seesaw, rotaryio, neopixel
 import generic
 #import gc
 #print(str(gc.mem_free()))
@@ -96,7 +95,7 @@ def setup():
 		should_use_rotary_encoder = True
 	elif "LORASEND2"==label: # rp2040 feather
 		node_type = "gathering"
-		should_use_bme680 = True
+		should_use_bme680 = False
 		should_use_as7341 = True
 		should_use_RTC = False
 		should_use_airlift = False
@@ -156,7 +155,10 @@ def setup():
 	global last_position
 	global encoder_switch
 	global encoder_pixel
+	global rotary_encoder_is_available
+	rotary_encoder_is_available = False
 	if should_use_rotary_encoder:
+		from adafruit_seesaw import seesaw, rotaryio, neopixel
 		# with help from https://github.com/adafruit/Adafruit_CircuitPython_seesaw/blob/main/examples/seesaw_rotary_neopixel.py
 		myseesaw = seesaw.Seesaw(i2c, 0x36)
 		seesaw_product = (myseesaw.get_version() >> 16) & 0xFFFF
@@ -171,6 +173,7 @@ def setup():
 		encoder_pixel = neopixel.NeoPixel(myseesaw, 6, 1)
 		encoder_pixel.brightness = 0.5
 		encoder_pixel.fill((0,127,127))
+		rotary_encoder_is_available = True
 	global bme680_is_available
 	bme680_is_available = False
 	if should_use_bme680:
@@ -292,14 +295,15 @@ def loop():
 	info("Waiting for packets...")
 	first_time_through = True
 	while True:
-		position = -encoder.position
-		#info("encoder position: " + str(position))
-		if position != last_position:
+		if rotary_encoder_is_available:
+			position = -encoder.position
 			#info("encoder position: " + str(position))
-			current_tx_power_dbm += position - last_position
-			current_tx_power_dbm = lora.change_tx_power_dbm(current_tx_power_dbm)
-		last_position = position
-		encoder_pixel.fill([int(20*(current_tx_power_dbm-3)/20) for a in range(3)])
+			if position != last_position:
+				#info("encoder position: " + str(position))
+				current_tx_power_dbm += position - last_position
+				current_tx_power_dbm = lora.change_tx_power_dbm(current_tx_power_dbm)
+			last_position = position
+			encoder_pixel.fill([int(20*(current_tx_power_dbm-3)/20) for a in range(3)])
 		if neopixel_is_available:
 			neopixel_adafruit.set_color(255, 0, 0)
 		LED.value = False
