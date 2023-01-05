@@ -806,12 +806,12 @@ def get_all_data(feed, count_desired=None):
 		values = []
 		for i in range(count_gotten):
 			values.insert(0, raw[i][VALUE_INDEX])
-		if count_desired is not None:
-			if count_desired<count_gotten:
-				values = values[:count_desired]
-			elif count_gotten<count_desired:
-				for i in range(count_gotten, count_desired):
-					values.append(DEFAULT_VALUE)
+#		if count_desired is not None:
+#			if count_desired<count_gotten:
+#				values = values[:count_desired]
+#			elif count_gotten<count_desired:
+#				for i in range(count_gotten, count_desired):
+#					values.append(DEFAULT_VALUE)
 		#info("done")
 		errorcount = 0
 		return values
@@ -854,12 +854,12 @@ def get_all_data_with_datestamps(feed, count_desired=None):
 		for i in range(count_gotten):
 			#values.insert(0, [raw[i][DATESTAMP_INDEX],raw[i][VALUE_INDEX]])
 			values.insert(0, [ raw[i][8], raw[i][3], raw[i][5], raw[i][1], raw[i][9], raw[i][10], raw[i][11] ])
-		if count_desired is not None:
-			if count_desired<count_gotten:
-				values = values[:count_desired]
-			elif count_gotten<count_desired:
-				for i in range(count_gotten, count_desired):
-					values.append([DEFAULT_ID, DEFAULT_VALUE, FEED_ID, DEFAULT_DATESTAMP, DEFAULT_LAT, DEFAULT_LON, DEFAULT_ELE])
+#		if count_desired is not None:
+#			if count_desired<count_gotten:
+#				values = values[:count_desired]
+#			elif count_gotten<count_desired:
+#				for i in range(count_gotten, count_desired):
+#					values.append([DEFAULT_ID, DEFAULT_VALUE, FEED_ID, DEFAULT_DATESTAMP, DEFAULT_LAT, DEFAULT_LON, DEFAULT_ELE])
 		#info("done")
 		errorcount = 0
 		return values
