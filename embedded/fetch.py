@@ -3,7 +3,7 @@
 # written 2022-04-30 by mza
 # last updated 2023-01-04 by mza
 
-count = 1000
+COUNT = 1000
 
 import sys
 import time
@@ -13,13 +13,17 @@ import datetime
 
 header = "id,value,feed_id,created_at,lat,lon,ele"
 
-def fetch_simple_list(feed_name):
-	myarray = airlift.get_all_data(feed_name, count)
-	for i in range(len(myarray)):
-		value = myarray[i]
-		print(str(value))
+def add_most_recent_data_to_end_of_array(values, feed):
+	return airlift.add_most_recent_data_to_end_of_array(values, feed)
 
-def fetch_list_with_datestamps(feed_name):
+def fetch_simple_list(feed_name, count=COUNT):
+	myarray = airlift.get_all_data(feed_name, count)
+#	for i in range(len(myarray)):
+#		value = myarray[i]
+#		#print(str(value))
+	return myarray
+
+def fetch_list_with_datestamps(feed_name, count=COUNT):
 	myarray = airlift.get_all_data_with_datestamps(feed_name, count)
 	#print(str(len(myarray)))
 	mynewarray = []
@@ -55,8 +59,11 @@ def grab_a_bunch():
 	for feed in myfeeds:
 		fetch_list_with_datestamps_and_write_to_file(feed)
 
-if "__main__"==__name__:
+def setup():
 	airlift.setup_io()
+
+if "__main__"==__name__:
+	setup()
 	timestamp = datetime.datetime.utcnow().replace(microsecond=0,tzinfo=datetime.timezone.utc).strftime("%Y-%m-%d.%H%M%S")
 	if 1<len(sys.argv):
 		for arg in sys.argv[1:]:
