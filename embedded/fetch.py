@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 # written 2022-04-30 by mza
-# last updated 2023-01-02 by mza
+# last updated 2023-01-04 by mza
+
+count = 1000
 
 import sys
 import time
@@ -12,15 +14,13 @@ import datetime
 header = "id,value,feed_id,created_at,lat,lon,ele"
 
 def fetch_simple_list(feed_name):
-	#myarray = airlift.get_all_data(feed_name, 215)
-	myarray = airlift.get_all_data(feed_name)
+	myarray = airlift.get_all_data(feed_name, count)
 	for i in range(len(myarray)):
-		value     = myarray[i]
+		value = myarray[i]
 		print(str(value))
 
 def fetch_list_with_datestamps(feed_name):
-	#myarray = airlift.get_all_data_with_datestamps(feed_name, 215)
-	myarray = airlift.get_all_data_with_datestamps(feed_name)
+	myarray = airlift.get_all_data_with_datestamps(feed_name, count)
 	#print(str(len(myarray)))
 	mynewarray = []
 	mynewarray.append(header)
@@ -64,3 +64,4 @@ if "__main__"==__name__:
 	else:
 		#grab_a_bunch()
 		print("fetch what?")
+
