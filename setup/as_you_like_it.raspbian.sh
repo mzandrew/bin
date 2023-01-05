@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+# last updated 2023-01-04 by mza
+
 declare -i MiB=1024
 
 function add_swap_if_necessary {
@@ -35,7 +37,8 @@ function install_packages_1 {
 }
 
 function install_packages_2 {
-	sudo apt install -y raspinfo rpi.gpio-common raspi-gpio python-rpi.gpio python3-rpi.gpio python3-gpiozero python-gpiozero python3-spidev python-spidev i2c-tools spi-tools python3-picamera python-picamera u-boot-rpi rpiboot lm-sensors lshw wiringpi libpigpio-dev pigpio-tools python-pigpio python3-pigpio # rpi-specific
+	sudo apt install -y raspinfo rpi.gpio-common raspi-gpio python3-rpi.gpio python3-gpiozero python-gpiozero python3-spidev i2c-tools spi-tools python3-picamera python-picamera u-boot-rpi rpiboot lm-sensors lshw libpigpio-dev pigpio-tools python-pigpio python3-pigpio # rpi-specific
+	# python-rpi.gpio python-spidev wiringpi # no longer available
 	# rpi-chromium-mods # includes flash player
 	#sudo apt install mpd mpc easytag audacious # audio stuff
 	# python3-pychrome mkchromecast castpulseaudio-dlna
