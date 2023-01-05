@@ -733,7 +733,13 @@ def post_geolocated_data(feed_name, location, value, perform_readback_and_verify
 def get_most_recent_data(feed):
 	global errorcount
 	try:
-		value = io.receive_data(feed)["value"]
+		try:
+			value = io.receive_data(feed)["value"]
+		#except (KeyboardInterrupt, ReloadException):
+		#	raise
+		except:
+			VALUE_INDEX = 3 # gotta know that "value" is index #3 in the tuple
+			value = io.receive(feed)[VALUE_INDEX]
 		#print(str(value))
 		value = float(value)
 		#print(str(value))
@@ -790,6 +796,7 @@ def get_some_data(feed_key, start_time, end_time, limit=1):
 		raise
 
 # url -H "X-AIO-Key: {io_key}" "https://io.adafruit.com/api/v2/{username}/feeds/{feed_key}/data?start_time=2019-05-04T00:00Z&end_time=2019-05-05T00:00Z"
+# should use paged mode to get more than 1000 at a time: https://gist.githubusercontent.com/abachman/12df0b34503edd5692be22f6b9695539/raw/5c7faa5fced3f19f14b69424c66b4af6d6d969dd/download_paged_data.py
 # in blinka/python, this works
 # in circuitpython, we get "AttributeError: 'IO_HTTP' object has no attribute 'data'"
 def get_all_data(feed, count_desired=None):
