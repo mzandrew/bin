@@ -58,6 +58,9 @@ import sys
 import time
 import random
 #import adafruit_blinka
+import os
+os.environ['SDL_AUDIODRIVER'] = 'dsp'
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 from pygame.locals import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_ESCAPE, KEYDOWN, QUIT, K_q, K_BREAK, K_SPACE
 import fetch
@@ -172,6 +175,7 @@ def setup():
 				feed_data[i][j].append([ DEFAULT_VALUE for x in range(plot_width) ])
 				normalized_feed_data[i][j].append([ 0.5 for x in range(plot_width) ])
 	pygame.init()
+	pygame.mouse.set_cursor((8,8),(0,0),(0,0,0,0,0,0,0,0),(0,0,0,0,0,0,0,0))
 	#size = (pygame.display.Info().current_w, pygame.display.Info().current_h)
 	size = (SCREEN_WIDTH, SCREEN_HEIGHT)
 	screen = pygame.display.set_mode(size)
