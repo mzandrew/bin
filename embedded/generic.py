@@ -253,6 +253,14 @@ def show_memory_difference():
 def collect_garbage():
 	gc.collect()
 
+def running_circuitpython():
+	uname = os.uname()
+	# posix.uname_result(sysname='Linux', nodename='2023-pi0w-hyperpixel', release='5.15.76+', version='#1597 Fri Nov 4 12:11:43 GMT 2022', machine='armv6l')
+	# (sysname='samd51', nodename='samd51', release='7.2.5', version='7.2.5 on 2022-04-06', machine='SparkFun Thing Plus - SAMD51 with samd51j20')
+	if 'Linux'==uname.sysname:
+		return False
+	return True
+
 def os_ver():
 	uname = os.uname()
 	return uname.release

@@ -11,6 +11,8 @@ import boxcar
 import generic
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
+VALUE_INDEX = 3 # gotta know that "value" is index #3 in the tuple
+
 secrets_already_imported = False
 def import_secrets_if_necessary():
 	global secrets_already_imported
@@ -733,12 +735,9 @@ def post_geolocated_data(feed_name, location, value, perform_readback_and_verify
 def get_most_recent_data(feed):
 	global errorcount
 	try:
-		try:
+		if generic.running_circuitpython():
 			value = io.receive_data(feed)["value"]
-		#except (KeyboardInterrupt, ReloadException):
-		#	raise
-		except:
-			VALUE_INDEX = 3 # gotta know that "value" is index #3 in the tuple
+		else:
 			value = io.receive(feed)[VALUE_INDEX]
 		#print(str(value))
 		value = float(value)
@@ -803,7 +802,6 @@ def get_all_data(feed, count_desired=None):
 	# fetches 100 if count_desired is None
 	global errorcount
 	try:
-		VALUE_INDEX = 3 # gotta know that "value" is index #3 in the tuple
 		#info("fetching data from feed " + str(feed) + "...")
 		if count_desired is not None:
 			raw = io.data(feed, max_results=count_desired)
@@ -847,7 +845,6 @@ def get_all_data_with_datestamps(feed, count_desired=None):
 	DEFAULT_LON = 0.0
 	DEFAULT_ELE = 0.0
 	try:
-		VALUE_INDEX = 3 # gotta know that "value" is index #3 in the tuple
 		DATESTAMP_INDEX = 1 # gotta know that "created_at" is index #1 in the tuple
 		#info("fetching data from feed " + str(feed) + "...")
 		if count_desired is not None:
