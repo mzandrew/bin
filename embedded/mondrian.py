@@ -2,7 +2,7 @@
 
 # written 2023-01-04 by mza
 # with help from https://realpython.com/pygame-a-primer/#displays-and-surfaces
-# last updated 2023-01-04 by mza
+# last updated 2023-01-06 by mza
 
 SCREEN_WIDTH = 720
 SCREEN_HEIGHT = 720
@@ -21,30 +21,22 @@ maximum = [ [ 100 for j in range(ROWS) ] for i in range(COLUMNS) ]
 plot_name[0][0] = "temp"
 minimum[0][0] = 10.
 maximum[0][0] = 80.
-feed_name[0][0] = [ "heater", "inside-temp" ]
+feed_name[0][0] = [ "roof-temp", "outdoor-temp", "inside-temp", "heater" ]
 
-plot_name[0][1] = "hum"
-minimum[0][1] = 40.
-maximum[0][1] = 100.
-feed_name[0][1] = [ "indoor2-hum", "inside-hum" ]
+plot_name[1][0] = "hum"
+minimum[1][0] = 40.
+maximum[1][0] = 100.
+feed_name[1][0] = [ "roof-hum", "outdoor-hum", "inside-hum", "indoor2-hum" ]
 
-plot_name[1][0] = "pres"
-minimum[1][0] = 0.997
-maximum[1][0] = 1.008
-feed_name[1][0] = [ "indoor2-pressure", "pressure" ]
+plot_name[0][1] = "pres"
+minimum[0][1] = 0.997
+maximum[0][1] = 1.008
+feed_name[0][1] = [ "pressure", "indoor2-pressure" ]
 
 plot_name[1][1] = "particle"
 minimum[1][1] = 0.
 maximum[1][1] = 350.
-feed_name[1][1] = [ "indoor-1p0", "particle1p0" ]
-
-import sys
-import time
-import random
-#import adafruit_blinka
-import pygame
-from pygame.locals import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_ESCAPE, KEYDOWN, QUIT, K_q, K_BREAK, K_SPACE
-import fetch
+feed_name[1][1] = [ "indoor-0p3", "indoor-0p5", "indoor-1p0", "indoor-2p5", "indoor-5p0", "particle0p3", "particle0p5", "particle1p0", "particle2p5", "particle5p0", "particle10p0" ]
 
 black = (0, 0, 0)
 white = (255, 255, 255)
@@ -54,8 +46,21 @@ blue = (0, 0, 255)
 yellow = (255, 255, 0)
 teal = (0, 255, 255)
 purple = (255, 0, 255)
+pink = (255, 127, 127)
+orange = (255, 127, 0)
+dark_green = (0, 127, 0)
+light_blue = (127, 127, 255)
+maroon = (255, 0, 127)
 
-color = [ black, white, red, green, blue, yellow, teal, purple ]
+color = [ black, white, red, green, blue, yellow, teal, purple, pink, orange, dark_green, light_blue, maroon ]
+
+import sys
+import time
+import random
+#import adafruit_blinka
+import pygame
+from pygame.locals import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_ESCAPE, KEYDOWN, QUIT, K_q, K_BREAK, K_SPACE
+import fetch
 
 def clear_plot(i, j):
 	plot[i][j].fill(black)
