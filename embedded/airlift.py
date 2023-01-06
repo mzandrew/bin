@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2022-12-02 by mza
+# last updated 2023-01-06 by mza
 
 import time
 import busio
@@ -10,6 +10,10 @@ import math
 import boxcar
 import generic
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+
+if not generic.running_circuitpython():
+	class ReloadException(Exception):
+		pass
 
 VALUE_INDEX = 3 # gotta know that "value" is index #3 in the tuple
 
@@ -820,15 +824,19 @@ def get_all_data(feed, count_desired=None):
 #					values.append(DEFAULT_VALUE)
 		#info("done")
 		errorcount = 0
-		return values
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except Exception as error_message:
 		error(str(error_message))
 		warning("couldn't fetch feed data from server")
 		errorcount += 1
-		raise
+		#raise
+		if count_desired is not None:
+			values = [ DEFAULT_VALUE for i in range(count_desired) ]
+		else:
+			values = [ DEFAULT_VALUE for i in range(100) ]
 	#check_error_count_and_reboot_if_too_high()
+	return values
 
 # url -H "X-AIO-Key: {io_key}" "https://io.adafruit.com/api/v2/{username}/feeds/{feed_key}/data?start_time=2019-05-04T00:00Z&end_time=2019-05-05T00:00Z"
 # in blinka/python, this works
