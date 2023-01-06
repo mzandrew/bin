@@ -810,7 +810,8 @@ def get_all_data(feed, count_desired=None):
 		count_gotten = len(raw)
 		values = []
 		for i in range(count_gotten):
-			values.insert(0, raw[i][VALUE_INDEX])
+			#values.insert(0, raw[i][VALUE_INDEX])
+			values.insert(0, float(raw[i][VALUE_INDEX]))
 #		if count_desired is not None:
 #			if count_desired<count_gotten:
 #				values = values[:count_desired]
@@ -857,7 +858,8 @@ def get_all_data_with_datestamps(feed, count_desired=None):
 		values = []
 		for i in range(count_gotten):
 			#values.insert(0, [raw[i][DATESTAMP_INDEX],raw[i][VALUE_INDEX]])
-			values.insert(0, [ raw[i][8], raw[i][3], raw[i][5], raw[i][1], raw[i][9], raw[i][10], raw[i][11] ])
+			#values.insert(0, [ raw[i][8], raw[i][3], raw[i][5], raw[i][1], raw[i][9], raw[i][10], raw[i][11] ])
+			values.insert(0, [ raw[i][8], float(raw[i][3]), raw[i][5], raw[i][1], raw[i][9], raw[i][10], raw[i][11] ])
 #		if count_desired is not None:
 #			if count_desired<count_gotten:
 #				values = values[:count_desired]
