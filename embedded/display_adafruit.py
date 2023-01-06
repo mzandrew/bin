@@ -264,7 +264,7 @@ def update_plot(plot_number, arrays_to_plot):
 					array_to_plot = arrays_to_plot[n][-plot_width:]
 				else:
 					array_to_plot = arrays_to_plot[n]
-				yn = int(0. + plot_height - 1. * plot_height * array_to_plot[x])
+				yn = int(plot_height - plot_height * array_to_plot[x])
 				doit = False
 				if y==yn:
 					doit = True
