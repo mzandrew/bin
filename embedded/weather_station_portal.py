@@ -92,7 +92,7 @@ def loop():
 	if update_plot[0]:
 		info("updating temperatures...")
 		global ds18b20
-		ds18b20 = airlift.add_most_recent_data_to_end_of_array(ds18b20, "roof-ds18b20")
+		ds18b20 = airlift.add_most_recent_data_to_end_of_array(ds18b20, "roof-temp")
 		myarray_a = display_adafruit.format_for_plot(ds18b20, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
 		global temperature_outdoor
 		temperature_outdoor = airlift.add_most_recent_data_to_end_of_array(temperature_outdoor, "outdoor-temp")
