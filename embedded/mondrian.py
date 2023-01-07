@@ -166,7 +166,7 @@ def setup():
 	usable_height = SCREEN_HEIGHT - 2*GAP_Y_TOP_BOTTOM - (ROWS-1)*GAP_Y_BETWEEN_PLOTS
 	#print("usable_height: " + str(usable_height))
 	plot_width = int(usable_width / COLUMNS)
-	plot_height = int(usable_width / ROWS)
+	plot_height = int(usable_height / ROWS)
 	#print("plot_width: " + str(plot_width))
 	#print("plot_height: " + str(plot_height))
 	global feed_data
