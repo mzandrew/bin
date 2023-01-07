@@ -61,7 +61,7 @@ import random
 import os
 os.environ['SDL_AUDIODRIVER'] = 'dsp'
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-import pygame
+import pygame # sudo apt install -y python3-pygame
 from pygame.locals import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_ESCAPE, KEYDOWN, QUIT, K_q, K_BREAK, K_SPACE
 import fetch
 
@@ -113,7 +113,7 @@ def fetch_data_for_the_first_time(i, j):
 		print("length of returned data = " + str(len(feed_data[i][j][k])))
 		#feed_data[i][j][k] = [ DEFAULT_VALUE for a in range(plot_width//2) ]
 		feed_data[i][j][k] = pad_data_if_insufficient(feed_data[i][j][k], plot_width)
-		print("length of data = " + str(len(feed_data[i][j][k])))
+		#print("length of data = " + str(len(feed_data[i][j][k])))
 		time.sleep(0.350)
 
 def update_plots():
@@ -176,6 +176,7 @@ def setup():
 				normalized_feed_data[i][j].append([ 0.5 for x in range(plot_width) ])
 	pygame.init()
 	pygame.mouse.set_cursor((8,8),(0,0),(0,0,0,0,0,0,0,0),(0,0,0,0,0,0,0,0))
+	pygame.display.set_caption("mondrian")
 	#size = (pygame.display.Info().current_w, pygame.display.Info().current_h)
 	size = (SCREEN_WIDTH, SCREEN_HEIGHT)
 	screen = pygame.display.set_mode(size)
@@ -191,7 +192,7 @@ def setup():
 			flip()
 	global should_check_for_new_data
 	should_check_for_new_data = pygame.USEREVENT + 1
-	pygame.time.set_timer(should_check_for_new_data, 15000)
+	pygame.time.set_timer(should_check_for_new_data, 60000)
 
 ij = 0
 def loop():
