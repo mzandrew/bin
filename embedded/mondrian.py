@@ -11,7 +11,9 @@ GAP_Y_BETWEEN_PLOTS = 44
 GAP_X_SIDE = 10
 GAP_Y_TOP = 24
 GAP_Y_BOTTOM = 24
-FONT_SIZE = 18
+FONT_SIZE_PLOT_CAPTION = 18
+FONT_SIZE_FEED_NAME = 16
+FONT_SIZE_FEED_NAME_EXTRA_GAP = 6
 ICON_SIZE = 32
 ICON_BORDER = 2
 ICON_SQUARE_LENGTH = ICON_SIZE//2 - 3*ICON_BORDER
@@ -20,6 +22,7 @@ ROWS = 2
 COLUMNS = 2
 plot_name = [ [ "" for j in range(ROWS) ] for i in range(COLUMNS) ]
 feed_name = [ [ [] for j in range(ROWS) ] for i in range(COLUMNS) ]
+short_feed_name = [ [ [] for j in range(ROWS) ] for i in range(COLUMNS) ]
 minimum = [ [ 0 for j in range(ROWS) ] for i in range(COLUMNS) ]
 maximum = [ [ 100 for j in range(ROWS) ] for i in range(COLUMNS) ]
 
@@ -27,21 +30,25 @@ plot_name[0][0] = "temperature"
 minimum[0][0] = 10.
 maximum[0][0] = 80.
 feed_name[0][0] = [ "roof-temp", "outdoor-temp", "inside-temp", "heater" ]
+short_feed_name[0][0] = [ "roof", "outdoor", "inside", "heater" ]
 
 plot_name[1][0] = "humidity"
 minimum[1][0] = 40.
 maximum[1][0] = 100.
 feed_name[1][0] = [ "roof-hum", "outdoor-hum", "inside-hum", "indoor2-hum" ]
+short_feed_name[1][0] = [ "roof", "outdoor", "inside", "indoor2" ]
 
 plot_name[0][1] = "pressure"
 minimum[0][1] = 0.997
 maximum[0][1] = 1.008
 feed_name[0][1] = [ "pressure", "indoor2-pressure" ]
+short_feed_name[0][1] = [ "pressure", "indoor2" ]
 
 plot_name[1][1] = "particle count"
 minimum[1][1] = 0.
 maximum[1][1] = 350.
 feed_name[1][1] = [ "indoor-0p3", "indoor-0p5", "indoor-1p0", "indoor-2p5", "indoor-5p0", "particle0p3", "particle0p5", "particle1p0", "particle2p5", "particle5p0", "particle10p0" ]
+short_feed_name[1][1] = [ "b3", "b5", "1b0", "2b5", "5b0", "g3", "g5", "1g0", "2g5", "5g0", "10g0" ]
 
 black = (0, 0, 0)
 white = (255, 255, 255)
@@ -70,7 +77,7 @@ import pygame # sudo apt install -y python3-pygame
 from pygame.locals import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_ESCAPE, KEYDOWN, QUIT, K_q, K_BREAK, K_SPACE
 import fetch
 
-FAKE_DATA = True
+FAKE_DATA = False
 
 def clear_plot(i, j):
 	plot[i][j].fill(black)
@@ -190,7 +197,8 @@ def setup():
 	pygame.init()
 	pygame.mouse.set_cursor((8,8),(0,0),(0,0,0,0,0,0,0,0),(0,0,0,0,0,0,0,0))
 	pygame.display.set_caption("mondrian")
-	myfont = pygame.font.SysFont("monospace", FONT_SIZE)
+	plot_caption_font = pygame.font.SysFont("monospace", FONT_SIZE_PLOT_CAPTION )
+	feed_name_font = pygame.font.SysFont("monospace", FONT_SIZE_FEED_NAME)
 #	icon = pygame.Surface((ICON_SIZE, ICON_SIZE))
 #	for i in range(COLUMNS):
 #		for j in range(ROWS):
@@ -206,10 +214,18 @@ def setup():
 	for i in range(COLUMNS):
 		for j in range(ROWS):
 			pygame.event.pump()
-			plot_caption = myfont.render(plot_name[i][j], 1, white)
-			screen.blit(plot_caption, plot_caption.get_rect(center=(GAP_X_SIDE+i*(plot_width+GAP_X_BETWEEN_PLOTS)+plot_width//2 , GAP_Y_TOP+j*(plot_height+GAP_Y_BETWEEN_PLOTS)-FONT_SIZE//2-4)))
-#			for k in range(len(feed_name[i][j])):
-#				feed_caption = myfont.render(feed_name[i][j], 1, color[k+2])
+			plot_caption = plot_caption_font.render(plot_name[i][j], 1, white)
+			screen.blit(plot_caption, plot_caption.get_rect(center=(GAP_X_SIDE+i*(plot_width+GAP_X_BETWEEN_PLOTS)+plot_width//2 , GAP_Y_TOP+j*(plot_height+GAP_Y_BETWEEN_PLOTS)-FONT_SIZE_PLOT_CAPTION//2-4)))
+			feed_caption = []
+			width = 0
+			for k in range(len(short_feed_name[i][j])):
+				feed_caption.append(feed_name_font.render(short_feed_name[i][j][k], 1, color[k+2]))
+				width += feed_caption[k].get_width() + FONT_SIZE_FEED_NAME_EXTRA_GAP
+			print("width: " + str(width))
+			for k in range(len(short_feed_name[i][j])):
+				screen.blit(feed_caption[k], feed_caption[k].get_rect(center=(GAP_X_SIDE+i*(plot_width+GAP_X_BETWEEN_PLOTS)+plot_width//2-width//2+feed_caption[k].get_width()//2, GAP_Y_TOP+j*(plot_height+GAP_Y_BETWEEN_PLOTS)+plot_height+FONT_SIZE_FEED_NAME//2+4)))
+				width -= 2*(feed_caption[k].get_width() + FONT_SIZE_FEED_NAME_EXTRA_GAP)
+			print("width: " + str(width))
 			fetch_data_for_the_first_time(i, j)
 			draw_plot_border(i, j)
 			update_plot(i, j)
