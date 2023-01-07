@@ -151,6 +151,10 @@ def update_plot(i, j):
 					plot[i][j].set_at((x, y), color[k+2]) # first two indices are black and white
 	plots_were_updated[i][j] = True
 
+def draw_plot_border(i, j):
+	print("drawing plot border...")
+	pygame.draw.rect(screen, white, pygame.Rect(GAP_X_SIDE+i*(plot_width+GAP_X_BETWEEN_PLOTS)-1, GAP_Y_TOP_BOTTOM+j*(plot_height+GAP_Y_BETWEEN_PLOTS)-1, plot_width+2, plot_height+2), 1)
+
 def setup():
 	fetch.setup()
 	global plot_width
@@ -187,6 +191,7 @@ def setup():
 	for i in range(COLUMNS):
 		for j in range(ROWS):
 			fetch_data_for_the_first_time(i, j)
+			draw_plot_border(i, j)
 			update_plot(i, j)
 			blit(i, j)
 			flip()
