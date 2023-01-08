@@ -1,112 +1,87 @@
-# written 2022-12-07 to 2022-12-13 by mza
-import time, board, busio, digitalio, adafruit_rfm9x, gc
-# last updated 2023-01-07 by mza
+# 2022-12-07to2023-01-07bymza
+import time,board,busio,digitalio,adafruit_rfm9x,gc
+import adafruit_ina260
 
-PRE = "SCOOPY"
-SUF = "BOOPS"
-BAUD = 4*57600
-RF = 905.0 # [902,928]
-TXDBM = 5 # [5, 23]
-N = 51 # target_period = 51*10=510
-delay = 10 # target_period = 51*10=510
-ina_N = 8
-ina_bins = 2
-nodeid = 3
+PRE="SCOOPY"
+SUF="BOOPS"
+B=4*57600
+RF=905.0
+T=5 #[5,20]
+N=51
+d=10
+n=3
 
-def bc_setup(numitems, numbins=1):
+def r(N):
+	return range(N)
+
+def bc_setup(numitems):
 	global items
-	items = numitems
-	global bins
-	bins = numbins
-	global acc_vals
-	acc_vals = [ [ [ 0. for a in range(items) ] for b in range(N) ] for c in range(bins) ]
+	items=numitems
+	global av
+	av=[[0. for a in r(items)] for b in r(N)]
 	global sums
-	sums = [ [ 0. for a in range(items) ] for b in range(bins) ]
+	sums=[0. for a in r(items)]
 	global Nacc
-	Nacc = [ 0 for a in range(bins) ]
+	Nacc=0
 	gc.collect()
 
-def bc_acc(vals, mybin=0):
+def bc_acc(vals):
 	global Nacc
-	Nacc[mybin] += 1
-	global acc_vals
-	acc_vals[mybin].append(vals[:])
-	for i in range(items):
-		sums[mybin][i] = 0.
-		for j in range(1, len(acc_vals[mybin])):
-			sums[mybin][i] += acc_vals[mybin][j][i]
-	acc_vals[mybin].pop(0)
+	Nacc+=1
+	global av
+	av.append(vals[:])
+	for i in r(items):
+		sums[i]=0.
+		for j in range(1,len(av)):
+			sums[i]+=av[j][i]
+	av.pop(0)
 	gc.collect()
 
-def bc_get_avg_vals(mybin=0):
-	if Nacc[mybin]<N:
-		n = Nacc[mybin]
+def bc_get_avg_vals():
+	if Nacc<N:
+		n=Nacc
 	else:
-		n = N
+		n=N
 	if 0==n:
 		return
-	avg_vals = [ sums[mybin][i]/float(n) for i in range(items) ]
+	avg_vals=[sums[i]/float(n) for i in r(items)]
 	return avg_vals
 
-def ina_get_vals(mybin=0):
-	vals = [ ina.current, ina.voltage, ina.power ]
-	bc_acc(vals, mybin)
+def ina_get_vals():
+	vals=[ina.current,ina.voltage,ina.power]
+	bc_acc(vals)
 	return vals
 
-def ina_get_avg_vals(mybin=0):
-	return bc_get_avg_vals(mybin)
+def ina_gav():
+	return bc_get_avg_vals()
 
-def ina_show_avg_vals(mybin=0):
-	print(str(ina_get_avg_vals(mybin)))
+def ina_show_avg_vals():
+	print(str(ina_gav()))
 
-msgid = 0
+msgid=0
 def send(msg):
 	global msgid
-	msgid += 1
-	msgid_str = "node" + str(nodeid) + "[" + str(msgid) + "] "
+	msgid+=1
+	msgid_str="node"+str(n)+"["+str(msgid)+"] "
 	print(msgid_str + msg)
-	rfm9x.send(bytes(PRE + msgid_str + msg + SUF, "utf-8"))
+	rfm9x.send(bytes(PRE+msgid_str+msg+SUF,"utf-8"))
 
-if __name__ == "__main__":
-	rfm9x = adafruit_rfm9x.RFM9x(spi=busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO), cs=digitalio.DigitalInOut(board.RFM9X_CS), reset=digitalio.DigitalInOut(board.RFM9X_RST), frequency=RF, baudrate=BAUD)
-	rfm9x.tx_power = TXDBM
-	gc.collect()
-	i2c = busio.I2C(board.SCL, board.SDA)
-	gc.collect()
-	ina_exists = False
-	try:
-		import adafruit_ina260
-		gc.collect()
-		global ina
-		ina = adafruit_ina260.INA260(i2c_bus=i2c, address=0x40)
-		gc.collect()
-		ina_exists = True
-	except:
-		print("can't setup ina260")
-	try:
-		gc.collect()
-		bc_setup(3, ina_bins)
-		gc.collect()
-	except:
-		print("can't setup boxcar")
-	if ina_exists:
-		ina_get_vals(1)
-	i = 1
-	while True:
-		if ina_exists:
-			ina_get_vals(0)
-		if 0==i%N:
-			print("yup")
-			if ina_exists:
-				ina_show_avg_vals(0)
-				send("ina260bin0 " + str(ina_get_avg_vals(0)))
-				time.sleep(2)
-				ina_get_vals(1)
-				ina_show_avg_vals(1)
-				send("ina260bin1 " + str(ina_get_avg_vals(1)))
-				ina_get_vals(1)
-		else:
-			print("nope")
-		i += 1
-		time.sleep(delay)
+rfm9x=adafruit_rfm9x.RFM9x(spi=busio.SPI(board.SCK,MOSI=board.MOSI,MISO=board.MISO),cs=digitalio.DigitalInOut(board.RFM9X_CS),reset=digitalio.DigitalInOut(board.RFM9X_RST),frequency=RF,baudrate=B)
+rfm9x.tx_power=T
+gc.collect()
+i2c=busio.I2C(board.SCL,board.SDA)
+gc.collect()
+global ina
+ina=adafruit_ina260.INA260(i2c_bus=i2c,address=0x40)
+gc.collect()
+bc_setup(3)
+gc.collect()
+i=1
+while True:
+	ina_get_vals()
+	if 0==i%N:
+		ina_show_avg_vals()
+		send("ina260bin0 " + str(ina_gav(0)))
+	i+=1
+	time.sleep(d)
 
