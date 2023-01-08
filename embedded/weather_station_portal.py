@@ -2,7 +2,7 @@
 
 # written 2022-04-23 by mza
 # based on temperature_log_and_graph.py
-# last updated 2023-01-07 by mza
+# last updated 2023-01-08 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/mza/CIRCUITPY/; cp -a weather_station_portal.py /media/mza/CIRCUITPY/code.py ; sync
@@ -18,7 +18,7 @@ import board
 import busio
 import displayio
 import airlift
-
+import gc
 import microsd_adafruit
 import neopixel_adafruit
 try:
@@ -33,7 +33,7 @@ import display_adafruit
 board_id = board.board_id
 info("we are " + board_id)
 if board_id=="pyportal_titano" or board_id=="pyportal":
-	delay = 500 # number of seconds between updates
+	delay = 125 # number of seconds between updates; 4*125=500
 	plots_to_update_every_screen_refresh = 1
 	should_use_airlift = True
 	should_use_builtin_wifi = False
@@ -91,57 +91,82 @@ def loop():
 #			info(string)
 	if update_plot[0]:
 		info("updating temperatures...")
-		global ds18b20
-		ds18b20 = airlift.add_most_recent_data_to_end_of_array(ds18b20, "roof-temp")
-		myarray_a = display_adafruit.format_for_plot(ds18b20, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
+		global temperature_indoor
+		temperature_indoor = airlift.add_most_recent_data_to_end_of_array(temperature_indoor, "living-room-temp")
+		myarray_a = display_adafruit.format_for_plot(temperature_indoor, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
+		global temperature_3dprinter
+		temperature_3dprinter = airlift.add_most_recent_data_to_end_of_array(temperature_3dprinter, "3d-printer-temp")
+		myarray_b = display_adafruit.format_for_plot(temperature_3dprinter, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
 		global temperature_outdoor
 		temperature_outdoor = airlift.add_most_recent_data_to_end_of_array(temperature_outdoor, "outdoor-temp")
-		myarray_b = display_adafruit.format_for_plot(temperature_outdoor, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
-		global temperature_indoor
-		temperature_indoor = airlift.add_most_recent_data_to_end_of_array(temperature_indoor, "inside-temp")
-		myarray_c = display_adafruit.format_for_plot(temperature_indoor, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
+		myarray_c = display_adafruit.format_for_plot(temperature_outdoor, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
+		global ds18b20
+		ds18b20 = airlift.add_most_recent_data_to_end_of_array(ds18b20, "roof-temp")
+		myarray_d = display_adafruit.format_for_plot(ds18b20, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
 		global heater
 		heater = airlift.add_most_recent_data_to_end_of_array(heater, "heater")
-		myarray_d = display_adafruit.format_for_plot(heater, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
-		display_adafruit.update_plot(0, [myarray_c, myarray_b, myarray_a, myarray_d])
+		myarray_e = display_adafruit.format_for_plot(heater, MIN_TEMP_TO_PLOT, MAX_TEMP_TO_PLOT)
+		display_adafruit.update_plot(0, [myarray_a, myarray_b, myarray_c, myarray_d, myarray_e])
 	if update_plot[1]:
 		info("updating humidities...")
-		global sht31d
-		sht31d = airlift.add_most_recent_data_to_end_of_array(sht31d, "roof-hum")
-		myarray_a = display_adafruit.format_for_plot(sht31d, MIN_HUM_TO_PLOT, MAX_HUM_TO_PLOT)
+		global humidity_living_room
+		humidity_living_room = airlift.add_most_recent_data_to_end_of_array(humidity_living_room, "living-room-hum")
+		myarray_a = display_adafruit.format_for_plot(humidity_living_room, MIN_HUM_TO_PLOT, MAX_HUM_TO_PLOT)
+		global humidity_indoor
+		humidity_indoor = airlift.add_most_recent_data_to_end_of_array(humidity_indoor, "3d-printer-hum")
+		myarray_b = display_adafruit.format_for_plot(humidity_indoor, MIN_HUM_TO_PLOT, MAX_HUM_TO_PLOT)
 		global humidity_outdoor
 		humidity_outdoor = airlift.add_most_recent_data_to_end_of_array(humidity_outdoor, "outdoor-hum")
-		myarray_b = display_adafruit.format_for_plot(humidity_outdoor, MIN_HUM_TO_PLOT, MAX_HUM_TO_PLOT)
-		global humidity_indoor
-		humidity_indoor = airlift.add_most_recent_data_to_end_of_array(humidity_indoor, "inside-hum")
-		myarray_c = display_adafruit.format_for_plot(humidity_indoor, MIN_HUM_TO_PLOT, MAX_HUM_TO_PLOT)
-		display_adafruit.update_plot(1, [myarray_c, myarray_b, myarray_a])
+		myarray_c = display_adafruit.format_for_plot(humidity_outdoor, MIN_HUM_TO_PLOT, MAX_HUM_TO_PLOT)
+		global sht31d
+		sht31d = airlift.add_most_recent_data_to_end_of_array(sht31d, "roof-hum")
+		myarray_d = display_adafruit.format_for_plot(sht31d, MIN_HUM_TO_PLOT, MAX_HUM_TO_PLOT)
+		display_adafruit.update_plot(1, [myarray_a, myarray_b, myarray_c, myarray_d])
 	if update_plot[2]:
 		info("updating pressures...")
+		global pressure_living_room
+		pressure_living_room = airlift.add_most_recent_data_to_end_of_array(pressure_living_room, "living-room-pressure")
+		myarray_a = display_adafruit.format_for_plot(pressure_living_room, MIN_PRES_TO_PLOT, MAX_PRES_TO_PLOT)
 		global pressure
-		pressure = airlift.add_most_recent_data_to_end_of_array(pressure, "pressure")
-		myarray_a = display_adafruit.format_for_plot(pressure, MIN_PRES_TO_PLOT, MAX_PRES_TO_PLOT)
-		display_adafruit.update_plot(2, [myarray_a])
+		pressure = airlift.add_most_recent_data_to_end_of_array(pressure, "3d-printer-pressure")
+		myarray_b = display_adafruit.format_for_plot(pressure, MIN_PRES_TO_PLOT, MAX_PRES_TO_PLOT)
+		display_adafruit.update_plot(2, [myarray_a, myarray_b])
 	if update_plot[3]:
 		info("updating particle counts...")
-		global particle0p3
-		particle0p3 = airlift.add_most_recent_data_to_end_of_array(particle0p3, "particle0p3")
-		myarray_a = display_adafruit.format_for_plot(particle0p3, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
-		global particle0p5
-		particle0p5 = airlift.add_most_recent_data_to_end_of_array(particle0p5, "particle0p5")
-		myarray_b = display_adafruit.format_for_plot(particle0p5, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
+		#global particle0p3
+		#particle0p3 = airlift.add_most_recent_data_to_end_of_array(particle0p3, "garage-0p3")
+		#myarray_a = display_adafruit.format_for_plot(particle0p3, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
+		#global particle0p5
+		#particle0p5 = airlift.add_most_recent_data_to_end_of_array(particle0p5, "garage-0p5")
+		#myarray_b = display_adafruit.format_for_plot(particle0p5, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
 		global particle1p0
-		particle1p0 = airlift.add_most_recent_data_to_end_of_array(particle1p0, "particle1p0")
+		particle1p0 = airlift.add_most_recent_data_to_end_of_array(particle1p0, "garage-1p0")
 		myarray_c = display_adafruit.format_for_plot(particle1p0, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
-		global particle2p5
-		particle2p5 = airlift.add_most_recent_data_to_end_of_array(particle2p5, "particle2p5")
-		myarray_d = display_adafruit.format_for_plot(particle2p5, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
-		global particle5p0
-		particle5p0 = airlift.add_most_recent_data_to_end_of_array(particle5p0, "particle5p0")
-		myarray_e = display_adafruit.format_for_plot(particle5p0, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
-		display_adafruit.update_plot(3, [myarray_a, myarray_b, myarray_c, myarray_d, myarray_e])
+		#global particle2p5
+		#particle2p5 = airlift.add_most_recent_data_to_end_of_array(particle2p5, "garage-2p5")
+		#myarray_d = display_adafruit.format_for_plot(particle2p5, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
+		#global particle5p0
+		#particle5p0 = airlift.add_most_recent_data_to_end_of_array(particle5p0, "garage-5p0")
+		#myarray_e = display_adafruit.format_for_plot(particle5p0, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
+		#global printer0p3
+		#printer0p3 = airlift.add_most_recent_data_to_end_of_array(printer0p3, "3d-printer-0p3")
+		#myarray_f = display_adafruit.format_for_plot(printer0p3, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
+		#global printer0p5
+		#printer0p5 = airlift.add_most_recent_data_to_end_of_array(printer0p5, "3d-printer-0p5")
+		#myarray_g = display_adafruit.format_for_plot(printer0p5, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
+		global printer1p0
+		printer1p0 = airlift.add_most_recent_data_to_end_of_array(printer1p0, "3d-printer-1p0")
+		myarray_h = display_adafruit.format_for_plot(printer1p0, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
+		#global printer2p5
+		#printer2p5 = airlift.add_most_recent_data_to_end_of_array(printer2p5, "3d-printer-2p5")
+		#myarray_i = display_adafruit.format_for_plot(printer2p5, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
+		#global printer5p0
+		#printer5p0 = airlift.add_most_recent_data_to_end_of_array(printer5p0, "3d-printer-5p0")
+		#myarray_j = display_adafruit.format_for_plot(printer5p0, MIN_PARTICLE_COUNT_TO_PLOT, MAX_PARTICLE_COUNT_TO_PLOT)
+		display_adafruit.update_plot(3, [myarray_c, myarray_h])
 	display_adafruit.refresh()
 	flush()
+	gc.collect()
 	time.sleep(delay)
 
 def main():
@@ -218,36 +243,54 @@ def main():
 			create_new_logfile_with_string_embedded(dirname, "weather_station", pcf8523_adafruit.get_timestring2())
 		else:
 			create_new_logfile_with_string_embedded(dirname, "weather_station")
-	display_adafruit.setup_for_n_m_plots(2, 2, [["temperature", "indoor", "outdoor", "roof", "heater"], ["humidity", "indoor", "outdoor", "roof"], ["pressure", "indoor"], ["particle count", "0.3", "0.5", "1.0", "2.5", "5.0"]])
+	display_adafruit.setup_for_n_m_plots(2, 2, [["temperature", "living-room", "3d-printer", "outdoor", "roof", "heater"], ["humidity", "living-room", "3d-printer", "outdoor", "roof"], ["pressure", "living-room", "3d-printer"], ["particle count", "garage-1.0", "3d-printer-1.0"]])
 	display_adafruit.refresh()
 	array_size = display_adafruit.plot_width
 	if 1:
-		global ds18b20
-		global temperature_outdoor
+		gc.collect()
 		global temperature_indoor
-		global heater
-		global sht31d
-		global humidity_outdoor
-		global humidity_indoor
-		global pressure
-		global particle0p3
-		global particle0p5
-		global particle1p0
-		global particle2p5
-		global particle5p0
-		ds18b20 = [ -40.0 for i in range(array_size) ]
-		temperature_outdoor = [ -40.0 for i in range(array_size) ]
 		temperature_indoor = [ -40.0 for i in range(array_size) ]
+		global temperature_3dprinter
+		temperature_3dprinter= [ -40.0 for i in range(array_size) ]
+		global temperature_outdoor
+		temperature_outdoor = [ -40.0 for i in range(array_size) ]
+		global ds18b20
+		ds18b20 = [ -40.0 for i in range(array_size) ]
+		global heater
 		heater = [ -40.0 for i in range(array_size) ]
-		sht31d = [ -40.0 for i in range(array_size) ]
-		humidity_outdoor = [ -40.0 for i in range(array_size) ]
+		global humidity_living_room
+		humidity_living_room = [ -40.0 for i in range(array_size) ]
+		global humidity_indoor
 		humidity_indoor = [ -40.0 for i in range(array_size) ]
+		global humidity_outdoor
+		humidity_outdoor = [ -40.0 for i in range(array_size) ]
+		global sht31d
+		sht31d = [ -40.0 for i in range(array_size) ]
+		global pressure_living_room
+		pressure_living_room = [ -40.0 for i in range(array_size) ]
+		global pressure
 		pressure = [ -40.0 for i in range(array_size) ]
-		particle0p3 = [ -40.0 for i in range(array_size) ]
-		particle0p5 = [ -40.0 for i in range(array_size) ]
+		#global particle0p3
+		#particle0p3 = [ -40.0 for i in range(array_size) ]
+		#global particle0p5
+		#particle0p5 = [ -40.0 for i in range(array_size) ]
+		global particle1p0
 		particle1p0 = [ -40.0 for i in range(array_size) ]
-		particle2p5 = [ -40.0 for i in range(array_size) ]
-		particle5p0 = [ -40.0 for i in range(array_size) ]
+		#global particle2p5
+		#particle2p5 = [ -40.0 for i in range(array_size) ]
+		#global particle5p0
+		#particle5p0 = [ -40.0 for i in range(array_size) ]
+		#global printer0p3
+		#printer0p3 = [ -40.0 for i in range(array_size) ]
+		#global printer0p5
+		#printer0p5 = [ -40.0 for i in range(array_size) ]
+		global printer1p0
+		printer1p0 = [ -40.0 for i in range(array_size) ]
+		#global printer2p5
+		#printer2p5 = [ -40.0 for i in range(array_size) ]
+		#global printer5p0
+		#printer5p0 = [ -40.0 for i in range(array_size) ]
+		gc.collect()
 	if 0:
 		print("fetching old data from feeds...")
 		#global temperature_indoor
