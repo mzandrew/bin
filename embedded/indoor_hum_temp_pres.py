@@ -37,7 +37,7 @@ mydir = "/logs"
 board_id = board.board_id
 info("we are " + board_id)
 if 'adafruit_feather_esp32s2_tft'==board_id: # bme680 temp/hum/pressure/alt/gas on feather tft esp32-s2
-	my_wifi_name = "indoor2"
+	my_wifi_name = "living-room"
 	FEATHER_ESP32S2 = True
 	use_pwm_status_leds = False
 	should_use_sdcard = False
@@ -134,7 +134,7 @@ def main():
 		else:
 			warning("display is not available")
 	if display_is_available:
-		display_adafruit.setup_for_n_m_plots(1, 1, [["indoor", "temperature", "humidity", "pressure"]])
+		display_adafruit.setup_for_n_m_plots(1, 1, [["living room", "temperature", "humidity", "pressure"]])
 		display_adafruit.refresh()
 		#display_adafruit.test_st7789()
 		#info("done with st7789 test")
@@ -217,8 +217,8 @@ def main():
 			airlift.setup_feed(my_wifi_name + "-temp")
 			airlift.setup_feed(my_wifi_name + "-hum")
 			airlift.setup_feed(my_wifi_name + "-pressure")
-			#airlift.setup_feed("indoor-altitude")
-			#airlift.setup_feed("indoor-gas")
+			#airlift.setup_feed("-altitude")
+			#airlift.setup_feed("-gas")
 	else:
 		airlift_is_available = False
 	if 0:
@@ -277,8 +277,8 @@ def loop():
 						airlift.post_data(my_wifi_name + "-temp",     bme680_adafruit.get_average_values()[0])
 						airlift.post_data(my_wifi_name + "-hum",      bme680_adafruit.get_average_values()[1])
 						airlift.post_data(my_wifi_name + "-pressure", bme680_adafruit.get_average_values()[2])
-						#airlift.post_data("indoor-altitude", bme680_adafruit.get_average_values()[3])
-						#airlift.post_data("indoor-gas", bme680_adafruit.get_average_values()[4])
+						#airlift.post_data("-altitude", bme680_adafruit.get_average_values()[3])
+						#airlift.post_data("-gas", bme680_adafruit.get_average_values()[4])
 					except KeyboardInterrupt:
 						raise
 					except:

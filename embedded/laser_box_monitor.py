@@ -2,7 +2,7 @@
 
 # written 2022-01-17 by mza
 # based on indoor_hum_temp_pres.py
-# last updated 2022-09-13 by mza
+# last updated 2023-01-08 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -321,8 +321,8 @@ def loop():
 						airlift.post_data(my_wifi_name + "-temp",     bme680_adafruit.get_average_values()[0])
 						airlift.post_data(my_wifi_name + "-hum",      bme680_adafruit.get_average_values()[1])
 						airlift.post_data(my_wifi_name + "-pressure", bme680_adafruit.get_average_values()[2])
-						#airlift.post_data("indoor-altitude", bme680_adafruit.get_average_values()[3])
-						#airlift.post_data("indoor-gas", bme680_adafruit.get_average_values()[4])
+						#airlift.post_data("-altitude", bme680_adafruit.get_average_values()[3])
+						#airlift.post_data("-gas", bme680_adafruit.get_average_values()[4])
 					except KeyboardInterrupt:
 						raise
 					except:

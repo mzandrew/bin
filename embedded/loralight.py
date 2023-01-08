@@ -81,7 +81,7 @@ while True:
 	ina_get_vals()
 	if 0==i%N:
 		ina_show_avg_vals()
-		send("ina260bin0 " + str(ina_gav(0)))
+		send("ina260bin0 " + str(ina_gav()))
 	i+=1
 	time.sleep(d)
 

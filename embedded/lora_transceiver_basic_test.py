@@ -8,10 +8,10 @@
 # cp -a lora_transceiver_basic_test.py /media/mza/LORASEND/code.py; cp -a lora_transceiver_basic_test.py /media/mza/LORARECEIVE/code.py
 # sync
 
-target_period = 90
-N = 64
+target_period = 514
+N = 32
 ina260_N = 4
-delay_between_acquisitions = 0.875
+delay_between_acquisitions = 16
 BAUD_RATE = 4*57600
 RADIO_FREQ_MHZ = 905.0 # 868-915 MHz (902-928 MHz is the allowed band in US/MEX/CAN)
 current_tx_power_dbm = 20 # minimum 5; default 13; maximum 20
@@ -293,7 +293,8 @@ def loop():
 	i = 0
 	j = 0
 	button_was_pressed = False
-	info("Waiting for packets...")
+	if "uplink"==node_type:
+		info("Waiting for packets...")
 	first_time_through = True
 	while True:
 		if rotary_encoder_is_available:

@@ -1,6 +1,6 @@
 # written 2022-01-17 by mza
 # based on indoor_hum_temp_pres.py
-# last updated 2022-09-18 by mza
+# last updated 2023-01-07 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -38,16 +38,16 @@ mydir = "/logs"
 board_id = board.board_id
 info("we are " + board_id)
 if 'adafruit_feather_esp32s2_tft'==board_id: # pm25 particle count sensor on feather tft esp32-s2
-	my_wifi_name = "particle-plot"
-	my_adafruit_io_prefix = "indoor"
+	my_wifi_name = "3d-printer-particle"
+	my_adafruit_io_prefix = "3d-printer"
 	FEATHER_ESP32S2 = True
 	use_pwm_status_leds = False
 	should_use_sdcard = False
 	should_use_RTC = False
 	should_use_gps = False
 	N = 32
-	desired_loop_time = 60.0
-	delay_between_acquisitions = 1.5
+	desired_loop_time = 514
+	delay_between_acquisitions = 16
 	gps_delay_in_ms = 2000
 	delay_between_posting_and_next_acquisition = 1.0
 	should_use_airlift = True
@@ -141,13 +141,13 @@ def main():
 		#display_adafruit.test_st7789()
 		#info("done with st7789 test")
 		array_size = display_adafruit.plot_width
-		#global temperatures_to_plot
-		#global humidities_to_plot
-		#global pressures_to_plot
+		global temperatures_to_plot
+		global humidities_to_plot
+		global pressures_to_plot
 		global particle_counts_to_plot
-		#temperatures_to_plot    = [ -40.0 for i in range(array_size) ]
-		#humidities_to_plot      = [ -40.0 for i in range(array_size) ]
-		#pressures_to_plot       = [ -40.0 for i in range(array_size) ]
+		temperatures_to_plot    = [ -40.0 for i in range(array_size) ]
+		humidities_to_plot      = [ -40.0 for i in range(array_size) ]
+		pressures_to_plot       = [ -40.0 for i in range(array_size) ]
 		particle_counts_to_plot = [ [ -40.0 for i in range(array_size) ] for j in range(5) ]
 	else:
 		error("display is not available")
@@ -223,6 +223,7 @@ def main():
 	global battery_monitor_is_available
 	try:
 		battery_monitor_is_available = generic.setup_battery_monitor(i2c)
+		header_string += ", batt%"
 	except KeyboardInterrupt:
 		raise
 	except:
@@ -246,8 +247,8 @@ def main():
 			airlift.setup_feed(my_adafruit_io_prefix + "-1p0")
 			airlift.setup_feed(my_adafruit_io_prefix + "-2p5")
 			airlift.setup_feed(my_adafruit_io_prefix + "-5p0")
-			#airlift.setup_feed("indoor-altitude")
-			#airlift.setup_feed("indoor-gas")
+			#airlift.setup_feed("-altitude")
+			#airlift.setup_feed("-gas")
 	else:
 		airlift_is_available = False
 	if 0:
@@ -325,8 +326,8 @@ def loop():
 						airlift.post_data(my_adafruit_io_prefix + "-temp",     bme680_adafruit.get_average_values()[0])
 						airlift.post_data(my_adafruit_io_prefix + "-hum",      bme680_adafruit.get_average_values()[1])
 						airlift.post_data(my_adafruit_io_prefix + "-pressure", bme680_adafruit.get_average_values()[2])
-						#airlift.post_data("indoor-altitude", bme680_adafruit.get_average_values()[3])
-						#airlift.post_data("indoor-gas", bme680_adafruit.get_average_values()[4])
+						#airlift.post_data("-altitude", bme680_adafruit.get_average_values()[3])
+						#airlift.post_data("-gas", bme680_adafruit.get_average_values()[4])
 					except KeyboardInterrupt:
 						raise
 					except:
@@ -338,7 +339,7 @@ def loop():
 		if use_pwm_status_leds:
 			generic.set_status_led_color([0, 0, 1])
 		if airlift_is_available:
-			if 0==i%86300:
+			if 0==i%86400:
 				airlift.update_time_from_server()
 		time.sleep(delay_between_acquisitions)
 

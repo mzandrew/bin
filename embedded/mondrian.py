@@ -12,7 +12,7 @@ GAP_X_SIDE = 14
 GAP_Y_TOP = 24
 GAP_Y_BOTTOM = 24
 FONT_SIZE_PLOT_CAPTION = 18
-FONT_SIZE_FEED_NAME = 16
+FONT_SIZE_FEED_NAME = 15
 FONT_SIZE_FEED_NAME_EXTRA_GAP = 6
 ICON_SIZE = 32
 ICON_BORDER = 2
@@ -29,26 +29,26 @@ maximum = [ [ 100 for j in range(ROWS) ] for i in range(COLUMNS) ]
 plot_name[0][0] = "temperature"
 minimum[0][0] = 10.
 maximum[0][0] = 80.
-feed_name[0][0] = [ "roof-temp", "outdoor-temp", "inside-temp", "heater" ]
-short_feed_name[0][0] = [ "roof", "outdoor", "inside", "heater" ]
+feed_name[0][0] = [ "living-room-temp", "3d-printer-temp", "outdoor-temp", "roof-temp", "heater" ]
+short_feed_name[0][0] = [ "living-room", "3d-printer", "outdoor", "roof", "heater" ]
 
 plot_name[1][0] = "humidity"
 minimum[1][0] = 40.
 maximum[1][0] = 100.
-feed_name[1][0] = [ "roof-hum", "outdoor-hum", "inside-hum", "indoor2-hum" ]
-short_feed_name[1][0] = [ "roof", "outdoor", "inside", "indoor2" ]
+feed_name[1][0] = [ "living-room-hum", "3d-printer-hum", "outdoor-hum", "roof-hum" ]
+short_feed_name[1][0] = [ "living-room", "3d-printer", "outdoor", "roof" ]
 
 plot_name[0][1] = "pressure"
 minimum[0][1] = 0.997
 maximum[0][1] = 1.009
-feed_name[0][1] = [ "pressure", "indoor2-pressure" ]
-short_feed_name[0][1] = [ "pressure", "indoor2" ]
+feed_name[0][1] = [ "living-room-pressure", "3d-printer-pressure" ]
+short_feed_name[0][1] = [ "living-room", "3d-printer" ]
 
 plot_name[1][1] = "particle count"
 minimum[1][1] = 0.
 maximum[1][1] = 350.
-feed_name[1][1] = [ "indoor-0p3", "indoor-0p5", "indoor-1p0", "indoor-2p5", "indoor-5p0", "particle0p3", "particle0p5", "particle1p0", "particle2p5", "particle5p0", "particle10p0" ]
-short_feed_name[1][1] = [ "b3", "b5", "1b0", "2b5", "5b0", "g3", "g5", "1g0", "2g5", "5g0", "10g0" ]
+feed_name[1][1] = [ "particle0p3", "particle0p5", "particle1p0", "particle2p5", "particle5p0", "particle10p0", "3d-printer-0p3", "3d-printer-0p5", "3d-printer-1p0", "3d-printer-2p5", "3d-printer-5p0" ]
+short_feed_name[1][1] = [ "g3", "g5", "1g0", "2g5", "5g0", "10g0", "d3", "d5", "1d0", "2d5", "5d0" ]
 
 black = (0, 0, 0)
 white = (255, 255, 255)
@@ -97,8 +97,7 @@ def clear_plots():
 #				axes_bitmap[padding_size//2,k] = 1
 #				axes_bitmap[tile_width-padding_size//2,k] = 1
 
-#DEFAULT_VALUE = -40
-DEFAULT_VALUE = 35.
+DEFAULT_VALUE = -40
 def pad_data_if_insufficient(values, count_desired):
 	if values is None:
 		values = []
@@ -108,7 +107,7 @@ def pad_data_if_insufficient(values, count_desired):
 			values = values[:count_desired]
 		elif count_gotten<count_desired:
 			for i in range(count_gotten, count_desired):
-				values.append(DEFAULT_VALUE)
+				values.insert(0, DEFAULT_VALUE)
 	return values
 
 def format_for_plot(values, minimum, maximum):

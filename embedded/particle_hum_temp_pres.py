@@ -281,8 +281,8 @@ def main():
 				airlift.setup_feed(my_adafruit_io_prefix + "-temp")
 				airlift.setup_feed(my_adafruit_io_prefix + "-hum")
 				airlift.setup_feed(my_adafruit_io_prefix + "-pressure")
-			#airlift.setup_feed("indoor-altitude")
-			#airlift.setup_feed("indoor-gas")
+			#airlift.setup_feed("-altitude")
+			#airlift.setup_feed("-gas")
 			if pm25_is_available:
 				airlift.setup_feed(my_adafruit_io_prefix + "-0p3")
 				airlift.setup_feed(my_adafruit_io_prefix + "-0p5")
@@ -354,8 +354,8 @@ def loop():
 						airlift.post_data(my_adafruit_io_prefix + "-temp",     bme680_adafruit.get_average_values()[0])
 						airlift.post_data(my_adafruit_io_prefix + "-hum",      bme680_adafruit.get_average_values()[1])
 						airlift.post_data(my_adafruit_io_prefix + "-pressure", bme680_adafruit.get_average_values()[2])
-						#airlift.post_data("indoor-altitude", bme680_adafruit.get_average_values()[3])
-						#airlift.post_data("indoor-gas", bme680_adafruit.get_average_values()[4])
+						#airlift.post_data("-altitude", bme680_adafruit.get_average_values()[3])
+						#airlift.post_data("-gas", bme680_adafruit.get_average_values()[4])
 					except (KeyboardInterrupt, ReloadException):
 						raise
 					except:
