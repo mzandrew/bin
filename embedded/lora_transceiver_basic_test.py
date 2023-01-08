@@ -374,7 +374,7 @@ def loop():
 					neopixel_adafruit.set_color(0, 255, 0)
 				if dotstar_is_available:
 					dotstar[0] = (0, 255, 0, dotstar_brightness)
-				if should_use_airlift:
+				if airlift_is_available:
 					target_period = airlift.get_most_recent_data("target-period")
 					info("target_period = " + str(target_period))
 				delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, target_period)
