@@ -1,6 +1,6 @@
 # written 2022-10-29 by mza
 # based on neopixel_clockface.py
-# last updated 2023-01-01 by mza
+# last updated 2023-01-07 by mza
 
 # to install:
 # cd lib
@@ -30,11 +30,11 @@ from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3,
 
 my_wifi_name = "roof2"
 my_adafruit_io_prefix = "roof2"
-delay_between_acquisitions = 1.5
+delay_between_acquisitions = 16
 N = 32 # average this many sensor readings before acting on it
 should_use_RTC = False
 should_power_down_wifi_when_not_needed = False
-ORIGINAL_TARGET_PERIOD = 90
+ORIGINAL_TARGET_PERIOD = 514
 target_period = ORIGINAL_TARGET_PERIOD
 should_use_fuel_gauge = False
 should_use_ina260 = True

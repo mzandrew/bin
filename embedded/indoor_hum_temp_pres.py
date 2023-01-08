@@ -2,7 +2,7 @@
 
 # written 2022-01-17 by mza
 # based on outdoor_temp_hum.py
-# last updated 2022-09-18 by mza
+# last updated 2023-01-07 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -44,8 +44,8 @@ if 'adafruit_feather_esp32s2_tft'==board_id: # bme680 temp/hum/pressure/alt/gas 
 	should_use_RTC = False
 	should_use_gps = False
 	N = 32
-	desired_loop_time = 60.0
-	delay_between_acquisitions = 1.5
+	desired_loop_time = 514.0
+	delay_between_acquisitions = 16
 	gps_delay_in_ms = 2000
 	delay_between_posting_and_next_acquisition = 1.0
 	should_use_airlift = True

@@ -1,14 +1,15 @@
 # written 2022-12-07 to 2022-12-13 by mza
 import time, board, busio, digitalio, adafruit_rfm9x, gc
+# last updated 2023-01-07 by mza
 
 PRE = "SCOOPY"
 SUF = "BOOPS"
 BAUD = 4*57600
 RF = 905.0 # [902,928]
 TXDBM = 5 # [5, 23]
-N = 9
+N = 51 # target_period = 51*10=510
+delay = 10 # target_period = 51*10=510
 ina_N = 8
-delay = 10
 ina_bins = 2
 nodeid = 3
 

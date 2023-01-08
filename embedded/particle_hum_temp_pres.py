@@ -2,7 +2,7 @@
 
 # written 2022-06-23 by mza
 # based on indoor_hum_temp_pres.py
-# last updated 2022-08-25 by mza
+# last updated 2023-01-07 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -54,8 +54,8 @@ if board_id=="pyportal_titano" or board_id=="pyportal":
 	should_use_RTC = False
 	should_use_gps = False
 	N = 32
-	desired_loop_time = 60.0
-	delay_between_acquisitions = 1.5
+	desired_loop_time = 514.0
+	delay_between_acquisitions = 16
 	gps_delay_in_ms = 2000
 	delay_between_posting_and_next_acquisition = 1.0
 	should_use_airlift = False
@@ -71,8 +71,8 @@ elif board_id=="adafruit_feather_esp32s2_tft" or board_id=="adafruit_feather_esp
 	should_use_RTC = False
 	should_use_gps = False
 	N = 32
-	desired_loop_time = 60.0
-	delay_between_acquisitions = 1.5
+	desired_loop_time = 514.0
+	delay_between_acquisitions = 16
 	gps_delay_in_ms = 2000
 	delay_between_posting_and_next_acquisition = 1.0
 	should_use_airlift = True
@@ -89,8 +89,8 @@ elif board_id=="adafruit_qtpy_esp32s2" or board_id=="adafruit_qtpy_esp32s3":
 	should_use_RTC = False
 	should_use_gps = False
 	N = 32
-	desired_loop_time = 60.0
-	delay_between_acquisitions = 1.5
+	desired_loop_time = 514.0
+	delay_between_acquisitions = 16
 	gps_delay_in_ms = 2000
 	delay_between_posting_and_next_acquisition = 1.0
 	#should_use_airlift = False

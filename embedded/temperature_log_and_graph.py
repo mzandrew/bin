@@ -2,7 +2,7 @@
 
 # written 2021-04-21 by mza
 # updated from indoor_temp_hum.py
-# last updated 2023-01-04 by mza
+# last updated 2023-01-07 by mza
 
 # to install on a circuitpython device:
 # rsync -r *.py /media/circuitpython/
@@ -39,8 +39,8 @@ generic.print_os_ver()
 if 'sparkfun_samd51_thing_plus'==board.board_id: # pct2075
 	my_wifi_name = "heater"
 	N = 32
-	desired_loop_time = 60.0
-	delay_between_acquisitions = 1.5
+	target_period = 510.0
+	delay_between_acquisitions = 16
 	gps_delay_in_ms = 2000
 	delay_between_posting_and_next_acquisition = 1.0
 	should_use_airlift = True
@@ -299,7 +299,7 @@ def loop():
 				display_adafruit.update_temperature_display_on_matrix_backpack()
 			info("waiting...")
 			time.sleep(delay_between_posting_and_next_acquisition)
-			delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, desired_loop_time)
+			delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, target_period)
 		neopixel_adafruit.set_color(0, 0, 255)
 		if use_pwm_status_leds:
 			generic.set_status_led_color([0, 0, 1])

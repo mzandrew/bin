@@ -1,5 +1,5 @@
 # written 2021-12-26 by mza
-# last updated 2022-01-25 by mza
+# last updated 2023-01-07 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -10,10 +10,9 @@
 header_string = "date/time"
 dir = "/logs"
 should_use_airlift = True
-N = 24
+N = 32
+delay_between_acquisitions = 16
 use_built_in_wifi = True
-delay_between_acquisitions = 2.3
-delay_between_posting_and_next_acquisition = 1.0
 
 import sys
 import time
@@ -159,8 +158,6 @@ def loop():
 				airlift.post_data("particle10p0", pm25_adafruit.get_average_values()[11])
 			except:
 				warning("couldn't post 10p0 data for pm25")
-		info("waiting...")
-		time.sleep(delay_between_posting_and_next_acquisition)
 	if neopixel_is_available:
 		neopixel_adafruit.set_color(0, 0, 255)
 	if airlift_is_available:

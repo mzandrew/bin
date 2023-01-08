@@ -1,5 +1,5 @@
 # written 2021-09-10 by mza
-# last updated 2022-11-17 by mza
+# last updated 2023-01-07 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -55,7 +55,6 @@ if board_id=="ASDF": # for the one with the TFT and GPS but no adalogger
 	N = 8
 	gps_delay_in_ms = 1000
 	delay_between_acquisitions = 2. * gps_delay_in_ms/1000.
-	delay_between_posting_and_next_acquisition = 2.0
 	use_built_in_wifi = True
 	import pm25_adafruit
 	import gps_adafruit
@@ -72,9 +71,8 @@ elif board_id=="adafruit_feather_rp2040": # cat on a hot tin roof
 	wifi_mapping_mode = False
 	cat_on_a_hot_tin_roof_mode = True
 	N = 32
-	delay_between_acquisitions = 0.5
+	delay_between_acquisitions = 16
 	gps_delay_in_ms = 2000
-	delay_between_posting_and_next_acquisition = 2.0
 	use_built_in_wifi = False
 else:
 	error("what board am I?")
@@ -443,8 +441,6 @@ def loop():
 			if pm25_is_available:
 				pm25_adafruit.show_average_values()
 			#pct2075_adafruit.show_average_values()
-			info("waiting...")
-			time.sleep(delay_between_posting_and_next_acquisition)
 		neopixel_adafruit.set_color(0, 0, 255)
 		if use_pwm_status_leds:
 			generic.set_status_led_color([0, 0, 1])

@@ -1,6 +1,6 @@
 # written 2022-01-12 by mza
 # based on indoor_temp_hum.py
-# last updated 2022-12-03 by mza
+# last updated 2023-01-07 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -38,7 +38,7 @@ if 'adafruit_qtpy_esp32s2'==board_id: # sht31 on qtpy esp32-s2
 	should_use_RTC = False
 	should_use_gps = False
 	N = 32
-	delay_between_acquisitions = 1.7
+	delay_between_acquisitions = 16
 	gps_delay_in_ms = 2000
 	#delay_between_posting_and_next_acquisition = 1.0
 	should_use_airlift = True
