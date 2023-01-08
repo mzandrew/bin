@@ -2,13 +2,13 @@
 
 # written 2023-01-04 by mza
 # with help from https://realpython.com/pygame-a-primer/#displays-and-surfaces
-# last updated 2023-01-06 by mza
+# last updated 2023-01-07 by mza
 
 SCREEN_WIDTH = 720
 SCREEN_HEIGHT = 720
-GAP_X_BETWEEN_PLOTS = 14
+GAP_X_BETWEEN_PLOTS = 20
 GAP_Y_BETWEEN_PLOTS = 44
-GAP_X_SIDE = 10
+GAP_X_SIDE = 14
 GAP_Y_TOP = 24
 GAP_Y_BOTTOM = 24
 FONT_SIZE_PLOT_CAPTION = 18
@@ -40,7 +40,7 @@ short_feed_name[1][0] = [ "roof", "outdoor", "inside", "indoor2" ]
 
 plot_name[0][1] = "pressure"
 minimum[0][1] = 0.997
-maximum[0][1] = 1.008
+maximum[0][1] = 1.009
 feed_name[0][1] = [ "pressure", "indoor2-pressure" ]
 short_feed_name[0][1] = [ "pressure", "indoor2" ]
 
@@ -54,7 +54,7 @@ black = (0, 0, 0)
 white = (255, 255, 255)
 red = (255, 0, 0)
 green = (0, 255, 0)
-blue = (0, 0, 255)
+blue = (31, 31, 255)
 yellow = (255, 255, 0)
 teal = (0, 255, 255)
 purple = (255, 0, 255)
