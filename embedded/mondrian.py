@@ -233,7 +233,7 @@ def setup():
 			flip()
 	global should_check_for_new_data
 	should_check_for_new_data = pygame.USEREVENT + 1
-	pygame.time.set_timer(should_check_for_new_data, 60000)
+	pygame.time.set_timer(should_check_for_new_data, 128500) # target_period=128.5*4=514
 
 ij = 0
 def loop():
