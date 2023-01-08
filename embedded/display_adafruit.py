@@ -200,8 +200,8 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 		FONT_GAP = FONT_SCALE*width_of_single_character
 	#print("font gap: " + str(FONT_GAP))
 	for m in range(len(list_of_labels)):
-		if 8<len(list_of_labels[m]):
-			error("can only plot 8 things at once")
+		if 7<len(list_of_labels[m]): # first entry is the plot label
+			error("can only plot 6 things at once")
 			continue
 		text_areas = []
 		running_text_width = 0
