@@ -2,7 +2,7 @@
 
 # written 2023-01-04 by mza
 # with help from https://realpython.com/pygame-a-primer/#displays-and-surfaces
-# last updated 2023-01-07 by mza
+# last updated 2023-01-08 by mza
 
 SCREEN_WIDTH = 720
 SCREEN_HEIGHT = 720
@@ -47,7 +47,7 @@ short_feed_name[0][1] = [ "living-room", "3d-printer" ]
 plot_name[1][1] = "particle count"
 minimum[1][1] = 0.
 maximum[1][1] = 350.
-feed_name[1][1] = [ "particle0p3", "particle0p5", "particle1p0", "particle2p5", "particle5p0", "particle10p0", "3d-printer-0p3", "3d-printer-0p5", "3d-printer-1p0", "3d-printer-2p5", "3d-printer-5p0" ]
+feed_name[1][1] = [ "garage-0p3", "garage-0p5", "garage-1p0", "garage-2p5", "garage-5p0", "garage-10p0", "3d-printer-0p3", "3d-printer-0p5", "3d-printer-1p0", "3d-printer-2p5", "3d-printer-5p0" ]
 short_feed_name[1][1] = [ "g3", "g5", "1g0", "2g5", "5g0", "10g0", "d3", "d5", "1d0", "2d5", "5d0" ]
 
 black = (0, 0, 0)
@@ -57,14 +57,14 @@ green = (0, 255, 0)
 blue = (31, 31, 255)
 yellow = (255, 255, 0)
 teal = (0, 255, 255)
-purple = (255, 0, 255)
-pink = (255, 127, 127)
-orange = (255, 127, 0)
+pink = (255, 63, 63)
+maroon = (255, 0, 127)
 dark_green = (0, 127, 0)
 light_blue = (127, 127, 255)
-maroon = (255, 0, 127)
+orange = (255, 127, 0)
+purple = (255, 0, 255)
 
-color = [ black, white, red, green, blue, yellow, teal, purple, pink, orange, dark_green, light_blue, maroon ]
+color = [ black, white, red, green, blue, yellow, teal, pink, maroon, dark_green, light_blue, orange, purple ]
 
 import sys
 import time
