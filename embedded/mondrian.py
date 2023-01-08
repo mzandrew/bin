@@ -29,26 +29,26 @@ maximum = [ [ 100 for j in range(ROWS) ] for i in range(COLUMNS) ]
 plot_name[0][0] = "temperature"
 minimum[0][0] = 10.
 maximum[0][0] = 80.
-feed_name[0][0] = [ "living-room-temp", "3d-printer-temp", "outdoor-temp", "roof-temp", "heater" ]
-short_feed_name[0][0] = [ "living-room", "3d-printer", "outdoor", "roof", "heater" ]
+feed_name[0][0] = [ "living-room-temp", "3d-printer-temp", "garage-temp", "outdoor-temp", "roof-temp", "heater" ]
+short_feed_name[0][0] = [ "living-room", "3d-printer", "garage", "outdoor", "roof", "heater" ]
 
 plot_name[1][0] = "humidity"
 minimum[1][0] = 40.
 maximum[1][0] = 100.
-feed_name[1][0] = [ "living-room-hum", "3d-printer-hum", "outdoor-hum", "roof-hum" ]
-short_feed_name[1][0] = [ "living-room", "3d-printer", "outdoor", "roof" ]
+feed_name[1][0] = [ "living-room-hum", "3d-printer-hum", "garage-hum", "outdoor-hum", "roof-hum" ]
+short_feed_name[1][0] = [ "living-room", "3d-printer", "garage", "outdoor", "roof" ]
 
 plot_name[0][1] = "pressure"
 minimum[0][1] = 0.997
 maximum[0][1] = 1.009
-feed_name[0][1] = [ "living-room-pressure", "3d-printer-pressure" ]
-short_feed_name[0][1] = [ "living-room", "3d-printer" ]
+feed_name[0][1] = [ "living-room-pressure", "3d-printer-pressure", "garage-pressure" ]
+short_feed_name[0][1] = [ "living-room", "3d-printer", "garage" ]
 
 plot_name[1][1] = "particle count"
 minimum[1][1] = 0.
 maximum[1][1] = 350.
-feed_name[1][1] = [ "garage-0p3", "garage-0p5", "garage-1p0", "garage-2p5", "garage-5p0", "garage-10p0", "3d-printer-0p3", "3d-printer-0p5", "3d-printer-1p0", "3d-printer-2p5", "3d-printer-5p0" ]
-short_feed_name[1][1] = [ "g3", "g5", "1g0", "2g5", "5g0", "10g0", "d3", "d5", "1d0", "2d5", "5d0" ]
+feed_name[1][1] = [ "3d-printer-0p3", "3d-printer-0p5", "3d-printer-1p0", "3d-printer-2p5", "3d-printer-5p0", "garage-0p3", "garage-0p5", "garage-1p0", "garage-2p5", "garage-5p0", "garage-10p0" ]
+short_feed_name[1][1] = [ "d3", "d5", "1d0", "2d5", "5d0", "g3", "g5", "1g0", "2g5", "5g0", "10g0" ]
 
 black = (0, 0, 0)
 white = (255, 255, 255)
