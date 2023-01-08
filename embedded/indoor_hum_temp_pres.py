@@ -2,7 +2,7 @@
 
 # written 2022-01-17 by mza
 # based on outdoor_temp_hum.py
-# last updated 2023-01-07 by mza
+# last updated 2023-01-08 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -37,7 +37,8 @@ mydir = "/logs"
 board_id = board.board_id
 info("we are " + board_id)
 if 'adafruit_feather_esp32s2_tft'==board_id: # bme680 temp/hum/pressure/alt/gas on feather tft esp32-s2
-	my_wifi_name = "living-room"
+	my_wifi_name = "garage"
+	#my_wifi_name = "living-room"
 	FEATHER_ESP32S2 = True
 	use_pwm_status_leds = False
 	should_use_sdcard = False

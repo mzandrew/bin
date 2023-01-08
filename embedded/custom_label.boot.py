@@ -31,7 +31,8 @@ try:
 	#m.label = "NEOCLOCK1"
 	#m.label = "GEOdataLOG"
 	#m.label = "LIVINGROOM"
-	m.label = "GARAGEPART"
+	#m.label = "GARAGEPART"
+	m.label = "GARAGEHUM"
 	try:
 		import os
 		os.unlink("boot.py")
