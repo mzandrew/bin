@@ -127,7 +127,9 @@ def fetch_data_for_the_first_time(i, j):
 		if not FAKE_DATA:
 			#feed_data[i][j][k] = fetch.fetch_list_with_datestamps(feed_name[i][j][k], count=plot_width)
 			feed_data[i][j][k] = fetch.fetch_simple_list(feed_name[i][j][k], count=plot_width)
-			print("length of returned data = " + str(len(feed_data[i][j][k])))
+			length_of_returned_data = len(feed_data[i][j][k])
+			if length_of_returned_data!=plot_width:
+				print("length of returned data = " + str(length_of_returned_data))
 			time.sleep(0.350)
 		#feed_data[i][j][k] = [ DEFAULT_VALUE for a in range(plot_width//2) ]
 		feed_data[i][j][k] = pad_data_if_insufficient(feed_data[i][j][k], plot_width)
