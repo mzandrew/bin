@@ -17,6 +17,7 @@ FONT_SIZE_FEED_NAME_EXTRA_GAP = 6
 ICON_SIZE = 32
 ICON_BORDER = 2
 ICON_SQUARE_LENGTH = ICON_SIZE//2 - 3*ICON_BORDER
+NUMBER_OF_HOURS_TO_PLOT = 48
 
 ROWS = 2
 COLUMNS = 2
@@ -30,19 +31,19 @@ plot_name[0][0] = "temperature"
 minimum[0][0] = 10.
 maximum[0][0] = 80.
 feed_name[0][0] = [ "living-room-temp", "3d-printer-temp", "garage-temp", "outdoor-temp", "roof-temp", "heater" ]
-short_feed_name[0][0] = [ "living-room", "3d-printer", "garage", "outdoor", "roof", "heater" ]
+short_feed_name[0][0] = [ "living", "3dprint", "garage", "out", "roof", "heater" ]
 
 plot_name[1][0] = "humidity"
 minimum[1][0] = 40.
 maximum[1][0] = 100.
 feed_name[1][0] = [ "living-room-hum", "3d-printer-hum", "garage-hum", "outdoor-hum", "roof-hum" ]
-short_feed_name[1][0] = [ "living-room", "3d-printer", "garage", "outdoor", "roof" ]
+short_feed_name[1][0] = [ "living", "3dprint", "garage", "out", "roof" ]
 
 plot_name[0][1] = "pressure"
 minimum[0][1] = 0.997
 maximum[0][1] = 1.009
 feed_name[0][1] = [ "living-room-pressure", "3d-printer-pressure", "garage-pressure" ]
-short_feed_name[0][1] = [ "living-room", "3d-printer", "garage" ]
+short_feed_name[0][1] = [ "living", "3dprint", "garage" ]
 
 plot_name[1][1] = "particle count"
 minimum[1][1] = 0.
@@ -54,23 +55,25 @@ black = (0, 0, 0)
 white = (255, 255, 255)
 red = (255, 0, 0)
 green = (0, 255, 0)
-blue = (31, 31, 255)
+blue = (75, 75, 255)
 yellow = (255, 255, 0)
 teal = (0, 255, 255)
 pink = (255, 63, 63)
 maroon = (255, 0, 127)
 dark_green = (0, 127, 0)
-light_blue = (127, 127, 255)
+light_blue = (200, 200, 255)
 orange = (255, 127, 0)
 purple = (255, 0, 255)
+grid_color_bright = (31, 31, 31)
+grid_color_faint = (15, 15, 15)
 
 color = [ black, white, red, green, blue, yellow, teal, pink, maroon, dark_green, light_blue, orange, purple ]
 
 import sys
 import time
 import random
-#import adafruit_blinka
 import os
+import datetime
 os.environ['SDL_AUDIODRIVER'] = 'dsp'
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame # sudo apt install -y python3-pygame
@@ -130,6 +133,19 @@ def fetch_data_for_the_first_time(i, j):
 		feed_data[i][j][k] = pad_data_if_insufficient(feed_data[i][j][k], plot_width)
 		#print("length of data = " + str(len(feed_data[i][j][k])))
 
+def pixels_since_noon():
+	now = datetime.datetime.now()
+	hours_since_noon = (now.hour - 12) % 24
+	minutes_since_the_hour = now.minute
+	minutes_since_noon = hours_since_noon * 60 + minutes_since_the_hour
+	return int(minutes_since_noon / minutes_per_pixel)
+
+def pixels_since_the_hour():
+	now = datetime.datetime.now()
+	minutes_since_the_hour = now.minute
+	minutes_since_the_hour = minutes_per_pixel * int(minutes_since_the_hour/minutes_per_pixel)
+	return int(minutes_since_the_hour / minutes_per_pixel)
+
 def update_plots():
 	#clear_plots()
 	for i in range(COLUMNS):
@@ -150,9 +166,18 @@ def update_plot(i, j):
 	# fill with colors for now:
 	#plot[i][j].fill((random.randrange(0, 255), random.randrange(0, 255), random.randrange(0, 255)))
 	print("[" + str(i) + "][" + str(j) + "]")
+	offset_noon = pixels_since_noon()
+	#print("offset_noon:" + str(offset_noon))
+	offset_hour = pixels_since_the_hour()
+	#print("offset_hour:" + str(offset_hour))
 	for x in range(plot_width):
 		for y in range(plot_height):
-			plot[i][j].set_at((x, y), black)
+			if 0==(plot_width-x-offset_noon)%(pixels_per_hour*24): # draw a bright vertical line for noon every day
+				plot[i][j].set_at((x, y), grid_color_bright)
+			elif 0==(plot_width-x-offset_hour)%pixels_per_hour: # draw a faint vertical line for each hour
+				plot[i][j].set_at((x, y), grid_color_faint)
+			else:
+				plot[i][j].set_at((x, y), black)
 			for k in range(len(feed_name[i][j])):
 				yn = int(plot_height - plot_height * normalized_feed_data[i][j][k][x])
 				doit = False
@@ -167,7 +192,7 @@ def update_plot(i, j):
 	plots_were_updated[i][j] = True
 
 def draw_plot_border(i, j):
-	print("drawing plot border...")
+	#print("drawing plot border...")
 	pygame.draw.rect(screen, white, pygame.Rect(GAP_X_SIDE+i*(plot_width+GAP_X_BETWEEN_PLOTS)-1, GAP_Y_TOP+j*(plot_height+GAP_Y_BETWEEN_PLOTS)-1, plot_width+2, plot_height+2), 1)
 
 def setup():
@@ -184,6 +209,15 @@ def setup():
 	plot_height = int(usable_height / ROWS)
 	#print("plot_width: " + str(plot_width))
 	#print("plot_height: " + str(plot_height))
+	global pixels_per_hour
+	pixels_per_hour = plot_width / NUMBER_OF_HOURS_TO_PLOT
+	#print("pixels_per_hour: " + str(pixels_per_hour))
+	global minutes_per_pixel
+	minutes_per_pixel = 60./pixels_per_hour
+	#print("minutes_per_pixel: " + str(minutes_per_pixel))
+	global target_period
+	target_period = 3600./pixels_per_hour
+	#print("target_period: " + str(target_period))
 	global feed_data
 	global normalized_feed_data
 	feed_data = [ [ [] for j in range(ROWS) ] for i in range(COLUMNS) ]
@@ -220,11 +254,11 @@ def setup():
 			for k in range(len(short_feed_name[i][j])):
 				feed_caption.append(feed_name_font.render(short_feed_name[i][j][k], 1, color[k+2]))
 				width += feed_caption[k].get_width() + FONT_SIZE_FEED_NAME_EXTRA_GAP
-			print("width: " + str(width))
+			#print("width: " + str(width))
 			for k in range(len(short_feed_name[i][j])):
 				screen.blit(feed_caption[k], feed_caption[k].get_rect(center=(GAP_X_SIDE+i*(plot_width+GAP_X_BETWEEN_PLOTS)+plot_width//2-width//2+feed_caption[k].get_width()//2, GAP_Y_TOP+j*(plot_height+GAP_Y_BETWEEN_PLOTS)+plot_height+FONT_SIZE_FEED_NAME//2+4)))
 				width -= 2*(feed_caption[k].get_width() + FONT_SIZE_FEED_NAME_EXTRA_GAP)
-			print("width: " + str(width))
+			#print("width: " + str(width))
 			fetch_data_for_the_first_time(i, j)
 			draw_plot_border(i, j)
 			update_plot(i, j)
@@ -232,7 +266,7 @@ def setup():
 			flip()
 	global should_check_for_new_data
 	should_check_for_new_data = pygame.USEREVENT + 1
-	pygame.time.set_timer(should_check_for_new_data, 128500) # target_period=128.5*4=514
+	pygame.time.set_timer(should_check_for_new_data, int(target_period*1000/COLUMNS/ROWS))
 
 ij = 0
 def loop():
@@ -276,7 +310,7 @@ def loop():
 def blit(i, j):
 	global something_was_updated
 	if plots_were_updated[i][j]:
-		print("blitting...")
+		#print("blitting...")
 		screen.blit(plot[i][j], (GAP_X_SIDE+i*(plot_width+GAP_X_BETWEEN_PLOTS), GAP_Y_TOP+j*(plot_height+GAP_Y_BETWEEN_PLOTS)))
 		plots_were_updated[i][j] = False
 		something_was_updated = True
@@ -284,7 +318,7 @@ def blit(i, j):
 def flip():
 	global something_was_updated
 	if something_was_updated:
-		print("flipping...")
+		#print("flipping...")
 		pygame.display.flip()
 		something_was_updated = False
 
