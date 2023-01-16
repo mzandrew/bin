@@ -2,7 +2,15 @@
 
 # written 2023-01-04 by mza
 # with help from https://realpython.com/pygame-a-primer/#displays-and-surfaces
-# last updated 2023-01-08 by mza
+# last updated 2023-01-15 by mza
+
+# have root checkout this repo:
+# mkdir -p ~/build; cd ~/build
+# git clone https://github.com/mzandrew/bin
+# then put a copy of secrets.py in /root/build/bin/embedded/
+# then put the following in /etc.rc.local:
+# (sleep 10; /root/build/bin/embedded/mondrian.py; ) &
+# and reboot
 
 SCREEN_WIDTH = 720
 SCREEN_HEIGHT = 720
