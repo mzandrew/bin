@@ -166,7 +166,8 @@ def loop():
 		display_adafruit.update_plot(3, [myarray_c, myarray_h])
 	display_adafruit.refresh()
 	flush()
-	gc.collect()
+	generic.collect_garbage(True)
+	#gc.collect()
 	time.sleep(delay)
 
 def main():
@@ -231,6 +232,7 @@ def main():
 		flush()
 		time.sleep(10)
 		generic.reset()
+	generic.collect_garbage(True)
 	global sdcard_is_available
 	sdcard_is_available = False
 	global dirname
@@ -243,11 +245,13 @@ def main():
 			create_new_logfile_with_string_embedded(dirname, "weather_station", pcf8523_adafruit.get_timestring2())
 		else:
 			create_new_logfile_with_string_embedded(dirname, "weather_station")
+	generic.collect_garbage(True)
 	display_adafruit.setup_for_n_m_plots(2, 2, [["temperature", "living-room", "3d-printer", "outdoor", "roof", "heater"], ["humidity", "living-room", "3d-printer", "outdoor", "roof"], ["pressure", "living-room", "3d-printer"], ["particle count", "garage-1.0", "3d-printer-1.0"]])
 	display_adafruit.refresh()
 	array_size = display_adafruit.plot_width
 	if 1:
-		gc.collect()
+		#gc.collect()
+		generic.collect_garbage(True)
 		global temperature_indoor
 		temperature_indoor = [ -40.0 for i in range(array_size) ]
 		global temperature_3dprinter
@@ -290,7 +294,7 @@ def main():
 		#printer2p5 = [ -40.0 for i in range(array_size) ]
 		#global printer5p0
 		#printer5p0 = [ -40.0 for i in range(array_size) ]
-		gc.collect()
+		#gc.collect()
 	if 0:
 		print("fetching old data from feeds...")
 		#global temperature_indoor
@@ -298,6 +302,7 @@ def main():
 		global humidity_indoor
 		humidity_indoor = airlift.get_all_data("inside-hum", array_size)
 		print(str(humidity_indoor))
+	generic.collect_garbage(True)
 	global loop_counter
 	while True:
 		loop()

@@ -230,14 +230,6 @@ def convert_date_to_UTC_time(datestamp):
 	#print(str(datestamp))
 	return datestamp
 
-def show_memory_situation():
-	print("gc.mem_alloc(): " + str(gc.mem_alloc()))
-	print("gc.mem_free(): " + str(gc.mem_free()))
-	print("gc.collect()")
-	gc.collect()
-	print("gc.mem_alloc(): " + str(gc.mem_alloc()))
-	print("gc.mem_free(): " + str(gc.mem_free()))
-
 def show_memory_difference():
 	global previous_allocated_memory
 	try:
@@ -250,8 +242,18 @@ def show_memory_difference():
 	previous_allocated_memory = current_allocated_memory
 	return difference
 
-def collect_garbage():
+def collect_garbage(should_show_status=False):
+	alloc_before = gc.mem_alloc()
+	free_before = gc.mem_free()
 	gc.collect()
+	alloc_after = gc.mem_alloc()
+	free_after = gc.mem_free()
+	if should_show_status:
+		print("gc.mem_alloc(before/after): " + str(alloc_before) + "/" + str(alloc_after))
+		print("gc.mem_free(before/after): " + str(free_before) + "/" + str(free_after))
+
+def show_memory_situation():
+	collect_garbage(True)
 
 def running_circuitpython():
 	uname = os.uname()
