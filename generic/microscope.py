@@ -93,11 +93,11 @@ try:
 	#camera.resolution = (4072, 3064) # effective pixels - Invalid resolution requested: PiResolution(width=4072, height=3064)
 	#camera.resolution = (4056, 3040) # active pixels - Failed to enable component: Out of resources
 	#camera.resolution = (4056, 2288) # 16:9 - Unable to enable port vc.ril.image_encode:out:0: Out of memory
-	#camera.resolution = (3808, 2142) # 16:9 works but the preview blinks
+	camera.resolution = (3808, 2142) # 16:9 works but the preview blinks
 	#camera.resolution = (3808, 2856) # 4:3 out of resources
-	camera.resolution = (1920, 1080) # works great
+	#camera.resolution = (1920, 1080) # works great
 	print("starting preview...")
-	camera.start_preview(alpha = 200)
+	camera.start_preview(resolution = (1920, 1080), alpha = 200)
 	time.sleep(2)
 except:
 	print("try changing gpu_mem from 128 to 192 in /boot/config.txt (or from raspi-config)")
