@@ -2,7 +2,7 @@
 
 # written 2021-03-02 by mza
 # modified from timelapse.py
-# last updated 2022-09-09 by mza
+# last updated 2023-01-20 by mza
 
 # from https://www.raspberrypi.org/blog/picamera-pure-python-interface-for-camera-module/
 # and https://stackoverflow.com/a/8858026/5728815
@@ -40,7 +40,9 @@ print("temporary_filename: " + temporary_filename.name)
 #print("temporary_filename: " + temporary_filename)
 atexit.register(remove_temporary_file_if_necessary)
 
+upper_left_button  = gpiozero.Button(2, pull_up=True)
 lower_left_button  = gpiozero.Button(14, pull_up=True)
+upper_right_button = gpiozero.Button(3,  pull_up=True)
 lower_right_button = gpiozero.Button(4,  pull_up=True)
 
 def fix_terminal():
@@ -128,7 +130,9 @@ except:
 print("press x or q to exit; any other key to take a(nother) pic")
 sys.stdout.flush()
 time.sleep(1)
+upper_right_button.when_pressed = take_one_picture_and_crlf
 lower_right_button.when_pressed = take_one_picture_and_crlf
+upper_left_button.when_pressed = fix_terminal_and_quit
 lower_left_button.when_pressed = fix_terminal_and_quit
 try:
 	#print("trying camera instatntiation")
