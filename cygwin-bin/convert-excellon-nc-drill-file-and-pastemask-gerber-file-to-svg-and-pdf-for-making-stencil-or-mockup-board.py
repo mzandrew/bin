@@ -49,10 +49,10 @@ eps_filename = base_filename + ".eps"
 dxf_filename = base_filename + ".dxf"
 
 # parameters of our laser:
-#dpi = 1000
+dpi = 1000
 #dpi = 500
 #dpi = 333
-dpi = 250
+#dpi = 250
 laser_stroke_width = 25.4/dpi
 #info(str(laser_stroke_width))
 stroke_length = 2.0 * laser_stroke_width
@@ -204,7 +204,8 @@ def generate_drill_layers(which_ones = "all"):
 			drill_extents_group = add_group(drill_extents_layer)
 			#debug(diameter + ":")
 			for location in tool[diameter]:
-				special_diameter = 6.05
+				#special_diameter = 6.05 # good for a 6-32 SHCS head to poke through
+				special_diameter = 5.0 # good for a 4-40 SHCS head to poke through
 				#special_diameter = 7.112
 				#special_diameter = 0.062 * 25.4
 				#radius = float(diameter) / 2.0

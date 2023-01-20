@@ -2,13 +2,15 @@
 # https://github.com/adafruit/Adafruit_CircuitPython_PM25/blob/main/adafruit_pm25/__init__.py
 # https://github.com/adafruit/Adafruit_CircuitPython_PM25/blob/main/adafruit_pm25/i2c.py
 # written 2021-11-25 by mza
-# last updated 2021-11-25 by mza
+# last updated 2022-05-04 by mza
 
 import time
 import board
 import busio
 from adafruit_pm25.i2c import PM25_I2C
 import boxcar
+
+header_string = ", 1p0s, 2p5s, 20p0s, 1p0e, 2p5e, 10p0e, 0p3, 0p5, 1p0, 2p5, 5p0, 10p0"
 
 def setup(i2c, N):
 	global pm25
@@ -20,7 +22,15 @@ def setup(i2c, N):
 
 def test_if_present():
 	try:
-		pm25.read()
+		try:
+			pm25.read()
+		except KeyboardInterrupt:
+			raise
+		except:
+			time.sleep(0.1)
+			pm25.read()
+	except KeyboardInterrupt:
+		raise
 	except:
 		print("pm25 not present")
 		return False
@@ -34,6 +44,8 @@ def get_values():
 	# "particles 25um" "particles 50um" "particles 100um"
 	try:
 		values = list(pm25.read().values())
+	except KeyboardInterrupt:
+		raise
 	except:
 		values = [ .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0 ]
 	myboxcar.accumulate(values)
@@ -50,7 +62,7 @@ def get_previous_values():
 
 def measure_string():
 	values = get_values()
-	return ", %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f" % ( values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8], values[9], values[10], values[11] )
+	return ", %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d" % ( values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8], values[9], values[10], values[11] )
 
 def print_compact():
 	print(measure_string())

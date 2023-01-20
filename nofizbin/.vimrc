@@ -21,7 +21,7 @@ set hlsearch	" highlight the search
 set dir=~/tmp
 set nobk	" do not make backups when overwriting files
 "set guifont=Monospace\ 14	" set guifont? to query
-set guifont=Courier_New:h14	" set guifont? to query
+set guifont=Courier_New:h14:cANSI:qDRAFT	" set guifont? to query
 set formatoptions-=cro " don't automatically continue comments
 " for win32, make a file c:\\Users\\blah\\_vimrc and have it contain the (uncommented) line:
 " source c:\\\\blah\\build\\bin\\nofizbin\\.vimrc

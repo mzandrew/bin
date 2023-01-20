@@ -2,15 +2,16 @@
 
 # written 2017-11 by mza
 # based on instructions posted at http://www.clifford.at/icestorm/
-# last updated 2020-05-02 by mza
+# last updated 2022-06-18 by mza
 
 declare build="$HOME/build"
-declare -i j=2
 declare -i np=$(grep -c "^processor" /proc/cpuinfo)
-if [ $j -gt $np ]; then
-	j=1
-	echo "dropping j to 1"
-fi
+declare -i j=$((np-1))
+#if [ $j -gt $np ]; then
+#	j=1
+#	echo "dropping j to 1"
+#fi
+echo "j=$j"
 
 function get_source_if_necessary {
 	cd $build

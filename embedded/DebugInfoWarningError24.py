@@ -1,6 +1,6 @@
 # written 2019-01-07 by mza to support python2.4-era SL5.11 on COPPERs
 # updated 2019-03-08 to write to logfiles
-# last updated 2022-04-23 by mza
+# last updated 2022-08-25 by mza
 
 import sys # stderr.write()
 import time # strftime
@@ -68,15 +68,25 @@ def create_new_logfile_with_string_embedded(dirname, basename, timestring=""):
 	global logfile
 	try:
 		if ""==timestring:
-			filename = dirname + "/" + basename + ".log"
+			for i in range(2**12):
+				filename = "%04d.%s.log" % (i, basename)
+				fullname = dirname + "/" + filename
+				#info(fullname)
+				#if not os.path.isfile(fullname):
+				import microsd_adafruit
+				if not microsd_adafruit.os_path_isfile(dirname, filename):
+					break
 		else:
-			filename = dirname + "/" + timestring + "." + basename + ".log"
-		info("logfile filename: " + filename)
-		logfile = open(filename, "a")
+			filename = timestring + "." + basename + ".log"
+			fullname = dirname + "/" + filename
+		info("logfile filename: " + fullname)
+		logfile = open(fullname, "a")
+		debug("Writing output to logfile: %s" % fullname)
 		logfile_is_open = 1
-		debug("Writing output to logfile: %s" % filename)
+		return filename
 	except:
-		warning("Unable to open logfile")
+		warning("Unable to open logfile " + fullname)
+		raise
 
 def print_string_stdout(string, should_flush=1):
 	print(string)

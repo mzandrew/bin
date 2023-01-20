@@ -1,8 +1,9 @@
 #!/bin/bash -e
 
-# last updated 2022-01-27 by mza
+# last updated 2022-12-13 by mza
 
-#declare -i debian_only=1
+declare -i debian_only=0
+#debian_only=1
 
 declare package_list_file=""
 function make_dpkg_list_if_necessary {
@@ -46,7 +47,8 @@ function install_packages {
 	list="$list mlocate build-essential openssh-server net-tools nfs-common"
 	list="$list dfu-util gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib" # tomu
 	list="$list synaptic gnuplot ntp meld doublecmd-gtk zip unzip dbus-x11 gimp inkscape xsane"
-	list="$list texlive-science" # latex
+	list="$list texlive-science texlive-latex-extra" # latex
+	list="$list cups paps" # cups and utf-8 to postscript converter
 	list="$list libgsl-dev" # root
 	list="$list ffmpeg mplayer" # making/playing videos
 	list="$list network-manager-openconnect-gnome" # for VPN
@@ -77,6 +79,9 @@ function change_apt_sources_list_if_desired {
 		sudo sed -i 's,us.archive.ubuntu.com,mirror.ancl.hawaii.edu/linux,' /etc/apt/sources.list
 	fi
 }
+
+# undo:
+#sudo sed -i 's,mirror.ancl.hawaii.edu/linux,us.archive.ubuntu.com,' /etc/apt/sources.list
 
 change_apt_sources_list_if_desired
 install_packages

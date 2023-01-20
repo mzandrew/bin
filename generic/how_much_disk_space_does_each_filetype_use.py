@@ -2,7 +2,7 @@
 
 # written 2022-03-24 by mza
 # based on duplicate_finder.py
-# last updated 2022-03-24 by mza
+# last updated 2022-05-02 by mza
 
 import sys
 import os.path
@@ -19,6 +19,7 @@ def read_it_in():
 	# with help from https://stackoverflow.com/a/45223675/5728815
 	count = 0
 	try:
+		sys.stdin.reconfigure(encoding='iso-8859-1')
 		for line in iter(sys.stdin.readline, b''):
 			if line=='':
 				break

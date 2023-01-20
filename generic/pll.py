@@ -5,7 +5,7 @@ import operator # itemgetter()
 
 # written 2018-07-19 by mza
 # works for a zynq or a spartan6
-# last updated 2020-05-21 by mza
+# last updated 2022-02-02 by mza
 
 if 0: # gigabit eth (125 MHz) out of superkekb RF clock / 4 (127.221875 MHz)
 	mode = "zynq"
@@ -20,6 +20,12 @@ if 0: # gigabit eth (125 MHz) out of superkekb RF clock / 4 (127.221875 MHz)
 	#desired_f = 127.216*4.0
 	desired_f = 125.0
 	ratio = desired_f / input_f
+elif 1:
+	mode = "spartan6_pll"
+	input_f = 100.0   # rpi_gpio6_gpclk2
+	fractional_tolerance = 0.000005
+	desired_f = 142.857143 # protodune LBLS
+	ratio = desired_f / input_f
 else:
 	#mode = "spartan6_dcm"
 	mode = "spartan6_pll"
@@ -30,7 +36,7 @@ else:
 	desired_f = 50.0
 	ratio = desired_f / input_f
 
-#print ratio
+#print(ratio)
 
 if "zynq" == mode:
 	# XC7Z045-2FFG900E from DS191:
@@ -93,26 +99,26 @@ else: # spartan6_dcm
 	clkout_divide_divisor = 1
 
 def try_combination(divclk_divide, clkout_mult, clkout_divide):
-	#print str(divclk_divide) + " " + str(clkout_mult) + " " + str(clkout_divide)
+	#print(str(divclk_divide) + " " + str(clkout_mult) + " " + str(clkout_divide))
 	global solutions
 	pfd_f = input_f / divclk_divide
 	vco_f = pfd_f * clkout_mult
 	output_f = vco_f / clkout_divide
 	fractional_error = (output_f - desired_f) / desired_f
 	if not (min_pfd_clock < pfd_f):
-		#print "min_pfd_clock > " + str(pfd_f)
+		#print("min_pfd_clock > " + str(pfd_f))
 		return
 	if not (pfd_f < max_pfd_clock):
-		#print "max_pfd_clock"
+		#print("max_pfd_clock")
 		return
 	if not (min_vco_clock < vco_f):
-		#print "min_vco_clock"
+		#print("min_vco_clock")
 		return
 	if not (vco_f < max_vco_clock):
-		#print "max_vco_clock"
+		#print("max_vco_clock")
 		return
 	if abs(fractional_error) < fractional_tolerance:
-		#print output_f, clkout_mult, clkout_divide, divclk_divide, fractional_error
+		#print(output_f, clkout_mult, clkout_divide, divclk_divide, fractional_error)
 		solutions.append((fractional_error, output_f, divclk_divide, clkout_mult, clkout_divide, pfd_f, vco_f))
 
 def parameter_scan_3d():
@@ -132,10 +138,10 @@ def parameter_scan_clkout_divide(fixed_divclk_divide, fixed_clkout_mult):
 	solutions = []
 	# ug472 table 3-7 shows the allowed values
 	if fixed_divclk_divide < 1 or 106 < fixed_divclk_divide:
-		print "out of range"
+		print("out of range")
 		return
 	if fixed_clkout_mult < 2.0 or 64.0 < fixed_clkout_mult:
-		print "out of range"
+		print("out of range")
 		return
 	for clkout_divide_frac in range(clkout_divide_divisor*clkout_divide_min, clkout_divide_divisor*clkout_divide_max*cascade_clkout4+1):
 		clkout_divide = clkout_divide_frac / float(clkout_divide_divisor)
@@ -176,7 +182,7 @@ def gcd(numbers, top_level=1):
 	string += str(result)
 	if top_level:
 		#info(string)
-		print string + "\n"
+		print(string + "\n")
 	return result
 
 #gcd([int(19.2*50), 50])
@@ -191,9 +197,9 @@ for item in sorted(solutions, key=operator.itemgetter(0,6)):
 #	highest_expected_output_f = highest_expected_input_f / divclk_divide * clkout_mult / clkout_divide
 #	for each in lowest_expected_output_f, output_f, highest_expected_output_f, pfd_f, vco_f, fractional_error:
 	for each in output_f, pfd_f, vco_f, fractional_error:
-		print format(each, '11.6f'),
+		print(format(each, '11.6f'),)
 	for each in divclk_divide, clkout_mult, clkout_divide:
-		print format(each, '8.3f'),
+		print(format(each, '8.3f'),)
 	print
 
 # input_f = 127.219

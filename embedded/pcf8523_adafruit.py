@@ -1,4 +1,4 @@
-# last updated 2022-01-08 by mza
+# last updated 2022-12-31 by mza
 
 import time
 import adafruit_pcf8523
@@ -20,9 +20,15 @@ def setup(i2c):
 			info("%04d-%02d-%02d" % (t.tm_year, t.tm_mon, t.tm_mday))
 		#return rtc.i2c_device.device_address
 		return 0x68
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		warning("unable to set up RTC")
 		raise
+
+def get_struct_time():
+	t = rtc.datetime
+	return t
 
 def get_timestring1():
 	t = rtc.datetime
@@ -32,7 +38,22 @@ def get_timestring2():
 	t = rtc.datetime
 	return "%04d-%02d-%02d.%02d%02d%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
 
+def get_timestring3():
+	# https://en.wikipedia.org/wiki/ISO_8601
+	t = rtc.datetime
+	#info(str(t))
+	#u = time.mktime(t)
+	#info(str(u))
+	#v = time.localtime(u)
+	#info(str(v))
+	return "%04d-%02d-%02dT%02d:%02d:%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
+
 def set_from_timestruct(time):
-	#info("setting time to " + str(time))
-	rtc.datetime = time
+	info("setting time to " + str(time))
+	try:
+		rtc.datetime = time
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except:
+		warning("couldn't set RTC time")
 

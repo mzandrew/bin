@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+
 # written 2022-01-17 by mza
 # based on outdoor_temp_hum.py
-# last updated 2022-04-24 by mza
+# last updated 2023-01-08 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -8,33 +10,9 @@
 # cd ~/build/adafruit-circuitpython/bundle/lib
 # rsync -r adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
 
-MIN_TEMP_TO_PLOT = 10.0
-MAX_TEMP_TO_PLOT = 80.0
-MIN_HUM_TO_PLOT = 40.0
-MAX_HUM_TO_PLOT = 100.0
-MIN_PRES_TO_PLOT = 0.997
-MAX_PRES_TO_PLOT = 1.008
-
-header_string = "date/time"
-mydir = "/logs"
-should_use_airlift = True
-if 1: # bme680 temp/hum/pressure/alt/gas on feather tft esp32-s2
-	FEATHER_ESP32S2 = True
-	use_pwm_status_leds = False
-	should_use_sdcard = False
-	should_use_RTC = False
-	should_use_gps = False
-	N = 32
-	delay_between_acquisitions = 1.5
-	gps_delay_in_ms = 2000
-	delay_between_posting_and_next_acquisition = 1.0
-	use_built_in_wifi = True
-	should_use_display = True
-
 import sys
 import time
 import atexit
-import supervisor
 import board
 import busio
 import simpleio
@@ -47,6 +25,36 @@ from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3,
 import generic
 import display_adafruit
 
+MIN_TEMP_TO_PLOT = 10.0
+MAX_TEMP_TO_PLOT = 80.0
+MIN_HUM_TO_PLOT = 40.0
+MAX_HUM_TO_PLOT = 100.0
+MIN_PRES_TO_PLOT = 0.997
+MAX_PRES_TO_PLOT = 1.008
+
+header_string = "date/time"
+mydir = "/logs"
+board_id = board.board_id
+info("we are " + board_id)
+if 'adafruit_feather_esp32s2_tft'==board_id: # bme680 temp/hum/pressure/alt/gas on feather tft esp32-s2
+	my_wifi_name = "garage"
+	#my_wifi_name = "living-room"
+	FEATHER_ESP32S2 = True
+	use_pwm_status_leds = False
+	should_use_sdcard = False
+	should_use_RTC = False
+	should_use_gps = False
+	N = 32
+	desired_loop_time = 514.0
+	delay_between_acquisitions = 16
+	gps_delay_in_ms = 2000
+	delay_between_posting_and_next_acquisition = 1.0
+	should_use_airlift = True
+	use_built_in_wifi = True
+	should_use_display = True
+else:
+	error("what kind of board am I?")
+
 def print_header():
 	info("" + header_string)
 
@@ -56,23 +64,30 @@ def print_compact(string):
 		try:
 			import time
 			date = time.strftime("%Y-%m-%d+%X")
+		except KeyboardInterrupt:
+			raise
 		except:
 			pass
 	if ""==date and RTC_is_available:
 		try:
 			import pcf8523_adafruit
 			date = pcf8523_adafruit.get_timestring1()
+		except KeyboardInterrupt:
+			raise
 		except:
 			pass
 	if ""==date and gps_is_available:
 		try:
 			import gps_adafruit
 			date = gps_adafruit.get_time()
+		except KeyboardInterrupt:
+			raise
 		except:
 			pass
 	info("%s%s" % (date, string))
 
 def main():
+	generic.start_uptime()
 	global header_string
 	if use_pwm_status_leds:
 		generic.setup_status_leds(red_pin=board.A2, green_pin=board.D9, blue_pin=board.A3)
@@ -83,6 +98,8 @@ def main():
 	try:
 		i2c = busio.I2C(board.SCL1, board.SDA1)
 		string = "using I2C1 "
+	except KeyboardInterrupt:
+		raise
 	except:
 		#i2c = busio.I2C(board.SCL, board.SDA)
 		i2c = board.I2C()
@@ -95,24 +112,30 @@ def main():
 	global spi
 	try:
 		spi = board.SPI
+		info("builtin SPI (1)")
+	except KeyboardInterrupt:
+		raise
 	except:
 		spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO) # this line stops the builtin from working
+		info("builtin SPI (2)")
+	global display_is_available
 	display_is_available = False
 	if should_use_display:
 		if board.DISPLAY:
 			display_is_available = True
+			display_adafruit.setup_builtin_display()
 			board.DISPLAY.brightness = 0.75
 			#display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.5)
-			info("display is available (1)")
+			info("display is available (builtin)")
 		elif display_adafruit.setup_st7789(spi, board.TFT_DC, board.TFT_CS, board.TFT_RESET):
 #		if display_adafruit.setup_st7789(spi, board.TFT_DC, board.TFT_CS, board.TFT_RESET):
 			display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.95)
 			display_is_available = True
-			info("display is available (2)")
+			info("display is available (external/spi)")
 		else:
 			warning("display is not available")
 	if display_is_available:
-		display_adafruit.setup_for_n_m_plots(1, 1, [["indoor", "temperature", "humidity", "pressure"]])
+		display_adafruit.setup_for_n_m_plots(1, 1, [["living room", "temperature", "humidity", "pressure"]])
 		display_adafruit.refresh()
 		#display_adafruit.test_st7789()
 		#info("done with st7789 test")
@@ -125,6 +148,8 @@ def main():
 			i2c_address = pcf8523_adafruit.setup(i2c)
 			prohibited_addresses.append(i2c_address)
 			RTC_is_available = True
+		except KeyboardInterrupt:
+			raise
 		except:
 			RTC_is_available = False
 	else:
@@ -136,11 +161,12 @@ def main():
 	else:
 		sdcard_is_available = False
 	if not sdcard_is_available:
-		mydir = "/"
-	if RTC_is_available:
-		create_new_logfile_with_string_embedded(mydir, "indoor", pcf8523_adafruit.get_timestring2())
-	else:
-		create_new_logfile_with_string_embedded(mydir, "indoor")
+		mydir = ""
+	if should_use_sdcard:
+		if RTC_is_available:
+			create_new_logfile_with_string_embedded(mydir, my_wifi_name, pcf8523_adafruit.get_timestring2())
+		else:
+			create_new_logfile_with_string_embedded(mydir, my_wifi_name)
 	global gps_is_available
 	if should_use_gps:
 		if 1:
@@ -154,6 +180,8 @@ def main():
 	global neopixel_is_available
 	try:
 		neopixel_is_available = neopixel_adafruit.setup_neopixel()
+	except KeyboardInterrupt:
+		raise
 	except:
 		warning("error setting up neopixel")
 	global bme680_is_available
@@ -162,6 +190,8 @@ def main():
 		prohibited_addresses.append(i2c_address)
 		header_string += bme680_adafruit.header_string
 		bme680_is_available = True
+	except KeyboardInterrupt:
+		raise
 	except:
 		error("bme680 not found")
 		sys.exit(1)
@@ -170,6 +200,8 @@ def main():
 	global battery_monitor_is_available
 	try:
 		battery_monitor_is_available = generic.setup_battery_monitor(i2c)
+	except KeyboardInterrupt:
+		raise
 	except:
 		battery_monitor_is_available = False
 		warning("battery monitor is not available")
@@ -178,16 +210,16 @@ def main():
 	global airlift_is_available
 	if should_use_airlift:
 		if use_built_in_wifi:
-			airlift_is_available = airlift.setup_wifi("indoor")
+			airlift_is_available = airlift.setup_wifi(my_wifi_name)
 		else:
-			airlift_is_available = airlift.setup_airlift("indoor", spi, board.D13, board.D11, board.D12)
+			airlift_is_available = airlift.setup_airlift(my_wifi_name, spi, board.D13, board.D11, board.D12)
 		if airlift_is_available:
 			header_string += ", RSSI-dB"
-			airlift.setup_feed("inside-temp")
-			airlift.setup_feed("inside-hum")
-			airlift.setup_feed("pressure")
-			#airlift.setup_feed("indoor-altitude")
-			#airlift.setup_feed("indoor-gas")
+			airlift.setup_feed(my_wifi_name + "-temp")
+			airlift.setup_feed(my_wifi_name + "-hum")
+			airlift.setup_feed(my_wifi_name + "-pressure")
+			#airlift.setup_feed("-altitude")
+			#airlift.setup_feed("-gas")
 	else:
 		airlift_is_available = False
 	if 0:
@@ -197,16 +229,16 @@ def main():
 	#gnuplot> set style data lines
 	#gnuplot> plot for [i=1:14] "solar_water_heater.log" using 0:i
 	print_header()
-	global i
-	i = 0
 	loop()
 	info("bme680 no longer available; cannot continue")
 
 def loop():
-	global i
 	temperatures_to_plot = [ -40.0 for i in range(display_adafruit.plot_width) ]
 	humidities_to_plot   = [ -40.0 for i in range(display_adafruit.plot_width) ]
 	pressures_to_plot    = [ -40.0 for i in range(display_adafruit.plot_width) ]
+	generic.get_uptime()
+	global delay_between_acquisitions
+	i = 0
 	while bme680_adafruit.test_if_present():
 		neopixel_adafruit.set_color(255, 0, 0)
 		if use_pwm_status_leds:
@@ -240,17 +272,21 @@ def loop():
 				#print(str(humidities_to_plot))
 				#print(str(pressures_to_plot))
 				display_adafruit.update_plot(0, [temperatures_to_plot, humidities_to_plot, pressures_to_plot])
+				display_adafruit.refresh()
 				if airlift_is_available:
 					try:
-						airlift.post_data("inside-temp", bme680_adafruit.get_average_values()[0])
-						airlift.post_data("inside-hum",  bme680_adafruit.get_average_values()[1])
-						airlift.post_data("pressure",    bme680_adafruit.get_average_values()[2])
-						#airlift.post_data("indoor-altitude", bme680_adafruit.get_average_values()[3])
-						#airlift.post_data("indoor-gas", bme680_adafruit.get_average_values()[4])
+						airlift.post_data(my_wifi_name + "-temp",     bme680_adafruit.get_average_values()[0])
+						airlift.post_data(my_wifi_name + "-hum",      bme680_adafruit.get_average_values()[1])
+						airlift.post_data(my_wifi_name + "-pressure", bme680_adafruit.get_average_values()[2])
+						#airlift.post_data("-altitude", bme680_adafruit.get_average_values()[3])
+						#airlift.post_data("-gas", bme680_adafruit.get_average_values()[4])
+					except KeyboardInterrupt:
+						raise
 					except:
 						warning("couldn't post data for bme680")
 			info("waiting...")
 			time.sleep(delay_between_posting_and_next_acquisition)
+			delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, desired_loop_time)
 		neopixel_adafruit.set_color(0, 0, 255)
 		if use_pwm_status_leds:
 			generic.set_status_led_color([0, 0, 1])
@@ -260,21 +296,13 @@ def loop():
 		time.sleep(delay_between_acquisitions)
 
 if __name__ == "__main__":
-	#supervisor.disable_autoreload()
 	atexit.register(generic.reset)
 	try:
 		main()
 	except KeyboardInterrupt:
-		info("caught ctrl-c")
-		flush()
-		atexit.unregister(generic.reset)
-		sys.exit(0)
+		generic.keyboard_interrupt_exception_handler()
 	except ReloadException:
-		info("reload exception")
-		flush()
-		atexit.unregister(generic.reset)
-		time.sleep(1)
-		supervisor.reload()
+		generic.reload_exception_handler()
 	info("leaving program...")
 	flush()
 	generic.reset()

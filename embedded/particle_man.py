@@ -1,5 +1,5 @@
 # written 2021-12-26 by mza
-# last updated 2022-01-25 by mza
+# last updated 2023-01-08 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -10,10 +10,11 @@
 header_string = "date/time"
 dir = "/logs"
 should_use_airlift = True
-N = 24
+N = 32
+delay_between_acquisitions = 16
 use_built_in_wifi = True
-delay_between_acquisitions = 2.3
-delay_between_posting_and_next_acquisition = 1.0
+my_wifi_name = "garage-particle"
+my_adafruit_io_prefix = "garage"
 
 import sys
 import time
@@ -85,18 +86,18 @@ def main():
 	global airlift_is_available
 	if should_use_airlift:
 		if use_built_in_wifi:
-			airlift_is_available = airlift.setup_wifi("RoamIfYouWantTwo")
+			airlift_is_available = airlift.setup_wifi(my_wifi_name)
 		else:
-			airlift_is_available = airlift.setup_airlift("RoamIfYouWantTwo", spi, board.D13, board.D11, board.D12)
+			airlift_is_available = airlift.setup_airlift(my_wifi_name, spi, board.D13, board.D11, board.D12)
 		if airlift_is_available:
 			info("airlift is available")
 			header_string += ", RSSI-dB"
-			airlift.setup_feed("particle0p3")
-			airlift.setup_feed("particle0p5")
-			airlift.setup_feed("particle1p0")
-			airlift.setup_feed("particle2p5")
-			airlift.setup_feed("particle5p0")
-			airlift.setup_feed("particle10p0")
+			airlift.setup_feed(my_adafruit_io_prefix + "-0p3")
+			airlift.setup_feed(my_adafruit_io_prefix + "-0p5")
+			airlift.setup_feed(my_adafruit_io_prefix + "-1p0")
+			airlift.setup_feed(my_adafruit_io_prefix + "-2p5")
+			airlift.setup_feed(my_adafruit_io_prefix + "-5p0")
+			airlift.setup_feed(my_adafruit_io_prefix + "-10p0")
 	else:
 		info("airlift is NOT available")
 		airlift_is_available = False
@@ -136,31 +137,29 @@ def loop():
 			pm25_adafruit.show_average_values()
 		if airlift_is_available:
 			try:
-				airlift.post_data("particle0p3", pm25_adafruit.get_average_values()[6])
+				airlift.post_data(my_adafruit_io_prefix + "-0p3", pm25_adafruit.get_average_values()[6])
 			except:
 				warning("couldn't post 0p3 data for pm25")
 			try:
-				airlift.post_data("particle0p5", pm25_adafruit.get_average_values()[7])
+				airlift.post_data(my_adafruit_io_prefix + "-0p5", pm25_adafruit.get_average_values()[7])
 			except:
 				warning("couldn't post 0p5 data for pm25")
 			try:
-				airlift.post_data("particle1p0", pm25_adafruit.get_average_values()[8])
+				airlift.post_data(my_adafruit_io_prefix + "-1p0", pm25_adafruit.get_average_values()[8])
 			except:
 				warning("couldn't post 1p0 data for pm25")
 			try:
-				airlift.post_data("particle2p5", pm25_adafruit.get_average_values()[9])
+				airlift.post_data(my_adafruit_io_prefix + "-2p5", pm25_adafruit.get_average_values()[9])
 			except:
 				warning("couldn't post 2p5 data for pm25")
 			try:
-				airlift.post_data("particle5p0", pm25_adafruit.get_average_values()[10])
+				airlift.post_data(my_adafruit_io_prefix + "-5p0", pm25_adafruit.get_average_values()[10])
 			except:
 				warning("couldn't post 5p0 data for pm25")
 			try:
-				airlift.post_data("particle10p0", pm25_adafruit.get_average_values()[11])
+				airlift.post_data(my_adafruit_io_prefix + "-10p0", pm25_adafruit.get_average_values()[11])
 			except:
 				warning("couldn't post 10p0 data for pm25")
-		info("waiting...")
-		time.sleep(delay_between_posting_and_next_acquisition)
 	if neopixel_is_available:
 		neopixel_adafruit.set_color(0, 0, 255)
 	if airlift_is_available:

@@ -2,19 +2,21 @@
 # 2012-05 mza
 # updated 2015-09 by mza
 # updated 2015-12 by mza
+# updated 2022-08 by mza
 
 use strict;
-use Spreadsheet::Read;
-use File::Basename;
+use Spreadsheet::Read; # perl -MCPAN -e "install Spreadsheet::Read; install Spreadsheet::ParseExcel"
+use File::Basename; # perl -MCPAN -e "install File::Basename"
 #use Env qw{COLUMNS};
 my $width = 196; #print $ENV{"COLUMNS"} . "\n";
 
-# apt-cyg install make gcc gcc-g++ wget curl libcrypt
+# apt-cyg install make gcc gcc-g++ wget curl libcrypt-devel
 # perl -MCPAN -e "install Spreadsheet::Read"
 # perl -MCPAN -e "install Spreadsheet::ParseExcel"
 
 my $dirname = "";
-$dirname = "/cygdrive/c/mza/orders";
+$dirname = "/cygdrive/d/mza/orders/by-year";
+#$dirname = "/cygdrive/c/mza/orders";
 #$dirname = "/cygdrive/c/mza/orders/JKennedy";
 
 my $dir;
@@ -27,12 +29,23 @@ my $e = 0;
 sub read_all_POs {
 	print "reading in all POs...\n";
 	opendir($dir, $dirname);
-	my @filenames = readdir($dir);
+	my @years = readdir($dir);
 	closedir($dir);
+	#print @years;
+	my @filenames;
+	for my $year (@years) {
+		opendir($dir, $dirname . "/" . $year);
+		for my $each (readdir($dir)) {
+			my $fullname = $dirname . "/" . $year . "/" . $each;
+			push(@filenames, $fullname);
+		}
+		closedir($dir);
+	}
+	#print @filenames;
 	#while (my $filename = readdir($dir)) {
 	for my $filename (sort @filenames) {
 		#next if ($filename =~ /^\.$/ || $filename =~ /^\.\.$/ || -d $filename);
-		$filename = $dirname . "/" . $filename;
+		$filename = $filename;
 		next if (-d $filename);
 		#print "$filename\n";
 		my $count = 0;

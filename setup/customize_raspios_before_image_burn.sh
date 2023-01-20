@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 # written 2020-11-21 by mza
-# last updated 2022-03-15 by mza
+# last updated 2022-06-02 by mza
 
 declare desired_locale="en_US.UTF-8"
 declare desired_keyboard="us"
@@ -17,8 +17,10 @@ declare -i partition2size_intended=7000000000
 # https://raspberrypi.stackexchange.com/a/56623/38978
 # https://unix.stackexchange.com/a/215354/150012
 
-#declare loop_device="/dev/loop0"
-declare loop_device="/dev/loop128"
+declare loop_device="/dev/loop0"
+#declare loop_device="/dev/loop130"
+loop_device=$(sudo losetup -f) # find an unused loop device
+echo "using loop device ${loop_device}"
 
 declare -i native=0
 if [ -e /etc/os-release ]; then
@@ -70,6 +72,14 @@ function unmount_unloop {
 	fi
 }
 
+function fix_dns_resolve {
+	declare resolvedcount=$(grep -c "127.0.0.53" /media/root/etc/resolv.conf || /bin/true)
+	if [ $resolvedcount -lt 1 ]; then
+		echo "nameserver 127.0.0.53" | sudo tee -a /media/root/etc/resolv.conf >/dev/null
+		#cat /media/root/etc/resolv.conf
+	fi
+}
+
 function update_and_install_new_packages {
 	sudo sed -i 's,raspbian.raspberrypi.org/raspbian,mirrordirector.raspbian.org/raspbian,' /media/root/etc/apt/sources.list
 	local package_list="vim git ntp tmux mlocate subversion rsync nfs-common"
@@ -100,13 +110,17 @@ fi
 declare original_image="$1"
 declare hostname="$2"
 declare modified_image=$(echo $original_image | sed -e "s,\.img$,.$hostname.img,")
+modified_image=$(basename "$modified_image")
 #echo "$modified_image"
 declare -i GID=$(getent passwd $USER | sed -e "s,$USER:x:\([0-9]\+\):\([0-9]\+\):.*,\2,")
+#echo "GID is $GID"
+declare GROUP=$(grep ":x:$GID:" /etc/group | sed -e "s,\([^:]\):.*,\1,")
+#echo "GROUP is $GROUP"
 
 unmount_unloop 1
 if [ ! -e $modified_image ]; then
 	echo "copying original..."
-	cp $original_image $modified_image
+	cp -a $original_image $modified_image
 fi
 #ls -lart $modified_image
 
@@ -247,7 +261,6 @@ if [ $fstabcount1 -gt 0 ]; then
 		cd -
 	fi
 fi
-update_and_install_new_packages
 if [ $native -gt 0 ]; then
 	declare piusercount=$(grep -c "^pi" /media/root/etc/passwd)
 	if [ $piusercount -gt 0 ]; then
@@ -259,8 +272,7 @@ if [ $native -gt 0 ]; then
 	fi
 	declare groupcount=$(grep -c ":x:$GID:" /media/root/etc/group || /bin/true)
 	if [ $groupcount -lt 1 ]; then
-		declare GROUP=$(grep ":x:$GID:" /etc/group)
-		echo "adding group $GID($GROUP)..."
+		echo "adding group $GROUP ($GID)..."
 		sudo chroot /media/root groupadd --gid $GID $GROUP
 	fi
 	declare -i usercount=$(grep -c $USER /media/root/etc/passwd)
@@ -292,8 +304,13 @@ if [ -e "${HOME}/build/${USER}-home.tar.bz2" ]; then
 	sudo chown -R $USER:$GID "${NEWHOME}/${USER}"
 fi
 
+fix_dns_resolve
+update_and_install_new_packages
+
 echo "all good"
 df --block-size=1000000 | grep "^Filesystem\|${loop_device}"
+sync
+sleep 1
 unmount_unloop 0
 
 echo "image is ready to burn (doublecheck the "of=" below!):"

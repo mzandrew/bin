@@ -1,6 +1,6 @@
 # from https://learn.adafruit.com/adafruit-ultimate-gps-featherwing/circuitpython-library
 # written 2021-11-28 by mza
-# last updated 2021-12-08 by mza
+# last updated 2022-12-16 by mza
 
 import time
 import board
@@ -12,7 +12,7 @@ from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3,
 shmepsilon = 1.5
 DESIRED_PRECISION_DEGREES = 7
 DESIRED_PRECISION_METERS = 3
-MAX_TIMES_GPS_CAN_NOT_UPDATE_BEFORE_RESETTING_MICROCONTROLLER = 25
+MAX_TIMES_GPS_CAN_NOT_UPDATE_BEFORE_RESETTING_MICROCONTROLLER = 250
 STORE_IN_DEGREES = False
 if STORE_IN_DEGREES:
 	DIVISOR = 1.
@@ -20,32 +20,51 @@ else:
 	DIVISOR = 60.
 
 def setup_internal(N, delay_in_ms=1000):
-	#gps.send_command(b"PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0") # GLL, RMC, VTG, GGA, GSA, GSV, 0, 0, 0, 0, 0, 0, 0, MCHN
-	gps.send_command(b"PMTK314,0,4,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0") # GLL, RMC, VTG, GGA, GSA, GSV, 0, 0, 0, 0, 0, 0, 0, MCHN
-	gps.send_command(b'PMTK220,' + str(delay_in_ms))
+	gps.send_command(b"PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0") # GLL, RMC, VTG, GGA, GSA, GSV, 0, 0, 0, 0, 0, 0, 0, MCHN
+	#gps.send_command(b"PMTK314,1,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0") # GLL, RMC, VTG, GGA, GSA, GSV, 0, 0, 0, 0, 0, 0, 0, MCHN
+	#gps.send_command(b"PMTK314,-1") # reset to defaults
+	gps.send_command(b'PMTK220,' + str(int(delay_in_ms)))
 	global myboxcar
 	myboxcar = boxcar.boxcar(6, N, "gps")
 
 def setup_uart(uart, N, delay_in_ms=1000):
 	global gps
-	gps = adafruit_gps.GPS(uart, debug=False) # set debug to True to print out NMEA sentences
+	gps = adafruit_gps.GPS(uart, debug=True) # set debug to True to print out NMEA sentences
 	setup_internal(N, delay_in_ms)
 
 def setup_i2c(i2c, N, delay_in_ms=1000):
 	global gps
-	gps = adafruit_gps.GPS_GtopI2C(i2c)
+	gps = adafruit_gps.GPS_GtopI2C(i2c, address=0x42, debug=True)
 	setup_internal(N, delay_in_ms)
 
 def has_fix():
+	result = gps.has_fix
+	if result:
+		info("gps has fix")
+	else:
+		info("gps has NO fix")
+	return result
 	try:
 		if 10<count_of_times_gps_did_not_update:
 			return False
 		else:
 			return gps.has_fix
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		return gps.has_fix
 
+def update():
+	return gps.update()
+
 def try_to_update():
+	updated = update()
+	if updated:
+		info("gps updated")
+	else:
+		info("gps is NOT updated")
+	return updated
+	#info("try_to_update")
 	global count_of_times_gps_did_not_update
 	global last_gps_fix_time_monotonic
 	updated = False
@@ -60,33 +79,47 @@ def try_to_update():
 			else:
 				time.sleep(0.125)
 		if not updated:
+			#info("not updated")
 			try:
 				count_of_times_gps_did_not_update += 1
+			except (KeyboardInterrupt, ReloadException):
+				raise
 			except:
 				count_of_times_gps_did_not_update = 1
 			duration = time.monotonic() - last_gps_fix_time_monotonic
 			if 2<count_of_times_gps_did_not_update:
-				warning("GPS did not get a fix for last " + str(count_of_times_gps_did_not_update) + " successive attempts (last " + str(duration) + " seconds)")
+				#warning("GPS did not get a fix for last " + str(count_of_times_gps_did_not_update) + " successive attempts (last " + str(duration) + " seconds)")
+				info("no GPS update for last " + str(count_of_times_gps_did_not_update) + " tries (" + str(duration) + " s)")
 			string = gps.read(gps.in_waiting) # read whatever is waiting
-			debug(string)
+			info(string)
+		string = gps.read(gps.in_waiting) # read whatever is waiting
+		info(string)
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		warning("GPS did not update")
 		try:
 			count_of_times_gps_did_not_update += 1
+		except (KeyboardInterrupt, ReloadException):
+			raise
 		except:
 			count_of_times_gps_did_not_update = 1
 		try:
 			duration = time.monotonic() - last_gps_fix_time_monotonic
+		except (KeyboardInterrupt, ReloadException):
+			raise
 		except:
 			duration = time.monotonic()
 		if 2<count_of_times_gps_did_not_update:
-			warning("GPS did not get a fix for last " + str(count_of_times_gps_did_not_update) + " successive attempts (last " + str(duration) + " seconds)")
-	if MAX_TIMES_GPS_CAN_NOT_UPDATE_BEFORE_RESETTING_MICROCONTROLLER<count_of_times_gps_did_not_update:
-		error("resetting board...")
-		time.sleep(1)
-		info("")
-		import microcontroller
-		microcontroller.reset()
+			#warning("GPS did not get a fix for last " + str(count_of_times_gps_did_not_update) + " successive attempts (last " + str(duration) + " seconds)")
+			warning("no GPS response for last " + str(count_of_times_gps_did_not_update) + " tries (" + str(duration) + " s)")
+#	if MAX_TIMES_GPS_CAN_NOT_UPDATE_BEFORE_RESETTING_MICROCONTROLLER<count_of_times_gps_did_not_update:
+#		error("resetting board...")
+#		time.sleep(60)
+#		info("")
+#		import microcontroller
+#		microcontroller.reset()
+	return updated
 
 def get_values():
 	try_to_update()
@@ -145,7 +178,10 @@ def average_location():
 		location = [ location[0]/DIVISOR, location[1]/DIVISOR, location[2] - location[3] ]
 		#info("location = " + str([ "%.6f" % z for z in location]))
 		return location
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
+		warning("can't get average location")
 		raise
 
 def instantaneous_location():
@@ -170,6 +206,8 @@ def show_location():
 def get_time():
 	try:
 		duration = time.monotonic() - last_gps_fix_time_monotonic
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		duration = time.monotonic()
 	if 1.0<duration:
