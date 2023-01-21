@@ -2,7 +2,7 @@
 
 # written 2021-03-02 by mza
 # modified from timelapse.py
-# last updated 2022-09-09 by mza
+# last updated 2023-01-20 by mza
 
 # from https://www.raspberrypi.org/blog/picamera-pure-python-interface-for-camera-module/
 # and https://stackoverflow.com/a/8858026/5728815
@@ -16,7 +16,7 @@ import gpiozero
 import datetime
 import time
 import shutil
-import termios, fcntl, sys, os
+import termios, fcntl, sys, os, stat
 import tempfile
 import atexit
 
@@ -40,7 +40,9 @@ print("temporary_filename: " + temporary_filename.name)
 #print("temporary_filename: " + temporary_filename)
 atexit.register(remove_temporary_file_if_necessary)
 
+upper_left_button  = gpiozero.Button(2, pull_up=True)
 lower_left_button  = gpiozero.Button(14, pull_up=True)
+upper_right_button = gpiozero.Button(3,  pull_up=True)
 lower_right_button = gpiozero.Button(4,  pull_up=True)
 
 def fix_terminal():
@@ -109,6 +111,7 @@ def read_single_keypress():
 def take_one_picture():
 	timestring = time.strftime("%Y-%m-%d.%H%M%S")
 	camera.capture(temporary_filename.name)
+	os.chmod(temporary_filename.name, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH | stat.S_IWUSR | stat.S_IWGRP)
 	filename = destination + "/" + timestring + ".jpeg"
 	shutil.copy(temporary_filename.name, filename)
 	#print(filename + " " + is_battery_running_low())
@@ -128,7 +131,9 @@ except:
 print("press x or q to exit; any other key to take a(nother) pic")
 sys.stdout.flush()
 time.sleep(1)
+upper_right_button.when_pressed = take_one_picture_and_crlf
 lower_right_button.when_pressed = take_one_picture_and_crlf
+upper_left_button.when_pressed = fix_terminal_and_quit
 lower_left_button.when_pressed = fix_terminal_and_quit
 try:
 	#print("trying camera instatntiation")
@@ -142,11 +147,11 @@ try:
 	#camera.resolution = (4072, 3064) # effective pixels - Invalid resolution requested: PiResolution(width=4072, height=3064)
 	#camera.resolution = (4056, 3040) # active pixels - Failed to enable component: Out of resources
 	#camera.resolution = (4056, 2288) # 16:9 - Unable to enable port vc.ril.image_encode:out:0: Out of memory
-	#camera.resolution = (3808, 2142) # 16:9 works but the preview blinks
+	camera.resolution = (3808, 2142) # 16:9 works but the preview blinks
 	#camera.resolution = (3808, 2856) # 4:3 out of resources
-	camera.resolution = (1920, 1080) # works great
+	#camera.resolution = (1920, 1080) # works great
 	print("starting preview...")
-	camera.start_preview(alpha = 200)
+	camera.start_preview(resolution = (1920, 1080), alpha = 200)
 	time.sleep(2)
 except:
 	print("try changing gpu_mem from 128 to 192 in /boot/config.txt (or from raspi-config)")

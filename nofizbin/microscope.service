@@ -1,0 +1,12 @@
+[Unit]
+RequiresMountsFor=/opt/data2
+Description=microscope.py capture script
+
+[Service]
+Type=oneshot
+Group=1010
+ExecStart=/root/build/bin/generic/microscope.py
+
+[Install]
+WantedBy=multi-user.target
+
