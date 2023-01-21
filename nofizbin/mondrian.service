@@ -4,12 +4,16 @@
 # and reboot or run systemctl start mondrian
 
 [Unit]
-Description=mondrian.py data plotting script
+Description = mondrian.py data plotting script
 
 [Service]
-Type=oneshot
-ExecStart=/root/build/bin/embedded/mondrian.py
+Type = simple
+ExecStart = /root/build/bin/embedded/mondrian.py
+Restart = always
+RestartSec = 300
+KillMode = process
+SendSIGHUP = no
 
 [Install]
-WantedBy=multi-user.target
+WantedBy = multi-user.target
 
