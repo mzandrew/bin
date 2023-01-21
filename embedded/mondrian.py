@@ -72,7 +72,7 @@ dark_green = (0, 127, 0)
 light_blue = (200, 200, 255)
 orange = (255, 127, 0)
 purple = (255, 0, 255)
-grid_color_bright = (31, 31, 31)
+grid_color_bright = (63, 63, 63)
 grid_color_faint = (15, 15, 15)
 
 color = [ black, white, red, green, blue, yellow, teal, pink, maroon, dark_green, light_blue, orange, purple ]
