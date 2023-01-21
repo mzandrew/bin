@@ -16,7 +16,7 @@ import gpiozero
 import datetime
 import time
 import shutil
-import termios, fcntl, sys, os
+import termios, fcntl, sys, os, stat
 import tempfile
 import atexit
 
@@ -111,6 +111,7 @@ def read_single_keypress():
 def take_one_picture():
 	timestring = time.strftime("%Y-%m-%d.%H%M%S")
 	camera.capture(temporary_filename.name)
+	os.chmod(temporary_filename.name, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH | stat.S_IWUSR | stat.S_IWGRP)
 	filename = destination + "/" + timestring + ".jpeg"
 	shutil.copy(temporary_filename.name, filename)
 	#print(filename + " " + is_battery_running_low())
