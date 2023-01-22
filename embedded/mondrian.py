@@ -274,7 +274,11 @@ def setup():
 			for k in range(len(feed_name[i][j])):
 				feed_data[i][j].append([ DEFAULT_VALUE for x in range(plot_width) ])
 				normalized_feed_data[i][j].append([ 0.5 for x in range(plot_width) ])
-	pygame.init()
+	pygame.display.init()
+	pygame.font.init()
+	#pygame.mixer.quit()
+	global game_clock
+	game_clock = pygame.time.Clock()
 	if not should_use_touchscreen:
 		pygame.mouse.set_cursor((8,8),(0,0),(0,0,0,0,0,0,0,0),(0,0,0,0,0,0,0,0))
 	pygame.display.set_caption("mondrian")
@@ -321,6 +325,8 @@ def setup():
 
 ij = 0
 def loop():
+	#pygame.time.wait(10)
+	game_clock.tick(100)
 	global running
 	global should_update_plots
 	global ij
@@ -328,6 +334,7 @@ def loop():
 	something_was_updated = False
 	should_update_plots = [ [ False for j in range(ROWS) ] for i in range(COLUMNS) ]
 	#pressed_keys = pygame.key.get_pressed()
+	pygame.event.wait()
 	for event in pygame.event.get():
 		if event.type == KEYDOWN:
 			if K_ESCAPE==event.key or K_q==event.key:
