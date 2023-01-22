@@ -79,6 +79,13 @@ grid_color_faint = (15, 15, 15)
 
 color = [ black, white, red, green, blue, yellow, teal, pink, maroon, dark_green, light_blue, orange, purple ]
 
+# when run as a systemd service, it gets sent a SIGHUP upon pygame.init(), hence this dummy signal handler
+# see https://stackoverflow.com/questions/39198961/pygame-init-fails-when-run-with-systemd
+import signal
+def handler(signum, frame):
+	pass
+signal.signal(signal.SIGHUP, handler)
+
 import sys
 import time
 import random
