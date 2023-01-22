@@ -40,14 +40,14 @@ maximum = [ [ 100 for j in range(ROWS) ] for i in range(COLUMNS) ]
 plot_name[0][0] = "temperature"
 minimum[0][0] = 10.
 maximum[0][0] = 80.
-feed_name[0][0] = [ "living-room-temp", "3d-printer-temp", "garage-temp", "outdoor-temp", "roof-temp", "heater" ]
-short_feed_name[0][0] = [ "living", "3dprint", "garage", "out", "roof", "heater" ]
+feed_name[0][0] = [ "living-room-temp", "3d-printer-temp", "garage-temp", "outdoor-temp", "bathroom-temp", "heater" ]
+short_feed_name[0][0] = [ "living", "3dprint", "garage", "out", "bath", "heater" ]
 
 plot_name[1][0] = "humidity"
 minimum[1][0] = 40.
 maximum[1][0] = 100.
-feed_name[1][0] = [ "living-room-hum", "3d-printer-hum", "garage-hum", "outdoor-hum", "roof-hum" ]
-short_feed_name[1][0] = [ "living", "3dprint", "garage", "out", "roof" ]
+feed_name[1][0] = [ "living-room-hum", "3d-printer-hum", "garage-hum", "outdoor-hum", "bathroom-hum" ]
+short_feed_name[1][0] = [ "living", "3dprint", "garage", "out", "bath" ]
 
 plot_name[0][1] = "pressure"
 minimum[0][1] = 0.997
