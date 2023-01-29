@@ -82,9 +82,12 @@ color = [ black, white, red, green, blue, yellow, teal, pink, maroon, dark_green
 # when run as a systemd service, it gets sent a SIGHUP upon pygame.init(), hence this dummy signal handler
 # see https://stackoverflow.com/questions/39198961/pygame-init-fails-when-run-with-systemd
 import signal
-def handler(signum, frame):
-	pass
-signal.signal(signal.SIGHUP, handler)
+def sighup_handler(signum, frame):
+	print("sighup handler: got signal " + str(signum))
+signal.signal(signal.SIGHUP, sighup_handler)
+def sigterm_handler(signum, frame):
+	print("sigterm handler: got signal " + str(signum))
+signal.signal(signal.SIGTERM, sigterm_handler)
 
 import sys
 import time
@@ -114,6 +117,7 @@ if should_use_touchscreen:
 		os.environ["SDL_MOUSEDEV"] = "/dev/input/touchscreen"
 	else:
 		os.environ["SDL_MOUSEDEV"] = "/dev/input/event0"
+		#os.environ["SDL_MOUSEDEV"] = "/dev/input/mouse0"
 		os.environ["SDL_MOUSEDRV"] = "TSLIB"
 import pygame # sudo apt install -y python3-pygame # gets 1.9.6 as of early 2023
 # pip3 install pygame # gets 2.1.2 as of early 2023
