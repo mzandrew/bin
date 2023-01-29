@@ -84,9 +84,13 @@ color = [ black, white, red, green, blue, yellow, teal, pink, maroon, dark_green
 import signal
 def sighup_handler(signum, frame):
 	print("sighup handler: got signal " + str(signum))
+	sys.stdout.flush()
 signal.signal(signal.SIGHUP, sighup_handler)
 def sigterm_handler(signum, frame):
 	print("sigterm handler: got signal " + str(signum))
+	sys.stdout.flush()
+	pygame.quit()
+	sys.exit(signum)
 signal.signal(signal.SIGTERM, sigterm_handler)
 
 import sys
@@ -323,6 +327,7 @@ def setup():
 			update_plot(i, j)
 			blit(i, j)
 			flip()
+			sys.stdout.flush()
 	global should_check_for_new_data
 	should_check_for_new_data = pygame.USEREVENT + 1
 	pygame.time.set_timer(should_check_for_new_data, int(target_period*1000/COLUMNS/ROWS))
@@ -393,5 +398,6 @@ plots_were_updated = [ [ False for j in range(ROWS) ] for i in range(COLUMNS) ]
 setup()
 while running:
 	loop()
+	sys.stdout.flush()
 pygame.quit()
 
