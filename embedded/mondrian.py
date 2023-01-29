@@ -82,16 +82,15 @@ color = [ black, white, red, green, blue, yellow, teal, pink, maroon, dark_green
 # when run as a systemd service, it gets sent a SIGHUP upon pygame.init(), hence this dummy signal handler
 # see https://stackoverflow.com/questions/39198961/pygame-init-fails-when-run-with-systemd
 import signal
-def sighup_handler(signum, frame):
-	print("sighup handler: got signal " + str(signum))
+def signal_handler(signum, frame):
+	print("signal handler: got signal " + str(signum))
 	sys.stdout.flush()
-signal.signal(signal.SIGHUP, sighup_handler)
-def sigterm_handler(signum, frame):
-	print("sigterm handler: got signal " + str(signum))
-	sys.stdout.flush()
-	pygame.quit()
-	sys.exit(signum)
-signal.signal(signal.SIGTERM, sigterm_handler)
+	if 15==signum:
+		pygame.quit()
+		sys.exit(signum)
+# from https://stackoverflow.com/a/34568177/5728815
+for mysignal in set(signal.Signals)-{signal.SIGKILL, signal.SIGSTOP}:
+	signal.signal(mysignal, signal_handler)
 
 import sys
 import time
@@ -343,7 +342,7 @@ def loop():
 	something_was_updated = False
 	should_update_plots = [ [ False for j in range(ROWS) ] for i in range(COLUMNS) ]
 	#pressed_keys = pygame.key.get_pressed()
-	pygame.event.wait()
+	#pygame.event.wait()
 	for event in pygame.event.get():
 		if event.type == KEYDOWN:
 			if K_ESCAPE==event.key or K_q==event.key:
