@@ -2,7 +2,7 @@
 
 # written 2023-01-04 by mza
 # with help from https://realpython.com/pygame-a-primer/#displays-and-surfaces
-# last updated 2023-01-15 by mza
+# last updated 2023-01-21 by mza
 
 # have root checkout this repo:
 # mkdir -p ~/build; cd ~/build
@@ -27,6 +27,8 @@ ICON_BORDER = 2
 ICON_SQUARE_LENGTH = ICON_SIZE//2 - 3*ICON_BORDER
 NUMBER_OF_HOURS_TO_PLOT = 48
 
+should_use_touchscreen = False
+
 ROWS = 2
 COLUMNS = 2
 plot_name = [ [ "" for j in range(ROWS) ] for i in range(COLUMNS) ]
@@ -38,14 +40,14 @@ maximum = [ [ 100 for j in range(ROWS) ] for i in range(COLUMNS) ]
 plot_name[0][0] = "temperature"
 minimum[0][0] = 10.
 maximum[0][0] = 80.
-feed_name[0][0] = [ "living-room-temp", "3d-printer-temp", "garage-temp", "outdoor-temp", "roof-temp", "heater" ]
-short_feed_name[0][0] = [ "living", "3dprint", "garage", "out", "roof", "heater" ]
+feed_name[0][0] = [ "living-room-temp", "3d-printer-temp", "garage-temp", "outdoor-temp", "bathroom-temp", "heater" ]
+short_feed_name[0][0] = [ "living", "3dprint", "garage", "out", "bath", "heater" ]
 
 plot_name[1][0] = "humidity"
 minimum[1][0] = 40.
 maximum[1][0] = 100.
-feed_name[1][0] = [ "living-room-hum", "3d-printer-hum", "garage-hum", "outdoor-hum", "roof-hum" ]
-short_feed_name[1][0] = [ "living", "3dprint", "garage", "out", "roof" ]
+feed_name[1][0] = [ "living-room-hum", "3d-printer-hum", "garage-hum", "outdoor-hum", "bathroom-hum" ]
+short_feed_name[1][0] = [ "living", "3dprint", "garage", "out", "bath" ]
 
 plot_name[0][1] = "pressure"
 minimum[0][1] = 0.997
@@ -72,10 +74,23 @@ dark_green = (0, 127, 0)
 light_blue = (200, 200, 255)
 orange = (255, 127, 0)
 purple = (255, 0, 255)
-grid_color_bright = (31, 31, 31)
+grid_color_bright = (63, 63, 63)
 grid_color_faint = (15, 15, 15)
 
 color = [ black, white, red, green, blue, yellow, teal, pink, maroon, dark_green, light_blue, orange, purple ]
+
+# when run as a systemd service, it gets sent a SIGHUP upon pygame.init(), hence this dummy signal handler
+# see https://stackoverflow.com/questions/39198961/pygame-init-fails-when-run-with-systemd
+import signal
+def signal_handler(signum, frame):
+	print("signal handler: got signal " + str(signum))
+	sys.stdout.flush()
+	if 15==signum:
+		pygame.quit()
+		sys.exit(signum)
+# from https://stackoverflow.com/a/34568177/5728815
+for mysignal in set(signal.Signals)-{signal.SIGKILL, signal.SIGSTOP}:
+	signal.signal(mysignal, signal_handler)
 
 import sys
 import time
@@ -84,7 +99,32 @@ import os
 import datetime
 os.environ['SDL_AUDIODRIVER'] = 'dsp'
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-import pygame # sudo apt install -y python3-pygame
+# from https://learn.adafruit.com/pi-video-output-using-pygame/pointing-pygame-to-the-framebuffer?view=all#pointing-pygame-to-the-framebuffer
+#disp_no = os.getenv("DISPLAY")
+#if disp_no:
+#	print("I'm running under X display = {0}".format(disp_no))
+#drivers = ['fbcon', 'directfb', 'svgalib']
+#for driver in drivers:
+#driver = 'fbcon' # unable to open a console terminal # fbcon not available
+#driver = 'directfb' # No available video device # directfb not available
+#driver = 'svgalib' # No available video device # svgalib not available
+#os.putenv('SDL_VIDEODRIVER', driver)
+# from https://github.com/project-owner/Peppy/blob/d9eb701c1f66be2ef5bccc8457bb96ece0f46f79/util/config.py#L1291
+#if os.path.exists("/dev/fb1"):
+#	os.environ["SDL_FBDEV"] = "/dev/fb1"
+#elif os.path.exists("/dev/fb0"):
+#	os.environ["SDL_FBDEV"] = "/dev/fb0"
+#os.environ["SDL_FBDEV"] = "/dev/fb0"
+if should_use_touchscreen:
+	if os.path.exists("/dev/input/touchscreen"):
+		os.environ["SDL_MOUSEDEV"] = "/dev/input/touchscreen"
+	else:
+		os.environ["SDL_MOUSEDEV"] = "/dev/input/event0"
+		#os.environ["SDL_MOUSEDEV"] = "/dev/input/mouse0"
+		os.environ["SDL_MOUSEDRV"] = "TSLIB"
+import pygame # sudo apt install -y python3-pygame # gets 1.9.6 as of early 2023
+# pip3 install pygame # gets 2.1.2 as of early 2023
+# sudo apt install -y libmad0 libmikmod3 libportmidi0 libsdl-image1.2 libsdl-mixer1.2 libsdl-ttf-2.0-0 libsdl1.2debian
 from pygame.locals import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_ESCAPE, KEYDOWN, QUIT, K_q, K_BREAK, K_SPACE
 import fetch
 
@@ -131,6 +171,7 @@ def format_for_plot(values, minimum, maximum):
 def fetch_data_for_the_first_time(i, j):
 	print(plot_name[i][j])
 	for k in range(len(feed_name[i][j])):
+		pygame.event.pump()
 		print("fetching data for feed \"" + feed_name[i][j][k] + "\"...")
 		if not FAKE_DATA:
 			#feed_data[i][j][k] = fetch.fetch_list_with_datestamps(feed_name[i][j][k], count=plot_width)
@@ -138,7 +179,7 @@ def fetch_data_for_the_first_time(i, j):
 			length_of_returned_data = len(feed_data[i][j][k])
 			if length_of_returned_data!=plot_width:
 				print("length of returned data = " + str(length_of_returned_data))
-			time.sleep(0.350)
+			time.sleep(0.250)
 		#feed_data[i][j][k] = [ DEFAULT_VALUE for a in range(plot_width//2) ]
 		feed_data[i][j][k] = pad_data_if_insufficient(feed_data[i][j][k], plot_width)
 		#print("length of data = " + str(len(feed_data[i][j][k])))
@@ -169,9 +210,11 @@ def update_plot(i, j):
 			feed_data[i][j][k] = fetch.add_most_recent_data_to_end_of_array(feed_data[i][j][k], feed_name[i][j][k])
 			#print("length of data = " + str(len(feed_data[i][j][k])))
 	global plots_were_updated
+	pygame.event.pump()
 	print("normalizing data...")
 	for k in range(len(feed_name[i][j])):
 		normalized_feed_data[i][j][k] = format_for_plot(feed_data[i][j][k], minimum[i][j], maximum[i][j])
+	pygame.event.pump()
 	print("plotting data...")
 	# fill with colors for now:
 	#plot[i][j].fill((random.randrange(0, 255), random.randrange(0, 255), random.randrange(0, 255)))
@@ -181,6 +224,7 @@ def update_plot(i, j):
 	offset_hour = pixels_since_the_hour()
 	#print("offset_hour:" + str(offset_hour))
 	for x in range(plot_width):
+		pygame.event.pump()
 		for y in range(plot_height):
 			if 0==(plot_width-x-offset_noon)%(pixels_per_hour*24): # draw a bright vertical line for noon every day
 				plot[i][j].set_at((x, y), grid_color_bright)
@@ -237,8 +281,13 @@ def setup():
 			for k in range(len(feed_name[i][j])):
 				feed_data[i][j].append([ DEFAULT_VALUE for x in range(plot_width) ])
 				normalized_feed_data[i][j].append([ 0.5 for x in range(plot_width) ])
-	pygame.init()
-	pygame.mouse.set_cursor((8,8),(0,0),(0,0,0,0,0,0,0,0),(0,0,0,0,0,0,0,0))
+	pygame.display.init()
+	pygame.font.init()
+	#pygame.mixer.quit()
+	global game_clock
+	game_clock = pygame.time.Clock()
+	if not should_use_touchscreen:
+		pygame.mouse.set_cursor((8,8),(0,0),(0,0,0,0,0,0,0,0),(0,0,0,0,0,0,0,0))
 	pygame.display.set_caption("mondrian")
 	plot_caption_font = pygame.font.SysFont("monospace", FONT_SIZE_PLOT_CAPTION )
 	feed_name_font = pygame.font.SysFont("monospace", FONT_SIZE_FEED_NAME)
@@ -251,6 +300,7 @@ def setup():
 #	pygame.display.set_icon(icon)
 	screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 	screen.fill(black)
+	pygame.event.pump()
 	plot = [ [ pygame.Surface((plot_width, plot_height)) for j in range(ROWS) ] for i in range(COLUMNS) ]
 	#plot_rect = [ [ plot[i][j].get_rect() for j in range(ROWS) ] for i in range(COLUMNS) ]
 	#clear_plots()
@@ -269,23 +319,30 @@ def setup():
 				screen.blit(feed_caption[k], feed_caption[k].get_rect(center=(GAP_X_SIDE+i*(plot_width+GAP_X_BETWEEN_PLOTS)+plot_width//2-width//2+feed_caption[k].get_width()//2, GAP_Y_TOP+j*(plot_height+GAP_Y_BETWEEN_PLOTS)+plot_height+FONT_SIZE_FEED_NAME//2+4)))
 				width -= 2*(feed_caption[k].get_width() + FONT_SIZE_FEED_NAME_EXTRA_GAP)
 			#print("width: " + str(width))
+			pygame.event.pump()
 			fetch_data_for_the_first_time(i, j)
+			pygame.event.pump()
 			draw_plot_border(i, j)
 			update_plot(i, j)
 			blit(i, j)
 			flip()
+			sys.stdout.flush()
 	global should_check_for_new_data
 	should_check_for_new_data = pygame.USEREVENT + 1
 	pygame.time.set_timer(should_check_for_new_data, int(target_period*1000/COLUMNS/ROWS))
 
 ij = 0
 def loop():
+	#pygame.time.wait(10)
+	game_clock.tick(100)
 	global running
 	global should_update_plots
 	global ij
 	global something_was_updated
 	something_was_updated = False
+	should_update_plots = [ [ False for j in range(ROWS) ] for i in range(COLUMNS) ]
 	#pressed_keys = pygame.key.get_pressed()
+	#pygame.event.wait()
 	for event in pygame.event.get():
 		if event.type == KEYDOWN:
 			if K_ESCAPE==event.key or K_q==event.key:
@@ -322,6 +379,7 @@ def blit(i, j):
 	if plots_were_updated[i][j]:
 		#print("blitting...")
 		screen.blit(plot[i][j], (GAP_X_SIDE+i*(plot_width+GAP_X_BETWEEN_PLOTS), GAP_Y_TOP+j*(plot_height+GAP_Y_BETWEEN_PLOTS)))
+		pygame.event.pump()
 		plots_were_updated[i][j] = False
 		something_was_updated = True
 
@@ -330,6 +388,7 @@ def flip():
 	if something_was_updated:
 		#print("flipping...")
 		pygame.display.flip()
+		pygame.event.pump()
 		something_was_updated = False
 
 running = True
@@ -338,6 +397,6 @@ plots_were_updated = [ [ False for j in range(ROWS) ] for i in range(COLUMNS) ]
 setup()
 while running:
 	loop()
-	time.sleep(1)
+	sys.stdout.flush()
 pygame.quit()
 
