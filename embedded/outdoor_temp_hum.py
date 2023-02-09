@@ -31,6 +31,8 @@ info("we are " + board_id)
 if 'adafruit_qtpy_esp32s2'==board_id: # sht31 on qtpy esp32-s2
 	my_wifi_name = "outdoor"
 	my_adafruit_io_prefix = "outdoor"
+	#my_wifi_name = "bathroom"
+	#my_adafruit_io_prefix = "bathroom"
 	FEATHER_ESP32S2 = True
 	use_pwm_status_leds = False
 	should_use_sdcard = False
