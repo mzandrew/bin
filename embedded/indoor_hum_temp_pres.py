@@ -2,7 +2,7 @@
 
 # written 2022-01-17 by mza
 # based on outdoor_temp_hum.py
-# last updated 2023-01-08 by mza
+# last updated 2023-02-19 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -208,6 +208,7 @@ def main():
 	if use_pwm_status_leds:
 		generic.set_status_led_color([0.5, 0.5, 0.5])
 	global airlift_is_available
+	airlift_is_available = False
 	if should_use_airlift:
 		if use_built_in_wifi:
 			airlift_is_available = airlift.setup_wifi(my_wifi_name)
@@ -220,8 +221,6 @@ def main():
 			airlift.setup_feed(my_wifi_name + "-pressure")
 			#airlift.setup_feed("-altitude")
 			#airlift.setup_feed("-gas")
-	else:
-		airlift_is_available = False
 	if 0:
 		if airlift_is_available:
 			airlift.update_time_from_server()
