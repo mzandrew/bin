@@ -2,7 +2,7 @@
 
 # written 2023-01-04 by mza
 # with help from https://realpython.com/pygame-a-primer/#displays-and-surfaces
-# last updated 2023-01-21 by mza
+# last updated 2023-02-19 by mza
 
 # have root checkout this repo:
 # mkdir -p ~/build; cd ~/build
@@ -52,8 +52,8 @@ short_feed_name[1][0] = [ "living", "3dprint", "garage", "out", "bath" ]
 plot_name[0][1] = "pressure"
 minimum[0][1] = 0.997
 maximum[0][1] = 1.009
-feed_name[0][1] = [ "living-room-pressure", "3d-printer-pressure", "garage-pressure" ]
-short_feed_name[0][1] = [ "living", "3dprint", "garage" ]
+feed_name[0][1] = [ "living-room-pressure", "3d-printer-pressure", "garage-pressure", "outdoor-pressure" ]
+short_feed_name[0][1] = [ "living", "3dprint", "garage", "out" ]
 
 plot_name[1][1] = "particle count"
 minimum[1][1] = 0.

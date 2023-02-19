@@ -1,12 +1,12 @@
 # written 2022-01-12 by mza
 # based on indoor_temp_hum.py
-# last updated 2023-01-07 by mza
+# last updated 2023-02-19 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
 # cp -a outdoor_temp_hum.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
-# rsync -r adafruit_datetime.mpy adafruit_minimqtt adafruit_sdcard.mpy adafruit_sht31d.mpy simpleio.mpy adafruit_esp32spi adafruit_register neopixel.mpy adafruit_io adafruit_requests.mpy adafruit_bus_device /media/circuitpython/lib/
+# rsync -r adafruit_bme680.mpy adafruit_datetime.mpy adafruit_minimqtt adafruit_sdcard.mpy adafruit_sht31d.mpy simpleio.mpy adafruit_esp32spi adafruit_register neopixel.mpy adafruit_io adafruit_requests.mpy adafruit_bus_device /media/circuitpython/lib/
 
 import sys
 import time
@@ -16,6 +16,7 @@ import busio
 import simpleio
 import microsd_adafruit
 import neopixel_adafruit
+import bme680_adafruit
 import sht31d_adafruit
 import airlift
 import gps_adafruit
@@ -28,7 +29,7 @@ header_string = "date/time"
 mydir = "/logs"
 board_id = board.board_id
 info("we are " + board_id)
-if 'adafruit_qtpy_esp32s2'==board_id: # sht31 on qtpy esp32-s2
+if 'adafruit_qtpy_esp32s2'==board_id: # sht31/bme680 on qtpy esp32-s2
 	my_wifi_name = "outdoor"
 	my_adafruit_io_prefix = "outdoor"
 	#my_wifi_name = "bathroom"
@@ -166,7 +167,19 @@ def main():
 		raise
 	except:
 		warning("error setting up neopixel")
+	global bme680_is_available
+	bme680_is_available = False
+	try:
+		i2c_address = bme680_adafruit.setup(i2c, N)
+		prohibited_addresses.append(i2c_address)
+		header_string += bme680_adafruit.header_string
+		bme680_is_available = True
+	except KeyboardInterrupt:
+		raise
+	except:
+		error("bme680 not found")
 	global sht31d_is_available
+	sht31d_is_available = False
 	try:
 		i2c_address = sht31d_adafruit.setup(i2c, N)
 		prohibited_addresses.append(i2c_address)
@@ -174,8 +187,6 @@ def main():
 		sht31d_is_available = True
 	except:
 		error("sht31d not found")
-		sys.exit(1)
-		sht31d_is_available = False
 	#info("prohibited i2c addresses: " + str(prohibited_addresses)) # disallow treating any devices already discovered as pct2075s
 	if use_pwm_status_leds:
 		generic.set_status_led_color([0.5, 0.5, 0.5])
@@ -190,7 +201,7 @@ def main():
 		header_string += ", RSSI-dB"
 		airlift.setup_feed(my_adafruit_io_prefix + "-temp")
 		airlift.setup_feed(my_adafruit_io_prefix + "-hum")
-		#airlift.setup_feed(my_adafruit_io_prefix + "-pressure")
+		airlift.setup_feed(my_adafruit_io_prefix + "-pressure")
 		airlift.setup_feed(my_adafruit_io_prefix + "-rssi")
 		#airlift.setup_feed("indoor-altitude")
 		#airlift.setup_feed("indoor-gas")
@@ -200,23 +211,30 @@ def main():
 	#gnuplot> set key autotitle columnheader
 	#gnuplot> set style data lines
 	#gnuplot> plot for [i=1:14] "solar_water_heater.log" using 0:i
+	if not sht31d_is_available and not bme680_is_available:
+		error("sht31d/bme680 not available; cannot continue")
+		sys.exit(1)
 	print_header()
 	global i
 	i = 0
 	loop()
-	info("sht31d no longer available; cannot continue")
+	info("sht31d/bme680 no longer available; cannot continue")
 
 def loop():
 	global i
 	last_good_post_time = generic.get_uptime()
 	global delay_between_acquisitions
-	while sht31d_adafruit.test_if_present():
+#	while sht31d_adafruit.test_if_present():
+	while bme680_adafruit.test_if_present():
 		neopixel_adafruit.set_color(255, 0, 0)
 		if use_pwm_status_leds:
 			generic.set_status_led_color([1, 0, 0])
 		string = ""
 		if gps_is_available:
 			string += gps_adafruit.measure_string()
+		if bme680_is_available:
+			#info("bme680")
+			string += bme680_adafruit.measure_string()
 		if sht31d_is_available:
 			#info("sht31d")
 			string += sht31d_adafruit.measure_string()
@@ -231,6 +249,19 @@ def loop():
 		if 0==i%N:
 			delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, target_period)
 			NUMBER_OF_SECONDS_TO_WAIT_BEFORE_FORCING_RESET = 5 * target_period
+			if bme680_is_available:
+				bme680_adafruit.show_average_values()
+				if airlift_is_available:
+					try:
+						airlift.post_data(my_adafruit_io_prefix + "-temp",     bme680_adafruit.get_average_values()[0])
+						airlift.post_data(my_adafruit_io_prefix + "-hum",      bme680_adafruit.get_average_values()[1])
+						airlift.post_data(my_adafruit_io_prefix + "-pressure", bme680_adafruit.get_average_values()[2])
+						#airlift.post_data("-altitude", bme680_adafruit.get_average_values()[3])
+						#airlift.post_data("-gas", bme680_adafruit.get_average_values()[4])
+					except KeyboardInterrupt:
+						raise
+					except:
+						warning("couldn't post data for bme680")
 			if sht31d_is_available:
 				sht31d_adafruit.show_average_values()
 				if airlift_is_available:
