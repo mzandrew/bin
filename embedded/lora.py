@@ -1,7 +1,7 @@
 # written 2022-07 by mza
 # basic bits taken from adafruit's rfm9x_simpletest.py by Tony DiCola and rfm9x_node1_ack.py by Jerry Needell
 # more help from https://learn.adafruit.com/multi-device-lora-temperature-network/using-with-adafruitio
-# last updated 2023-01-02 by mza
+# last updated 2023-03-09 by mza
 
 import time
 import board
@@ -14,6 +14,15 @@ from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3,
 PREFIX = "SCOOPY"
 SUFFIX = "BOOPS"
 USE_ACKNOWLEDGE = False
+
+error_count = 0
+MAX_ERROR_COUNT_BEFORE_RESET = 10
+
+def increment_error_count_and_reset_if_too_high():
+	global error_count
+	error_count += 1
+	if MAX_ERROR_COUNT_BEFORE_RESET<error_count:
+		generic.reset()
 
 def setup(spi, cs, reset, frequency, baudrate, tx_power_dbm, airlift_available, RTC_available, type_of_node, adafruit_io_prefix, mynodeid):
 	global rfm9x
@@ -81,6 +90,7 @@ def send_a_message(message):
 		raise
 	except Exception as error_message:
 		message_id = 1
+		increment_error_count_and_reset_if_too_high()
 	message_id_string = "node" + str(nodeid) + "[" + str(message_id) + "] "
 	message_with_prefix_and_suffix = PREFIX + message_id_string + message + SUFFIX
 	if 252<len(message_with_prefix_and_suffix):
@@ -114,6 +124,7 @@ def decode_a_message(packet):
 		raise
 	except Exception as error_message:
 		rssi = 0
+		increment_error_count_and_reset_if_too_high()
 	try:
 		packet_text = str(packet, "ascii")
 		match = re.search("^" + PREFIX + "node([0-9]+)\[([0-9]+)\](.*)" + SUFFIX + "$", packet_text)
@@ -130,6 +141,7 @@ def decode_a_message(packet):
 				previously_received_message_id[mynodeid] = 0
 				total_skipped_messages[mynodeid] = 0
 				skipped_messages[mynodeid] = 0
+				increment_error_count_and_reset_if_too_high()
 			#debug("previously_received_message_id[" + str(mynodeid) + "]: " + str(previously_received_message_id[mynodeid]))
 			#debug("current_message_id: " + str(current_message_id))
 			previously_received_message_id[mynodeid] = current_message_id
@@ -150,6 +162,7 @@ def decode_a_message(packet):
 						warning("unable to post skipped data")
 						airlift.show_network_status()
 						error(str(error_message))
+						increment_error_count_and_reset_if_too_high()
 			info("received: node" + str(mynodeid) + "[" + str(current_message_id) + "]" + message + " RSSI=" + str(rssi) + "dBm")
 			if "uplink"==node_type:
 				parse(mynodeid, message, rssi)
@@ -160,6 +173,7 @@ def decode_a_message(packet):
 	except Exception as error_message:
 		warning("message garbled RSSI=" + str(rssi) + "dBm")
 		error(str(error_message))
+		increment_error_count_and_reset_if_too_high()
 		if airlift_is_available:
 			try:
 				airlift.post_data(my_adafruit_io_prefix + "-garb-rssi", rssi)
@@ -169,6 +183,7 @@ def decode_a_message(packet):
 				warning("unable to post garb_rssi data")
 				airlift.show_network_status()
 				error(str(error_message))
+				increment_error_count_and_reset_if_too_high()
 		#info("total skipped messages: " + str(total_skipped_messages[mynodeid]))
 	return current_message_id
 
@@ -182,6 +197,7 @@ def post_rssi(mynodeid, rssi):
 		warning("couldn't post data for lora rssi")
 		airlift.show_network_status()
 		error(str(error_message))
+		increment_error_count_and_reset_if_too_high()
 
 def parse_bme680(mynodeid, message, rssi):
 	match = re.search("bme680 \[([0-9.]+), ([0-9.]+), ([0-9.]+),", message)
@@ -206,6 +222,7 @@ def parse_bme680(mynodeid, message, rssi):
 				warning("couldn't post data for remote bme680")
 				airlift.show_network_status()
 				error(str(error_message))
+				increment_error_count_and_reset_if_too_high()
 			#post_rssi(mynodeid, rssi)
 		return True
 	else:
@@ -235,6 +252,7 @@ def parse_as7341(mynodeid, message, rssi):
 				warning("couldn't post data for remote as7341")
 				airlift.show_network_status()
 				error(str(error_message))
+				increment_error_count_and_reset_if_too_high()
 			#post_rssi(mynodeid, rssi)
 		return True
 	else:
@@ -264,6 +282,7 @@ def parse_ina260(mynodeid, message, rssi):
 				warning("couldn't post data for remote ina260")
 				airlift.show_network_status()
 				error(str(error_message))
+				increment_error_count_and_reset_if_too_high()
 			if 0==mybin:
 				post_rssi(mynodeid, rssi)
 		return True
@@ -286,6 +305,7 @@ def parse_ping_and_respond(mynodeid, message, rssi):
 				warning("couldn't post data for received ping")
 				airlift.show_network_status()
 				error(str(error_message))
+				increment_error_count_and_reset_if_too_high()
 		return True
 	else:
 		return False
@@ -311,6 +331,7 @@ def parse_lora_rssi_pingpong(mynodeid, message, rssi):
 				warning("couldn't post data for received " + pingpong + " rssi")
 				airlift.show_network_status()
 				error(str(error_message))
+				increment_error_count_and_reset_if_too_high()
 		return True
 	else:
 		return False
@@ -339,6 +360,7 @@ def parse_geotagged_lora_rssi_pingpong(mynodeid, message, rssi):
 				warning("couldn't post data for received " + pingpong + " rssi")
 				airlift.show_network_status()
 				error(str(error_message))
+				increment_error_count_and_reset_if_too_high()
 		return True
 	else:
 		return False
