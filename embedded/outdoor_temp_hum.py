@@ -1,6 +1,6 @@
 # written 2022-01-12 by mza
 # based on indoor_temp_hum.py
-# last updated 2023-02-19 by mza
+# last updated 2023-03-09 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -258,6 +258,7 @@ def loop():
 						airlift.post_data(my_adafruit_io_prefix + "-pressure", bme680_adafruit.get_average_values()[2])
 						#airlift.post_data("-altitude", bme680_adafruit.get_average_values()[3])
 						#airlift.post_data("-gas", bme680_adafruit.get_average_values()[4])
+						last_good_post_time = generic.get_uptime()
 					except KeyboardInterrupt:
 						raise
 					except:
