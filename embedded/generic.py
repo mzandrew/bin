@@ -1,5 +1,5 @@
 # written 2021-12-28 by mza
-# last updated 2023-01-04 by mza
+# last updated 2023-03-09 by mza
 
 import os
 import sys
@@ -110,7 +110,7 @@ def reload_exception_handler():
 def reset():
 	atexit.unregister(reset)
 	try:
-		error("resetting board... (ctrl-c to abort)")
+		error("resetting board in 300 seconds... (ctrl-c to abort)")
 		sys.stdout.flush()
 	except:
 		pass
@@ -119,11 +119,11 @@ def reset():
 #	except:
 #		pass
 	try:
-		time.sleep(60)
+		time.sleep(300)
 	except KeyboardInterrupt:
 		keyboard_interrupt_exception_handler()
 	except:
-		info("couldn't sleep (60), sorry!")
+		info("couldn't sleep (300), sorry!")
 		flush()
 	try:
 		info("")
