@@ -84,6 +84,7 @@ def print_header():
 	info("" + header_string)
 
 def main():
+	info(""); info("")
 	generic.start_uptime()
 	global header_string
 	if use_pwm_status_leds:
