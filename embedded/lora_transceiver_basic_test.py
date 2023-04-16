@@ -1,5 +1,5 @@
 # written 2022-07 by mza
-# last updated 2023-01-07 by mza
+# last updated 2023-04-16 by mza
 
 # rsync -a *.py /media/mza/LORASEND/; rsync -a *.py /media/mza/LORARECEIVE/
 # cd lib
