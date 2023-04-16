@@ -12,6 +12,7 @@ target_period = 514
 N = 32
 ina260_N = 4
 delay_between_acquisitions = 16
+time_to_wait_for_each_packet = 1.0
 BAUD_RATE = 4*57600
 RADIO_FREQ_MHZ = 905.0 # 868-915 MHz (902-928 MHz is the allowed band in US/MEX/CAN)
 current_tx_power_dbm = 20 # minimum 5; default 13; maximum 20
@@ -263,6 +264,7 @@ def setup():
 		except Exception as error_message:
 			RTC_is_available = False
 			error(str(error_message))
+	#info("RTC is available")
 	global sdcard_is_available
 	sdcard_is_available = False
 	global dirname
@@ -358,7 +360,7 @@ def loop():
 		if dotstar_is_available:
 			dotstar[0] = (0, 0, 255, dotstar_brightness)
 		if "uplink"==node_type:
-			packet = lora.receive(delay_between_acquisitions)
+			packet = lora.receive(time_to_wait_for_each_packet)
 			if ina260_is_available:
 				ina260_adafruit.get_values(1)
 			if packet is not None:
@@ -392,7 +394,6 @@ def loop():
 				as7341_adafruit.get_values()
 			if ina260_is_available:
 				ina260_adafruit.get_values(0)
-		j += 1
 		if RTC_is_available:
 			if airlift_is_available:
 				t = pcf8523_adafruit.get_struct_time()
@@ -403,10 +404,13 @@ def loop():
 			if RTC_is_available:
 				t = pcf8523_adafruit.get_struct_time()
 				debug2(str(t.tm_sec))
-				if 0==t.tm_sec:
+				#if 0==t.tm_sec:
+				#if 0==t.tm_sec or 30==t.tm_sec:
+				if 0==t.tm_sec or 30==t.tm_sec or 15==t.tm_sec or 45==t.tm_sec:
 					lora.send_a_message_with_timestamp("the current time")
-		if 0==j%N:
-			if "gathering"==node_type:
+		j += 1
+		if "gathering"==node_type and N<=j:
+			if 0==j%N:
 				if neopixel_is_available:
 					neopixel_adafruit.set_color(0, 255, 0)
 				if dotstar_is_available:
@@ -421,6 +425,12 @@ def loop():
 					lora.send_a_message_with_timestamp("bme680 " + string)
 					ina260_adafruit.get_values(1)
 					time.sleep(delay)
+				lora.sleep()
+			if 3==j%N:
+				if neopixel_is_available:
+					neopixel_adafruit.set_color(0, 255, 0)
+				if dotstar_is_available:
+					dotstar[0] = (0, 255, 0, dotstar_brightness)
 				if ina260_is_available:
 					ina260_adafruit.show_average_values(0)
 					values = ina260_adafruit.get_average_values(0)
@@ -428,12 +438,24 @@ def loop():
 					lora.send_a_message_with_timestamp("ina260bin0 " + string)
 					ina260_adafruit.get_values(1)
 					time.sleep(delay)
+			if 6==j%N:
+				if neopixel_is_available:
+					neopixel_adafruit.set_color(0, 255, 0)
+				if dotstar_is_available:
+					dotstar[0] = (0, 255, 0, dotstar_brightness)
+				if ina260_is_available:
 					ina260_adafruit.show_average_values(1)
 					values = ina260_adafruit.get_average_values(1)
 					string = str(values)
 					lora.send_a_message_with_timestamp("ina260bin1 " + string)
 					ina260_adafruit.get_values(1)
 					time.sleep(delay)
+				lora.sleep()
+			if 9==j%N:
+				if neopixel_is_available:
+					neopixel_adafruit.set_color(0, 255, 0)
+				if dotstar_is_available:
+					dotstar[0] = (0, 255, 0, dotstar_brightness)
 				if as7341_is_available:
 					values = as7341_adafruit.get_average_values()
 					string = str(values)
