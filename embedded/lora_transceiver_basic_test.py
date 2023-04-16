@@ -39,9 +39,10 @@ except (KeyboardInterrupt, ReloadException):
 except MemoryError as error_message:
 	print("MemoryError: " + str(error_message))
 #print(str(gc.mem_free()))
-from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string
+from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string, create_new_logfile_with_string_embedded
 
 ina260_address = 0x40
+dirname = "/logs"
 
 def setup():
 	generic.start_uptime()
@@ -55,20 +56,20 @@ def setup():
 	generic.print_os_ver()
 	dotstar_is_available = False
 	neopixel_is_available = False
-	if 'unexpectedmaker_feathers2'==board.board_id: # for uf2 boot, click [RESET], then about a second later click [BOOT]
-		import feathers2
-		feathers2.enable_LDO2(True)
-		feathers2.led_set(False)
-		r = 25
-		g = 50
-		b = 100
-		global dotstar_brightness
-		dotstar_brightness = 0.05
-		import adafruit_dotstar
-		global dotstar
-		dotstar = adafruit_dotstar.DotStar(board.APA102_SCK, board.APA102_MOSI, 1, brightness=dotstar_brightness, auto_write=True)
-		dotstar[0] = (r, g, b, dotstar_brightness)
-		dotstar_is_available = True
+#	if 'unexpectedmaker_feathers2'==board.board_id: # for uf2 boot, click [RESET], then about a second later click [BOOT]
+#		import feathers2
+#		feathers2.enable_LDO2(True)
+#		feathers2.led_set(False)
+#		r = 25
+#		g = 50
+#		b = 100
+#		global dotstar_brightness
+#		dotstar_brightness = 0.05
+#		import adafruit_dotstar
+#		global dotstar
+#		dotstar = adafruit_dotstar.DotStar(board.APA102_SCK, board.APA102_MOSI, 1, brightness=dotstar_brightness, auto_write=True)
+#		dotstar[0] = (r, g, b, dotstar_brightness)
+#		dotstar_is_available = True
 	label = "unknown"
 	try:
 		m = storage.getmount("/")
@@ -81,6 +82,11 @@ def setup():
 	info("our label is " + label)
 	my_adafruit_io_prefix = ""
 	node_type = None
+	global my_lora_identifier
+	my_lora_identifier = "lora? unknown"
+	import digitalio
+	CS = digitalio.DigitalInOut(board.D5)
+	RESET = digitalio.DigitalInOut(board.D6)
 	if "LORARECEIVE"==label:
 		node_type = "uplink"
 		should_use_bme680 = False
@@ -94,6 +100,8 @@ def setup():
 		nodeid = 1
 		should_use_neopixel = False
 		should_use_rotary_encoder = True
+		should_use_sdcard = True
+		my_lora_identifier = "lora1 transponder uplink esp32tft adalogger rotary"
 	elif "LORASEND2"==label: # rp2040 feather
 		node_type = "gathering"
 		should_use_bme680 = False
@@ -105,7 +113,9 @@ def setup():
 		nodeid = 2
 		should_use_neopixel = True
 		should_use_rotary_encoder = False
-	elif "LORASEND3"==label: # feather_m0_rfm9x - needs loralight.py
+		should_use_sdcard = False
+		my_lora_identifier = "lora2 rp2040 as7341 ina260 solar"
+	elif "LORASEND3"==label: # feather_m0_rfm9x - m0 procesor needs loralight.py and even then it's difficult
 		node_type = "gathering"
 		should_use_bme680 = False
 		should_use_as7341 = False
@@ -116,6 +126,23 @@ def setup():
 		nodeid = 3
 		should_use_neopixel = False
 		should_use_rotary_encoder = False
+		should_use_sdcard = False
+		my_lora_identifier = "lora3 m0 can't circuitpython this much..."
+	elif "LORASEND4"==label: # rp2040 rfm95x feather
+		node_type = "gathering"
+		should_use_bme680 = False
+		should_use_as7341 = True
+		should_use_RTC = False
+		should_use_airlift = False
+		use_built_in_wifi = False
+		should_use_ina260 = True
+		nodeid = 2
+		should_use_neopixel = True
+		should_use_rotary_encoder = False
+		should_use_sdcard = False
+		my_lora_identifier = "lora4 rp2040 rfm95x as7341 ina260 solar"
+		CS = digitalio.DigitalInOut(board.RFM_CS)
+		RESET = digitalio.DigitalInOut(board.RFM_RST)
 	else:
 		warning("board filesystem has no label")
 	if should_use_neopixel:
@@ -126,20 +153,35 @@ def setup():
 	if neopixel_is_available:
 		neopixel_adafruit.set_color(255, 255, 255)
 	global LED
-	import digitalio
 	LED = digitalio.DigitalInOut(board.D13)
 	LED.direction = digitalio.Direction.OUTPUT
 	global button
-	if 'unexpectedmaker_feathers2'==board.board_id:
+#	if 'unexpectedmaker_feathers2'==board.board_id:
+#		button = digitalio.DigitalInOut(board.D0)
+#	else:
+	try:
+		button = digitalio.DigitalInOut(board.BUTTON)
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except:
 		button = digitalio.DigitalInOut(board.D0)
-	else:
-		try:
-			button = digitalio.DigitalInOut(board.BUTTON)
-		except (KeyboardInterrupt, ReloadException):
-			raise
-		except:
-			button = digitalio.DigitalInOut(board.D0)
 	button.switch_to_input(pull=digitalio.Pull.UP)
+	global encoder
+	global last_position
+	global encoder_switch
+	global encoder_pixel
+	global spi
+	try:
+		spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as error_message:
+		spi = board.SPI()
+#	if 'unexpectedmaker_feathers2'==board.board_id:
+#		CS = digitalio.DigitalInOut(board.D20)
+#		RESET = digitalio.DigitalInOut(board.D21)
+	if neopixel_is_available:
+		neopixel_adafruit.set_color(255, 0, 255)
 	try:
 		global i2c
 		try:
@@ -152,10 +194,6 @@ def setup():
 		raise
 	except Exception as error_message:
 		error(str(error_message))
-	global encoder
-	global last_position
-	global encoder_switch
-	global encoder_pixel
 	global rotary_encoder_is_available
 	rotary_encoder_is_available = False
 	if should_use_rotary_encoder:
@@ -212,19 +250,6 @@ def setup():
 		except:
 			warning("can't talk to ina260 at address " + generic.hex(ina260_address))
 			raise
-	global spi
-	try:
-		spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-	except (KeyboardInterrupt, ReloadException):
-		raise
-	except Exception as error_message:
-		spi = board.SPI()
-	if 'unexpectedmaker_feathers2'==board.board_id:
-		CS = digitalio.DigitalInOut(board.D20)
-		RESET = digitalio.DigitalInOut(board.D21)
-	else:
-		CS = digitalio.DigitalInOut(board.D5)
-		RESET = digitalio.DigitalInOut(board.D6)
 	global RTC_is_available
 	RTC_is_available = False
 	if should_use_RTC:
@@ -238,8 +263,19 @@ def setup():
 		except Exception as error_message:
 			RTC_is_available = False
 			error(str(error_message))
-	if neopixel_is_available:
-		neopixel_adafruit.set_color(255, 0, 255)
+	global sdcard_is_available
+	sdcard_is_available = False
+	global dirname
+	if should_use_sdcard:
+		import microsd_adafruit
+		sdcard_is_available = microsd_adafruit.setup_sdcard_for_logging_data(spi, board.D10, dirname)
+	else:
+		dirname = ""
+	if sdcard_is_available:
+		if RTC_is_available:
+			create_new_logfile_with_string_embedded(dirname, "lora_transceiver", pcf8523_adafruit.get_timestring2())
+		else:
+			create_new_logfile_with_string_embedded(dirname, "lora_transceiver")
 	global airlift_is_available
 	airlift_is_available = False
 	if should_use_airlift:
@@ -314,7 +350,7 @@ def loop():
 			button_was_pressed = True
 		if first_time_through:
 			first_time_through = False
-			lora.send_a_message_with_timestamp("lora node coming online")
+			lora.send_a_message_with_timestamp(my_lora_identifier + " coming online")
 			if ina260_is_available:
 				ina260_adafruit.get_values(1)
 			if "gathering"==node_type:
