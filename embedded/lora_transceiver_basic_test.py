@@ -28,6 +28,7 @@ import busio
 import storage
 import simpleio
 import adafruit_rfm9x
+import microsd_adafruit
 import neopixel_adafruit
 import ina260_adafruit
 import generic
@@ -269,15 +270,16 @@ def setup():
 	sdcard_is_available = False
 	global dirname
 	if should_use_sdcard:
-		import microsd_adafruit
 		sdcard_is_available = microsd_adafruit.setup_sdcard_for_logging_data(spi, board.D10, dirname)
 	else:
 		dirname = ""
 	if sdcard_is_available:
+		global log_filename
 		if RTC_is_available:
-			create_new_logfile_with_string_embedded(dirname, "lora_transceiver", pcf8523_adafruit.get_timestring2())
+			log_filename = create_new_logfile_with_string_embedded(dirname, "lora_transceiver", pcf8523_adafruit.get_timestring2())
 		else:
-			create_new_logfile_with_string_embedded(dirname, "lora_transceiver")
+			log_filename = create_new_logfile_with_string_embedded(dirname, "lora_transceiver")
+		microsd_adafruit.list_files(dirname)
 	global airlift_is_available
 	airlift_is_available = False
 	if should_use_airlift:
@@ -408,6 +410,8 @@ def loop():
 				#if 0==t.tm_sec or 30==t.tm_sec:
 				if 0==t.tm_sec or 30==t.tm_sec or 15==t.tm_sec or 45==t.tm_sec:
 					lora.send_a_message_with_timestamp("the current time")
+				if 0==t.tm_sec and 0==t.tm_min:
+					microsd_adafruit.list_file(dirname, log_filename)
 		j += 1
 		if "gathering"==node_type and N<=j:
 			if 0==j%N:
