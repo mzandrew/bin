@@ -22,8 +22,8 @@ def setup_sdcard_for_logging_data(spi, cs_pin, dirname):
 		#	f.write("Hello, World!\r\n")
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
-		warning("unable to find/mount sdcard")
+	except Exception as message:
+		warning("unable to find/mount sdcard: " + str(message))
 		return False
 	return True
 

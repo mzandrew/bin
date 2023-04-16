@@ -26,6 +26,7 @@ try:
 	#m.label = "roof2"
 	#m.label = "LORASEND2"
 	#m.label = "LORASEND3"
+	m.label = "LORASEND4"
 	#m.label = "CIRCUITPY"
 	#m.label = "OUTDOOR"
 	#m.label = "NEOCLOCK1"
@@ -33,7 +34,7 @@ try:
 	#m.label = "LIVINGROOM"
 	#m.label = "GARAGEPART"
 	#m.label = "GARAGEHUM"
-	m.label = "BATHROOM"
+	#m.label = "BATHROOM"
 	try:
 		import os
 		os.unlink("boot.py")
