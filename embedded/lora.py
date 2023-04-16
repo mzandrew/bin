@@ -25,6 +25,22 @@ def increment_error_count_and_reset_if_too_high():
 		generic.reset()
 
 def setup(spi, cs, reset, frequency, baudrate, tx_power_dbm, airlift_available, RTC_available, type_of_node, adafruit_io_prefix, mynodeid):
+	global airlift_is_available
+	airlift_is_available = airlift_available
+	if airlift_is_available:
+		global airlift
+		import airlift
+	global RTC_is_available
+	RTC_is_available = RTC_available
+	if RTC_is_available:
+		global pcf8523_adafruit
+		import pcf8523_adafruit
+	global node_type
+	node_type = type_of_node
+	global my_adafruit_io_prefix
+	my_adafruit_io_prefix = adafruit_io_prefix
+	global nodeid
+	nodeid = mynodeid
 	global rfm9x
 	rfm9x = adafruit_rfm9x.RFM9x(spi=spi, cs=cs, reset=reset, frequency=frequency, baudrate=baudrate)
 	change_tx_power_dbm(tx_power_dbm)
@@ -42,22 +58,6 @@ def setup(spi, cs, reset, frequency, baudrate, tx_power_dbm, airlift_available, 
 			rfm9x.node = 1
 			rfm9x.destination = 2
 		info("we are node " + str(rfm9x.node))
-	global airlift_is_available
-	airlift_is_available = airlift_available
-	if airlift_is_available:
-		global airlift
-		import airlift
-	global RTC_is_available
-	RTC_is_available = RTC_available
-	if RTC_is_available:
-		global pcf8523_adafruit
-		import pcf8523_adafruit
-	global node_type
-	node_type = type_of_node
-	global my_adafruit_io_prefix
-	my_adafruit_io_prefix = adafruit_io_prefix
-	global nodeid
-	nodeid = mynodeid
 
 def change_tx_power_dbm(new_tx_power_dbm):
 	if new_tx_power_dbm<5:
