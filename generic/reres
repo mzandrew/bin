@@ -6,19 +6,22 @@
 # 2015-01-25 updated
 # 2019-10-17 updated
 # 2022-08-31 updated
+# 2023-04-27 updated
 
 declare res
 #res="640x480"
-res="1024x768"
+#res="1024x768"
 #res="1280x1024"
-#res="1600x1200"
+res="1600x1200"
+#res="1632x1224"
 
 function run {
 	local dir="${@}"
-	if [ -e "${dir}" ] && [ -d "${dir}" ]; then
+	if [ -e "${dir}" ] && [ -d "${dir}" ] && [ "${dir: -7}" != "@eaDir/" ]; then
 		echo "$dir"
+		cd "$dir"
 		# find files and create a lowres version of each in lowres/
-		find "${dir}" -maxdepth 1 -type f -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" | while read each; do
+		find -maxdepth 1 -type f -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" | while read each; do
 			mkdir -p "lowres"
 			if [ "${each}" -nt "lowres/${each}" ]; then
 				echo "converting ${each} to ${res}"
@@ -27,12 +30,12 @@ function run {
 			fi
 		done
 		# if it didn't make a lowres/ subdir, then there's no source files and we're done
-		if [ ! -e "${dir}/lowres" ]; then
+		if [ ! -e "lowres" ]; then
 			return
 		fi
 		# delete files in lowres/ that don't have a match:
-		for each in "${dir}/lowres"/*; do
-			if [ "${each}" == "${dir}/lowres/*" ]; then
+		for each in "lowres"/*; do
+			if [ "${each}" == "lowres/*" ]; then
 				continue
 			fi
 			if [ -e "$each" ]; then
@@ -44,8 +47,8 @@ function run {
 			fi
 		done
 		local -i count_of_valid_source_files=0
-		for each in "${dir}/lowres"/*; do
-			if [ "${each}" == "${dir}/lowres/*" ]; then
+		for each in "lowres"/*; do
+			if [ "${each}" == "lowres/*" ]; then
 				continue
 			fi
 			count_of_valid_source_files=$((count_of_valid_source_files+1))
@@ -53,18 +56,21 @@ function run {
 		#echo "$count_of_valid_source_files"
 		if [ ${count_of_valid_source_files} -lt 1 ]; then
 			echo "removing unneeded lowres subdir..."
-			rm -rf "${dir}/lowres"
+			rm -rf "lowres"
 		fi
 	fi
 }
 
+declare localdir=$(pwd)
+#echo "localdir = $localdir"
 # https://superuser.com/a/1070947/539022
 if [ $# -gt 0 ]; then
 	for each; do
+		cd "${localdir}"
 		run "$each"
 	done
 else
-	#find . -type d -name "lowres" -prune -o -type d -exec $0 "{}" \;
-	find . -type d -name "lowres" -prune -o -type d -print
+	find . -type d -name "lowres" -o -name "@eaDir" -prune -o -type d -exec $0 "{}" \;
+	#find . -type d -name "lowres" -prune -o -type d -print
 fi
 
