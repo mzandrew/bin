@@ -50,7 +50,7 @@ feed_name[1][0] = [ "living-room-hum", "3d-printer-hum", "garage-hum", "outdoor-
 short_feed_name[1][0] = [ "living", "3dprint", "garage", "out", "bath" ]
 
 plot_name[0][1] = "pressure"
-minimum[0][1] = 0.997
+minimum[0][1] = 0.996
 maximum[0][1] = 1.009
 feed_name[0][1] = [ "living-room-pressure", "3d-printer-pressure", "garage-pressure", "outdoor-pressure" ]
 short_feed_name[0][1] = [ "living", "3dprint", "garage", "out" ]
