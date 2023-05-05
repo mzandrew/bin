@@ -406,9 +406,9 @@ def loop():
 			if RTC_is_available:
 				t = pcf8523_adafruit.get_struct_time()
 				debug2(str(t.tm_sec))
-				#if 0==t.tm_sec:
+				if 0==t.tm_sec:
 				#if 0==t.tm_sec or 30==t.tm_sec:
-				if 0==t.tm_sec or 30==t.tm_sec or 15==t.tm_sec or 45==t.tm_sec:
+				#if 0==t.tm_sec or 30==t.tm_sec or 15==t.tm_sec or 45==t.tm_sec:
 					lora.send_a_message_with_timestamp("the current time")
 				if 0==t.tm_sec and 0==t.tm_min:
 					microsd_adafruit.list_file(dirname, log_filename)

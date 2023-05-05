@@ -173,7 +173,7 @@ def decode_a_message(packet):
 	except Exception as error_message:
 		warning("message garbled RSSI=" + str(rssi) + "dBm")
 		error(str(error_message))
-		increment_error_count_and_reset_if_too_high()
+		#increment_error_count_and_reset_if_too_high()
 		if airlift_is_available:
 			try:
 				airlift.post_data(my_adafruit_io_prefix + "-garb-rssi", rssi)
