@@ -28,9 +28,8 @@ function amdgpu_dkms {
 }
 
 function rocm_hip_sdk {
-#	for ver in 5.0.2 5.1.4 5.2.5 5.3.3 5.4.3; do
 	for ver in 5.4.3; do
-		echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/rocm-keyring.gpg] https://repo.radeon.com/rocm/apt/$ver jammy main" | sudo tee -a /etc/apt/sources.list.d/rocm.list
+		echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/rocm-keyring.gpg] https://repo.radeon.com/rocm/apt/$ver jammy main" | sudo tee /etc/apt/sources.list.d/rocm.list
 	done
 	echo -e 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
 	sudo apt update
@@ -43,7 +42,8 @@ EOF
 }
 
 function show_status {
-	export PATH=$PATH:/opt/rocm-5.4.3/bin:/opt/rocm-5.4.3/opencl/bin
+	#echo 'export PATH=$PATH:/opt/rocm/bin' >> ~/.bashrc
+	export PATH=$PATH:/opt/rocm/bin
 	/opt/rocm/bin/rocminfo
 	#/opt/rocm/opencl/bin/clinfo
 }
