@@ -5,7 +5,7 @@
 # update for clhep from git
 # update for geant4 10.05: new prerequisites: zlib; new dataset versions; other associated changes
 # update for geant 4.10.07; ubuntu20.04; new dataset versions
-# last updated 2021-04-08 by mza
+# last updated 2023-05-24 by mza
 
 declare dir="$HOME/build/geant4"
 declare tdir="$dir"
@@ -34,23 +34,29 @@ deblist="$deblist qtbase5-dev"
 #rpmlist="$rpmlist libXmu-devel"
 declare -i numcores=$(($(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk '{print $3}')+1))
 declare MAKE="make -j$numcores"
+echo "using $numcores cores to compile..."
 
 # check http://geant4.cern.ch/support/download.shtml
-declare geant_version_string_a="geant4.10.05.p01" # latest as of 2019-04-25
-declare geant_version_string_b="Geant4-10.5.1" # install subdir name
+#declare geant_version_string_a="geant4.10.05.p01" # latest as of 2019-04-25
+#declare geant_version_string_b="Geant4-10.5.1" # install subdir name
 #declare geant_version_string_a="geant4.10.06.p03"
 #declare geant_version_string_b="Geant4-10.6.3" # install subdir name
 #declare geant_version_string_a="geant4.10.07.p01" # latest as of 2021-04-06
 #declare geant_version_string_b="Geant4-10.7.1" # install subdir name
+declare geant_version_string_a="geant4.11.1.1" # latest as of 2023-05-24
+declare geant_version_string_b="geant4-v11.1.1-831f69382912c44d27800821b0265454d912756c" # install subdir name
 
 # for 10.5:
-datasets_list="G4NDL.4.5.tar.gz G4EMLOW.7.7.tar.gz G4PhotonEvaporation.5.3.tar.gz G4RadioactiveDecay.5.3.tar.gz G4PARTICLEXS.1.1.tar.gz G4PII.1.3.tar.gz G4RealSurface.2.1.1.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4ENSDFSTATE.2.2.tar.gz"
+#datasets_list="G4NDL.4.5.tar.gz G4EMLOW.7.7.tar.gz G4PhotonEvaporation.5.3.tar.gz G4RadioactiveDecay.5.3.tar.gz G4PARTICLEXS.1.1.tar.gz G4PII.1.3.tar.gz G4RealSurface.2.1.1.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4ENSDFSTATE.2.2.tar.gz"
 
 # for 10.6:
 #datasets_list="G4NDL.4.6.tar.gz G4PARTICLEXS.3.1.tar.gz G4PII.1.3.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4EMLOW.7.9.1.tar.gz G4PhotonEvaporation.5.5.tar.gz G4RadioactiveDecay.5.4.tar.gz G4PARTICLEXS.2.1.tar.gz G4RealSurface.2.1.1.tar.gz G4ENSDFSTATE.2.2.tar.gz"
 
 # for 10.7:
 #datasets_list="G4NDL.4.6.tar.gz G4EMLOW.7.13.tar.gz G4PhotonEvaporation.5.7.tar.gz G4RadioactiveDecay.5.6.tar.gz G4PARTICLEXS.3.1.tar.gz G4PII.1.3.tar.gz G4RealSurface.2.2.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4ENSDFSTATE.2.3.tar.gz G4PARTICLEXS.3.1.1.tar.gz"
+
+# for 11.1:
+datasets_list="G4NDL.4.7.tar.gz G4EMLOW.8.2.tar.gz G4PhotonEvaporation.5.7.tar.gz G4RadioactiveDecay.5.6.tar.gz G4PARTICLEXS.4.0.tar.gz G4PII.1.3.tar.gz G4RealSurface.2.2.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4ENSDFSTATE.2.3.tar.gz G4TENDL.1.4.tar.gz"
 
 declare list_of_things_that_should_be_there_after_complete_installation="
 	/usr/local/include/Geant4
@@ -384,12 +390,13 @@ function build_and_install_geant {
 	if [ ! -e $geant_version_string_a ]; then
 		if [ ! -e $tdir/$file ]; then
 			cd $tdir
-			wget "https://geant4-data.web.cern.ch/releases/$file"
+			wget "https://gitlab.cern.ch/geant4/geant4/-/archive/v11.1.1/$file"
+			#wget "https://geant4-data.web.cern.ch/releases/$file"
 		fi
 		echo "extracting from $file..."
 		tar xzf $tdir/$file
 	fi
-	cd $geant_version_string_a
+	cd $geant_version_string_b
 	mkdir -p build
 	cd build
 	#export INVENTOR_SOXT_LIBRARY="/usr/local/lib/libSoXt.so"
@@ -420,9 +427,10 @@ function build_and_install_geant {
 	fi
 	cd /usr/local/share
 	if [ -e Geant4 ]; then
-		sudo rm Geant4
+		sudo rm -rf Geant4
 	fi
 	sudo ln -s $geant_version_string_b Geant4
+	sudo ldconfig
 }
 
 function print_geant4_build_run_help {
