@@ -45,7 +45,8 @@ function show_status {
 	#echo 'export PATH=$PATH:/opt/rocm/bin' >> ~/.bashrc
 	export PATH=$PATH:/opt/rocm/bin
 	/opt/rocm/bin/rocminfo
-	#/opt/rocm/opencl/bin/clinfo
+	dkms status
+	/opt/rocm/bin/rocm-smi
 }
 
 #linux_firmware

@@ -1,15 +1,17 @@
 #!/bin/bash -e
 
 # written 2020-01-15 by mza
-# last updated 2020-07-23 by mza
+# last updated 2023-05-18 by mza
 
 # when trying it on ubuntu 20.04:
 # E: Unable to locate package python-pip
+# when trying it on ubuntu 22.04:
+# E: Package 'python-pip-whl' has no installation candidate
 
 function install_prerequisites_apt {
 	#sudo nice apt -y update
 	#sudo nice apt -y upgrade
-	sudo nice apt -y install python2 python-pip-whl snmp libsmi2-common erlang-snmp bc python-tk
+	sudo nice apt -y install python2 python2-pip-whl snmp libsmi2-common erlang-snmp bc python-tk libncurses5
 	# python-imaging-tk
 }
 
