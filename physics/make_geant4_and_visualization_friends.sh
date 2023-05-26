@@ -395,17 +395,23 @@ function build_and_install_soxt {
 
 function build_and_install_geant {
 	echo; echo "geant4"
+	cd /usr/local/share
+	if [ -e Geant4 ]; then
+		sudo rm -rf Geant4
+	fi
+	sudo ln -s $geant_version_string_b Geant4
 	file="${geant_version_string_a}.tar.gz"
 	cd $dir
-	if [ ! -e $geant_version_string_c ]; then
+	if [ ! -e $geant_version_string_b ]; then
 		if [ ! -e $tdir/$file ]; then
 			cd $tdir
 			wget $geant_url
 		fi
 		echo "extracting from $file..."
 		tar xzf $tdir/$file
+		#mv "$geant_version_string_c" "$geant_version_string_b"
 	fi
-	cd $geant_version_string_c
+	cd "$geant_version_string_b"
 	mkdir -p build
 	cd build
 	#export INVENTOR_SOXT_LIBRARY="/usr/local/lib/libSoXt.so"
@@ -413,6 +419,7 @@ function build_and_install_geant {
 	if [ ! -e Makefile ]; then
 		#$CMAKE .. -DGEANT4_USE_QT=ON -DGEANT4_USE_INVENTOR=ON
 		$CMAKE .. -DGEANT4_USE_QT=ON -DGEANT4_INSTALL_DATA=OFF -DGEANT4_INSTALL_DATADIR="/usr/local/share/$geant_version_string_b/data"
+		# -DCMAKE_INSTALL_PREFIX="/usr/local"
 	else
 		echo "geant4 already cmake'd"
 	fi
@@ -434,11 +441,6 @@ function build_and_install_geant {
 	elif [ -e /usr/local/lib64/$geant_version_string_b ]; then
 		fix_permissions /usr/local/lib64/$geant_version_string_b
 	fi
-	cd /usr/local/share
-	if [ -e Geant4 ]; then
-		sudo rm -rf Geant4
-	fi
-	sudo ln -s $geant_version_string_b Geant4
 	sudo ldconfig
 }
 
