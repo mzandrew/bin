@@ -7,6 +7,10 @@ import board # pip3 install adafruit-blinka python3-rpi.gpio # sudo apt install 
 
 addresses = [ 0x10, 0x12 ]
 
+def setup(bus):
+	global i2c
+	i2c = bus
+
 def set_voltage_on_channel(channel, voltage):
 	command = 0x20 + (channel % 8)
 	value = int(2**16 * voltage / 2.5)
@@ -27,6 +31,6 @@ def set_voltage_on_all_channels(voltage):
 
 if __name__ == "__main__":
 	i2c = board.I2C()
-	set_voltage_on_all_channels(1.0000)
+	set_voltage_on_all_channels(1.20)
 	#set_voltage_on_channel(8, 2.345678)
 
