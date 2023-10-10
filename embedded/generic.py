@@ -1,5 +1,5 @@
 # written 2021-12-28 by mza
-# last updated 2023-03-09 by mza
+# last updated 2023-10-10 by mza
 
 import os
 import sys
@@ -8,8 +8,17 @@ import atexit
 import gc
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
-def hex(number, width=1):
-	return "%0*x" % (width, number)
+def hex(number, width=1, pad_with_zeroes=True):
+	if pad_with_zeroes:
+		return "%0*x" % (width, number)
+	else:
+		return "%*x" % (width, number)
+
+def dec(number, width=1, pad_with_zeroes=True):
+	if pad_with_zeroes:
+		return "%0*d" % (width, number)
+	else:
+		return "%*d" % (width, number)
 
 def fround(value, precision):
 	if value<0.0:

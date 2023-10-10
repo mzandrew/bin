@@ -1,4 +1,4 @@
-# last updated 2023-10-05 by mza
+# last updated 2023-10-10 by mza
 
 import time
 import math
@@ -442,11 +442,16 @@ def setup_7seg_numeric_backpack_4(i2c, address=0x70):
 	# from https://learn.adafruit.com/adafruit-led-backpack/0-dot-56-seven-segment-backpack-circuitpython-and-python-usage
 	from adafruit_ht16k33.segments import Seg7x4
 	global display
-	display = Seg7x4(i2c, address=address)
-	display.brightness = 0.25
-	#display.print("8421")
-	#time.sleep(1)
-	#display.print("12:30")
+	try:
+		display = Seg7x4(i2c, address=address)
+		display.brightness = 0.25
+		#display.brightness = 1.0
+		#display.print("8421")
+		#time.sleep(1)
+		#display.print("12:30")
+		return 0x70
+	except:
+		raise
 
 def update_temperature_display_on_matrix_backpack():
 	matrix_backpack.auto_write = False
