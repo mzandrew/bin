@@ -47,7 +47,10 @@ def parse_RTC():
 			m = int(m)
 			s = int(s)
 			hms = str(h12) + ":" + "%0*d"%(2,m) + ":" + "%0*d"%(2,s)
-			time_string = dec(h12, 2, False) + ":" + dec(m, 2, True)
+			if 0==h12:
+				time_string = dec(12, 2, False) + ":" + dec(m, 2, True)
+			else:
+				time_string = dec(h12, 2, False) + ":" + dec(m, 2, True)
 			if not old_hour==h24:
 				info(string + " " + hms)
 				if 0==h24:
