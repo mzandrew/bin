@@ -65,6 +65,9 @@ def parse_RTC():
 			old_minute = m
 			if 2000==yyyy and 1==mm:
 				debug("need to update RTC from network time")
+				global airlift_is_available
+				if not airlift_is_available:
+					airlift_is_available = airlift.setup_wifi(my_wifi_name)
 				if airlift_is_available:
 					airlift.update_time_from_server()
 					parse_RTC()
@@ -105,15 +108,18 @@ def setup():
 	else:
 		info("RTC is not available")
 	display_adafruit.setup_7seg_numeric_backpack_4(i2c)
-	global airlift_is_available
-	airlift_is_available = airlift.setup_wifi(my_wifi_name)
 	if 0:
+		global airlift_is_available
+		airlift_is_available = airlift.setup_wifi(my_wifi_name)
 		if airlift_is_available:
 			airlift.update_time_from_server()
 
 def loop():
 	global should_check_network_time
 	if should_check_network_time:
+		global airlift_is_available
+		if not airlift_is_available:
+			airlift_is_available = airlift.setup_wifi(my_wifi_name)
 		if airlift_is_available:
 			airlift.update_time_from_server()
 		should_check_network_time = False
