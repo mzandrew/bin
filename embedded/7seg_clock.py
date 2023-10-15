@@ -2,7 +2,7 @@
 
 # written 2023-10-05 by mza
 # borrowed bits and bobs from neopixel_clockface.py
-# last updated 2023-10-10 by mza
+# last updated 2023-10-15 by mza
 
 # to install:
 # cp -ar adafruit_register adafruit_ds3231.mpy adafruit_requests.mpy adafruit_io adafruit_minimqtt adafruit_display_text adafruit_ht16k33 /media/mza/7SEGCLOK/lib/
@@ -17,7 +17,7 @@ import display_adafruit
 import ds3231_adafruit
 import airlift
 from generic import *
-from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush, exception
 
 my_wifi_name = "7segclock"
 
@@ -82,7 +82,8 @@ def setup():
 		string = "using I2C1 "
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		#i2c = busio.I2C(board.SCL, board.SDA)
 		i2c = board.I2C()
 		string = "using I2C0 "
@@ -120,8 +121,12 @@ def loop():
 	global should_update_clockface
 	if should_update_clockface:
 		info(time_string)
-		display_adafruit.update_string_on_7seg_numeric_backpack_4(time_string)
-		should_update_clockface = False
+		try:
+			display_adafruit.update_string_on_7seg_numeric_backpack_4(time_string)
+			should_update_clockface = False
+		except Exception as e:
+			exception(e)
+			pass
 	time.sleep(1)
 
 if __name__ == "__main__":

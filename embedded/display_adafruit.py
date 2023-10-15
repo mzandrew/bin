@@ -1,4 +1,4 @@
-# last updated 2023-10-10 by mza
+# last updated 2023-10-15 by mza
 
 import time
 import math
@@ -6,7 +6,7 @@ import board
 import displayio
 import terminalio
 from adafruit_display_text import label
-from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush, exception
 
 display_has_autorefresh = True
 
@@ -45,7 +45,8 @@ def setup_i2c_oled_display_ssd1327(i2c, address):
 		import adafruit_ssd1327 # sudo pip3 install adafruit-circuitpython-ssd1327
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		print("unable to find adafruit_ssd1327 library")
 		return False
 	try:
@@ -53,7 +54,8 @@ def setup_i2c_oled_display_ssd1327(i2c, address):
 		display = adafruit_ssd1327.SSD1327(display_bus, width=128, height=128)
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		error("can't initialize ssd1327 display over i2c (address " + hex(address) + ")")
 		return False
 	return True
@@ -66,7 +68,8 @@ def setup_i2c_oled_display_sh1107(i2c, address):
 		import adafruit_displayio_sh1107
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		print("unable to find adafruit_displayio_sh1107 library")
 		return False
 	try:
@@ -75,7 +78,8 @@ def setup_i2c_oled_display_sh1107(i2c, address):
 		display.auto_refresh = False
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		error("can't initialize sh1107 display over i2c (address " + hex(address) + ")")
 		return False
 	return True
@@ -93,14 +97,16 @@ def setup_builtin_lcd_hx8357():
 		display = board.DISPLAY
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		print("can't initialize hx8357 display")
 		return False
 #	try:
 #		setup_pwm_backlight(backlight_pin, 1.0)
 #	except (KeyboardInterrupt, ReloadException):
 #		raise
-#	except:
+#	except Exception as e:
+#		exception(e)
 #		print("can't initialize pwm for display backlight")
 	#board.DISPLAY.brightness = 0.75
 	board.DISPLAY.auto_brightness = True
@@ -117,14 +123,16 @@ def setup_builtin_epd():
 		display = board.DISPLAY
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		print("can't initialize epd display")
 		return False
 #	try:
 #		setup_pwm_backlight(backlight_pin, 1.0)
 #	except (KeyboardInterrupt, ReloadException):
 #		raise
-#	except:
+#	except Exception as e:
+#		exception(e)
 #		print("can't initialize pwm for display backlight")
 	#print("complete")
 	return True
@@ -237,14 +245,16 @@ def refresh():
 		#info("worked immediately")
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		time.sleep(0.05)
 		try:
 			display.refresh()
 			#info("worked after 50 ms")
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
+		except Exception as e:
+			exception(e)
 			pass
 
 def format_for_plot(values, minimum, maximum):
@@ -298,12 +308,14 @@ def setup_ili9341(spi, tft_cs, tft_dc):
 		import adafruit_ili9341
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		print("unable to find adafruit_ili9341 library")
 		return False
 #	try:
 #		displayio.release_displays()
-#	except:
+#	except Exception as e:
+#		exception(e)
 #		pass
 	#tft_cs = board.D9
 	#tft_dc = board.D10 # conflicts with adalogger cs
@@ -318,7 +330,8 @@ def setup_ili9341(spi, tft_cs, tft_dc):
 		return True
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		return False
 
 def setup_st7789(spi, tft_cs, tft_dc, tft_reset):
@@ -328,12 +341,14 @@ def setup_st7789(spi, tft_cs, tft_dc, tft_reset):
 		import adafruit_st7789
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		print("unable to find adafruit_st7789 library")
 		return False
 #	try:
 #		displayio.release_displays()
-#	except:
+#	except Exception as e:
+#		exception(e)
 #		pass
 	try:
 		display_bus = displayio.FourWire(spi, chip_select=tft_cs, command=tft_dc, reset=tft_reset)
@@ -342,7 +357,8 @@ def setup_st7789(spi, tft_cs, tft_dc, tft_reset):
 		return True
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		raise
 		return False
 
@@ -351,7 +367,8 @@ def setup_pwm_backlight(backlight_pin, backlight_brightness=0.95):
 		import pwmio
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		warning("can't find library pwmio; can't control backlight brightness")
 	PWM_MAX = 65535
 	try:
@@ -359,7 +376,8 @@ def setup_pwm_backlight(backlight_pin, backlight_brightness=0.95):
 		backlight_pwm.duty_cycle = int(backlight_brightness * PWM_MAX)
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		warning("can't initialize display backlight pwm pin")
 
 def setup_dotstar_matrix(auto_write = True):
@@ -372,7 +390,8 @@ def setup_dotstar_matrix(auto_write = True):
 		dots.auto_write = False
 		dots.show()
 		dots.auto_write = auto_write
-	except:
+	except Exception as e:
+		exception(e)
 		error("error setting up dotstar matrix")
 		return False
 	return True
@@ -408,7 +427,8 @@ def setup_matrix_backpack(i2c, address=0x70):
 	global matrix_backpack
 	try:
 		import adafruit_ht16k33.matrix
-	except:
+	except Exception as e:
+		exception(e)
 		error("can't load adafruit_ht16k33 module")
 		return False
 	try:
@@ -417,7 +437,8 @@ def setup_matrix_backpack(i2c, address=0x70):
 		matrix_backpack.auto_write = False
 		#matrix_backpack.brightness = 0.5
 		#matrix_backpack.blink_rate = 0
-	except:
+	except Exception as e:
+		exception(e)
 		return False
 	return True
 
@@ -425,7 +446,8 @@ def setup_alphanumeric_backpack(i2c, address=0x70):
 	global alphanumeric_backpack
 	try:
 		import adafruit_ht16k33.segments
-	except:
+	except Exception as e:
+		exception(e)
 		error("can't load adafruit_ht16k33 module")
 		return False
 	try:
@@ -433,7 +455,8 @@ def setup_alphanumeric_backpack(i2c, address=0x70):
 		alphanumeric_backpack.auto_write = False
 		#alphanumeric_backpack.brightness = 0.5
 		#alphanumeric_backpack.blink_rate = 0
-	except:
+	except Exception as e:
+		exception(e)
 		error("can't find alphanumeric backpack (i2c address " + hex(address) + ")")
 		return False
 	return True
@@ -450,7 +473,8 @@ def setup_7seg_numeric_backpack_4(i2c, address=0x70):
 		#time.sleep(1)
 		#display.print("12:30")
 		return 0x70
-	except:
+	except Exception as e:
+		exception(e)
 		raise
 
 def update_temperature_display_on_matrix_backpack():
@@ -486,5 +510,9 @@ def update_temperature_display_on_alphanumeric_backpack(temperature):
 	alphanumeric_backpack.show()
 
 def update_string_on_7seg_numeric_backpack_4(string):
-	display.print(string)
+	try:
+		display.print(string)
+	except Exception as e:
+		exception(e)
+		raise
 
