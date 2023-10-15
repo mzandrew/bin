@@ -230,7 +230,7 @@ def parse_RTC():
 				debug("minute = " + str(m))
 				debug("second = " + str(s))
 			old_minute = m
-			if 2000==yyyy and 1==mm and 1==dd:
+			if 2000==yyyy and 1==mm:
 				debug("need to update RTC from network time")
 				if airlift_is_available:
 					airlift.update_time_from_server()
