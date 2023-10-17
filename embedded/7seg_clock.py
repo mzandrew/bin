@@ -21,6 +21,15 @@ from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3,
 
 my_wifi_name = "7segclock"
 
+def connect_to_wifi_if_necessary_and_get_ntp_time():
+	global airlift_is_available
+	if not airlift_is_available:
+		airlift_is_available = airlift.setup_wifi(my_wifi_name)
+	if airlift_is_available:
+		airlift.update_time_from_server()
+		return True
+	return False
+
 def parse_RTC():
 	# "2000-01-01.001146"
 	global h12
@@ -32,7 +41,11 @@ def parse_RTC():
 	global should_check_network_time
 	global time_string
 	if RTC_is_available:
-		string = ds3231_adafruit.get_timestring2()
+		try:
+			string = ds3231_adafruit.get_timestring2()
+		except Exception as e:
+			exception(e)
+			return
 		debug(string)
 		match = re.search("([0-9][0-9][0-9][0-9])-([0-9][0-9])-([0-9][0-9])\.([0-9][0-9])([0-9][0-9])([0-9][0-9])", string)
 		if match:
@@ -65,11 +78,7 @@ def parse_RTC():
 			old_minute = m
 			if 2000==yyyy and 1==mm:
 				debug("need to update RTC from network time")
-				global airlift_is_available
-				if not airlift_is_available:
-					airlift_is_available = airlift.setup_wifi(my_wifi_name)
-				if airlift_is_available:
-					airlift.update_time_from_server()
+				if connect_to_wifi_if_necessary_and_get_ntp_time():
 					parse_RTC()
 
 def setup():
@@ -109,20 +118,13 @@ def setup():
 		info("RTC is not available")
 	display_adafruit.setup_7seg_numeric_backpack_4(i2c)
 	if 0:
-		global airlift_is_available
-		airlift_is_available = airlift.setup_wifi(my_wifi_name)
-		if airlift_is_available:
-			airlift.update_time_from_server()
+		connect_to_wifi_if_necessary_and_get_ntp_time()
 
 def loop():
 	global should_check_network_time
 	if should_check_network_time:
-		global airlift_is_available
-		if not airlift_is_available:
-			airlift_is_available = airlift.setup_wifi(my_wifi_name)
-		if airlift_is_available:
-			airlift.update_time_from_server()
-		should_check_network_time = False
+		if connect_to_wifi_if_necessary_and_get_ntp_time():
+			should_check_network_time = False
 	parse_RTC()
 	global should_update_clockface
 	if should_update_clockface:
