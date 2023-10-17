@@ -117,6 +117,8 @@ def setup():
 	else:
 		info("RTC is not available")
 	display_adafruit.setup_7seg_numeric_backpack_4(i2c)
+	global airlift_is_available
+	airlift_is_available = False
 	if 0:
 		connect_to_wifi_if_necessary_and_get_ntp_time()
 
