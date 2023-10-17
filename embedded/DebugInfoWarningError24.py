@@ -151,9 +151,9 @@ def warning(string, should_flush=1):
 		print_string_stderr(string, should_flush)
 		print_string_logfile(string, should_flush)
 
-def exception(string, should_flush=1):
+def exception(e, should_flush=1):
 	if verbosity>=2:
-		string = "EXCEPTION:  " + string
+		string = "EXCEPTION:  " + str(e)
 		print_string_stderr(string, should_flush)
 		print_string_logfile(string, should_flush)
 
