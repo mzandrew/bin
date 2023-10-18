@@ -2,7 +2,7 @@
 
 # written 2023-10-05 by mza
 # borrowed bits and bobs from neopixel_clockface.py
-# last updated 2023-10-15 by mza
+# last updated 2023-10-18 by mza
 
 # to install:
 # cp -ar adafruit_register adafruit_ds3231.mpy adafruit_requests.mpy adafruit_io adafruit_minimqtt adafruit_display_text adafruit_ht16k33 /media/mza/7SEGCLOK/lib/
@@ -43,6 +43,8 @@ def parse_RTC():
 	if RTC_is_available:
 		try:
 			string = ds3231_adafruit.get_timestring2()
+		except (KeyboardInterrupt, ReloadException):
+			raise
 		except Exception as e:
 			exception(e)
 			return
@@ -69,6 +71,9 @@ def parse_RTC():
 				if 0==h24:
 					should_check_network_time = True
 					debug("just past midnight - need to update RTC from network time")
+#			if not old_minute==m:
+#				if 0==m%10:
+#					should_check_network_time = True
 			old_hour = h24
 			if not old_minute==m:
 				should_update_clockface = True
@@ -134,6 +139,8 @@ def loop():
 		try:
 			display_adafruit.update_string_on_7seg_numeric_backpack_4(time_string)
 			should_update_clockface = False
+		except (KeyboardInterrupt, ReloadException):
+			raise
 		except Exception as e:
 			exception(e)
 			pass
