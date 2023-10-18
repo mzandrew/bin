@@ -3,7 +3,7 @@
 
 import time
 import adafruit_ds3231
-from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush, exception
 
 def setup(i2c):
 	global rtc
