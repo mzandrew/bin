@@ -92,6 +92,9 @@ export HISTFILESIZE=
 if [ -e "${HOME}/bin" ]; then
 	PATH=$PATH:$(cd "${HOME}/bin"; echo $(find \( -type d -o -type l \)) | sed -e "s,^\. ,./ ," | sed -e "s,$, ," | sed -e "s,\./\([^ ]*\) ,${HOME}/bin/\1:,g" | sed -e "s,:$,,")
 fi
+if [ -e "${HOME}/.local/bin" ]; then
+	PATH="${PATH}:${HOME}/.local/bin"
+fi
 #set | grep ^PATH=
 #/home/mza/bin/:/home/mza/bin/bin:/home/mza/bin/cygwin-bin:/home/mza/bin/generic
 
