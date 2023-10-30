@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
 # written 2022-04-30 by mza
-# last updated 2023-01-04 by mza
+# last updated 2023-10-29 by mza
 
-COUNT = 1000
+# if we try to specify the number of items to return, we now get this:
+# EXCEPTION:  Client.data() got an unexpected keyword argument 'max_results'
+
+COUNT = None
 
 import sys
 import time
