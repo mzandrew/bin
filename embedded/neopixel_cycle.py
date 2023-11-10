@@ -2,7 +2,7 @@
 
 # written 2021-04-21 by mza
 # with help from https://learn.adafruit.com/adafruit-neopixel-driver-bff/circuitpython
-# last updated 2023-10-26 by mza
+# last updated 2023-11-10 by mza
 
 # to install:
 # cp -ar adafruit_pixelbuf.mpy neopixel.mpy /media/mza/CIRCUITPY/lib/
@@ -17,7 +17,11 @@ if 0:
 	NUMPIXELS = 1
 	PIN = board.NEOPIXEL
 else:
-	NUMPIXELS = 90
+	NUMPIXELS = 60
+	#NUMPIXELS = 90
+	#NUMPIXELS = 120
+	#NUMPIXELS = 144
+	#NUMPIXELS = 165
 	PIN = board.A3
 
 SPEED = 0.001
