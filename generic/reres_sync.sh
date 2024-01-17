@@ -13,6 +13,7 @@
 #declare string="-resize ${res}>" # > = only make smaller; never enlarge
 
 declare megapixels=3.0
+megapixels=2.0
 declare -i pixels=$(echo "$megapixels*1000000/1" | bc)
 declare string="-resize ${pixels}@>" # > = only make smaller; never enlarge
 #echo "$string"
