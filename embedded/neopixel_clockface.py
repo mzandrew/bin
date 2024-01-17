@@ -27,12 +27,17 @@ AMBIENT_BRIGHTNESS_FOR_MIN_NEOPIXEL_BRIGHTNESS = 0.0
 NEOPIXEL_BRIGHTNESS_MAX = 6.0
 AMBIENT_BRIGHTNESS_FOR_MAX_NEOPIXEL_BRIGHTNESS = 2.0
 
+mode = "normal"
+#mode = "pulsed"
+PULSE_TIMING_ON_ms = 1000
+
 AMBIENT_CHANNEL = 5
 NUMBER_OF_MINUTE_PIXELS = 60
 OFFSET_FOR_MINUTE_HAND = 7
 NUMBER_OF_PIXELS_PER_HOUR = 8 # 1=ring_of_12; 2=ring_of_24; 8=12_sticks
-NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR = 2 # 1=ring_of_12; 1,2=ring_of_24; [1-8]=12_sticks
-FIRST_PIXEL_TO_LIGHT_UP_FOR_HOUR_DOT = 5 # 1=ring_of_12; 1,2=ring_of_24; [1-8]=12_sticks
+FIRST_PIXEL_TO_LIGHT_UP_FOR_HOUR = 7 # 0=ring_of_12; 0,1=ring_of_24; [0-7]=12_sticks
+NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR = 1 # 1=ring_of_12; 1,2=ring_of_24; [1-8]=12_sticks
+FIRST_PIXEL_TO_LIGHT_UP_FOR_HOUR_DOT = 6 # 0=ring_of_12; 0,1=ring_of_24; [0-7]=12_sticks
 NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR_DOT = 2 # 1=ring_of_12; 1,2=ring_of_24; [1-8]=12_sticks
 NUMBER_OF_HOUR_PIXELS = 12*NUMBER_OF_PIXELS_PER_HOUR
 
@@ -44,7 +49,7 @@ ILLUMINATE_EVERY_FIFTEEN_MINUTES = False # 0, 15, 30, 45
 BLACK           = ( 0,  0,  0, 0)
 TRUE_WHITE      = ( 0,  0,  0, 1)
 COMPOSITE_WHITE = ( 1,  1,  1, 0)
-GREEN           = ( 0,  2,  0, 0)
+GREEN           = ( 0,  1,  0, 0)
 BLUE            = ( 0,  0,  1, 0)
 RED             = ( 1,  0,  0, 0)
 if ILLUMINATE_EVERY_THREE_HOURS:
@@ -188,7 +193,7 @@ def draw_clockface():
 	for hh in range(0, 12, 3): # 0,3,6,9
 		for i in range(FIRST_PIXEL_TO_LIGHT_UP_FOR_HOUR_DOT, FIRST_PIXEL_TO_LIGHT_UP_FOR_HOUR_DOT + NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR_DOT): # [0] or [0,1] or [0,7]
 			hours[hh*NUMBER_OF_PIXELS_PER_HOUR+i] = list(map(lambda x: int(x*brightness), DOT_HOUR)) # 0,3,... or 0,1,6,7,... or 0,1,2,3,4,5,6,7,24,25,26,27,28,29,30,31,...
-	for i in range(NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR): # [0] or [0,1] or [0,7]
+	for i in range(FIRST_PIXEL_TO_LIGHT_UP_FOR_HOUR, FIRST_PIXEL_TO_LIGHT_UP_FOR_HOUR + NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR): # [0] or [0,1] or [0,7]
 		hours[h12*NUMBER_OF_PIXELS_PER_HOUR+i] = list(map(lambda x: int(x*brightness), hour_color))
 	minutes.fill(list(map(lambda x: int(x*brightness), BLACK))) # [0,59]
 	for mm in range(OFFSET_FOR_MINUTE_HAND, OFFSET_FOR_MINUTE_HAND+NUMBER_OF_MINUTE_PIXELS, NUMBER_OF_MINUTE_PIXELS//12): # [7,66]
@@ -196,8 +201,12 @@ def draw_clockface():
 	for mm in range(OFFSET_FOR_MINUTE_HAND, OFFSET_FOR_MINUTE_HAND+NUMBER_OF_MINUTE_PIXELS, NUMBER_OF_MINUTE_PIXELS//4): # [7,66]
 		minutes[mm%NUMBER_OF_MINUTE_PIXELS] = list(map(lambda x: int(x*brightness), DOT_MINUTE_FIFTEEN)) # [7,59],[0,6]
 	minutes[(m+OFFSET_FOR_MINUTE_HAND)%NUMBER_OF_MINUTE_PIXELS] = list(map(lambda x: int(x*brightness), minute_color))
-	hours.show()
 	minutes.show()
+	hours.show()
+	if mode=="pulsed":
+		time.sleep(PULSE_TIMING_ON_ms/1000)
+		hours.fill(list(map(lambda x: int(x*brightness), BLACK)))
+		hours.show()
 
 def parse_RTC():
 	# "2000-01-01.001146"
