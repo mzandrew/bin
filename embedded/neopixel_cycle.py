@@ -3,7 +3,9 @@
 # written 2021-04-21 by mza
 # with help from https://learn.adafruit.com/adafruit-neopixel-driver-bff/circuitpython
 # and from https://learn.adafruit.com/adafruit-qt-py-charger-bff/pinouts
-# last updated 2023-11-10 by mza
+# last updated 2023-12-06 by mza
+
+# solder lipo BFF to qtpy (ensure orientation is correct): only need GND, 5V, A2 and A3
 
 # to install:
 # cp -ar adafruit_pixelbuf.mpy neopixel.mpy /media/mza/CIRCUITPY/lib/
@@ -11,7 +13,7 @@
 # cp -a neopixel_cycle.py /media/mza/NEO90/code.py; sync
 
 DELAY = 0.001
-BRIGHTNESS = 0.2
+BRIGHTNESS = 0.0125
 MIN_LION_VOLTAGE = 3.3
 MAX_LION_VOLTAGE = 3.7
 N = 60
