@@ -2,7 +2,7 @@
 # with help from https://learn.adafruit.com/adafruit-circuit-playground-express/circuitpython-neopixel
 # and from https://learn.adafruit.com/adafruit-circuit-playground-express/circuitpython-digital-in-out
 # and from https://learn.adafruit.com/circuitpython-essentials/circuitpython-neopixel
-# last updated 2023-01-02 by mza
+# last updated 2024-01-16 by mza
 
 # to install:
 # cd lib
@@ -22,31 +22,31 @@ import ds3231_adafruit
 import airlift
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
-NEOPIXEL_BRIGHTNESS_MIN = 1
-AMBIENT_BRIGHTNESS_FOR_MIN_NEOPIXEL_BRIGHTNESS = 1.0
-NEOPIXEL_BRIGHTNESS_MAX = 6
-AMBIENT_BRIGHTNESS_FOR_MAX_NEOPIXEL_BRIGHTNESS = 10.0
-AMBIENT_CHANNEL = 5
+NEOPIXEL_BRIGHTNESS_MIN = 1.0
+AMBIENT_BRIGHTNESS_FOR_MIN_NEOPIXEL_BRIGHTNESS = 0.0
+NEOPIXEL_BRIGHTNESS_MAX = 6.0
+AMBIENT_BRIGHTNESS_FOR_MAX_NEOPIXEL_BRIGHTNESS = 2.0
 
+AMBIENT_CHANNEL = 5
 NUMBER_OF_MINUTE_PIXELS = 60
 OFFSET_FOR_MINUTE_HAND = 7
 NUMBER_OF_PIXELS_PER_HOUR = 8 # 1=ring_of_12; 2=ring_of_24; 8=12_sticks
-NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR = 7 # 1=ring_of_12; 1,2=ring_of_24; [1-8]=12_sticks
+NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR = 2 # 1=ring_of_12; 1,2=ring_of_24; [1-8]=12_sticks
 FIRST_PIXEL_TO_LIGHT_UP_FOR_HOUR_DOT = 5 # 1=ring_of_12; 1,2=ring_of_24; [1-8]=12_sticks
 NUMBER_OF_PIXELS_TO_LIGHT_UP_PER_HOUR_DOT = 2 # 1=ring_of_12; 1,2=ring_of_24; [1-8]=12_sticks
 NUMBER_OF_HOUR_PIXELS = 12*NUMBER_OF_PIXELS_PER_HOUR
 
 USE_TRUE_WHITE = False # use special white led or light up red, green and blue [note: the sticks do not have true white]
-ILLUMINATE_EVERY_THREE_HOURS = True # 12, 3, 6, 9
+ILLUMINATE_EVERY_THREE_HOURS = False # 12, 3, 6, 9
 ILLUMINATE_EVERY_FIVE_MINUTES = False # 0, 5, 10, ..., 55
 ILLUMINATE_EVERY_FIFTEEN_MINUTES = False # 0, 15, 30, 45
 
 BLACK           = ( 0,  0,  0, 0)
 TRUE_WHITE      = ( 0,  0,  0, 1)
 COMPOSITE_WHITE = ( 1,  1,  1, 0)
-GREEN           = ( 0, 20,  0, 0)
-BLUE            = ( 0,  0, 10, 0)
-RED             = (10,  0,  0, 0)
+GREEN           = ( 0,  2,  0, 0)
+BLUE            = ( 0,  0,  1, 0)
+RED             = ( 1,  0,  0, 0)
 if ILLUMINATE_EVERY_THREE_HOURS:
 	if USE_TRUE_WHITE:
 		DOT_HOUR   = TRUE_WHITE
@@ -123,15 +123,23 @@ def setup():
 		raise
 	except:
 		RTC_is_available = False
+	global airlift_is_available
+	airlift_is_available = False
 	if RTC_is_available:
 		string = ds3231_adafruit.get_timestring2()
-		info(string)
-	setup_neopixel_clockface()
-	global airlift_is_available
-	airlift_is_available = airlift.setup_wifi(my_wifi_name)
-	if 0:
+		info("RTC: " + string)
+		parse_RTC()
+		if yyyy<2024:
+			airlift_is_available = airlift.setup_wifi(my_wifi_name)
+			debug("need to update RTC from network time")
+			if airlift_is_available:
+				airlift.update_time_from_server()
+	else:
+		airlift_is_available = airlift.setup_wifi(my_wifi_name)
+		debug("need to update RTC from network time")
 		if airlift_is_available:
 			airlift.update_time_from_server()
+	setup_neopixel_clockface()
 
 def setup_neopixel_clockface():
 	global hours
@@ -139,10 +147,10 @@ def setup_neopixel_clockface():
 	global brightness
 	brightness = NEOPIXEL_BRIGHTNESS_MIN
 	if 8==NUMBER_OF_PIXELS_PER_HOUR:
-		hours = neopixel.NeoPixel(hours_neopixel_pin, NUMBER_OF_HOUR_PIXELS, brightness=1.0, auto_write=False)
+		hours = neopixel.NeoPixel(hours_neopixel_pin, NUMBER_OF_HOUR_PIXELS, brightness=brightness, auto_write=False)
 	else:
-		hours = neopixel.NeoPixel(hours_neopixel_pin, NUMBER_OF_HOUR_PIXELS, pixel_order=(1, 0, 2, 3), brightness=1.0, auto_write=False)
-	minutes = neopixel.NeoPixel(minutes_neopixel_pin, NUMBER_OF_MINUTE_PIXELS, pixel_order=(1, 0, 2, 3), brightness=1.0, auto_write=False)
+		hours = neopixel.NeoPixel(hours_neopixel_pin, NUMBER_OF_HOUR_PIXELS, pixel_order=(1, 0, 2, 3), brightness=brightness, auto_write=False)
+	minutes = neopixel.NeoPixel(minutes_neopixel_pin, NUMBER_OF_MINUTE_PIXELS, pixel_order=(1, 0, 2, 3), brightness=brightness, auto_write=False)
 
 def check_ambient_brightness():
 	global n
@@ -166,7 +174,7 @@ def check_ambient_brightness():
 			brightness = NEOPIXEL_BRIGHTNESS_MIN + (NEOPIXEL_BRIGHTNESS_MAX-NEOPIXEL_BRIGHTNESS_MIN)*(values[AMBIENT_CHANNEL]-AMBIENT_BRIGHTNESS_FOR_MIN_NEOPIXEL_BRIGHTNESS)/(AMBIENT_BRIGHTNESS_FOR_MAX_NEOPIXEL_BRIGHTNESS-AMBIENT_BRIGHTNESS_FOR_MIN_NEOPIXEL_BRIGHTNESS)
 		brightness = quantize_in_etas(brightness)
 		global brightness_string
-		brightness_string = "ch[" + str(AMBIENT_CHANNEL) + "] = " + str(values[AMBIENT_CHANNEL]) + "; new brightness = " + str(brightness)
+		brightness_string = "ambient light (ch[" + str(AMBIENT_CHANNEL) + "]) = " + str(values[AMBIENT_CHANNEL]) + "; new brightness = " + str(brightness)
 		n = 0
 		if eta<math.fabs(old_brightness-brightness):
 			should_update_clockface = True
@@ -196,13 +204,14 @@ def parse_RTC():
 	global h12
 	global h24
 	global m
+	global yyyy
 	global old_hour
 	global old_minute
 	global should_update_clockface
 	global should_check_network_time
 	if RTC_is_available:
 		string = ds3231_adafruit.get_timestring2()
-		debug(string)
+		debug2(string)
 		match = re.search("([0-9][0-9][0-9][0-9])-([0-9][0-9])-([0-9][0-9])\.([0-9][0-9])([0-9][0-9])([0-9][0-9])", string)
 		if match:
 			yyyy = int(match.group(1))
@@ -226,12 +235,13 @@ def parse_RTC():
 			old_hour = h24
 			if not old_minute==m:
 				should_update_clockface = True
-				debug("hour = " + str(h12))
-				debug("minute = " + str(m))
-				debug("second = " + str(s))
+				debug("hour = " + str(h12) + " minute = " + str(m) + " second = " + str(s))
 			old_minute = m
-			if 2000==yyyy and 1==mm:
+			if yyyy<2024:
 				debug("need to update RTC from network time")
+				global airlift_is_available
+				if not airlift_is_available:
+					airlift_is_available = airlift.setup_wifi(my_wifi_name)
 				if airlift_is_available:
 					airlift.update_time_from_server()
 					parse_RTC()
@@ -239,6 +249,9 @@ def parse_RTC():
 def loop():
 	global should_check_network_time
 	if should_check_network_time:
+		global airlift_is_available
+		if not airlift_is_available:
+			airlift_is_available = airlift.setup_wifi(my_wifi_name)
 		if airlift_is_available:
 			airlift.update_time_from_server()
 		should_check_network_time = False
@@ -251,16 +264,18 @@ def loop():
 	time.sleep(1)
 
 if __name__ == "__main__":
-	setup()
+	set_verbosity(4)
 	h12 = 0
 	h24 = 0
 	m = 0
+	yyyy = 2000
 	old_minute = 0
 	old_hour = 0
 	old_brightness = 0
 	brightness_string = ""
 	should_update_clockface = True
 	should_check_network_time = False
+	setup()
 	info("")
 	while True:
 		loop()
