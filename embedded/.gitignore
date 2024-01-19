@@ -1,9 +1,12 @@
+settings.toml
 .env
 *.csv
 csv
 code.py
 *.cap
 lib
+lib8
+lib9
 __pycache__
 backup
 contrib/rpi-rgb-led-matrix.tar
