@@ -9,7 +9,7 @@
 # configuration:
 length_of_hour_hand = 200
 length_of_minute_hand = 300
-distance_of_dot_from_center = 345
+distance_of_dot_from_center = 342
 radius_of_dot = 10
 background_color = 0x000000
 color_of_hour_hand = 0x4444ff
@@ -119,8 +119,10 @@ def draw_clockface():
 		theta = twopi*alpha/60
 		x0 = center_x + int(distance_of_dot_from_center*math.sin(theta))
 		y0 = center_y - int(distance_of_dot_from_center*math.cos(theta))
-		#graphics.display.root_group.append(Circle(x0=x0, y0=y0, r=radius_of_dot, fill=color_of_dot))
-		bitmaptools.draw_circle(bitmap, x0, y0, radius_of_dot, convert_24bit_to_16bit(color_of_dot))
+		bonus=1.0
+		if 0==alpha%15:
+			bonus=1.5
+		bitmaptools.draw_circle(bitmap, x0, y0, int(bonus*radius_of_dot), convert_24bit_to_16bit(color_of_dot))
 		bitmaptools.boundary_fill(bitmap, x0, y0, convert_24bit_to_16bit(color_of_dot), convert_24bit_to_16bit(background_color))
 
 def setup():
