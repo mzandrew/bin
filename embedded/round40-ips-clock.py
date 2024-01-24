@@ -4,7 +4,7 @@
 # based on https://learn.adafruit.com/simplifying-qualia-cirtcuitpython-projects/usage
 # and https://learn.adafruit.com/pico-w-wifi-with-circuitpython/pico-w-basic-wifi-test
 # and https://docs.circuitpython.org/projects/ntp/en/latest/examples.html#set-rtc
-# last updated 2024-01-18 by mza
+# last updated 2024-01-24 by mza
 
 # configuration:
 length_of_hour_hand = 200
@@ -25,6 +25,8 @@ width_of_minute_hand = 16
 #import storage
 #storage.disable_usb_drive()
 
+import gc
+import array
 import time
 import math
 import wifi
@@ -37,6 +39,7 @@ from adafruit_display_shapes.line import Line
 from adafruit_display_shapes.circle import Circle
 from adafruit_display_shapes.polygon import Polygon
 from adafruit_qualia.peripherals import Peripherals
+import bitmaptools
 
 #peripherals = Peripherals()
 #peripherals.backlight = True
@@ -106,6 +109,11 @@ def get_ntp_time_if_necessary():
 	else:
 		print("rtc: " + str(datetime))
 
+def convert_24bit_to_16bit(value_24bit):
+	value_16bit = ((value_24bit>>19)&0x1f)<<11 | ((value_24bit>>10)&0x2f)<<5 | (value_24bit>>3)&0x1f 
+	#print(hex(value_24bit) + " -> " + hex(value_16bit))
+	return value_16bit
+
 def draw_clockface():
 	for alpha in range(0, 60, 5):
 		theta = twopi*alpha/60
@@ -116,26 +124,25 @@ def draw_clockface():
 def setup():
 	print()
 	#global startup_time; startup_time = time.monotonic()
+	global twopi; twopi = 2 * math.pi
 	global graphics, bitmap
 	graphics = Graphics(Displays.ROUND40, default_bg=None, auto_refresh=False)
+	global center_x, center_y
+	center_x = (graphics.display.width + 1) // 2
+	center_y = (graphics.display.height + 1) // 2
 	bitmap = displayio.Bitmap(graphics.display.width, graphics.display.height, 65535)
 	tile_grid = displayio.TileGrid(bitmap, pixel_shader=displayio.ColorConverter(input_colorspace=displayio.Colorspace.RGB565))
 	graphics.splash.append(tile_grid)
 	graphics.display.root_group = graphics.splash
-	global center_x, center_y
-	center_x = (graphics.display.width + 1) // 2
-	center_y = (graphics.display.height + 1) // 2
-	global twopi; twopi = 2 * math.pi
 	get_ntp_time_if_necessary()
 	draw_clockface()
 	#diff = time.monotonic() - startup_time; print (str(diff))
 
-def thickline(x1, y1, angle, length, width, color):
+def thickline(x1, y1, angle, length, width, color1, color2=background_color):
 	#x2 = x1 + int(length*math.sin(angle))
 	#y2 = y1 - int(length*math.cos(angle))
-	#return Line(x1, y1, x2, y2, color)
-	#return Polygon(points=[(x1, y1), (x2, y2)], outline=color)
-	points = []
+	#return Line(x1, y1, x2, y2, color1)
+	#return Polygon(points=[(x1, y1), (x2, y2)], outline=color1)
 	x_adjustment = int(width//2*math.cos(angle))
 	y_adjustment = int(width//2*math.sin(angle))
 	x3 = x1 + x_adjustment
@@ -146,24 +153,23 @@ def thickline(x1, y1, angle, length, width, color):
 	y5 = y1 - y_adjustment - int(length*math.cos(angle))
 	x6 = x1 - x_adjustment
 	y6 = y1 - y_adjustment
-	points.append((x3, y3))
-	points.append((x4, y4))
-	points.append((x5, y5))
-	points.append((x6, y6))
 	#print(str((x1, y1)) + " " + str((x2, y2)) + " " + str(points))
-	return Polygon(points=points, outline=color)
+	xs = array.array("i", (x3, x4, x5, x6))
+	ys = array.array("i", (y3, y4, y5, y6))
+	bitmaptools.draw_polygon(bitmap, xs, ys, convert_24bit_to_16bit(color1), 2)
+	#bitmaptools.boundary_fill(bitmap, x1, y1, convert_24bit_to_16bit(color1), convert_24bit_to_16bit(color2))
 
 def draw_hour_and_minute_hands(hour, minute):
 	minute_angle = twopi*minute/60
 	hour_angle = twopi*hour12/12
 	hour_angle += minute_angle/12
-	graphics.display.root_group.append(thickline(center_x, center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, color_of_minute_hand))
-	graphics.display.root_group.append(thickline(center_x, center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, color_of_hour_hand))
-	radius_of_middle_dot = max(width_of_minute_hand, width_of_hour_hand)//2 + 1
-	graphics.display.root_group.append(Circle(x0=center_x, y0=center_y, r=radius_of_middle_dot, fill=color_of_dot))
+	thickline(center_x, center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, color_of_minute_hand)
+	thickline(center_x, center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, color_of_hour_hand)
+	#radius_of_middle_dot = max(width_of_minute_hand, width_of_hour_hand)//2 + 1
+	#graphics.display.root_group.append(Circle(x0=center_x, y0=center_y, r=radius_of_middle_dot, fill=color_of_dot))
 	graphics.display.refresh()
-	graphics.display.root_group.append(thickline(center_x, center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, background_color))
-	graphics.display.root_group.append(thickline(center_x, center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, background_color))
+	thickline(center_x, center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, background_color, color_of_minute_hand)
+	thickline(center_x, center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, background_color, color_of_hour_hand)
 	#diff = time.monotonic() - startup_time; print (str(diff))
 
 setup()
@@ -179,5 +185,6 @@ while True:
 		we_still_need_to_get_ntp_time = True
 	if we_still_need_to_get_ntp_time:
 		get_ntp_time_and_set_RTC()
+	gc.collect() ; print(gc.mem_free())
 	time.sleep(60 - rtc.RTC().datetime.tm_sec)
 
