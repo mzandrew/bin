@@ -14,7 +14,7 @@ radius_of_dot = 10
 background_color = 0x000000
 color_of_hour_hand = 0x4444ff
 color_of_minute_hand = 0xff0000
-color_of_dot = 0x666666
+color_of_dot = 0x888888
 width_of_hour_hand = 24
 width_of_minute_hand = 16
 
@@ -110,7 +110,7 @@ def get_ntp_time_if_necessary():
 		print("rtc: " + str(datetime))
 
 def convert_24bit_to_16bit(value_24bit):
-	value_16bit = ((value_24bit>>19)&0x1f)<<11 | ((value_24bit>>10)&0x2f)<<5 | (value_24bit>>3)&0x1f 
+	value_16bit = ((value_24bit>>19)&0x1f)<<11 | ((value_24bit>>10)&0x3f)<<5 | (value_24bit>>3)&0x1f
 	#print(hex(value_24bit) + " -> " + hex(value_16bit))
 	return value_16bit
 
@@ -119,10 +119,15 @@ def draw_clockface():
 		theta = twopi*alpha/60
 		x0 = center_x + int(distance_of_dot_from_center*math.sin(theta))
 		y0 = center_y - int(distance_of_dot_from_center*math.cos(theta))
-		graphics.display.root_group.append(Circle(x0=x0, y0=y0, r=radius_of_dot, fill=color_of_dot))
+		#graphics.display.root_group.append(Circle(x0=x0, y0=y0, r=radius_of_dot, fill=color_of_dot))
+		bitmaptools.draw_circle(bitmap, x0, y0, radius_of_dot, convert_24bit_to_16bit(color_of_dot))
+		bitmaptools.boundary_fill(bitmap, x0, y0, convert_24bit_to_16bit(color_of_dot), convert_24bit_to_16bit(background_color))
 
 def setup():
 	print()
+	#convert_24bit_to_16bit(0xff0000)
+	#convert_24bit_to_16bit(0x00ff00)
+	#convert_24bit_to_16bit(0x0000ff)
 	#global startup_time; startup_time = time.monotonic()
 	global twopi; twopi = 2 * math.pi
 	global graphics, bitmap
