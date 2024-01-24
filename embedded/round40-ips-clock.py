@@ -45,7 +45,8 @@ import bitmaptools
 #peripherals.backlight = True
 fake_the_network_being_down_counter = 0
 #mode = "bitmaptools"
-mode = "display_shapes"
+#mode = "display_shapes"
+mode = "rotozoom"
 
 # shows QR code for a URL:
 if 0:
@@ -116,13 +117,14 @@ def convert_24bit_to_16bit(value_24bit):
 	#print(hex(value_24bit) + " -> " + hex(value_16bit))
 	return value_16bit
 
-def clear_bitmap():
-	bitmaptools.fill_region(bitmap, 0, 0, graphics.display.width, graphics.display.height, convert_24bit_to_16bit(background_color))
+def clear_bitmap(bitmap_name):
+	bitmaptools.fill_region(bitmap_name, 0, 0, graphics.display.width, graphics.display.height, convert_24bit_to_16bit(background_color))
 
 def draw_clockface():
 	print("draw_clockface()")
 	if "bitmaptools"==mode:
-		clear_bitmap()
+		clear_bitmap(bitmap)
+		clear_bitmap(dots_bitmap)
 	#objects = []
 	for alpha in range(0, 60, 5):
 		theta = twopi*alpha/60
@@ -131,12 +133,12 @@ def draw_clockface():
 		bonus=1.0
 		if 0==alpha%15:
 			bonus=1.5
-		if "bitmaptools"==mode:
-			bitmaptools.draw_circle(bitmap, x0, y0, int(bonus*radius_of_dot), convert_24bit_to_16bit(color_of_dot))
-			bitmaptools.boundary_fill(bitmap, x0, y0, convert_24bit_to_16bit(color_of_dot), convert_24bit_to_16bit(background_color))
-		else:
+		if "display_shapes"==mode:
 			object = Circle(x0=x0, y0=y0, r=int(bonus*radius_of_dot), fill=color_of_dot)
 			graphics.display.root_group.append(object)
+		else:
+			bitmaptools.draw_circle(dots_bitmap, x0, y0, int(bonus*radius_of_dot), convert_24bit_to_16bit(color_of_dot))
+			bitmaptools.boundary_fill(dots_bitmap, x0, y0, convert_24bit_to_16bit(color_of_dot), convert_24bit_to_16bit(background_color))
 	#return objects
 
 def setup():
@@ -152,12 +154,32 @@ def setup():
 	center_x = (graphics.display.width + 1) // 2
 	center_y = (graphics.display.height + 1) // 2
 	bitmap = displayio.Bitmap(graphics.display.width, graphics.display.height, 65535)
+	global dots_bitmap
+	dots_bitmap = displayio.Bitmap(graphics.display.width, graphics.display.height, 65535)
 	tile_grid = displayio.TileGrid(bitmap, pixel_shader=displayio.ColorConverter(input_colorspace=displayio.Colorspace.RGB565))
 	graphics.splash.append(tile_grid)
 	graphics.display.root_group = graphics.splash
 	get_ntp_time_if_necessary()
 	draw_clockface()
+	if "rotozoom"==mode:
+		rotozoom_hands()
 	#diff = time.monotonic() - startup_time; print (str(diff))
+
+def rotozoom_hands():
+	global hour_hand_bitmap
+	hour_hand_bitmap = displayio.Bitmap(graphics.display.width, graphics.display.height, 65535)
+	clear_bitmap(hour_hand_bitmap)
+	xs = array.array("i", (center_x-width_of_hour_hand//2, center_x+width_of_hour_hand//2, center_x+width_of_hour_hand//2, center_x-width_of_hour_hand//2))
+	ys = array.array("i", (center_y, center_y, center_y-length_of_hour_hand, center_y-length_of_hour_hand))
+	bitmaptools.draw_polygon(hour_hand_bitmap, xs, ys, convert_24bit_to_16bit(color_of_hour_hand), 2)
+	bitmaptools.boundary_fill(hour_hand_bitmap, center_x, center_y-length_of_hour_hand//2, convert_24bit_to_16bit(color_of_hour_hand), convert_24bit_to_16bit(background_color))
+	global minute_hand_bitmap
+	minute_hand_bitmap = displayio.Bitmap(graphics.display.width, graphics.display.height, 65535)
+	clear_bitmap(minute_hand_bitmap)
+	xs = array.array("i", (center_x-width_of_minute_hand//2, center_x+width_of_minute_hand//2, center_x+width_of_minute_hand//2, center_x-width_of_minute_hand//2))
+	ys = array.array("i", (center_y, center_y, center_y-length_of_minute_hand, center_y-length_of_minute_hand))
+	bitmaptools.draw_polygon(minute_hand_bitmap, xs, ys, convert_24bit_to_16bit(color_of_minute_hand), 2)
+	bitmaptools.boundary_fill(minute_hand_bitmap, center_x, center_y-length_of_minute_hand//2, convert_24bit_to_16bit(color_of_minute_hand), convert_24bit_to_16bit(background_color))
 
 def thickline(x1, y1, angle, length, width, color1, color2=background_color):
 	x2 = x1 + int(length*math.sin(angle))
@@ -180,7 +202,7 @@ def thickline(x1, y1, angle, length, width, color1, color2=background_color):
 		ys = array.array("i", (y3, y4, y5, y6))
 		bitmaptools.draw_polygon(bitmap, xs, ys, convert_24bit_to_16bit(color1), 2)
 		bitmaptools.boundary_fill(bitmap, (x2+x1)//2, (y2+y1)//2, convert_24bit_to_16bit(color1), convert_24bit_to_16bit(color2))
-	else:
+	elif "display_shapes"==mode:
 		points = []
 		points.append((x3, y3))
 		points.append((x4, y4))
@@ -194,8 +216,15 @@ def draw_hour_and_minute_hands(hour, minute):
 	minute_angle = twopi*minute/60
 	hour_angle = twopi*hour12/12
 	hour_angle += minute_angle/12
-	minute_hand = thickline(center_x, center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, color_of_minute_hand)
-	hour_hand = thickline(center_x, center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, color_of_hour_hand)
+	if "rotozoom"==mode:
+		#bitmaptools.blit(bitmap, hour_hand_bitmap, 0, 0)
+		#bitmaptools.blit(bitmap, minute_hand_bitmap, 0, 0)
+		bitmaptools.rotozoom(bitmap, dots_bitmap)
+		bitmaptools.rotozoom(bitmap, minute_hand_bitmap, angle=minute_angle, skip_index=0)
+		bitmaptools.rotozoom(bitmap, hour_hand_bitmap, angle=hour_angle, skip_index=0)
+	else:
+		minute_hand = thickline(center_x, center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, color_of_minute_hand)
+		hour_hand = thickline(center_x, center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, color_of_hour_hand)
 	#radius_of_middle_dot = max(width_of_minute_hand, width_of_hour_hand)//2 + 1
 	#bitmaptools.draw_circle(bitmap, center_x, center_y, radius_of_middle_dot, convert_24bit_to_16bit(color_of_dot))
 	#bitmaptools.boundary_fill(bitmap, center_x+2, center_y+2, convert_24bit_to_16bit(color_of_dot), convert_24bit_to_16bit(background_color))
@@ -203,7 +232,7 @@ def draw_hour_and_minute_hands(hour, minute):
 	if "bitmaptools"==mode:
 		thickline(center_x, center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, background_color, color_of_minute_hand)
 		thickline(center_x, center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, background_color, color_of_hour_hand)
-	else:
+	elif "display_shapes"==mode:
 		graphics.display.root_group.remove(hour_hand)
 		graphics.display.root_group.remove(minute_hand)
 	#diff = time.monotonic() - startup_time; print (str(diff))
