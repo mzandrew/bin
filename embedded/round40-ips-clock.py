@@ -114,7 +114,12 @@ def convert_24bit_to_16bit(value_24bit):
 	#print(hex(value_24bit) + " -> " + hex(value_16bit))
 	return value_16bit
 
+def clear_bitmap():
+	bitmaptools.fill_region(bitmap, 0, 0, graphics.display.width, graphics.display.height, convert_24bit_to_16bit(background_color))
+
 def draw_clockface():
+	print("draw_clockface()")
+	clear_bitmap()
 	for alpha in range(0, 60, 5):
 		theta = twopi*alpha/60
 		x0 = center_x + int(distance_of_dot_from_center*math.sin(theta))
@@ -188,6 +193,8 @@ while True:
 	second = datetime.tm_sec
 	hour12 = hour24 % 12
 	print(dec(hour24, 2) + ":" + dec(minute, 2) + ":" + dec(second, 2))
+	if 0==minute:
+		draw_clockface()
 	draw_hour_and_minute_hands(hour12, minute)
 	if hour24==23 and minute==59:
 		we_still_need_to_get_ntp_time = True
