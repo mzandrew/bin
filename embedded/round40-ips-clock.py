@@ -44,6 +44,8 @@ import bitmaptools
 #peripherals = Peripherals()
 #peripherals.backlight = True
 fake_the_network_being_down_counter = 0
+#mode = "bitmaptools"
+mode = "display_shapes"
 
 # shows QR code for a URL:
 if 0:
@@ -119,7 +121,9 @@ def clear_bitmap():
 
 def draw_clockface():
 	print("draw_clockface()")
-	clear_bitmap()
+	if "bitmaptools"==mode:
+		clear_bitmap()
+	#objects = []
 	for alpha in range(0, 60, 5):
 		theta = twopi*alpha/60
 		x0 = center_x + int(distance_of_dot_from_center*math.sin(theta))
@@ -127,8 +131,13 @@ def draw_clockface():
 		bonus=1.0
 		if 0==alpha%15:
 			bonus=1.5
-		bitmaptools.draw_circle(bitmap, x0, y0, int(bonus*radius_of_dot), convert_24bit_to_16bit(color_of_dot))
-		bitmaptools.boundary_fill(bitmap, x0, y0, convert_24bit_to_16bit(color_of_dot), convert_24bit_to_16bit(background_color))
+		if "bitmaptools"==mode:
+			bitmaptools.draw_circle(bitmap, x0, y0, int(bonus*radius_of_dot), convert_24bit_to_16bit(color_of_dot))
+			bitmaptools.boundary_fill(bitmap, x0, y0, convert_24bit_to_16bit(color_of_dot), convert_24bit_to_16bit(background_color))
+		else:
+			object = Circle(x0=x0, y0=y0, r=int(bonus*radius_of_dot), fill=color_of_dot)
+			graphics.display.root_group.append(object)
+	#return objects
 
 def setup():
 	print()
@@ -166,23 +175,37 @@ def thickline(x1, y1, angle, length, width, color1, color2=background_color):
 	x6 = x1 - x_adjustment
 	y6 = y1 - y_adjustment
 	#print(str((x1, y1)) + " " + str((x2, y2)) + " " + str(points))
-	xs = array.array("i", (x3, x4, x5, x6))
-	ys = array.array("i", (y3, y4, y5, y6))
-	bitmaptools.draw_polygon(bitmap, xs, ys, convert_24bit_to_16bit(color1), 2)
-	bitmaptools.boundary_fill(bitmap, (x2+x1)//2, (y2+y1)//2, convert_24bit_to_16bit(color1), convert_24bit_to_16bit(color2))
+	if "bitmaptools"==mode:
+		xs = array.array("i", (x3, x4, x5, x6))
+		ys = array.array("i", (y3, y4, y5, y6))
+		bitmaptools.draw_polygon(bitmap, xs, ys, convert_24bit_to_16bit(color1), 2)
+		bitmaptools.boundary_fill(bitmap, (x2+x1)//2, (y2+y1)//2, convert_24bit_to_16bit(color1), convert_24bit_to_16bit(color2))
+	else:
+		points = []
+		points.append((x3, y3))
+		points.append((x4, y4))
+		points.append((x5, y5))
+		points.append((x6, y6))
+		object = Polygon(points=points, outline=color1)
+		graphics.display.root_group.append(object)
+		return object
 
 def draw_hour_and_minute_hands(hour, minute):
 	minute_angle = twopi*minute/60
 	hour_angle = twopi*hour12/12
 	hour_angle += minute_angle/12
-	thickline(center_x, center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, color_of_minute_hand)
-	thickline(center_x, center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, color_of_hour_hand)
+	minute_hand = thickline(center_x, center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, color_of_minute_hand)
+	hour_hand = thickline(center_x, center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, color_of_hour_hand)
 	#radius_of_middle_dot = max(width_of_minute_hand, width_of_hour_hand)//2 + 1
 	#bitmaptools.draw_circle(bitmap, center_x, center_y, radius_of_middle_dot, convert_24bit_to_16bit(color_of_dot))
 	#bitmaptools.boundary_fill(bitmap, center_x+2, center_y+2, convert_24bit_to_16bit(color_of_dot), convert_24bit_to_16bit(background_color))
 	graphics.display.refresh()
-	thickline(center_x, center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, background_color, color_of_minute_hand)
-	thickline(center_x, center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, background_color, color_of_hour_hand)
+	if "bitmaptools"==mode:
+		thickline(center_x, center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, background_color, color_of_minute_hand)
+		thickline(center_x, center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, background_color, color_of_hour_hand)
+	else:
+		graphics.display.root_group.remove(hour_hand)
+		graphics.display.root_group.remove(minute_hand)
 	#diff = time.monotonic() - startup_time; print (str(diff))
 
 setup()
@@ -194,7 +217,8 @@ while True:
 	hour12 = hour24 % 12
 	print(dec(hour24, 2) + ":" + dec(minute, 2) + ":" + dec(second, 2))
 	if 0==minute:
-		draw_clockface()
+		if "bitmaptools"==mode:
+			draw_clockface()
 	draw_hour_and_minute_hands(hour12, minute)
 	if hour24==23 and minute==59:
 		we_still_need_to_get_ntp_time = True
