@@ -139,8 +139,8 @@ def setup():
 	#diff = time.monotonic() - startup_time; print (str(diff))
 
 def thickline(x1, y1, angle, length, width, color1, color2=background_color):
-	#x2 = x1 + int(length*math.sin(angle))
-	#y2 = y1 - int(length*math.cos(angle))
+	x2 = x1 + int(length*math.sin(angle))
+	y2 = y1 - int(length*math.cos(angle))
 	#return Line(x1, y1, x2, y2, color1)
 	#return Polygon(points=[(x1, y1), (x2, y2)], outline=color1)
 	x_adjustment = int(width//2*math.cos(angle))
@@ -157,7 +157,7 @@ def thickline(x1, y1, angle, length, width, color1, color2=background_color):
 	xs = array.array("i", (x3, x4, x5, x6))
 	ys = array.array("i", (y3, y4, y5, y6))
 	bitmaptools.draw_polygon(bitmap, xs, ys, convert_24bit_to_16bit(color1), 2)
-	#bitmaptools.boundary_fill(bitmap, x1, y1, convert_24bit_to_16bit(color1), convert_24bit_to_16bit(color2))
+	bitmaptools.boundary_fill(bitmap, (x2+x1)//2, (y2+y1)//2, convert_24bit_to_16bit(color1), convert_24bit_to_16bit(color2))
 
 def draw_hour_and_minute_hands(hour, minute):
 	minute_angle = twopi*minute/60
@@ -166,7 +166,8 @@ def draw_hour_and_minute_hands(hour, minute):
 	thickline(center_x, center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, color_of_minute_hand)
 	thickline(center_x, center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, color_of_hour_hand)
 	#radius_of_middle_dot = max(width_of_minute_hand, width_of_hour_hand)//2 + 1
-	#graphics.display.root_group.append(Circle(x0=center_x, y0=center_y, r=radius_of_middle_dot, fill=color_of_dot))
+	#bitmaptools.draw_circle(bitmap, center_x, center_y, radius_of_middle_dot, convert_24bit_to_16bit(color_of_dot))
+	#bitmaptools.boundary_fill(bitmap, center_x+2, center_y+2, convert_24bit_to_16bit(color_of_dot), convert_24bit_to_16bit(background_color))
 	graphics.display.refresh()
 	thickline(center_x, center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, background_color, color_of_minute_hand)
 	thickline(center_x, center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, background_color, color_of_hour_hand)
