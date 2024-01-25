@@ -17,7 +17,11 @@ width_of_hour_hand = 24
 width_of_minute_hand = 16
 
 # to install:
+# cd lib9
 # rsync -a adafruit_qualia adafruit_portalbase adafruit_bitmap_font adafruit_display_text adafruit_io adafruit_minimqtt adafruit_display_shapes adafruit_requests.mpy adafruit_fakerequests.mpy adafruit_pca9554.mpy adafruit_focaltouch.mpy adafruit_cst8xx.mpy adafruit_miniqr.mpy adafruit_ntp.mpy /media/mza/CIRCUITPY/lib/
+# cd ..
+# cp -a settings.toml /media/mza/CIRCUITPY/
+# cp -a round40-ips-clock.py /media/mza/CIRCUITPY/code.py; sync
 
 # to edit files with web workflow, you must disable usb mass storage (must be done in boot.py):
 #import storage
