@@ -4,6 +4,8 @@
 # based on https://learn.adafruit.com/simplifying-qualia-cirtcuitpython-projects/usage
 # and https://learn.adafruit.com/pico-w-wifi-with-circuitpython/pico-w-basic-wifi-test
 # and https://docs.circuitpython.org/projects/ntp/en/latest/examples.html#set-rtc
+# https://docs.circuitpython.org/projects/display-shapes/en/latest/api.html
+# https://docs.circuitpython.org/en/latest/shared-bindings/bitmaptools/index.html
 # last updated 2024-01-24 by mza
 
 # configuration:
