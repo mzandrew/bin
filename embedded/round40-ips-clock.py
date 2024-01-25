@@ -13,10 +13,6 @@ length_of_hour_hand = 200
 length_of_minute_hand = 300
 distance_of_dot_from_center = 342
 radius_of_dot = 10
-background_color = 0x000000
-color_of_hour_hand = 0x4444ff
-color_of_minute_hand = 0xff0000
-color_of_dot = 0x888888
 width_of_hour_hand = 24
 width_of_minute_hand = 16
 
@@ -42,6 +38,19 @@ from adafruit_display_shapes.circle import Circle
 from adafruit_display_shapes.polygon import Polygon
 from adafruit_qualia.peripherals import Peripherals
 import bitmaptools
+
+#palette_colors = 65535
+palette_colors = 6
+palette = displayio.Palette(palette_colors)
+palette[0] = 0x000000 # black
+palette[1] = 0xff0000 # red
+palette[2] = 0x00ff00 # green
+palette[3] = 0x4444ff # light blue
+palette[4] = 0x999999 # grey
+background_color = 0
+color_of_hour_hand = 3
+color_of_minute_hand = 1
+color_of_dot = 4
 
 #peripherals = Peripherals()
 #peripherals.backlight = True
@@ -114,13 +123,8 @@ def get_ntp_time_if_necessary():
 	else:
 		print("rtc: " + str(datetime))
 
-def convert_24bit_to_16bit(value_24bit):
-	value_16bit = ((value_24bit>>19)&0x1f)<<11 | ((value_24bit>>10)&0x3f)<<5 | (value_24bit>>3)&0x1f
-	#print(hex(value_24bit) + " -> " + hex(value_16bit))
-	return value_16bit
-
 def clear_bitmap(bitmap_name):
-	bitmaptools.fill_region(bitmap_name, 0, 0, graphics.display.width, graphics.display.height, convert_24bit_to_16bit(background_color))
+	bitmaptools.fill_region(bitmap_name, 0, 0, graphics.display.width, graphics.display.height, background_color)
 
 def draw_clockface():
 	print("draw_clockface()")
@@ -139,15 +143,12 @@ def draw_clockface():
 			object = Circle(x0=x0, y0=y0, r=int(bonus*radius_of_dot), fill=color_of_dot)
 			graphics.display.root_group.append(object)
 		else:
-			bitmaptools.draw_circle(dots_bitmap, x0, y0, int(bonus*radius_of_dot), convert_24bit_to_16bit(color_of_dot))
-			bitmaptools.boundary_fill(dots_bitmap, x0, y0, convert_24bit_to_16bit(color_of_dot), convert_24bit_to_16bit(background_color))
+			bitmaptools.draw_circle(dots_bitmap, x0, y0, int(bonus*radius_of_dot), color_of_dot)
+			bitmaptools.boundary_fill(dots_bitmap, x0, y0, color_of_dot, background_color)
 	#return objects
 
 def setup():
 	print()
-	#convert_24bit_to_16bit(0xff0000)
-	#convert_24bit_to_16bit(0x00ff00)
-	#convert_24bit_to_16bit(0x0000ff)
 	#global startup_time; startup_time = time.monotonic()
 	global twopi; twopi = 2 * math.pi
 	global graphics, bitmap
@@ -155,10 +156,10 @@ def setup():
 	global center_x, center_y
 	center_x = (graphics.display.width + 1) // 2
 	center_y = (graphics.display.height + 1) // 2
-	bitmap = displayio.Bitmap(graphics.display.width, graphics.display.height, 65535)
+	bitmap = displayio.Bitmap(graphics.display.width, graphics.display.height, palette_colors)
 	global dots_bitmap
-	dots_bitmap = displayio.Bitmap(graphics.display.width, graphics.display.height, 65535)
-	tile_grid = displayio.TileGrid(bitmap, pixel_shader=displayio.ColorConverter(input_colorspace=displayio.Colorspace.RGB565))
+	dots_bitmap = displayio.Bitmap(graphics.display.width, graphics.display.height, palette_colors)
+	tile_grid = displayio.TileGrid(bitmap, pixel_shader=palette)
 	graphics.splash.append(tile_grid)
 	graphics.display.root_group = graphics.splash
 	get_ntp_time_if_necessary()
@@ -169,19 +170,19 @@ def setup():
 
 def rotozoom_hands():
 	global hour_hand_bitmap
-	hour_hand_bitmap = displayio.Bitmap(graphics.display.width, graphics.display.height, 65535)
+	hour_hand_bitmap = displayio.Bitmap(graphics.display.width, graphics.display.height, palette_colors)
 	clear_bitmap(hour_hand_bitmap)
 	xs = array.array("i", (center_x-width_of_hour_hand//2, center_x+width_of_hour_hand//2, center_x+width_of_hour_hand//2, center_x-width_of_hour_hand//2))
 	ys = array.array("i", (center_y, center_y, center_y-length_of_hour_hand, center_y-length_of_hour_hand))
-	bitmaptools.draw_polygon(hour_hand_bitmap, xs, ys, convert_24bit_to_16bit(color_of_hour_hand), 2)
-	bitmaptools.boundary_fill(hour_hand_bitmap, center_x, center_y-length_of_hour_hand//2, convert_24bit_to_16bit(color_of_hour_hand), convert_24bit_to_16bit(background_color))
+	bitmaptools.draw_polygon(hour_hand_bitmap, xs, ys, color_of_hour_hand, 2)
+	bitmaptools.boundary_fill(hour_hand_bitmap, center_x, center_y-length_of_hour_hand//2, color_of_hour_hand, background_color)
 	global minute_hand_bitmap
-	minute_hand_bitmap = displayio.Bitmap(graphics.display.width, graphics.display.height, 65535)
+	minute_hand_bitmap = displayio.Bitmap(graphics.display.width, graphics.display.height, palette_colors)
 	clear_bitmap(minute_hand_bitmap)
 	xs = array.array("i", (center_x-width_of_minute_hand//2, center_x+width_of_minute_hand//2, center_x+width_of_minute_hand//2, center_x-width_of_minute_hand//2))
 	ys = array.array("i", (center_y, center_y, center_y-length_of_minute_hand, center_y-length_of_minute_hand))
-	bitmaptools.draw_polygon(minute_hand_bitmap, xs, ys, convert_24bit_to_16bit(color_of_minute_hand), 2)
-	bitmaptools.boundary_fill(minute_hand_bitmap, center_x, center_y-length_of_minute_hand//2, convert_24bit_to_16bit(color_of_minute_hand), convert_24bit_to_16bit(background_color))
+	bitmaptools.draw_polygon(minute_hand_bitmap, xs, ys, color_of_minute_hand, 2)
+	bitmaptools.boundary_fill(minute_hand_bitmap, center_x, center_y-length_of_minute_hand//2, color_of_minute_hand, background_color)
 
 def thickline(x1, y1, angle, length, width, color1, color2=background_color):
 	x2 = x1 + int(length*math.sin(angle))
@@ -202,8 +203,8 @@ def thickline(x1, y1, angle, length, width, color1, color2=background_color):
 	if "bitmaptools"==mode:
 		xs = array.array("i", (x3, x4, x5, x6))
 		ys = array.array("i", (y3, y4, y5, y6))
-		bitmaptools.draw_polygon(bitmap, xs, ys, convert_24bit_to_16bit(color1), 2)
-		bitmaptools.boundary_fill(bitmap, (x2+x1)//2, (y2+y1)//2, convert_24bit_to_16bit(color1), convert_24bit_to_16bit(color2))
+		bitmaptools.draw_polygon(bitmap, xs, ys, color1, 2)
+		bitmaptools.boundary_fill(bitmap, (x2+x1)//2, (y2+y1)//2, color1, color2)
 	elif "display_shapes"==mode:
 		points = []
 		points.append((x3, y3))
@@ -228,8 +229,8 @@ def draw_hour_and_minute_hands(hour, minute):
 		minute_hand = thickline(center_x, center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, color_of_minute_hand)
 		hour_hand = thickline(center_x, center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, color_of_hour_hand)
 	#radius_of_middle_dot = max(width_of_minute_hand, width_of_hour_hand)//2 + 1
-	#bitmaptools.draw_circle(bitmap, center_x, center_y, radius_of_middle_dot, convert_24bit_to_16bit(color_of_dot))
-	#bitmaptools.boundary_fill(bitmap, center_x+2, center_y+2, convert_24bit_to_16bit(color_of_dot), convert_24bit_to_16bit(background_color))
+	#bitmaptools.draw_circle(bitmap, center_x, center_y, radius_of_middle_dot, color_of_dot)
+	#bitmaptools.boundary_fill(bitmap, center_x+2, center_y+2, color_of_dot, background_color)
 	graphics.display.refresh()
 	if "bitmaptools"==mode:
 		thickline(center_x, center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, background_color, color_of_minute_hand)
