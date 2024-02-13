@@ -31,13 +31,14 @@ function install_packages_1 {
 	sudo apt -y install firefox-esr nfs-common tmux
 #	sudo apt -y install network-manager-openconnect-gnome # for VPN
 	sudo apt -y install libcanberra-gtk-module libcanberra-gtk3-module # to avoid annoying messages
-	sudo apt -y install vim-gtk cmake imagemagick eog
+	sudo apt -y install vim-gtk3 cmake imagemagick eog
 	sudo apt-get -y autoremove
 	sudo apt-get clean
 }
 
 function install_packages_2 {
-	sudo apt install -y raspinfo rpi.gpio-common raspi-gpio python3-rpi.gpio python3-gpiozero python-gpiozero python3-spidev i2c-tools spi-tools python3-picamera python-picamera u-boot-rpi rpiboot lm-sensors lshw libpigpio-dev pigpio-tools python-pigpio python3-pigpio # rpi-specific
+	sudo apt install -y raspinfo rpi.gpio-common raspi-gpio python3-rpi.gpio python3-gpiozero python3-spidev i2c-tools spi-tools u-boot-rpi rpiboot lm-sensors lshw libpigpio-dev pigpio-tools python3-pigpio # rpi-specific
+	# python-gpiozero python3-picamera python-picamera python-pigpio # no longer available
 	# python-rpi.gpio python-spidev wiringpi # no longer available
 	# rpi-chromium-mods # includes flash player
 	#sudo apt install mpd mpc easytag audacious # audio stuff
