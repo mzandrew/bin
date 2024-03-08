@@ -2,7 +2,7 @@
 
 # written 2022-06-23 by mza
 # based on indoor_hum_temp_pres.py
-# last updated 2023-01-07 by mza
+# last updated 2024-03-08 by mza
 
 # to install on a circuitpython device:
 # rsync -av *.py /media/circuitpython/
@@ -10,25 +10,28 @@
 # cd ~/build/adafruit-circuitpython/bundle/lib
 # rsync -r adafruit_pm25 adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
 
-import sys
-import time
-import atexit
+from sys import exit # sys.exit
+from time import sleep # time.sleep
+from atexit import register # atexit.register
 import board
-import busio
-import simpleio
+from busio import SPI, I2C
+#import simpleio
+from gc import collect, mem_free
 import microsd_adafruit
 import neopixel_adafruit
 import bme680_adafruit
 import pm25_adafruit
-import airlift
-import gps_adafruit
+import ds3231_adafruit
+import adafruit_tca9548a
+#import airlift
+#import gps_adafruit
 try:
 	from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 except (KeyboardInterrupt, ReloadException):
 	raise
 except:
 	print("can't find DebugInfoWarningError24.py")
-	sys.exit(0)
+	exit(0)
 import generic
 import display_adafruit
 
@@ -47,7 +50,7 @@ board_id = board.board_id
 info("we are " + board_id)
 if board_id=="pyportal_titano" or board_id=="pyportal":
 	my_wifi_name = "part-hum-temp-pres-portal"
-	my_adafruit_io_prefix = "congdon"
+	my_adafruit_io_prefix = "cleanroom"
 	FEATHER_ESP32S2 = False
 	use_pwm_status_leds = False
 	should_use_sdcard = True
@@ -108,24 +111,24 @@ def print_compact(string):
 	date = ""
 	if ""==date:
 		try:
-			import time
-			date = time.strftime("%Y-%m-%d+%X")
+			from time import strftime
+			date = strftime("%Y-%m-%d+%X")
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except:
 			pass
 	if ""==date and RTC_is_available:
 		try:
-			import pcf8523_adafruit
-			date = pcf8523_adafruit.get_timestring1()
+			from pcf8523_adafruit import get_timestring1
+			date = get_timestring1()
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except:
 			pass
 	if ""==date and gps_is_available:
 		try:
-			import gps_adafruit
-			date = gps_adafruit.get_time()
+			from gps_adafruit import get_time
+			date = get_time()
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except:
@@ -142,12 +145,12 @@ def main():
 #		simpleio.DigitalOut(board.I2C_TFT_POWER, value=1)
 	global i2c
 	try:
-		i2c = busio.I2C(board.SCL1, board.SDA1)
+		i2c = I2C(board.SCL1, board.SDA1)
 		string = "using I2C1 "
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
-		#i2c = busio.I2C(board.SCL, board.SDA)
+		#i2c = I2C(board.SCL, board.SDA)
 		i2c = board.I2C()
 		string = "using I2C0 "
 	info(string)
@@ -165,10 +168,10 @@ def main():
 	except:
 		error("particle count sensor not found")
 		pm25_is_available = False
-		#sys.exit(1)
+		#exit(1)
 	global spi
 	try:
-		spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO) # this line stops the builtin from working
+		spi = SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO) # this line stops the builtin from working
 		info("builtin SPI (2)")
 	except (KeyboardInterrupt, ReloadException):
 		raise
@@ -180,6 +183,7 @@ def main():
 			raise
 		except:
 			raise
+	collect()
 	global display_is_available
 	display_is_available = False
 	if should_use_display:
@@ -207,7 +211,7 @@ def main():
 		#display_adafruit.test_st7789()
 		#info("done with st7789 test")
 	#global uart
-	#uart = busio.UART(board.TX, board.RX, baudrate=9600, timeout=10)
+	#uart = UART(board.TX, board.RX, baudrate=9600, timeout=10)
 	global RTC_is_available
 	if should_use_RTC:
 		try:
@@ -257,8 +261,9 @@ def main():
 		raise
 	except:
 		error("bme680 not found")
-		sys.exit(1)
+		exit(1)
 		bme680_is_available = False
+	collect()
 	global battery_monitor_is_available
 	try:
 		battery_monitor_is_available = generic.setup_battery_monitor(i2c)
@@ -297,6 +302,8 @@ def main():
 	#gnuplot> set key autotitle columnheader
 	#gnuplot> set style data lines
 	#gnuplot> plot for [i=1:14] "solar_water_heater.log" using 0:i
+	collect()
+	print("mem free: " + str(mem_free()))
 	print_header()
 	loop()
 	info("bme680 no longer available; cannot continue")
@@ -394,7 +401,7 @@ def loop():
 						display_adafruit.update_plot(0, [particle_counts_to_plot[2], particle_counts_to_plot[3]])
 				display_adafruit.refresh()
 			info("waiting...")
-			time.sleep(delay_between_posting_and_next_acquisition)
+			sleep(delay_between_posting_and_next_acquisition)
 			delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, desired_loop_time)
 		neopixel_adafruit.set_color(0, 0, 255)
 		if use_pwm_status_leds:
@@ -402,10 +409,11 @@ def loop():
 		if airlift_is_available:
 			if 0==i%86300:
 				airlift.update_time_from_server()
-		time.sleep(delay_between_acquisitions)
+		sleep(delay_between_acquisitions)
+		collect()
 
 if __name__ == "__main__":
-	atexit.register(generic.reset)
+	register(generic.reset)
 	try:
 		main()
 	except KeyboardInterrupt:

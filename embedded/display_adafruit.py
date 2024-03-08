@@ -1,10 +1,10 @@
-# last updated 2023-10-15 by mza
+# last updated 2024-03-08 by mza
 
-import time
-import math
+from time import sleep
 import board
 import displayio
-import terminalio
+from terminalio import FONT
+from gc import collect, mem_free
 from adafruit_display_text import label
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush, exception
 
@@ -155,7 +155,7 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 	padding_size = 24
 	plot_width = tile_width - padding_size - 1
 	plot_height = tile_height - padding_size - 1
-	axes_bitmap = displayio.Bitmap(tile_width, tile_height, 1)
+	axes_bitmap = displayio.Bitmap(tile_width, tile_height, 2)
 	for i in range(padding_size//2, tile_width-padding_size//2):
 		axes_bitmap[i,padding_size//2] = 1
 		axes_bitmap[i,tile_height-padding_size//2] = 1
@@ -168,7 +168,14 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 	global plot_bitmap
 	plot_bitmap = []
 	for i in range(number_of_plots):
-		plot_bitmap.append(displayio.Bitmap(plot_width, plot_height, 8))
+		try:
+			collect()
+			print("mem free: " + str(mem_free()))
+			plot_bitmap.append(displayio.Bitmap(plot_width, plot_height, 8))
+		except:
+			print("couldn't allocate memory for displayio.Bitmap")
+			print("mem free: " + str(mem_free()))
+			raise
 	global plot
 	plot = []
 	for i in range(number_of_plots):
@@ -187,7 +194,7 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 	group.append(axes_group)
 	group.append(plot_group)
 	FONT_SCALE = 1 # int
-	text_area = label.Label(terminalio.FONT, text="i", color=palette2[1]) # 6 pixels each for "W" and "i"
+	text_area = label.Label(FONT, text="i", color=palette2[1]) # 6 pixels each for "W" and "i"
 	width_of_single_character = text_area.bounding_box[2] * FONT_SCALE
 	FONT_GAP = 2 * width_of_single_character
 	#print(str(display.width))
@@ -218,13 +225,13 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 			#print(list_of_labels[m][n])
 			if n==0:
 				y = (m//2)*tile_height + FONT_SCALE * 5
-				text_area = label.Label(terminalio.FONT, text=list_of_labels[m][n], color=palette8[1]) # white for plot label
+				text_area = label.Label(FONT, text=list_of_labels[m][n], color=palette8[1]) # white for plot label
 				text_width = text_area.bounding_box[2] * FONT_SCALE
 				text_group = displayio.Group(scale=FONT_SCALE, x=x-text_width//2, y=y)
 				text_group.append(text_area)
 				group.append(text_group)
 			else:
-				text_area = label.Label(terminalio.FONT, text=list_of_labels[m][n], color=palette8[n+1]) # other colors
+				text_area = label.Label(FONT, text=list_of_labels[m][n], color=palette8[n+1]) # other colors
 				text_width = text_area.bounding_box[2] * FONT_SCALE + FONT_GAP
 				running_text_width += text_width
 				text_areas.append(text_area)
@@ -247,7 +254,7 @@ def refresh():
 		raise
 	except Exception as e:
 		exception(e)
-		time.sleep(0.05)
+		sleep(0.05)
 		try:
 			display.refresh()
 			#info("worked after 50 ms")
@@ -291,7 +298,7 @@ def show_text_on_ssd1327(string):
 	# https://learn.adafruit.com/adafruit-grayscale-1-5-128x128-oled-display/circuitpython-wiring-and-usage
 	splash = displayio.Group()
 	display.show(splash)
-	text_area = label.Label(terminalio.FONT, text=string, color=0xFFFFFF)
+	text_area = label.Label(FONT, text=string, color=0xFFFFFF)
 	text_width = text_area.bounding_box[2] * FONTSCALE
 	text_group = displayio.Group(
 		scale=FONTSCALE,
@@ -470,7 +477,7 @@ def setup_7seg_numeric_backpack_4(i2c, address=0x70):
 		display.brightness = 0.25
 		#display.brightness = 1.0
 		#display.print("8421")
-		#time.sleep(1)
+		#sleep(1)
 		#display.print("12:30")
 		return 0x70
 	except Exception as e:

@@ -5,6 +5,7 @@ csv
 code.py
 *.cap
 lib
+lib7
 lib8
 lib9
 __pycache__
