@@ -7,7 +7,7 @@
 # and https://docs.circuitpython.org/projects/ntp/en/latest/examples.html#set-rtc
 # https://docs.circuitpython.org/projects/display-shapes/en/latest/api.html
 # https://docs.circuitpython.org/en/latest/shared-bindings/bitmaptools/index.html
-# last updated 2024-03-07 by mza
+# last updated 2024-03-09 by mza
 
 # configuration:
 length_of_hour_hand = 70
@@ -16,12 +16,17 @@ distance_of_dot_from_center = 148
 radius_of_dot = 7
 width_of_hour_hand = 16
 width_of_minute_hand = 9
-offset_x = 0
-offset_y = -320
 subbitmap_width = 320
 subbitmap_height = 320
 subbitmap_center_x = subbitmap_width//2
 subbitmap_center_y = subbitmap_height//2
+FONTSCALE = 2
+worldclock_text = [ "Tokyo", "Honolulu", "New York" ]
+text_offset_x = -150
+text_offset_y = -50
+offset_timezone = [ -5, 0, +5 ]
+offset_x = [ 0, 0, 0 ]
+offset_y = [ 320, 0, -320 ]
 
 # to install:
 # cd lib9
@@ -48,8 +53,11 @@ from adafruit_display_shapes.line import Line
 from adafruit_display_shapes.circle import Circle
 from adafruit_display_shapes.polygon import Polygon
 from adafruit_qualia.peripherals import Peripherals
+from adafruit_display_text import bitmap_label
+from terminalio import FONT
 import bitmaptools
 
+rotation_angle=math.pi/2
 #palette_colors = 65535
 palette_colors = 6
 palette = displayio.Palette(palette_colors)
@@ -58,6 +66,7 @@ palette[1] = 0xff0000 # red
 palette[2] = 0x00ff00 # green
 palette[3] = 0x4444ff # light blue
 palette[4] = 0x999999 # grey
+palette[5] = 0xffffff # white
 background_color = 0
 color_of_hour_hand = 3
 color_of_minute_hand = 1
@@ -146,10 +155,17 @@ def setup():
 	get_ntp_time_if_necessary()
 	draw_clockface()
 	if "rotozoom"==mode:
-		rotozoom_hands()
+		generate_worldclock_titles()
+		generate_rotozoom_hands()
 	#diff = time.monotonic() - startup_time; print (str(diff))
 
-def rotozoom_hands():
+def generate_worldclock_titles():
+	global worldclock_titles
+	worldclock_titles = []
+	for i in range(3):
+		worldclock_titles.append(bitmap_label.Label(FONT, text=worldclock_text[i]))
+
+def generate_rotozoom_hands():
 	global hour_hand_bitmap
 	hour_hand_bitmap = displayio.Bitmap(subbitmap_width, subbitmap_height, palette_colors)
 	clear_bitmap(hour_hand_bitmap)
@@ -196,16 +212,17 @@ def thickline(x1, y1, angle, length, width, color1, color2=background_color):
 		graphics.display.root_group.append(object)
 		return object
 
-def draw_hour_and_minute_hands(hour, minute):
+def draw_hour_and_minute_hands(i, hour, minute):
 	minute_angle = twopi*minute/60
 	hour_angle = twopi*hour12/12
 	hour_angle += minute_angle/12
 	if "rotozoom"==mode:
 		#bitmaptools.blit(bitmap, hour_hand_bitmap, 0, 0)
 		#bitmaptools.blit(bitmap, minute_hand_bitmap, 0, 0)
-		bitmaptools.rotozoom(bitmap, dots_bitmap, ox=center_x+offset_x, oy=center_y+offset_y)
-		bitmaptools.rotozoom(bitmap, minute_hand_bitmap, angle=minute_angle, skip_index=0, ox=center_x+offset_x, oy=center_y+offset_y)
-		bitmaptools.rotozoom(bitmap, hour_hand_bitmap, angle=hour_angle, skip_index=0, ox=center_x+offset_x, oy=center_y+offset_y)
+		bitmaptools.rotozoom(bitmap, dots_bitmap, ox=center_x+offset_x[i], oy=center_y+offset_y[i], angle=-rotation_angle)
+		bitmaptools.rotozoom(bitmap, worldclock_titles[i].bitmap, angle=-rotation_angle, skip_index=0, ox=center_x+offset_x[i]+text_offset_x, oy=center_y+offset_y[i]+text_offset_y-worldclock_titles[i].bitmap.width//2, scale=FONTSCALE)
+		bitmaptools.rotozoom(bitmap, minute_hand_bitmap, angle=minute_angle-rotation_angle, skip_index=0, ox=center_x+offset_x[i], oy=center_y+offset_y[i])
+		bitmaptools.rotozoom(bitmap, hour_hand_bitmap, angle=hour_angle-rotation_angle, skip_index=0, ox=center_x+offset_x[i], oy=center_y+offset_y[i])
 	else:
 		minute_hand = thickline(subbitmap_center_x, subbitmap_center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, color_of_minute_hand)
 		hour_hand = thickline(subbitmap_center_x, subbitmap_center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, color_of_hour_hand)
@@ -224,16 +241,19 @@ def draw_hour_and_minute_hands(hour, minute):
 setup()
 while True:
 	datetime = rtc.RTC().datetime
-	hour24 = datetime.tm_hour
-	minute = datetime.tm_min
-	second = datetime.tm_sec
-	hour12 = hour24 % 12
-	print(dec(hour24, 2) + ":" + dec(minute, 2) + ":" + dec(second, 2))
-	if 0==minute:
-		if "bitmaptools"==mode:
-			draw_clockface()
-	draw_hour_and_minute_hands(hour12, minute)
-	if hour24==23 and minute==59:
+	t_int = time.mktime(datetime)
+	for i in range(3):
+		t_struct = time.localtime(t_int + offset_timezone[i]*3600)
+		hour24 = t_struct.tm_hour
+		minute = t_struct.tm_min
+		second = t_struct.tm_sec
+		hour12 = hour24 % 12
+		print(dec(hour24, 2) + ":" + dec(minute, 2) + ":" + dec(second, 2))
+		if 0==minute:
+			if "bitmaptools"==mode:
+				draw_clockface()
+		draw_hour_and_minute_hands(i, hour12, minute)
+	if datetime.tm_hour==23 and datetime.tm_min==59:
 		we_still_need_to_get_ntp_time = True
 	if we_still_need_to_get_ntp_time:
 		get_ntp_time_and_set_RTC()
