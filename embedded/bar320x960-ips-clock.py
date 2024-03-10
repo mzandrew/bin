@@ -7,7 +7,7 @@
 # and https://docs.circuitpython.org/projects/ntp/en/latest/examples.html#set-rtc
 # https://docs.circuitpython.org/projects/display-shapes/en/latest/api.html
 # https://docs.circuitpython.org/en/latest/shared-bindings/bitmaptools/index.html
-# last updated 2024-03-09 by mza
+# last updated 2024-03-10 by mza
 
 # configuration:
 length_of_hour_hand = 70
@@ -22,9 +22,13 @@ subbitmap_center_x = subbitmap_width//2
 subbitmap_center_y = subbitmap_height//2
 FONTSCALE = 2
 worldclock_text = [ "Tokyo", "Honolulu", "New York" ]
-text_offset_x = -150
-text_offset_y = -50
-offset_timezone = [ -5, 0, +5 ]
+titles_offset_x = -150
+titles_offset_y = -50
+dates_offset_x = 150
+dates_offset_y = -52
+days_offset_x = 150
+days_offset_y = 77
+offset_timezone = [ +19, 0, +5 ]
 offset_x = [ 0, 0, 0 ]
 offset_y = [ 320, 0, -320 ]
 
@@ -54,6 +58,7 @@ from adafruit_display_shapes.circle import Circle
 from adafruit_display_shapes.polygon import Polygon
 from adafruit_qualia.peripherals import Peripherals
 from adafruit_display_text import bitmap_label
+from adafruit_datetime import _DAYNAMES
 from terminalio import FONT
 import bitmaptools
 
@@ -154,16 +159,47 @@ def setup():
 	graphics.display.root_group = graphics.splash
 	get_ntp_time_if_necessary()
 	draw_clockface()
+	global t_struct
+	t_struct = [ 0 for i in range(3) ]
+	update_t_struct()
 	if "rotozoom"==mode:
 		generate_worldclock_titles()
+		global worldclock_dates
+		worldclock_dates = [ 0 for i in range(3) ]
+		global worldclock_days
+		worldclock_days = [ 0 for i in range(3) ]
+		update_worldclock_dates()
+		update_worldclock_days_AMPM()
 		generate_rotozoom_hands()
 	#diff = time.monotonic() - startup_time; print (str(diff))
+
+def update_t_struct():
+	global t_struct
+	datetime = rtc.RTC().datetime
+	for i in range(3):
+		t_struct[i] = time.localtime(time.mktime(datetime) + offset_timezone[i]*3600)
 
 def generate_worldclock_titles():
 	global worldclock_titles
 	worldclock_titles = []
 	for i in range(3):
-		worldclock_titles.append(bitmap_label.Label(FONT, text=worldclock_text[i]))
+		worldclock_titles.append(bitmap_label.Label(FONT, text=worldclock_text[i], color=3))
+
+def update_worldclock_dates():
+	for i in range(3):
+		string = dec(t_struct[i].tm_year,4) + "-" + dec(t_struct[i].tm_mon,2) + "-" + dec(t_struct[i].tm_mday,2)
+		#del worldclock_dates[i]
+		worldclock_dates[i] = bitmap_label.Label(FONT, text=string, color=3)
+
+def update_worldclock_days_AMPM():
+	for i in range(3):
+		if t_struct[i].tm_hour//12:
+			AMPM = " PM"
+		else:
+			AMPM = " AM"
+		string = _DAYNAMES[t_struct[i].tm_wday+1] + AMPM
+		#del worldclock_days[i]
+		worldclock_days[i] = bitmap_label.Label(FONT, text=string, color=3)
 
 def generate_rotozoom_hands():
 	global hour_hand_bitmap
@@ -220,7 +256,9 @@ def draw_hour_and_minute_hands(i, hour, minute):
 		#bitmaptools.blit(bitmap, hour_hand_bitmap, 0, 0)
 		#bitmaptools.blit(bitmap, minute_hand_bitmap, 0, 0)
 		bitmaptools.rotozoom(bitmap, dots_bitmap, ox=center_x+offset_x[i], oy=center_y+offset_y[i], angle=-rotation_angle)
-		bitmaptools.rotozoom(bitmap, worldclock_titles[i].bitmap, angle=-rotation_angle, skip_index=0, ox=center_x+offset_x[i]+text_offset_x, oy=center_y+offset_y[i]+text_offset_y-worldclock_titles[i].bitmap.width//2, scale=FONTSCALE)
+		bitmaptools.rotozoom(bitmap, worldclock_titles[i].bitmap, angle=-rotation_angle, skip_index=0, ox=center_x+offset_x[i]+titles_offset_x, oy=center_y+offset_y[i]+titles_offset_y-worldclock_titles[i].bitmap.width//2, scale=FONTSCALE)
+		bitmaptools.rotozoom(bitmap, worldclock_dates[i].bitmap, angle=-rotation_angle, skip_index=0, ox=center_x+offset_x[i]+dates_offset_x, oy=center_y+offset_y[i]+dates_offset_y-worldclock_dates[i].bitmap.width//2, scale=FONTSCALE)
+		bitmaptools.rotozoom(bitmap, worldclock_days[i].bitmap, angle=-rotation_angle, skip_index=0, ox=center_x+offset_x[i]+days_offset_x, oy=center_y+offset_y[i]+days_offset_y-worldclock_days[i].bitmap.width//2, scale=FONTSCALE)
 		bitmaptools.rotozoom(bitmap, minute_hand_bitmap, angle=minute_angle-rotation_angle, skip_index=0, ox=center_x+offset_x[i], oy=center_y+offset_y[i])
 		bitmaptools.rotozoom(bitmap, hour_hand_bitmap, angle=hour_angle-rotation_angle, skip_index=0, ox=center_x+offset_x[i], oy=center_y+offset_y[i])
 	else:
@@ -240,22 +278,23 @@ def draw_hour_and_minute_hands(i, hour, minute):
 
 setup()
 while True:
-	datetime = rtc.RTC().datetime
-	t_int = time.mktime(datetime)
+	update_t_struct()
 	for i in range(3):
-		t_struct = time.localtime(t_int + offset_timezone[i]*3600)
-		hour24 = t_struct.tm_hour
-		minute = t_struct.tm_min
-		second = t_struct.tm_sec
+		hour24 = t_struct[i].tm_hour
+		minute = t_struct[i].tm_min
+		second = t_struct[i].tm_sec
 		hour12 = hour24 % 12
 		print(dec(hour24, 2) + ":" + dec(minute, 2) + ":" + dec(second, 2))
 		if 0==minute:
 			if "bitmaptools"==mode:
 				draw_clockface()
+		update_worldclock_dates()
+		update_worldclock_days_AMPM()
 		draw_hour_and_minute_hands(i, hour12, minute)
-	if datetime.tm_hour==23 and datetime.tm_min==59:
+	if t_struct[1].tm_hour==23 and t_struct[1].tm_min==59:
 		we_still_need_to_get_ntp_time = True
 	if we_still_need_to_get_ntp_time:
+		print("getting NTP time and setting RTC...")
 		get_ntp_time_and_set_RTC()
 	gc.collect() ; print(gc.mem_free())
 	time.sleep(60 - rtc.RTC().datetime.tm_sec)
