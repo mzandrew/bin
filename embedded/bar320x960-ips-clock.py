@@ -7,7 +7,9 @@
 # and https://docs.circuitpython.org/projects/ntp/en/latest/examples.html#set-rtc
 # https://docs.circuitpython.org/projects/display-shapes/en/latest/api.html
 # https://docs.circuitpython.org/en/latest/shared-bindings/bitmaptools/index.html
-# last updated 2024-03-10 by mza
+# last updated 2024-03-13 by mza
+
+# for use on a qualia esp32 s3
 
 # configuration:
 length_of_hour_hand = 70
@@ -21,20 +23,21 @@ subbitmap_height = 320
 subbitmap_center_x = subbitmap_width//2
 subbitmap_center_y = subbitmap_height//2
 FONTSCALE = 2
-worldclock_text = [ "Tokyo", "Honolulu", "New York" ]
 titles_offset_x = -150
 titles_offset_y = -50
 dates_offset_x = 150
 dates_offset_y = -52
 days_offset_x = 150
 days_offset_y = 77
+NUMBER_OF_CLOCKFACES = 3
+worldclock_text = [ "Tokyo", "Honolulu", "New York" ]
 offset_timezone = [ +19, 0, +5 ]
 offset_x = [ 0, 0, 0 ]
 offset_y = [ 320, 0, -320 ]
 
 # to install:
 # cd lib9
-# rsync -a adafruit_qualia adafruit_portalbase adafruit_bitmap_font adafruit_display_text adafruit_io adafruit_minimqtt adafruit_display_shapes adafruit_requests.mpy adafruit_fakerequests.mpy adafruit_pca9554.mpy adafruit_focaltouch.mpy adafruit_cst8xx.mpy adafruit_miniqr.mpy adafruit_ntp.mpy /media/mza/CIRCUITPY/lib/
+# rsync -a adafruit_qualia adafruit_portalbase adafruit_bitmap_font adafruit_display_text adafruit_io adafruit_minimqtt adafruit_display_shapes adafruit_requests.mpy adafruit_fakerequests.mpy adafruit_pca9554.mpy adafruit_focaltouch.mpy adafruit_cst8xx.mpy adafruit_miniqr.mpy adafruit_ntp.mpy adafruit_bitmapsaver.mpy /media/mza/CIRCUITPY/lib/
 # cd ..
 # cp -a settings.toml /media/mza/CIRCUITPY/
 # cp -a bar320x960-ips-clock.py /media/mza/CIRCUITPY/code.py; sync
@@ -53,10 +56,10 @@ import adafruit_ntp
 import rtc
 import displayio
 from adafruit_qualia.graphics import Graphics, Displays # helps find the name "Displays.BAR320X960"
-from adafruit_display_shapes.line import Line
+#from adafruit_display_shapes.line import Line
+from adafruit_qualia.peripherals import Peripherals
 from adafruit_display_shapes.circle import Circle
 from adafruit_display_shapes.polygon import Polygon
-from adafruit_qualia.peripherals import Peripherals
 from adafruit_display_text import bitmap_label
 from adafruit_datetime import _DAYNAMES
 from terminalio import FONT
@@ -89,6 +92,20 @@ def dec(number, width=1, pad_with_zeroes=True):
 		return "%0*d" % (width, number)
 	else:
 		return "%*d" % (width, number)
+
+def setup_io_expander_buttons(i2c):
+	global pcf
+	i2c = board.I2C()
+	tft_io_expander = dict(board.TFT_IO_EXPANDER)
+	pcf = adafruit_pca9554.PCA9554(i2c, address=tft_io_expander['i2c_address'])
+
+def setup_io_expander_button(button):
+	button_up = pcf.get_pin(button)
+	button_up.switch_to_input(pull=digitalio.Pull.UP)
+
+#def check_io_expander_button(button)
+#	check_io_expander_button(board.BTN_UP)
+#	return button_up.value
 
 def get_ntp_time_and_set_RTC():
 	datetime = rtc.RTC().datetime
@@ -136,7 +153,7 @@ def draw_clockface():
 			bonus=1.5
 		if "display_shapes"==mode:
 			object = Circle(x0=x0, y0=y0, r=int(bonus*radius_of_dot), fill=color_of_dot)
-			graphics.display.root_group.append(object)
+			display.root_group.append(object)
 		else:
 			bitmaptools.draw_circle(dots_bitmap, x0, y0, int(bonus*radius_of_dot), color_of_dot)
 			bitmaptools.boundary_fill(dots_bitmap, x0, y0, color_of_dot, background_color)
@@ -146,28 +163,49 @@ def setup():
 	print()
 	#global startup_time; startup_time = time.monotonic()
 	global twopi; twopi = 2 * math.pi
-	global graphics, bitmap
-	graphics = Graphics(Displays.BAR320X960, default_bg=None, auto_refresh=False)
+	global display, bitmap
+	gc.collect(); print(gc.mem_free())
+	if 1:
+		graphics = Graphics(Displays.BAR320X960, default_bg=None, auto_refresh=False)
+		display = graphics.display
+		splash = graphics.splash
+	else:
+		displayio.release_displays()
+		import board
+		spi = board.SPI()
+		if board.board_id=="adafruit_feather_esp32_v2":
+			tft_cs = board.D15
+			tft_dc = board.D33
+		else:
+			tft_cs = board.D9
+			tft_dc = board.D10
+		display_width = 480
+		display_height = 320
+		display_bus = displayio.FourWire(spi, command=tft_dc, chip_select=tft_cs)
+		from adafruit_hx8357 import HX8357
+		display = HX8357(display_bus, width=display_width, height=display_height)
+		splash = displayio.Group()
+	gc.collect(); print(gc.mem_free())
+	bitmap = displayio.Bitmap(display.width, display.height, palette_colors)
 	global center_x, center_y
-	center_x = (graphics.display.width + 1) // 2
-	center_y = (graphics.display.height + 1) // 2
-	bitmap = displayio.Bitmap(graphics.display.width, graphics.display.height, palette_colors)
+	center_x = (display.width + 1) // 2
+	center_y = (display.height + 1) // 2
 	global dots_bitmap
 	dots_bitmap = displayio.Bitmap(subbitmap_width, subbitmap_height, palette_colors)
 	tile_grid = displayio.TileGrid(bitmap, pixel_shader=palette)
-	graphics.splash.append(tile_grid)
-	graphics.display.root_group = graphics.splash
+	splash.append(tile_grid)
+	display.root_group = splash
 	get_ntp_time_if_necessary()
 	draw_clockface()
 	global t_struct
-	t_struct = [ 0 for i in range(3) ]
+	t_struct = [ 0 for i in range(NUMBER_OF_CLOCKFACES) ]
 	update_t_struct()
 	if "rotozoom"==mode:
 		generate_worldclock_titles()
 		global worldclock_dates
-		worldclock_dates = [ 0 for i in range(3) ]
+		worldclock_dates = [ 0 for i in range(NUMBER_OF_CLOCKFACES) ]
 		global worldclock_days
-		worldclock_days = [ 0 for i in range(3) ]
+		worldclock_days = [ 0 for i in range(NUMBER_OF_CLOCKFACES) ]
 		update_worldclock_dates()
 		update_worldclock_days_AMPM()
 		generate_rotozoom_hands()
@@ -176,23 +214,23 @@ def setup():
 def update_t_struct():
 	global t_struct
 	datetime = rtc.RTC().datetime
-	for i in range(3):
+	for i in range(NUMBER_OF_CLOCKFACES):
 		t_struct[i] = time.localtime(time.mktime(datetime) + offset_timezone[i]*3600)
 
 def generate_worldclock_titles():
 	global worldclock_titles
 	worldclock_titles = []
-	for i in range(3):
+	for i in range(NUMBER_OF_CLOCKFACES):
 		worldclock_titles.append(bitmap_label.Label(FONT, text=worldclock_text[i], color=3))
 
 def update_worldclock_dates():
-	for i in range(3):
+	for i in range(NUMBER_OF_CLOCKFACES):
 		string = dec(t_struct[i].tm_year,4) + "-" + dec(t_struct[i].tm_mon,2) + "-" + dec(t_struct[i].tm_mday,2)
 		#del worldclock_dates[i]
 		worldclock_dates[i] = bitmap_label.Label(FONT, text=string, color=3)
 
 def update_worldclock_days_AMPM():
-	for i in range(3):
+	for i in range(NUMBER_OF_CLOCKFACES):
 		if t_struct[i].tm_hour//12:
 			AMPM = " PM"
 		else:
@@ -245,7 +283,7 @@ def thickline(x1, y1, angle, length, width, color1, color2=background_color):
 		points.append((x5, y5))
 		points.append((x6, y6))
 		object = Polygon(points=points, outline=color1)
-		graphics.display.root_group.append(object)
+		display.root_group.append(object)
 		return object
 
 def draw_hour_and_minute_hands(i, hour, minute):
@@ -267,19 +305,19 @@ def draw_hour_and_minute_hands(i, hour, minute):
 	#radius_of_middle_dot = max(width_of_minute_hand, width_of_hour_hand)//2 + 1
 	#bitmaptools.draw_circle(bitmap, center_x, center_y, radius_of_middle_dot, color_of_dot)
 	#bitmaptools.boundary_fill(bitmap, center_x+2, center_y+2, color_of_dot, background_color)
-	graphics.display.refresh()
+	display.refresh()
 	if "bitmaptools"==mode:
 		thickline(subbitmap_center_x, subbitmap_center_y, minute_angle, length_of_minute_hand, width_of_minute_hand, background_color, color_of_minute_hand)
 		thickline(subbitmap_center_x, subbitmap_center_y, hour_angle, length_of_hour_hand, width_of_hour_hand, background_color, color_of_hour_hand)
 	elif "display_shapes"==mode:
-		graphics.display.root_group.remove(hour_hand)
-		graphics.display.root_group.remove(minute_hand)
+		display.root_group.remove(hour_hand)
+		display.root_group.remove(minute_hand)
 	#diff = time.monotonic() - startup_time; print (str(diff))
 
 setup()
 while True:
 	update_t_struct()
-	for i in range(3):
+	for i in range(NUMBER_OF_CLOCKFACES):
 		hour24 = t_struct[i].tm_hour
 		minute = t_struct[i].tm_min
 		second = t_struct[i].tm_sec

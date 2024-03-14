@@ -42,15 +42,14 @@ offset_timezone = [ 0 ]
 offset_x = [ 0 ]
 offset_y = [ 0 ]
 
-from gc import collect, mem_free
-from array import array
+import gc
+import array
 import time
-from math import sin, cos, pi
-from wifi import radio
-from socketpool import SocketPool
-from adafruit_ntp import NTP
-from rtc import RTC
-#from adafruit_display_shapes.line import Line
+import math
+import wifi
+import socketpool
+import adafruit_ntp
+import rtc
 import displayio
 from adafruit_display_shapes.circle import Circle
 from adafruit_display_shapes.polygon import Polygon
@@ -62,7 +61,7 @@ if 0:
 	from adafruit_qualia.graphics import Graphics, Displays # helps find the name "Displays.BAR320X960"
 	from adafruit_qualia.peripherals import Peripherals
 
-rotation_angle=3*pi/2
+rotation_angle=3*math.pi/2
 #palette_colors = 65535
 palette_colors = 6
 palette = displayio.Palette(palette_colors)
@@ -91,18 +90,19 @@ def dec(number, width=1, pad_with_zeroes=True):
 		return "%*d" % (width, number)
 
 def get_ntp_time_and_set_RTC():
-	datetime = RTC().datetime
+	datetime = rtc.RTC().datetime
 	print("rtc: " + str(datetime))
 	try:
 		global fake_the_network_being_down_counter
 		if 0<fake_the_network_being_down_counter:
 			fake_the_network_being_down_counter -= 1
-		pool = SocketPool(radio)
-		ntp = NTP(pool, tz_offset=-10)
+			raise
+		pool = socketpool.SocketPool(wifi.radio)
+		ntp = adafruit_ntp.NTP(pool, tz_offset=-10)
 		datetime = ntp.datetime
 		print("ntp: " + str(datetime))
-		RTC().datetime = datetime
-		datetime = RTC().datetime
+		rtc.RTC().datetime = datetime
+		datetime = rtc.RTC().datetime
 		print("rtc: " + str(datetime))
 		global we_still_need_to_get_ntp_time; we_still_need_to_get_ntp_time = False
 	except:
@@ -111,7 +111,7 @@ def get_ntp_time_and_set_RTC():
 
 def get_ntp_time_if_necessary():
 	global we_still_need_to_get_ntp_time; we_still_need_to_get_ntp_time = False
-	datetime = RTC().datetime
+	datetime = rtc.RTC().datetime
 	if datetime.tm_year<2024:
 		we_still_need_to_get_ntp_time = True
 		get_ntp_time_and_set_RTC()
@@ -129,8 +129,8 @@ def draw_clockface():
 	#objects = []
 	for alpha in range(0, 60, 5):
 		theta = twopi*alpha/60
-		x0 = subbitmap_center_x + int(distance_of_dot_from_center*sin(theta))
-		y0 = subbitmap_center_y - int(distance_of_dot_from_center*cos(theta))
+		x0 = subbitmap_center_x + int(distance_of_dot_from_center*math.sin(theta))
+		y0 = subbitmap_center_y - int(distance_of_dot_from_center*math.cos(theta))
 		bonus=1.0
 		if 0==alpha%15:
 			bonus=1.5
@@ -145,12 +145,12 @@ def draw_clockface():
 def setup():
 	print()
 	#global startup_time; startup_time = time.monotonic()
-	global twopi; twopi = 2 * pi
-	global bitmap
-	collect(); print(mem_free())
-	global display
+	global twopi; twopi = 2 * math.pi
+	global display, bitmap
+	gc.collect(); print(gc.mem_free())
 	if 0:
 		graphics = Graphics(Displays.BAR320X960, default_bg=None, auto_refresh=False)
+		#graphics = Graphics(Displays.ROUND40, default_bg=None, auto_refresh=False)
 		display = graphics.display
 		splash = graphics.splash
 	else:
@@ -169,13 +169,12 @@ def setup():
 		from adafruit_hx8357 import HX8357
 		display = HX8357(display_bus, width=display_width, height=display_height)
 		splash = displayio.Group()
-	collect(); print(mem_free())
+	gc.collect(); print(gc.mem_free())
 	bitmap = displayio.Bitmap(display.width, display.height, palette_colors)
 	global center_x, center_y
 	center_x = (display.width + 1) // 2
 	center_y = (display.height + 1) // 2
 	global dots_bitmap
-	collect(); print(mem_free())
 	dots_bitmap = displayio.Bitmap(subbitmap_width, subbitmap_height, palette_colors)
 	tile_grid = displayio.TileGrid(bitmap, pixel_shader=palette)
 	splash.append(tile_grid)
@@ -185,7 +184,6 @@ def setup():
 	global t_struct
 	t_struct = [ 0 for i in range(NUMBER_OF_CLOCKFACES) ]
 	update_t_struct()
-	collect(); print(mem_free())
 	if "rotozoom"==mode:
 		generate_worldclock_titles()
 		global worldclock_dates
@@ -199,7 +197,7 @@ def setup():
 
 def update_t_struct():
 	global t_struct
-	datetime = RTC().datetime
+	datetime = rtc.RTC().datetime
 	for i in range(NUMBER_OF_CLOCKFACES):
 		t_struct[i] = time.localtime(time.mktime(datetime) + offset_timezone[i]*3600)
 
@@ -229,37 +227,37 @@ def generate_rotozoom_hands():
 	global hour_hand_bitmap
 	hour_hand_bitmap = displayio.Bitmap(subbitmap_width, subbitmap_height, palette_colors)
 	clear_bitmap(hour_hand_bitmap)
-	xs = array("i", (subbitmap_center_x-width_of_hour_hand//2, subbitmap_center_x+width_of_hour_hand//2, subbitmap_center_x+width_of_hour_hand//2, subbitmap_center_x-width_of_hour_hand//2))
-	ys = array("i", (subbitmap_center_y, subbitmap_center_y, subbitmap_center_y-length_of_hour_hand, subbitmap_center_y-length_of_hour_hand))
+	xs = array.array("i", (subbitmap_center_x-width_of_hour_hand//2, subbitmap_center_x+width_of_hour_hand//2, subbitmap_center_x+width_of_hour_hand//2, subbitmap_center_x-width_of_hour_hand//2))
+	ys = array.array("i", (subbitmap_center_y, subbitmap_center_y, subbitmap_center_y-length_of_hour_hand, subbitmap_center_y-length_of_hour_hand))
 	bitmaptools.draw_polygon(hour_hand_bitmap, xs, ys, color_of_hour_hand, 2)
 	bitmaptools.boundary_fill(hour_hand_bitmap, subbitmap_center_x, subbitmap_center_y-length_of_hour_hand//2, color_of_hour_hand, background_color)
 	global minute_hand_bitmap
 	minute_hand_bitmap = displayio.Bitmap(subbitmap_width, subbitmap_height, palette_colors)
 	clear_bitmap(minute_hand_bitmap)
-	xs = array("i", (subbitmap_center_x-width_of_minute_hand//2, subbitmap_center_x+width_of_minute_hand//2, subbitmap_center_x+width_of_minute_hand//2, subbitmap_center_x-width_of_minute_hand//2))
-	ys = array("i", (subbitmap_center_y, subbitmap_center_y, subbitmap_center_y-length_of_minute_hand, subbitmap_center_y-length_of_minute_hand))
+	xs = array.array("i", (subbitmap_center_x-width_of_minute_hand//2, subbitmap_center_x+width_of_minute_hand//2, subbitmap_center_x+width_of_minute_hand//2, subbitmap_center_x-width_of_minute_hand//2))
+	ys = array.array("i", (subbitmap_center_y, subbitmap_center_y, subbitmap_center_y-length_of_minute_hand, subbitmap_center_y-length_of_minute_hand))
 	bitmaptools.draw_polygon(minute_hand_bitmap, xs, ys, color_of_minute_hand, 2)
 	bitmaptools.boundary_fill(minute_hand_bitmap, subbitmap_center_x, subbitmap_center_y-length_of_minute_hand//2, color_of_minute_hand, background_color)
 
 def thickline(x1, y1, angle, length, width, color1, color2=background_color):
-	x2 = x1 + int(length*sin(angle))
-	y2 = y1 - int(length*cos(angle))
+	x2 = x1 + int(length*math.sin(angle))
+	y2 = y1 - int(length*math.cos(angle))
 	#return Line(x1, y1, x2, y2, color1)
 	#return Polygon(points=[(x1, y1), (x2, y2)], outline=color1)
-	x_adjustment = int(width//2*cos(angle))
-	y_adjustment = int(width//2*sin(angle))
+	x_adjustment = int(width//2*math.cos(angle))
+	y_adjustment = int(width//2*math.sin(angle))
 	x3 = x1 + x_adjustment
 	y3 = y1 + y_adjustment
-	x4 = x1 + x_adjustment + int(length*sin(angle))
-	y4 = y1 + y_adjustment - int(length*cos(angle))
-	x5 = x1 - x_adjustment + int(length*sin(angle))
-	y5 = y1 - y_adjustment - int(length*cos(angle))
+	x4 = x1 + x_adjustment + int(length*math.sin(angle))
+	y4 = y1 + y_adjustment - int(length*math.cos(angle))
+	x5 = x1 - x_adjustment + int(length*math.sin(angle))
+	y5 = y1 - y_adjustment - int(length*math.cos(angle))
 	x6 = x1 - x_adjustment
 	y6 = y1 - y_adjustment
 	#print(str((x1, y1)) + " " + str((x2, y2)) + " " + str(points))
 	if "bitmaptools"==mode:
-		xs = array("i", (x3, x4, x5, x6))
-		ys = array("i", (y3, y4, y5, y6))
+		xs = array.array("i", (x3, x4, x5, x6))
+		ys = array.array("i", (y3, y4, y5, y6))
 		bitmaptools.draw_polygon(bitmap, xs, ys, color1, 2)
 		bitmaptools.boundary_fill(bitmap, (x2+x1)//2, (y2+y1)//2, color1, color2)
 	elif "display_shapes"==mode:
@@ -320,6 +318,6 @@ while True:
 	if we_still_need_to_get_ntp_time:
 		print("getting NTP time and setting RTC...")
 		get_ntp_time_and_set_RTC()
-	collect(); print(mem_free())
-	time.sleep(60 - RTC().datetime.tm_sec)
+	gc.collect() ; print(gc.mem_free())
+	time.sleep(60 - rtc.RTC().datetime.tm_sec)
 
