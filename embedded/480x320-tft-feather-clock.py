@@ -4,7 +4,7 @@
 # based on https://learn.adafruit.com/adafruit-3-5-tft-featherwing/circuitpython-displayio-quickstart-v2
 # and bar320x960-ips-clock.py
 # and round40-ips-clock.py
-# last updated 2024-03-13 by mza
+# last updated 2024-03-16 by mza
 
 # for use on an esp32-s2 feather 
 
@@ -169,6 +169,7 @@ def setup():
 		from adafruit_hx8357 import HX8357
 		display = HX8357(display_bus, width=display_width, height=display_height)
 		splash = displayio.Group()
+		display.auto_refresh = False
 	gc.collect(); print(gc.mem_free())
 	bitmap = displayio.Bitmap(display.width, display.height, palette_colors)
 	global center_x, center_y

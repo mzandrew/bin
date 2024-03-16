@@ -167,6 +167,7 @@ def setup():
 	gc.collect(); print(gc.mem_free())
 	if 1:
 		graphics = Graphics(Displays.BAR320X960, default_bg=None, auto_refresh=False)
+		#graphics = Graphics(Displays.ROUND40, default_bg=None, auto_refresh=False)
 		display = graphics.display
 		splash = graphics.splash
 	else:
@@ -185,6 +186,7 @@ def setup():
 		from adafruit_hx8357 import HX8357
 		display = HX8357(display_bus, width=display_width, height=display_height)
 		splash = displayio.Group()
+		display.auto_refresh = False
 	gc.collect(); print(gc.mem_free())
 	bitmap = displayio.Bitmap(display.width, display.height, palette_colors)
 	global center_x, center_y
