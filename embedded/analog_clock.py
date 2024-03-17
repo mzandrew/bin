@@ -1,63 +1,34 @@
 #!/usr/bin/env python3
 
 # written 2024-01-18 by mza
-# based on round40-ips-clock.py
-# based on https://learn.adafruit.com/simplifying-qualia-cirtcuitpython-projects/usage
-# and https://learn.adafruit.com/pico-w-wifi-with-circuitpython/pico-w-basic-wifi-test
-# and https://docs.circuitpython.org/projects/ntp/en/latest/examples.html#set-rtc
-# https://docs.circuitpython.org/projects/display-shapes/en/latest/api.html
-# https://docs.circuitpython.org/en/latest/shared-bindings/bitmaptools/index.html
-# last updated 2024-03-13 by mza
+# based on 480x320-tft-feather-clock.py, bar320x960-ips-clock.py, round40-ips-clock.py
+# from https://learn.adafruit.com/rgb-matrix-slot-machine/circuitpython-libraries
+# last updated 2024-03-16 by mza
 
-# for use on a qualia esp32 s3
-
-# configuration:
-length_of_hour_hand = 70
-length_of_minute_hand = 110
-distance_of_dot_from_center = 148
-radius_of_dot = 7
-width_of_hour_hand = 16
-width_of_minute_hand = 9
-subbitmap_width = 320
-subbitmap_height = 320
-subbitmap_center_x = subbitmap_width//2
-subbitmap_center_y = subbitmap_height//2
-FONTSCALE = 2
-titles_offset_x = -150
-titles_offset_y = -50
-dates_offset_x = 150
-dates_offset_y = -52
-days_offset_x = 150
-days_offset_y = 77
-NUMBER_OF_CLOCKFACES = 3
-worldclock_text = [ "Tokyo", "Honolulu", "New York" ]
-offset_timezone = [ +19, 0, +5 ]
-offset_x = [ 0, 0, 0 ]
-offset_y = [ 320, 0, -320 ]
+# for use on an interstate75w (raspberry_pi_pico_w) with a rgbmatrix
+# or for use on a adafruit_qualia_s3_rgb666 with a rgb 666 tft display
+# or for use on a adafruit_feather_esp32s2 or a feather-esp32-v2 with a tft feather
 
 # to install:
-# cd lib9
-# rsync -a adafruit_qualia adafruit_portalbase adafruit_bitmap_font adafruit_display_text adafruit_io adafruit_minimqtt adafruit_display_shapes adafruit_requests.mpy adafruit_fakerequests.mpy adafruit_pca9554.mpy adafruit_focaltouch.mpy adafruit_cst8xx.mpy adafruit_miniqr.mpy adafruit_ntp.mpy adafruit_bitmapsaver.mpy /media/mza/CIRCUITPY/lib/
-# cd ..
+# rsync -av adafruit_qualia adafruit_portalbase adafruit_bitmap_font adafruit_io adafruit_minimqtt adafruit_bus_device adafruit_display_text adafruit_display_shapes adafruit_fakerequests.mpy adafruit_requests.mpy adafruit_pca9554.mpy adafruit_focaltouch.mpy adafruit_cst8xx.mpy adafruit_hx8357.mpy adafruit_tsc2007.mpy adafruit_datetime.mpy adafruit_ntp.mpy /media/mza/CIRCUITPY/lib/
 # cp -a settings.toml /media/mza/CIRCUITPY/
-# cp -a bar320x960-ips-clock.py /media/mza/CIRCUITPY/code.py; sync
+# cp -a 64x32-matrix-clock.py /media/mza/CIRCUITPY/code.py; sync
+# customize custom_label.boot.py with "64X64CLOCK" or "720X720CLOC" (as appropriate), unmount CIRCUITPY drive and unplug/replug board
 
-# to edit files with web workflow, you must disable usb mass storage (must be done in boot.py):
-#import storage
-#storage.disable_usb_drive()
+#import adafruit_tsc2007
+#i2c = board.STEMMA_I2C()
+#irq_dio = None
+#tsc = adafruit_tsc2007.TSC2007(i2c, irq=irq_dio)
 
+import math
+import storage
+import re
 import gc
 import array
 import time
-import math
-import wifi
-import socketpool
-import adafruit_ntp
+import board
 import rtc
 import displayio
-from adafruit_qualia.graphics import Graphics, Displays # helps find the name "Displays.BAR320X960"
-#from adafruit_display_shapes.line import Line
-from adafruit_qualia.peripherals import Peripherals
 from adafruit_display_shapes.circle import Circle
 from adafruit_display_shapes.polygon import Polygon
 from adafruit_display_text import bitmap_label
@@ -65,8 +36,6 @@ from adafruit_datetime import _DAYNAMES
 from terminalio import FONT
 import bitmaptools
 
-rotation_angle=math.pi/2
-#palette_colors = 65535
 palette_colors = 6
 palette = displayio.Palette(palette_colors)
 palette[0] = 0x000000 # black
@@ -78,7 +47,6 @@ palette[5] = 0xffffff # white
 background_color = 0
 color_of_hour_hand = 3
 color_of_minute_hand = 1
-color_of_dot = 4
 
 #peripherals = Peripherals()
 #peripherals.backlight = True
@@ -93,20 +61,6 @@ def dec(number, width=1, pad_with_zeroes=True):
 	else:
 		return "%*d" % (width, number)
 
-def setup_io_expander_buttons(i2c):
-	global pcf
-	i2c = board.I2C()
-	tft_io_expander = dict(board.TFT_IO_EXPANDER)
-	pcf = adafruit_pca9554.PCA9554(i2c, address=tft_io_expander['i2c_address'])
-
-def setup_io_expander_button(button):
-	button_up = pcf.get_pin(button)
-	button_up.switch_to_input(pull=digitalio.Pull.UP)
-
-#def check_io_expander_button(button)
-#	check_io_expander_button(board.BTN_UP)
-#	return button_up.value
-
 def get_ntp_time_and_set_RTC():
 	datetime = rtc.RTC().datetime
 	print("rtc: " + str(datetime))
@@ -115,9 +69,15 @@ def get_ntp_time_and_set_RTC():
 		if 0<fake_the_network_being_down_counter:
 			fake_the_network_being_down_counter -= 1
 			raise
+		import wifi
+		import socketpool
 		pool = socketpool.SocketPool(wifi.radio)
+		import adafruit_ntp
 		ntp = adafruit_ntp.NTP(pool, tz_offset=-10)
-		datetime = ntp.datetime
+		try:
+			datetime = ntp.datetime # OSError: [Errno 116] ETIMEDOUT
+		except:
+			raise
 		print("ntp: " + str(datetime))
 		rtc.RTC().datetime = datetime
 		datetime = rtc.RTC().datetime
@@ -125,6 +85,7 @@ def get_ntp_time_and_set_RTC():
 		global we_still_need_to_get_ntp_time; we_still_need_to_get_ntp_time = False
 	except:
 		print("can't get ntp time!")
+		raise
 
 def get_ntp_time_if_necessary():
 	global we_still_need_to_get_ntp_time; we_still_need_to_get_ntp_time = False
@@ -159,20 +120,142 @@ def draw_clockface():
 			bitmaptools.boundary_fill(dots_bitmap, x0, y0, color_of_dot, background_color)
 	#return objects
 
+def hang():
+	while True:
+		time.sleep(1)
+
 def setup():
 	print()
+	print("board type: " + board.board_id)
+	m = storage.getmount("/")
+	label = m.label
+	print("label is: " + label)
+	match = re.search("([0-9]+)X([0-9]+)CLOC", str(label))
+	if match:
+		width = int(match.group(1))
+		height = int(match.group(2))
+		print("width: " + str(width))
+		print("height: " + str(height))
+	else:
+		print("customize custom_label.boot.py with \"64X64CLOCK\" or \"320x480CLOCK\" (etc)")
+		print("then cp custom_label.boot.py to /media/mza/CIRCUITPY/boot.py")
+		print("unmount drive, and then unplug/replug board")
+		hang()
+	global NTP_INDEX, should_show_worldclock_labels, subbitmap_width, subbitmap_height
+	global length_of_hour_hand, length_of_minute_hand, distance_of_dot_from_center, radius_of_dot
+	global width_of_hour_hand, width_of_minute_hand, subbitmap_center_x, subbitmap_center_y
+	global FONTSCALE, titles_offset_x, titles_offset_y, dates_offset_x, dates_offset_y, days_offset_x, days_offset_y
+	global rotation_angle, twopi, color_of_dot, NUMBER_OF_CLOCKFACES
+	global worldclock_text, offset_timezone, offset_x, offset_y
+	if width==64 and height==32:
+		subbitmap_size = 32
+		brightness = 0.4
+		rotation_angle = 0*math.pi/2
+		boardtype = "rgbmatrix"
+		should_show_worldclock_labels = False
+		color_of_dot = 4
+		radius_of_dot = 0
+		width_of_hour_hand = 2
+		width_of_minute_hand = 2
+		distance_of_dot_from_center = 15
+	elif width==64 and height==64:
+		subbitmap_size = 64
+		brightness = 0.25
+		rotation_angle = 0*math.pi/2
+		boardtype = "rgbmatrix"
+		should_show_worldclock_labels = False
+		color_of_dot = 4
+		radius_of_dot = 0
+		width_of_hour_hand = 2
+		width_of_minute_hand = 2
+		distance_of_dot_from_center = 31
+	elif width==480 and height==320:
+		subbitmap_size = 320
+		rotation_angle = 3*math.pi/2
+		boardtype = "feather"
+		should_show_worldclock_labels = True
+		color_of_dot = 5
+		radius_of_dot = 7
+		width_of_hour_hand = 16
+		width_of_minute_hand = 9
+		distance_of_dot_from_center = 148
+	elif width==320 and height==960:
+		rotation_angle = 1*math.pi/2 # must come after 320 one above
+		subbitmap_size = 320
+		boardtype = "qualia"
+		should_show_worldclock_labels = True
+		color_of_dot = 4
+		radius_of_dot = 7
+		width_of_hour_hand = 16
+		width_of_minute_hand = 9
+		distance_of_dot_from_center = 148
+	elif width==720 and height==720:
+		subbitmap_size = 720
+		boardtype = "qualia"
+		rotation_angle = 0*math.pi/2
+		should_show_worldclock_labels = False
+		color_of_dot = 4
+		radius_of_dot = 10
+		width_of_hour_hand = 24
+		width_of_minute_hand = 16
+		distance_of_dot_from_center = 342
+	else:
+		print("unsupported width/height combination (1)")
+		hang()
+	subbitmap_width = subbitmap_size
+	subbitmap_height = subbitmap_size
+	length_of_hour_hand = int(0.5 * subbitmap_size/2)
+	length_of_minute_hand = int(0.8 * subbitmap_size/2)
+	subbitmap_center_x = subbitmap_width//2
+	subbitmap_center_y = subbitmap_height//2
+	FONTSCALE = 2
+	if width==480:
+		titles_offset_x = 150
+		titles_offset_y = -50
+		dates_offset_x = -200
+		dates_offset_y = -52
+		days_offset_x = -200
+		days_offset_y = 77
+	elif subbitmap_size==320:
+		titles_offset_x = -150
+		titles_offset_y = -50
+		dates_offset_x = 150
+		dates_offset_y = -52
+		days_offset_x = 150
+		days_offset_y = 77
+	if height==3*width: # worldclock mode
+		NUMBER_OF_CLOCKFACES = 3
+		worldclock_text = [ "Tokyo", "Honolulu", "New York" ]
+		offset_timezone = [ +19, 0, +5 ]
+		offset_x = [ 0, 0, 0 ]
+		offset_y = [ 320, 0, -320 ]
+		NTP_INDEX = 1
+		rotation_angle = 1*math.pi/2
+	else:
+		NUMBER_OF_CLOCKFACES = 1
+		worldclock_text = [ " " ]
+		offset_timezone = [ 0 ]
+		offset_x = [ 0 ]
+		offset_y = [ 0 ]
+		NTP_INDEX = 0
 	#global startup_time; startup_time = time.monotonic()
 	global twopi; twopi = 2 * math.pi
 	global display, bitmap
 	gc.collect(); print(gc.mem_free())
-	if 1:
-		graphics = Graphics(Displays.BAR320X960, default_bg=None, auto_refresh=False)
-		#graphics = Graphics(Displays.ROUND40, default_bg=None, auto_refresh=False)
+	displayio.release_displays()
+	if boardtype=="qualia":
+		from adafruit_qualia.graphics import Graphics, Displays # helps find the name "Displays.BAR320X960"
+		from adafruit_qualia.peripherals import Peripherals
+		if width==320 and height==960:
+			graphics = Graphics(Displays.BAR320X960, default_bg=None, auto_refresh=False)
+		elif width==720 and height==720:
+			graphics = Graphics(Displays.ROUND40, default_bg=None, auto_refresh=False)
+		else:
+			print("unsupported width/height combination (2)")
+			hang()
 		display = graphics.display
 		splash = graphics.splash
-	else:
-		displayio.release_displays()
-		import board
+	elif boardtype=="feather":
 		spi = board.SPI()
 		if board.board_id=="adafruit_feather_esp32_v2":
 			tft_cs = board.D15
@@ -187,6 +270,52 @@ def setup():
 		display = HX8357(display_bus, width=display_width, height=display_height)
 		splash = displayio.Group()
 		display.auto_refresh = False
+	elif boardtype=="rgbmatrix":
+		import rgbmatrix
+		import framebufferio
+		if 0:
+			matrix = rgbmatrix.RGBMatrix( # matrix_featherwing
+				width=64, height=32, bit_depth=4,
+				rgb_pins=[board.D6, board.D5, board.D9, board.D11, board.D10, board.D12], # R1, G1, B1, R2, B2, G2
+				addr_pins=[board.A5, board.A4, board.A3, board.A2], # ROW_A, ROW_B, ROW_C, ROW_D
+				clock_pin=board.D13, latch_pin=board.D0, output_enable_pin=board.D1)
+		elif width==64 and height==32:
+			try:
+				matrix = rgbmatrix.RGBMatrix( # interstate75 64x32
+					width=64, height=32, bit_depth=4,
+					rgb_pins=[board.R0, board.G0, board.B0, board.R1, board.G1, board.B1], # R0, G0, B0, R1, G1, B1
+					addr_pins=[board.ROW_A, board.ROW_B, board.ROW_C, board.ROW_D], # ROW_E needed for 64x64 displays
+					clock_pin=board.CLK, latch_pin=board.LAT, output_enable_pin=board.OE)
+			except:
+				matrix = rgbmatrix.RGBMatrix( # interstate75w 64x32
+					width=64, height=32, bit_depth=4,
+					rgb_pins=[board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5], # R0, G0, B0, R1, G1, B1
+					addr_pins=[board.GP6, board.GP7, board.GP8, board.GP9], # ROW_E needed for 64x64 displays
+					clock_pin=board.GP11, latch_pin=board.GP12, output_enable_pin=board.GP13)
+		elif width==64 and height==64:
+			try:
+				matrix = rgbmatrix.RGBMatrix( # interstate75 64x64
+					width=64, height=64, bit_depth=4,
+					rgb_pins=[board.R0, board.G0, board.B0, board.R1, board.G1, board.B1], # R0, G0, B0, R1, G1, B1
+					addr_pins=[board.ROW_A, board.ROW_B, board.ROW_C, board.ROW_D, board.ROW_E], # ROW_E needed for 64x64 displays
+					clock_pin=board.CLK, latch_pin=board.LAT, output_enable_pin=board.OE)
+			except:
+				matrix = rgbmatrix.RGBMatrix( # interstate75w 64x64
+					width=64, height=64, bit_depth=4,
+					rgb_pins=[board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5], # R0, G0, B0, R1, G1, B1
+					addr_pins=[board.GP6, board.GP7, board.GP8, board.GP9, board.GP10], # ROW_E needed for 64x64 displays
+					clock_pin=board.GP11, latch_pin=board.GP12, output_enable_pin=board.GP13)
+		else:
+			print("unsupported width/height combination (3)")
+			hang()
+		matrix.brightness = brightness
+		# ValueError: 5 address pins, 6 rgb pins and 1 tiles indicate a height of 64, not 32
+		splash = displayio.Group()
+		display = framebufferio.FramebufferDisplay(matrix)
+	else:
+		print("unsupported width/height combination (4)")
+		hang()
+	#display.auto_refresh = False
 	gc.collect(); print(gc.mem_free())
 	bitmap = displayio.Bitmap(display.width, display.height, palette_colors)
 	global center_x, center_y
@@ -296,9 +425,10 @@ def draw_hour_and_minute_hands(i, hour, minute):
 		#bitmaptools.blit(bitmap, hour_hand_bitmap, 0, 0)
 		#bitmaptools.blit(bitmap, minute_hand_bitmap, 0, 0)
 		bitmaptools.rotozoom(bitmap, dots_bitmap, ox=center_x+offset_x[i], oy=center_y+offset_y[i], angle=-rotation_angle)
-		bitmaptools.rotozoom(bitmap, worldclock_titles[i].bitmap, angle=-rotation_angle, skip_index=0, ox=center_x+offset_x[i]+titles_offset_x, oy=center_y+offset_y[i]+titles_offset_y-worldclock_titles[i].bitmap.width//2, scale=FONTSCALE)
-		bitmaptools.rotozoom(bitmap, worldclock_dates[i].bitmap, angle=-rotation_angle, skip_index=0, ox=center_x+offset_x[i]+dates_offset_x, oy=center_y+offset_y[i]+dates_offset_y-worldclock_dates[i].bitmap.width//2, scale=FONTSCALE)
-		bitmaptools.rotozoom(bitmap, worldclock_days[i].bitmap, angle=-rotation_angle, skip_index=0, ox=center_x+offset_x[i]+days_offset_x, oy=center_y+offset_y[i]+days_offset_y-worldclock_days[i].bitmap.width//2, scale=FONTSCALE)
+		if should_show_worldclock_labels:
+			bitmaptools.rotozoom(bitmap, worldclock_titles[i].bitmap, angle=-rotation_angle, skip_index=0, ox=center_x+offset_x[i]+titles_offset_x, oy=center_y+offset_y[i]+titles_offset_y-worldclock_titles[i].bitmap.width//2, scale=FONTSCALE)
+			bitmaptools.rotozoom(bitmap, worldclock_dates[i].bitmap, angle=-rotation_angle, skip_index=0, ox=center_x+offset_x[i]+dates_offset_x, oy=center_y+offset_y[i]+dates_offset_y-worldclock_dates[i].bitmap.width//2, scale=FONTSCALE)
+			bitmaptools.rotozoom(bitmap, worldclock_days[i].bitmap, angle=-rotation_angle, skip_index=0, ox=center_x+offset_x[i]+days_offset_x, oy=center_y+offset_y[i]+days_offset_y-worldclock_days[i].bitmap.width//2, scale=FONTSCALE)
 		bitmaptools.rotozoom(bitmap, minute_hand_bitmap, angle=minute_angle-rotation_angle, skip_index=0, ox=center_x+offset_x[i], oy=center_y+offset_y[i])
 		bitmaptools.rotozoom(bitmap, hour_hand_bitmap, angle=hour_angle-rotation_angle, skip_index=0, ox=center_x+offset_x[i], oy=center_y+offset_y[i])
 	else:
@@ -331,7 +461,7 @@ while True:
 		update_worldclock_dates()
 		update_worldclock_days_AMPM()
 		draw_hour_and_minute_hands(i, hour12, minute)
-	if t_struct[1].tm_hour==23 and t_struct[1].tm_min==59:
+	if t_struct[NTP_INDEX].tm_hour==23 and t_struct[NTP_INDEX].tm_min==59:
 		we_still_need_to_get_ntp_time = True
 	if we_still_need_to_get_ntp_time:
 		print("getting NTP time and setting RTC...")
