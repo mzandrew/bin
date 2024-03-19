@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 # written 2024-01-18 by mza
-# based on 480x320-tft-feather-clock.py, bar320x960-ips-clock.py, round40-ips-clock.py
+# based on 480x320-tft-feather-clock.py, bar320x960-ips-clock.py, round40-ips-clock.py, 64x64-rgbmatrix-clock.py
 # from https://learn.adafruit.com/rgb-matrix-slot-machine/circuitpython-libraries
+# and https://learn.adafruit.com/rgb-led-matrices-matrix-panels-with-circuitpython/advanced-multiple-panels
 # last updated 2024-03-16 by mza
 
 # for use on an interstate75w (raspberry_pi_pico_w) with a rgbmatrix
@@ -85,7 +86,7 @@ def get_ntp_time_and_set_RTC():
 		global we_still_need_to_get_ntp_time; we_still_need_to_get_ntp_time = False
 	except:
 		print("can't get ntp time!")
-		raise
+		#raise
 
 def get_ntp_time_if_necessary():
 	global we_still_need_to_get_ntp_time; we_still_need_to_get_ntp_time = False
@@ -130,35 +131,57 @@ def setup():
 	m = storage.getmount("/")
 	label = m.label
 	print("label is: " + label)
-	match = re.search("([0-9]+)X([0-9]+)CLOC", str(label))
+	numV = 1 # tiling in vertical direction
+	numH = 1 # tiling in horizontal direction
+	match = re.search("([0-9]+)X([0-9]+)CLOC", str(label)) # "64X64CLOCK"
 	if match:
 		width = int(match.group(1))
 		height = int(match.group(2))
 		print("width: " + str(width))
 		print("height: " + str(height))
 	else:
-		print("customize custom_label.boot.py with \"64X64CLOCK\" or \"320x480CLOCK\" (etc)")
-		print("then cp custom_label.boot.py to /media/mza/CIRCUITPY/boot.py")
-		print("unmount drive, and then unplug/replug board")
-		hang()
+		match = re.search("([0-9]+)X([0-9]+)X([0-9]+)", str(label)) # "64X32X2" (implicit vertical tiling)
+		if match:
+			width = int(match.group(1))
+			height = int(match.group(2))
+			numV = int(match.group(3))
+			print("width: " + str(width))
+			print("height: " + str(height))
+			print("numV: " + str(numV))
+		else:
+			match = re.search("([0-9]+)X([0-9]+)X([0-9]+)X([0-9]|)", str(label)) # "64X64X2X2"
+			if match:
+				width = int(match.group(1))
+				height = int(match.group(2))
+				numH = int(match.group(3))
+				numV = int(match.group(4))
+				print("width: " + str(width))
+				print("height: " + str(height))
+				print("numH: " + str(numH))
+				print("numV: " + str(numV))
+			else:
+				print("customize custom_label.boot.py with \"64X64CLOCK\" or \"320x480CLOCK\" or \"63X32X2\" (etc)")
+				print("then cp custom_label.boot.py to /media/mza/CIRCUITPY/boot.py")
+				print("unmount drive, and then unplug/replug board")
+				hang()
 	global NTP_INDEX, should_show_worldclock_labels, subbitmap_width, subbitmap_height
 	global length_of_hour_hand, length_of_minute_hand, distance_of_dot_from_center, radius_of_dot
 	global width_of_hour_hand, width_of_minute_hand, subbitmap_center_x, subbitmap_center_y
 	global FONTSCALE, titles_offset_x, titles_offset_y, dates_offset_x, dates_offset_y, days_offset_x, days_offset_y
 	global rotation_angle, twopi, color_of_dot, NUMBER_OF_CLOCKFACES
 	global worldclock_text, offset_timezone, offset_x, offset_y
-	if width==64 and height==32:
+	if numH*width==64 and numV*height==32:
 		subbitmap_size = 32
 		brightness = 0.4
 		rotation_angle = 0*math.pi/2
 		boardtype = "rgbmatrix"
 		should_show_worldclock_labels = False
 		color_of_dot = 4
-		radius_of_dot = 0
-		width_of_hour_hand = 2
-		width_of_minute_hand = 2
-		distance_of_dot_from_center = 15
-	elif width==64 and height==64:
+		radius_of_dot = 0.75
+		width_of_hour_hand = 1.75
+		width_of_minute_hand = 0.25
+		distance_of_dot_from_center = 14.5
+	elif numH*width==64 and numV*height==64:
 		subbitmap_size = 64
 		brightness = 0.25
 		rotation_angle = 0*math.pi/2
@@ -204,8 +227,8 @@ def setup():
 		hang()
 	subbitmap_width = subbitmap_size
 	subbitmap_height = subbitmap_size
-	length_of_hour_hand = int(0.5 * subbitmap_size/2)
-	length_of_minute_hand = int(0.8 * subbitmap_size/2)
+	length_of_hour_hand = int(0.45 * subbitmap_size/2)
+	length_of_minute_hand = int(0.85 * subbitmap_size/2)
 	subbitmap_center_x = subbitmap_width//2
 	subbitmap_center_y = subbitmap_height//2
 	FONTSCALE = 2
@@ -281,27 +304,27 @@ def setup():
 				clock_pin=board.D13, latch_pin=board.D0, output_enable_pin=board.D1)
 		elif width==64 and height==32:
 			try:
-				matrix = rgbmatrix.RGBMatrix( # interstate75 64x32
-					width=64, height=32, bit_depth=4,
+				matrix = rgbmatrix.RGBMatrix( # pimoroni_interstate75 64x32
+					width=numH*width, height=numV*height, bit_depth=4, tile=numV,
 					rgb_pins=[board.R0, board.G0, board.B0, board.R1, board.G1, board.B1], # R0, G0, B0, R1, G1, B1
 					addr_pins=[board.ROW_A, board.ROW_B, board.ROW_C, board.ROW_D], # ROW_E needed for 64x64 displays
 					clock_pin=board.CLK, latch_pin=board.LAT, output_enable_pin=board.OE)
 			except:
 				matrix = rgbmatrix.RGBMatrix( # interstate75w 64x32
-					width=64, height=32, bit_depth=4,
+					width=numH*width, height=numV*height, bit_depth=4, tile=numV,
 					rgb_pins=[board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5], # R0, G0, B0, R1, G1, B1
 					addr_pins=[board.GP6, board.GP7, board.GP8, board.GP9], # ROW_E needed for 64x64 displays
 					clock_pin=board.GP11, latch_pin=board.GP12, output_enable_pin=board.GP13)
 		elif width==64 and height==64:
 			try:
-				matrix = rgbmatrix.RGBMatrix( # interstate75 64x64
-					width=64, height=64, bit_depth=4,
+				matrix = rgbmatrix.RGBMatrix( # pimoroni_interstate75 64x64
+					width=numH*width, height=numV*height, bit_depth=4, tile=numV,
 					rgb_pins=[board.R0, board.G0, board.B0, board.R1, board.G1, board.B1], # R0, G0, B0, R1, G1, B1
 					addr_pins=[board.ROW_A, board.ROW_B, board.ROW_C, board.ROW_D, board.ROW_E], # ROW_E needed for 64x64 displays
 					clock_pin=board.CLK, latch_pin=board.LAT, output_enable_pin=board.OE)
 			except:
 				matrix = rgbmatrix.RGBMatrix( # interstate75w 64x64
-					width=64, height=64, bit_depth=4,
+					width=numH*width, height=numV*height, bit_depth=4, tile=numV,
 					rgb_pins=[board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5], # R0, G0, B0, R1, G1, B1
 					addr_pins=[board.GP6, board.GP7, board.GP8, board.GP9, board.GP10], # ROW_E needed for 64x64 displays
 					clock_pin=board.GP11, latch_pin=board.GP12, output_enable_pin=board.GP13)
@@ -374,25 +397,25 @@ def generate_rotozoom_hands():
 	global hour_hand_bitmap
 	hour_hand_bitmap = displayio.Bitmap(subbitmap_width, subbitmap_height, palette_colors)
 	clear_bitmap(hour_hand_bitmap)
-	xs = array.array("i", (subbitmap_center_x-width_of_hour_hand//2, subbitmap_center_x+width_of_hour_hand//2, subbitmap_center_x+width_of_hour_hand//2, subbitmap_center_x-width_of_hour_hand//2))
-	ys = array.array("i", (subbitmap_center_y, subbitmap_center_y, subbitmap_center_y-length_of_hour_hand, subbitmap_center_y-length_of_hour_hand))
+	xs = array.array("i", (int(subbitmap_center_x-width_of_hour_hand/2), int(subbitmap_center_x+width_of_hour_hand/2), int(subbitmap_center_x+width_of_hour_hand/2), int(subbitmap_center_x-width_of_hour_hand/2)))
+	ys = array.array("i", (subbitmap_center_y, subbitmap_center_y, int(subbitmap_center_y-length_of_hour_hand), int(subbitmap_center_y-length_of_hour_hand)))
 	bitmaptools.draw_polygon(hour_hand_bitmap, xs, ys, color_of_hour_hand, 2)
-	bitmaptools.boundary_fill(hour_hand_bitmap, subbitmap_center_x, subbitmap_center_y-length_of_hour_hand//2, color_of_hour_hand, background_color)
+	bitmaptools.boundary_fill(hour_hand_bitmap, subbitmap_center_x, int(subbitmap_center_y-length_of_hour_hand/2), color_of_hour_hand, background_color)
 	global minute_hand_bitmap
 	minute_hand_bitmap = displayio.Bitmap(subbitmap_width, subbitmap_height, palette_colors)
 	clear_bitmap(minute_hand_bitmap)
-	xs = array.array("i", (subbitmap_center_x-width_of_minute_hand//2, subbitmap_center_x+width_of_minute_hand//2, subbitmap_center_x+width_of_minute_hand//2, subbitmap_center_x-width_of_minute_hand//2))
-	ys = array.array("i", (subbitmap_center_y, subbitmap_center_y, subbitmap_center_y-length_of_minute_hand, subbitmap_center_y-length_of_minute_hand))
+	xs = array.array("i", (int(subbitmap_center_x-width_of_minute_hand/2), int(subbitmap_center_x+width_of_minute_hand/2), int(subbitmap_center_x+width_of_minute_hand/2), int(subbitmap_center_x-width_of_minute_hand/2)))
+	ys = array.array("i", (subbitmap_center_y, subbitmap_center_y, int(subbitmap_center_y-length_of_minute_hand), int(subbitmap_center_y-length_of_minute_hand)))
 	bitmaptools.draw_polygon(minute_hand_bitmap, xs, ys, color_of_minute_hand, 2)
-	bitmaptools.boundary_fill(minute_hand_bitmap, subbitmap_center_x, subbitmap_center_y-length_of_minute_hand//2, color_of_minute_hand, background_color)
+	bitmaptools.boundary_fill(minute_hand_bitmap, subbitmap_center_x, int(subbitmap_center_y-length_of_minute_hand/2), color_of_minute_hand, background_color)
 
 def thickline(x1, y1, angle, length, width, color1, color2=background_color):
 	x2 = x1 + int(length*math.sin(angle))
 	y2 = y1 - int(length*math.cos(angle))
 	#return Line(x1, y1, x2, y2, color1)
 	#return Polygon(points=[(x1, y1), (x2, y2)], outline=color1)
-	x_adjustment = int(width//2*math.cos(angle))
-	y_adjustment = int(width//2*math.sin(angle))
+	x_adjustment = int(width/2*math.cos(angle))
+	y_adjustment = int(width/2*math.sin(angle))
 	x3 = x1 + x_adjustment
 	y3 = y1 + y_adjustment
 	x4 = x1 + x_adjustment + int(length*math.sin(angle))
