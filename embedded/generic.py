@@ -288,3 +288,33 @@ def is_blinka():
 			info("uname.sysname is Linux")
 		info(str(os.uname()))
 
+def filesize(filename):
+	from os import stat
+	stats = stat(filename)
+	filesize = stats[6]
+	return filesize
+
+def show_filesize(filename):
+	myfilesize = filesize(filename)
+	info('{0:>12} {1:<40}'.format(str(myfilesize), filename))
+
+def linecount(filename):
+	linecount = 0
+	# from https://stackoverflow.com/a/1019572/5728815
+	with open(filename, "rb") as myfile:
+		linecount = sum(1 for _ in myfile)
+	return linecount
+
+def show_linecount(filename):
+	mylinecount = linecount(filename)
+	info('{0:>6} {1:<40}'.format(str(mylinecount), filename))
+
+def wc(filename):
+	myfilesize = filesize(filename)
+	mylinecount = linecount(filename)
+	return myfilesize, mylinecount
+
+def show_wc(filename):
+	myfilesize, mylinecount = wc(filename)
+	info('{0:>6} {1:>12} {2:<40}'.format(str(mylinecount), str(myfilesize), filename))
+

@@ -62,11 +62,14 @@ def fetch_list_with_datestamps(feed_name, count=COUNT):
 
 def fetch_list_with_datestamps_and_write_to_file(arg):
 	filename = timestamp + "." + arg + ".csv"
-	print("fetching " + arg + " to " + filename + "...")
+	print("fetching " + arg + " to " + filename + " ...")
 	with open(filename, "w") as myfile:
 		for line in fetch_list_with_datestamps(arg):
 			myfile.write(line)
 			myfile.write("\n")
+	#generic.show_filesize(filename)
+	#generic.show_linecount(filename)
+	generic.show_wc(filename)
 	time.sleep(1)
 
 def grab_a_bunch():
