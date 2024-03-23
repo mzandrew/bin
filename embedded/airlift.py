@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2021-05-01 by mza
-# last updated 2023-10-18 by mza
+# last updated 2024-03-23 by mza
 
 import time
 import busio
@@ -222,6 +222,8 @@ def connect_wifi(hostname):
 # for esp32-s2 boards
 # from https://learn.adafruit.com/adafruit-metro-esp32-s2/circuitpython-internet-test
 def setup_wifi(hostname, number_of_retries_remaining=2):
+	if not generic.running_circuitpython():
+		return True
 	global mydesiredhostname
 	global myboxcar
 	global using_builtin_wifi
@@ -336,6 +338,8 @@ def esp32_connect(number_of_retries_remaining=2):
 	# and https://github.com/adafruit/Adafruit_CircuitPython_ESP32SPI/blob/main/adafruit_esp32spi/adafruit_esp32spi.py
 #spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 def setup_airlift(hostname, spi, cs_pin, ready_pin, reset_pin, number_of_retries_remaining=2):
+	if not generic.running_circuitpython():
+		return True
 	global mydesiredhostname
 	global myboxcar
 	global esp
@@ -417,6 +421,8 @@ def get_rssi():
 	return rssi
 
 def show_network_status():
+	if not generic.running_circuitpython():
+		return
 	try:
 		using_builtin_wifi
 	except (KeyboardInterrupt, ReloadException):
@@ -488,6 +494,63 @@ def setup_io():
 		warning("can't connect to adafruit io")
 		increment_error_count_and_check_error_count_and_reboot_if_too_high()
 
+def get_feed(feed_name):
+	global myfeeds
+	for feed in myfeeds: # list of lists, where each entry is: [ feed_name, feed ]
+		if feed_name==feed[0]:
+			return feed[1]
+	debug2("initial len(mydesiredfeeds): " + str(len(mydesiredfeeds)))
+	match = False
+	for already_added_feed_name in mydesiredfeeds:
+		if feed_name == already_added_feed_name:
+			match = True
+	if not match:
+		debug2("adding " + feed_name + " to list of desired feeds")
+		mydesiredfeeds.append(feed_name)
+	debug2("final len(mydesiredfeeds): " + str(len(mydesiredfeeds)))
+	from adafruit_io.adafruit_io import AdafruitIO_RequestError, AdafruitIO_MQTTError, AdafruitIO_ThrottleError
+	try:
+		io
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
+		exception(e)
+		error("can't talk to aio")
+		raise
+	info("attempting to connect to feed " + feed_name + "...")
+	try:
+		myfeed = io.get_feed(feed_name)
+		info("connected to feed " + feed_name)
+		info(str(myfeed["key"]))
+		myfeeds.append([ feed_name , myfeed ])
+		return myfeed
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except AdafruitIO_RequestError as e:
+		info("feed " + str(feed_name) + " doesn't exist")
+	except AdafruitIO_MQTTError as e:
+		error("aio MQTT error")
+		exception(e)
+	except AdafruitIO_ThrottleError as e:
+		error("aio throttle error")
+		exception(e)
+	except ValueError as e:
+		error("invalid feed name: " + feed_name)
+		exception(e)
+	except RuntimeError as e:
+		exception(e)
+		raise
+	except AttributeError as e:
+		error("function doesn't exist")
+		exception(e)
+		show_network_status()
+		raise
+	except Exception as e:
+		error("some other problem")
+		exception(e)
+		show_network_status()
+		raise
+
 def setup_feed(feed_name, number_of_retries_remaining=2):
 	global myfeeds
 	for feed in myfeeds: # list of lists, where each entry is: [ feed_name, feed ]
@@ -527,7 +590,8 @@ def setup_feed(feed_name, number_of_retries_remaining=2):
 			try:
 				myfeed = io.create_new_feed(feed_name)
 				info("created new feed " + feed_name)
-				break
+				myfeeds.append([ feed_name , myfeed ])
+				return myfeed
 			except (KeyboardInterrupt, ReloadException):
 				raise
 			except AdafruitIO_RequestError as e:
@@ -554,8 +618,6 @@ def setup_feed(feed_name, number_of_retries_remaining=2):
 			raise
 		#info(str(myfeed["key"]))
 		time.sleep(DELAY)
-	myfeeds.append([ feed_name , myfeed ])
-	return myfeed
 
 def setup_feeds(list_of_feeds, interstitial_delay=0.1):
 	info("attempting to set up feeds: " + str(list_of_feeds))
@@ -786,12 +848,14 @@ def add_most_recent_data_to_end_of_array(values, feed):
 
 # curl -H "X-AIO-Key: {io_key}" "https://io.adafruit.com/api/v2/{username}/feeds/{feed_key}/data?limit=1&end_time=2019-05-05T00:00Z"
 # curl -H "X-AIO-Key: {io_key}" "https://io.adafruit.com/api/v2/{username}/feeds/{feed_key}/data?start_time=2019-05-04T00:00Z&end_time=2019-05-05T00:00Z"
-# Not implemented in Adafruit IO CircuitPython
-def get_some_data(feed_key, start_time, end_time, limit=1):
+#def get_some_data(feed_name, start_time, end_time, count_desired=1):
+def get_some_data(feed_name, count_desired=1):
 	try:
-		adafruit_io.validate_feed_key(feed_key)
-		path = adafruit_io._compose_path("feeds/{0}/data?start_time={0}&end_time={0}&limit={0}".format(feed_key, start_time, end_time, limit))
-		return adafruit_io._get(path)
+		feed_key = get_feed(feed_name)["key"]
+		#io.validate_feed_key(feed_key)
+		#path = adafruit_io._compose_path("feeds/{0}/data?start_time={0}&end_time={0}&limit={0}".format(feed_key, start_time, end_time, limit))
+		#return adafruit_io._get(path)
+		return io.receive_n_data(feed_key, count_desired)
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except Exception as e:
@@ -856,10 +920,10 @@ def get_all_data_with_datestamps(feed, count_desired=None):
 	try:
 		DATESTAMP_INDEX = 1 # gotta know that "created_at" is index #1 in the tuple
 		#info("fetching data from feed " + str(feed) + "...")
-		if count_desired is not None:
-			raw = io.data(feed, max_results=count_desired)
-		else:
-			raw = io.data(feed)
+#		if count_desired is not None:
+		raw = io.data(feed, max_results=count_desired)
+#		else:
+#			raw = io.data(feed)
 		count_gotten = len(raw)
 		if count_gotten:
 			FEED_ID = raw[0][5]

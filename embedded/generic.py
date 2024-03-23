@@ -279,3 +279,12 @@ def os_ver():
 def print_os_ver():
 	print("running on circuitpython " + os_ver())
 
+def is_blinka():
+	from board import board_id
+	if board_id=='GENERIC_LINUX_PC':
+		info("running blinka")
+		print_os_ver()
+		if running_circuitpython():
+			info("uname.sysname is Linux")
+		info(str(os.uname()))
+
