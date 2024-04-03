@@ -77,7 +77,7 @@ def parse_RTC():
 	global should_update_clockface
 	global should_check_network_time
 	datetime = rtc.RTC().datetime
-	print("rtc: " + str(datetime))
+	#print("rtc: " + str(datetime))
 	yyyy = datetime.tm_year
 	mm = datetime.tm_mon
 	dd = datetime.tm_mday
@@ -188,7 +188,6 @@ def setup_neopixel_clockface():
 	digit.append(neopixel.NeoPixel(board.A3, NUMBER_OF_PIXELS_PER_DIGIT, auto_write=False))
 
 def draw_clockface():
-	debug("updating clockface...")
 	datetime = rtc.RTC().datetime
 	for i in range(4):
 		if 3==i: # hh:mM
@@ -206,7 +205,6 @@ def draw_clockface():
 			digit[i][j] = list(map(lambda x: int(x*brightness*font_4x8[k][j]), PURPLE))
 	for i in range(4):
 		digit[i].show()
-	debug("done updating clockface")
 
 def loop():
 	global should_check_network_time
