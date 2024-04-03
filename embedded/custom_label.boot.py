@@ -43,7 +43,8 @@
 #desired_label = "320X960CLOCK"
 #desired_label = "480X320CLOCK"
 #desired_label = "720X720CLOCK"
-desired_label = "64X32X2"
+#desired_label = "64X32X2"
+desired_label = "NEOCLOCKDIG"
 
 try:
 	import storage
