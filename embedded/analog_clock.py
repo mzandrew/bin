@@ -51,7 +51,7 @@ color_of_minute_hand = 1
 
 #peripherals = Peripherals()
 #peripherals.backlight = True
-fake_the_network_being_down_counter = 0
+#fake_the_network_being_down_counter = 0
 #mode = "bitmaptools"
 #mode = "display_shapes"
 mode = "rotozoom"
@@ -66,10 +66,10 @@ def get_ntp_time_and_set_RTC():
 	datetime = rtc.RTC().datetime
 	print("rtc: " + str(datetime))
 	try:
-		global fake_the_network_being_down_counter
-		if 0<fake_the_network_being_down_counter:
-			fake_the_network_being_down_counter -= 1
-			raise
+#		global fake_the_network_being_down_counter
+#		if 0<fake_the_network_being_down_counter:
+#			fake_the_network_being_down_counter -= 1
+#			raise
 		import wifi
 		import socketpool
 		pool = socketpool.SocketPool(wifi.radio)
