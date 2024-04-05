@@ -13,7 +13,7 @@
 # to install:
 # rsync -av adafruit_qualia adafruit_portalbase adafruit_bitmap_font adafruit_io adafruit_minimqtt adafruit_bus_device adafruit_display_text adafruit_display_shapes adafruit_fakerequests.mpy adafruit_requests.mpy adafruit_pca9554.mpy adafruit_focaltouch.mpy adafruit_cst8xx.mpy adafruit_hx8357.mpy adafruit_tsc2007.mpy adafruit_datetime.mpy adafruit_ntp.mpy /media/mza/CIRCUITPY/lib/
 # cp -a settings.toml /media/mza/CIRCUITPY/
-# cp -a 64x32-matrix-clock.py /media/mza/CIRCUITPY/code.py; sync
+# cp -a clock.analog.py /media/mza/CIRCUITPY/code.py; sync
 # customize custom_label.boot.py with "64X64CLOCK" or "720X720CLOC" (as appropriate), unmount CIRCUITPY drive and unplug/replug board
 
 #import adafruit_tsc2007

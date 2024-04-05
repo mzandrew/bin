@@ -7,7 +7,7 @@
 # to install:
 # cp -ar adafruit_register adafruit_ds3231.mpy adafruit_requests.mpy adafruit_io adafruit_minimqtt adafruit_display_text adafruit_ht16k33 /media/mza/7SEGCLOK/lib/
 # cp -a ds3231_adafruit.py secrets.py airlift.py boxcar.py generic display_adafruit.py DebugInfoWarningError24.py /media/mza/7SEGCLOK/
-# cp -a 7seg_clock.py /media/mza/7SEGCLOK/code.py; sync
+# cp -a clock.7seg.py /media/mza/7SEGCLOK/code.py; sync
 
 import time
 import re

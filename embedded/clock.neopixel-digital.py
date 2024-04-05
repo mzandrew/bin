@@ -10,7 +10,7 @@
 # rsync -r adafruit_ntp.mpy neopixel.mpy /media/mza/CIRCUITPY/lib/
 # cd ..
 # rsync -av DebugInfoWarningError24.py /media/mza/CIRCUITPY/
-# cp -a neopixel_clockface_digital.py /media/mza/CIRCUITPY/code.py; sync
+# cp -a clock.neopixel-digital.py /media/mza/CIRCUITPY/code.py; sync
 
 import time
 import re

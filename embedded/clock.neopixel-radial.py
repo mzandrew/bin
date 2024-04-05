@@ -9,7 +9,7 @@
 # rsync -r adafruit_ds3231.mpy adafruit_as7341.mpy neopixel.mpy adafruit_minimqtt simpleio.mpy adafruit_esp32spi adafruit_register adafruit_io adafruit_requests.mpy adafruit_bus_device /media/mza/CIRCUITPY/lib/
 # cd ..
 # rsync -av *.py /media/mza/CIRCUITPY/
-# cp -a neopixel_clockface.py /media/mza/CIRCUITPY/code.py; sync
+# cp -a clock.neopixel-radial.py /media/mza/CIRCUITPY/code.py; sync
 
 import time
 import re
