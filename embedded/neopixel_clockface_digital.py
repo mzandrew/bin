@@ -3,7 +3,7 @@
 # with help from https://learn.adafruit.com/adafruit-circuit-playground-express/circuitpython-neopixel
 # and from https://learn.adafruit.com/adafruit-circuit-playground-express/circuitpython-digital-in-out
 # and from https://learn.adafruit.com/circuitpython-essentials/circuitpython-neopixel
-# last updated 2024-04-03 by mza
+# last updated 2024-04-04 by mza
 
 # to install:
 # cd lib
@@ -190,14 +190,17 @@ def setup_neopixel_clockface():
 def draw_clockface():
 	datetime = rtc.RTC().datetime
 	for i in range(4):
+		h24 = datetime.tm_hour
+		h12 = h24 % 12
+		m = datetime.tm_min
 		if 3==i: # hh:mM
-			k = datetime.tm_min%10
+			k = m%10
 		if 2==i: # hh:Mm
-			k = datetime.tm_min//10
+			k = m//10
 		if 1==i: # hH:mm
-			k = datetime.tm_hour%10
+			k = h12%10
 		if 0==i: # Hh:mm
-			k = datetime.tm_hour//10
+			k = h12//10
 			if 0==k:
 				k = 10
 		digit[i].fill(list(map(lambda x: int(x*brightness), BLACK)))
