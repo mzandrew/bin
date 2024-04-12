@@ -2,7 +2,12 @@
 # with help from https://learn.adafruit.com/adafruit-circuit-playground-express/circuitpython-neopixel
 # and from https://learn.adafruit.com/adafruit-circuit-playground-express/circuitpython-digital-in-out
 # based on purple.py
-# last updated 2022-12-01 by mza
+# last updated 2023-11-01 by mza
+
+# circuit playground bluefruit requires new bootloader and the neopixel lib:
+# pip3 install --user adafruit-nrfutil
+# adafruit-nrfutil --verbose dfu serial --package ~/Downloads/adafruit/circuitplayground_nrf52840_bootloader-0.8.0_s140_6.1.1.zip -p /dev/ttyACM0 -b 115200 --singlebank --touch 1200
+# cp -a neopixel.mpy /media/mza/CIRCUITPY/lib/; sync
 
 import time
 import board

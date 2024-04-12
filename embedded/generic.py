@@ -1,5 +1,5 @@
 # written 2021-12-28 by mza
-# last updated 2023-03-09 by mza
+# last updated 2023-10-10 by mza
 
 import os
 import sys
@@ -8,8 +8,17 @@ import atexit
 import gc
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
-def hex(number, width=1):
-	return "%0*x" % (width, number)
+def hex(number, width=1, pad_with_zeroes=True):
+	if pad_with_zeroes:
+		return "%0*x" % (width, number)
+	else:
+		return "%*x" % (width, number)
+
+def dec(number, width=1, pad_with_zeroes=True):
+	if pad_with_zeroes:
+		return "%0*d" % (width, number)
+	else:
+		return "%*d" % (width, number)
 
 def fround(value, precision):
 	if value<0.0:
@@ -269,4 +278,43 @@ def os_ver():
 
 def print_os_ver():
 	print("running on circuitpython " + os_ver())
+
+def is_blinka():
+	from board import board_id
+	if board_id=='GENERIC_LINUX_PC':
+		info("running blinka")
+		print_os_ver()
+		if running_circuitpython():
+			info("uname.sysname is Linux")
+		info(str(os.uname()))
+
+def filesize(filename):
+	from os import stat
+	stats = stat(filename)
+	filesize = stats[6]
+	return filesize
+
+def show_filesize(filename):
+	myfilesize = filesize(filename)
+	info('{0:>12} {1:<40}'.format(str(myfilesize), filename))
+
+def linecount(filename):
+	linecount = 0
+	# from https://stackoverflow.com/a/1019572/5728815
+	with open(filename, "rb") as myfile:
+		linecount = sum(1 for _ in myfile)
+	return linecount
+
+def show_linecount(filename):
+	mylinecount = linecount(filename)
+	info('{0:>6} {1:<40}'.format(str(mylinecount), filename))
+
+def wc(filename):
+	myfilesize = filesize(filename)
+	mylinecount = linecount(filename)
+	return myfilesize, mylinecount
+
+def show_wc(filename):
+	myfilesize, mylinecount = wc(filename)
+	info('{0:>6} {1:>12} {2:<40}'.format(str(mylinecount), str(myfilesize), filename))
 

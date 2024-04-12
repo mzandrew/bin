@@ -2,7 +2,7 @@
 
 # written 2023-01-04 by mza
 # with help from https://realpython.com/pygame-a-primer/#displays-and-surfaces
-# last updated 2023-02-19 by mza
+# last updated 2023-08-23 by mza
 
 # have root checkout this repo:
 # mkdir -p ~/build; cd ~/build
@@ -255,6 +255,8 @@ def setup():
 	global plot_height
 	global screen
 	global plot
+	global something_was_updated
+	something_was_updated = True
 	usable_width = SCREEN_WIDTH - 2*GAP_X_SIDE - (COLUMNS-1)*GAP_X_BETWEEN_PLOTS
 	#print("usable_width: " + str(usable_width))
 	usable_height = SCREEN_HEIGHT - GAP_Y_TOP - GAP_Y_BOTTOM - (ROWS-1)*GAP_Y_BETWEEN_PLOTS
@@ -361,7 +363,7 @@ def loop():
 			elif 3==ij:
 				should_update_plots[1][1] = True
 			ij += 1
-			if 3<ij:
+			if COLUMNS*ROWS-1<ij:
 				ij = 0
 	for i in range(COLUMNS):
 		for j in range(ROWS):

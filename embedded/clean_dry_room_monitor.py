@@ -2,35 +2,37 @@
 
 # written 2022-08-25 by mza
 # based on particle_hum_temp_pres.py
-# last updated 2022-09-14 by mza
+# with help from https://learn.adafruit.com/Memory-saving-tips-for-CircuitPython?view=all
+# last updated 2024-03-08 by mza
 
 # to install on a circuitpython device:
-# rsync -av *.py /media/circuitpython/
+# rsync -av DebugInfoWarningError24.py microsd_adafruit.py neopixel_adafruit.py bme680_adafruit.py pm25_adafruit.py ds3231_adafruit.py airlift.py adafruit_datetime.py boxcar.py generic.py gps_adafruit.py display_adafruit.py /media/circuitpython/
 # cp -a clean_dry_room_monitor.py /media/circuitpython/code.py
 # cd ~/build/adafruit-circuitpython/bundle/lib
-# rsync -r adafruit_ds3231.mpy adafruit_tca9548a.mpy adafruit_pm25 adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
+# rsync -r adafruit_datetime.mpy adafruit_ds3231.mpy adafruit_tca9548a.mpy adafruit_pm25 adafruit_minimqtt adafruit_display_text adafruit_bme680.mpy simpleio.mpy adafruit_esp32spi adafruit_register adafruit_sdcard.mpy neopixel.mpy adafruit_onewire adafruit_gps.mpy adafruit_io adafruit_requests.mpy adafruit_lc709203f.mpy adafruit_bus_device /media/circuitpython/lib/
 
-import sys
-import time
-import atexit
+from sys import exit # sys.exit
+from time import sleep # time.sleep
+from atexit import register # atexit.register
 import board
-import busio
-import simpleio
+from busio import SPI, I2C
+#import simpleio
+from gc import collect, mem_free
 import microsd_adafruit
 import neopixel_adafruit
 import bme680_adafruit
 import pm25_adafruit
 import ds3231_adafruit
 import adafruit_tca9548a
-import airlift
-import gps_adafruit
+#import airlift
+#import gps_adafruit
 try:
 	from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 except (KeyboardInterrupt, ReloadException):
 	raise
 except:
 	print("can't find DebugInfoWarningError24.py")
-	sys.exit(0)
+	exit(0)
 import generic
 import display_adafruit
 
@@ -41,7 +43,7 @@ MAX_HUM_TO_PLOT = 80.0
 MIN_PRES_TO_PLOT = 0.997
 MAX_PRES_TO_PLOT = 1.011
 MIN_PARTICLE_COUNT_TO_PLOT = 0.0
-MAX_PARTICLE_COUNT_TO_PLOT = 200.0
+MAX_PARTICLE_COUNT_TO_PLOT = 5.0
 
 set_verbosity(4)
 header_string = "date/time"
@@ -74,8 +76,8 @@ def print_compact(string):
 	date = ""
 	if ""==date:
 		try:
-			import time
-			date = time.strftime("%Y-%m-%d+%X")
+			from time import strftime
+			date = strftime("%Y-%m-%d+%X")
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except:
@@ -84,8 +86,8 @@ def print_compact(string):
 		try:
 			#import pcf8523_adafruit
 			#date = pcf8523_adafruit.get_timestring1()
-			import ds3231_adafruit
-			date = ds3231_adafruit.get_timestring1()
+			from ds3231_adafruit import get_timestring1
+			date = get_timestring1()
 		except (KeyboardInterrupt, ReloadException):
 			raise
 		except:
@@ -102,6 +104,7 @@ def print_compact(string):
 
 def main():
 	generic.start_uptime()
+	print("mem free: " + str(mem_free()))
 	global header_string
 	if use_pwm_status_leds:
 		generic.setup_status_leds(red_pin=board.A2, green_pin=board.D9, blue_pin=board.A3)
@@ -110,15 +113,15 @@ def main():
 #		simpleio.DigitalOut(board.I2C_TFT_POWER, value=1)
 	global i2c
 	try:
-		i2c = busio.I2C(board.SCL1, board.SDA1)
+		i2c = I2C(board.SCL1, board.SDA1)
 		string = "using I2C1 "
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:
-		#i2c = busio.I2C(board.SCL, board.SDA)
+		#i2c = I2C(board.SCL, board.SDA)
 		i2c = board.I2C()
 		string = "using I2C0 "
-	# alti2c = busio.I2C(board.D4, board.D3) # using the other two 3-pin connectors
+	# alti2c = I2C(board.D4, board.D3) # using the other two 3-pin connectors
 	info(string)
 	#i2c.try_lock()
 	#i2c_list = i2c.scan()
@@ -136,7 +139,7 @@ def main():
 		pm25_is_available = False
 	global spi
 	try:
-		spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO) # this line stops the builtin from working
+		spi = SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO) # this line stops the builtin from working
 		info("builtin SPI (2)")
 	except (KeyboardInterrupt, ReloadException):
 		raise
@@ -148,24 +151,8 @@ def main():
 			raise
 		except:
 			raise
-	global display_is_available
-	display_is_available = False
-	if should_use_display:
-		if board.DISPLAY:
-			display_is_available = True
-			display_adafruit.setup_builtin_display()
-			board.DISPLAY.brightness = 0.75
-			#display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.5)
-			info("display is available (builtin)")
-		elif display_adafruit.setup_st7789(spi, board.TFT_DC, board.TFT_CS, board.TFT_RESET):
-#		if display_adafruit.setup_st7789(spi, board.TFT_DC, board.TFT_CS, board.TFT_RESET):
-			display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.95)
-			display_is_available = True
-			info("display is available (external/spi)")
-		else:
-			warning("display is not available")
 	#global uart
-	#uart = busio.UART(board.TX, board.RX, baudrate=9600, timeout=10)
+	#uart = UART(board.TX, board.RX, baudrate=9600, timeout=10)
 	global RTC_is_available
 	RTC_is_available = False
 	if should_use_RTC:
@@ -208,6 +195,9 @@ def main():
 		raise
 	except:
 		warning("error setting up neopixel")
+	collect()
+	print("mem free: " + str(mem_free()))
+	info("setting up i2c mux...")
 	i2c_mux = adafruit_tca9548a.TCA9548A(i2c)
 #	if i2c_mux[0].try_lock():
 #		addresses = i2c_mux[0].scan()
@@ -226,6 +216,26 @@ def main():
 			#error("bme680 " + str(i) + " not found")
 			pass
 	info("found " + str(number_of_sensors_available) + " bme680 sensor(s)")
+	collect()
+	print("mem free: " + str(mem_free()))
+	global display_is_available
+	display_is_available = False
+	if should_use_display:
+		if board.DISPLAY:
+			display_is_available = True
+			display_adafruit.setup_builtin_display()
+			board.DISPLAY.brightness = 0.75
+			#display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.5)
+			info("display is available (builtin)")
+		elif display_adafruit.setup_st7789(spi, board.TFT_DC, board.TFT_CS, board.TFT_RESET):
+#		if display_adafruit.setup_st7789(spi, board.TFT_DC, board.TFT_CS, board.TFT_RESET):
+			display_adafruit.setup_pwm_backlight(board.TFT_BACKLIGHT, backlight_brightness=0.95)
+			display_is_available = True
+			info("display is available (external/spi)")
+		else:
+			warning("display is not available")
+	collect()
+	print("mem free: " + str(mem_free()))
 	if display_is_available:
 		temp = [ "temperature" ]
 		hum  = [ "humidity" ]
@@ -234,6 +244,7 @@ def main():
 			temp.append("dry" + str(i+1))
 			hum.append("dry" + str(i+1))
 			pres.append("dry" + str(i+1))
+		print("mem free: " + str(mem_free()))
 		#info(str(temp))
 		#info(str(hum))
 		#info(str(pres))
@@ -279,6 +290,8 @@ def main():
 	#gnuplot> set key autotitle columnheader
 	#gnuplot> set style data lines
 	#gnuplot> plot for [i=1:14] "solar_water_heater.log" using 0:i
+	collect()
+	print("mem free: " + str(mem_free()))
 	print_header()
 	loop()
 	info("bme680 no longer available; cannot continue")
@@ -289,10 +302,12 @@ def loop():
 		temperatures_to_plot = []
 		humidities_to_plot = []
 		pressures_to_plot = []
+		print("mem free: " + str(mem_free()))
 		for j in range(number_of_sensors_available):
 			temperatures_to_plot.append([ -40.0 for i in range(display_adafruit.plot_width) ])
 			humidities_to_plot.append(  [ -40.0 for i in range(display_adafruit.plot_width) ])
 			pressures_to_plot.append(   [ -40.0 for i in range(display_adafruit.plot_width) ])
+		print("mem free: " + str(mem_free()))
 		if pm25_is_available:
 			particle_counts_to_plot = [ [ -40.0 for i in range(display_adafruit.plot_width) ] for j in range(5) ]
 		info("finished allocating memory")
@@ -323,7 +338,7 @@ def loop():
 		if 0==i%N:
 			#microsd_adafruit.list_files(mydir)
 			#info("----")
-			microsd_adafruit.list_file(mydir, logfilename)
+			#microsd_adafruit.list_file(mydir, logfilename)
 			info("manipulating data...")
 			if number_of_sensors_available:
 				for j in range(number_of_sensors_available):
@@ -365,7 +380,7 @@ def loop():
 					display_adafruit.update_plot(3, [particle_counts_to_plot[2], particle_counts_to_plot[3]])
 				display_adafruit.refresh()
 			info("waiting...")
-			time.sleep(delay_between_posting_and_next_acquisition)
+			sleep(delay_between_posting_and_next_acquisition)
 			delay_between_acquisitions = generic.adjust_delay_for_desired_loop_time(delay_between_acquisitions, N, desired_loop_time)
 		neopixel_adafruit.set_color(0, 0, 255)
 		if use_pwm_status_leds:
@@ -373,10 +388,12 @@ def loop():
 		if airlift_is_available:
 			if 0==i%86300:
 				airlift.update_time_from_server()
-		time.sleep(delay_between_acquisitions)
+		sleep(delay_between_acquisitions)
+		collect()
+		print("mem free: " + str(mem_free()))
 
 if __name__ == "__main__":
-	atexit.register(generic.reset)
+	register(generic.reset)
 	try:
 		main()
 	except KeyboardInterrupt:

@@ -1,12 +1,12 @@
-# last updated 2022-08-30 by mza
+# last updated 2024-03-08 by mza
 
-import time
-import math
+from time import sleep
 import board
 import displayio
-import terminalio
+from terminalio import FONT
+from gc import collect, mem_free
 from adafruit_display_text import label
-from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush, exception
 
 display_has_autorefresh = True
 
@@ -45,7 +45,8 @@ def setup_i2c_oled_display_ssd1327(i2c, address):
 		import adafruit_ssd1327 # sudo pip3 install adafruit-circuitpython-ssd1327
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		print("unable to find adafruit_ssd1327 library")
 		return False
 	try:
@@ -53,7 +54,8 @@ def setup_i2c_oled_display_ssd1327(i2c, address):
 		display = adafruit_ssd1327.SSD1327(display_bus, width=128, height=128)
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		error("can't initialize ssd1327 display over i2c (address " + hex(address) + ")")
 		return False
 	return True
@@ -66,7 +68,8 @@ def setup_i2c_oled_display_sh1107(i2c, address):
 		import adafruit_displayio_sh1107
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		print("unable to find adafruit_displayio_sh1107 library")
 		return False
 	try:
@@ -75,7 +78,8 @@ def setup_i2c_oled_display_sh1107(i2c, address):
 		display.auto_refresh = False
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		error("can't initialize sh1107 display over i2c (address " + hex(address) + ")")
 		return False
 	return True
@@ -93,14 +97,16 @@ def setup_builtin_lcd_hx8357():
 		display = board.DISPLAY
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		print("can't initialize hx8357 display")
 		return False
 #	try:
 #		setup_pwm_backlight(backlight_pin, 1.0)
 #	except (KeyboardInterrupt, ReloadException):
 #		raise
-#	except:
+#	except Exception as e:
+#		exception(e)
 #		print("can't initialize pwm for display backlight")
 	#board.DISPLAY.brightness = 0.75
 	board.DISPLAY.auto_brightness = True
@@ -117,14 +123,16 @@ def setup_builtin_epd():
 		display = board.DISPLAY
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		print("can't initialize epd display")
 		return False
 #	try:
 #		setup_pwm_backlight(backlight_pin, 1.0)
 #	except (KeyboardInterrupt, ReloadException):
 #		raise
-#	except:
+#	except Exception as e:
+#		exception(e)
 #		print("can't initialize pwm for display backlight")
 	#print("complete")
 	return True
@@ -147,7 +155,7 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 	padding_size = 24
 	plot_width = tile_width - padding_size - 1
 	plot_height = tile_height - padding_size - 1
-	axes_bitmap = displayio.Bitmap(tile_width, tile_height, 1)
+	axes_bitmap = displayio.Bitmap(tile_width, tile_height, 2)
 	for i in range(padding_size//2, tile_width-padding_size//2):
 		axes_bitmap[i,padding_size//2] = 1
 		axes_bitmap[i,tile_height-padding_size//2] = 1
@@ -160,7 +168,14 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 	global plot_bitmap
 	plot_bitmap = []
 	for i in range(number_of_plots):
-		plot_bitmap.append(displayio.Bitmap(plot_width, plot_height, 8))
+		try:
+			collect()
+			print("mem free: " + str(mem_free()))
+			plot_bitmap.append(displayio.Bitmap(plot_width, plot_height, 8))
+		except:
+			print("couldn't allocate memory for displayio.Bitmap")
+			print("mem free: " + str(mem_free()))
+			raise
 	global plot
 	plot = []
 	for i in range(number_of_plots):
@@ -179,7 +194,7 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 	group.append(axes_group)
 	group.append(plot_group)
 	FONT_SCALE = 1 # int
-	text_area = label.Label(terminalio.FONT, text="i", color=palette2[1]) # 6 pixels each for "W" and "i"
+	text_area = label.Label(FONT, text="i", color=palette2[1]) # 6 pixels each for "W" and "i"
 	width_of_single_character = text_area.bounding_box[2] * FONT_SCALE
 	FONT_GAP = 2 * width_of_single_character
 	#print(str(display.width))
@@ -210,13 +225,13 @@ def setup_for_n_m_plots(number_of_plots_n, number_of_plots_m, list_of_labels=[[]
 			#print(list_of_labels[m][n])
 			if n==0:
 				y = (m//2)*tile_height + FONT_SCALE * 5
-				text_area = label.Label(terminalio.FONT, text=list_of_labels[m][n], color=palette8[1]) # white for plot label
+				text_area = label.Label(FONT, text=list_of_labels[m][n], color=palette8[1]) # white for plot label
 				text_width = text_area.bounding_box[2] * FONT_SCALE
 				text_group = displayio.Group(scale=FONT_SCALE, x=x-text_width//2, y=y)
 				text_group.append(text_area)
 				group.append(text_group)
 			else:
-				text_area = label.Label(terminalio.FONT, text=list_of_labels[m][n], color=palette8[n+1]) # other colors
+				text_area = label.Label(FONT, text=list_of_labels[m][n], color=palette8[n+1]) # other colors
 				text_width = text_area.bounding_box[2] * FONT_SCALE + FONT_GAP
 				running_text_width += text_width
 				text_areas.append(text_area)
@@ -237,14 +252,16 @@ def refresh():
 		#info("worked immediately")
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
-		time.sleep(0.05)
+	except Exception as e:
+		exception(e)
+		sleep(0.05)
 		try:
 			display.refresh()
 			#info("worked after 50 ms")
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
+		except Exception as e:
+			exception(e)
 			pass
 
 def format_for_plot(values, minimum, maximum):
@@ -281,7 +298,7 @@ def show_text_on_ssd1327(string):
 	# https://learn.adafruit.com/adafruit-grayscale-1-5-128x128-oled-display/circuitpython-wiring-and-usage
 	splash = displayio.Group()
 	display.show(splash)
-	text_area = label.Label(terminalio.FONT, text=string, color=0xFFFFFF)
+	text_area = label.Label(FONT, text=string, color=0xFFFFFF)
 	text_width = text_area.bounding_box[2] * FONTSCALE
 	text_group = displayio.Group(
 		scale=FONTSCALE,
@@ -298,12 +315,14 @@ def setup_ili9341(spi, tft_cs, tft_dc):
 		import adafruit_ili9341
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		print("unable to find adafruit_ili9341 library")
 		return False
 #	try:
 #		displayio.release_displays()
-#	except:
+#	except Exception as e:
+#		exception(e)
 #		pass
 	#tft_cs = board.D9
 	#tft_dc = board.D10 # conflicts with adalogger cs
@@ -318,7 +337,8 @@ def setup_ili9341(spi, tft_cs, tft_dc):
 		return True
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		return False
 
 def setup_st7789(spi, tft_cs, tft_dc, tft_reset):
@@ -328,12 +348,14 @@ def setup_st7789(spi, tft_cs, tft_dc, tft_reset):
 		import adafruit_st7789
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		print("unable to find adafruit_st7789 library")
 		return False
 #	try:
 #		displayio.release_displays()
-#	except:
+#	except Exception as e:
+#		exception(e)
 #		pass
 	try:
 		display_bus = displayio.FourWire(spi, chip_select=tft_cs, command=tft_dc, reset=tft_reset)
@@ -342,7 +364,8 @@ def setup_st7789(spi, tft_cs, tft_dc, tft_reset):
 		return True
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		raise
 		return False
 
@@ -351,7 +374,8 @@ def setup_pwm_backlight(backlight_pin, backlight_brightness=0.95):
 		import pwmio
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		warning("can't find library pwmio; can't control backlight brightness")
 	PWM_MAX = 65535
 	try:
@@ -359,7 +383,8 @@ def setup_pwm_backlight(backlight_pin, backlight_brightness=0.95):
 		backlight_pwm.duty_cycle = int(backlight_brightness * PWM_MAX)
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
+	except Exception as e:
+		exception(e)
 		warning("can't initialize display backlight pwm pin")
 
 def setup_dotstar_matrix(auto_write = True):
@@ -372,7 +397,8 @@ def setup_dotstar_matrix(auto_write = True):
 		dots.auto_write = False
 		dots.show()
 		dots.auto_write = auto_write
-	except:
+	except Exception as e:
+		exception(e)
 		error("error setting up dotstar matrix")
 		return False
 	return True
@@ -408,7 +434,8 @@ def setup_matrix_backpack(i2c, address=0x70):
 	global matrix_backpack
 	try:
 		import adafruit_ht16k33.matrix
-	except:
+	except Exception as e:
+		exception(e)
 		error("can't load adafruit_ht16k33 module")
 		return False
 	try:
@@ -417,7 +444,8 @@ def setup_matrix_backpack(i2c, address=0x70):
 		matrix_backpack.auto_write = False
 		#matrix_backpack.brightness = 0.5
 		#matrix_backpack.blink_rate = 0
-	except:
+	except Exception as e:
+		exception(e)
 		return False
 	return True
 
@@ -425,7 +453,8 @@ def setup_alphanumeric_backpack(i2c, address=0x70):
 	global alphanumeric_backpack
 	try:
 		import adafruit_ht16k33.segments
-	except:
+	except Exception as e:
+		exception(e)
 		error("can't load adafruit_ht16k33 module")
 		return False
 	try:
@@ -433,10 +462,27 @@ def setup_alphanumeric_backpack(i2c, address=0x70):
 		alphanumeric_backpack.auto_write = False
 		#alphanumeric_backpack.brightness = 0.5
 		#alphanumeric_backpack.blink_rate = 0
-	except:
+	except Exception as e:
+		exception(e)
 		error("can't find alphanumeric backpack (i2c address " + hex(address) + ")")
 		return False
 	return True
+
+def setup_7seg_numeric_backpack_4(i2c, address=0x70):
+	# from https://learn.adafruit.com/adafruit-led-backpack/0-dot-56-seven-segment-backpack-circuitpython-and-python-usage
+	from adafruit_ht16k33.segments import Seg7x4
+	global display
+	try:
+		display = Seg7x4(i2c, address=address)
+		display.brightness = 0.25
+		#display.brightness = 1.0
+		#display.print("8421")
+		#sleep(1)
+		#display.print("12:30")
+		return 0x70
+	except Exception as e:
+		exception(e)
+		raise
 
 def update_temperature_display_on_matrix_backpack():
 	matrix_backpack.auto_write = False
@@ -469,4 +515,11 @@ def update_temperature_display_on_alphanumeric_backpack(temperature):
 	#DIGIT_2 = 0b000011111011
 	#alphanumeric_backpack.set_digit_raw(0, DIGIT_2)
 	alphanumeric_backpack.show()
+
+def update_string_on_7seg_numeric_backpack_4(string):
+	try:
+		display.print(string)
+	except Exception as e:
+		exception(e)
+		raise
 

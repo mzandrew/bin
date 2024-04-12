@@ -1,9 +1,9 @@
 # from pcf8523_adafruit.py
-# last updated 2022-01-08 by mza
+# last updated 2023-10-18 by mza
 
 import time
 import adafruit_ds3231
-from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush, exception
 
 def setup(i2c):
 	global rtc
@@ -29,11 +29,29 @@ def get_timestring1():
 	t = rtc.datetime
 	return "%04d-%02d-%02d+%02d:%02d:%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
 
-def get_timestring2():
-	t = rtc.datetime
-	return "%04d-%02d-%02d.%02d%02d%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
+def get_timestring2(number_of_tries_remaining=3):
+	if 0==number_of_tries_remaining:
+		#return ""
+		return "2000-01-01.000000"
+	try:
+		t = rtc.datetime
+		return "%04d-%02d-%02d.%02d%02d%02d" % (t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec)
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
+		exception(e)
+		return get_timestring2(number_of_tries_remaining-1)
 
-def set_from_timestruct(time):
+def set_from_timestruct(time, number_of_tries_remaining=3):
 	#info("setting time to " + str(time))
-	rtc.datetime = time
+	if 0==number_of_tries_remaining:
+		return False
+	try:
+		rtc.datetime = time
+		return True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
+		exception(e)
+		return set_from_timestruct(time, number_of_tries_remaining-1)
 

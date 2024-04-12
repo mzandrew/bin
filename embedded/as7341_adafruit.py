@@ -5,6 +5,7 @@
 
 import time
 import board
+import busio
 import adafruit_as7341
 import boxcar
 
@@ -77,9 +78,11 @@ def verbose_output():
 	print("------------------------------------------------")
 
 if __name__ == "__main__":
-	i2c = busio.I2C(board.SCL1, board.SDA1)
-	#i2c = board.I2C()
-	setup(i2c)
+	try:
+		i2c = busio.I2C(board.SCL1, board.SDA1)
+	except:
+		i2c = board.I2C()
+	setup(i2c, 32)
 	while test_if_present():
 		compact_output()
 		sleep(1)

@@ -2,7 +2,10 @@
 
 # written 2017-11 by mza
 # based on instructions posted at http://www.clifford.at/icestorm/
-# last updated 2022-06-18 by mza
+# last updated 2023-05-18 by mza
+
+# when trying it on ubuntu 22.04:
+# E: Package 'python' has no installation candidate
 
 declare build="$HOME/build"
 declare -i np=$(grep -c "^processor" /proc/cpuinfo)
@@ -86,7 +89,7 @@ function list_files {
 function install_prerequisites_apt {
 	sudo apt -y install build-essential clang clang-format bison flex libreadline-dev \
 		gawk tcl-dev libffi-dev git mercurial graphviz \
-		xdot pkg-config python python3 python3-dev python3-pip libftdi-dev gforth iverilog gtkwave \
+		xdot pkg-config python3 python3-dev python3-pip libftdi-dev gforth iverilog gtkwave \
 		libboost-all-dev libboost-python-dev zlib1g-dev \
 		cmake libeigen3-dev \
 		xclip

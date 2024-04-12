@@ -71,11 +71,15 @@ function pkgconfig {
 function install_prerequisites_apt {
 	sudo nice apt -y install build-essential libusb-1.0-0 libusb-1.0-0-dev libtcl8.6 tcl8.6 make gcc clang texinfo libftdi1 git pkg-config
 	# must choose here to build from source or not...
-	sudo nice apt -y erase libtool autoconf automake
-	libtool
-	automake
-	autoconf
-	#pkgconfig
+	if [ $build_libtool_autoconf_automake_from_source -gt 0 ]; then
+		sudo nice apt -y erase libtool autoconf automake
+		libtool
+		automake
+		autoconf
+		#pkgconfig
+	else
+		sudo nice apt -y install libtool autoconf automake
+	fi
 }
 
 function install_prerequisites_yum {

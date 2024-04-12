@@ -1,18 +1,20 @@
 #!/bin/bash -e
 
 # written 2019-06-27 by mza
-# last updated 2021-04-06 by mza
+# last updated 2023-05-25 by mza
 # the build dir is about 3GB after the build
 
 # when trying it on ubuntu 20.04:
 # E: Package 'libpython-dev' has no installation candidate
+# when trying it on ubuntu 22.04:
+# E: Package 'python-dev' has no installation candidate
 
-declare filename="root_v6.22.00.source.tar.gz"
-declare dirname="root-6.22.00"
+#declare filename="root_v6.22.00.source.tar.gz"
+#declare dirname="root-6.22.00"
 
-declare -i j=2
 declare -i np=$(grep -c "^processor" /proc/cpuinfo)
-if [ $j -gt $np ] || [ -e /etc/rpi-issue ]; then
+declare -i j=$np
+if [ -e /etc/rpi-issue ]; then
 	j=1
 	echo "dropping j to 1"
 fi
@@ -35,9 +37,9 @@ function add_swap_if_necessary {
 # https://root.cern.ch/build-prerequisites
 
 function install_prerequisites_apt {
-	#sudo nice apt -y install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev python-dev gfortran libfftw3-dev libjpeg-dev libgif-dev libtiff-dev libcfitsio-dev libxml2-dev uuid-dev davix-dev libpythia8-dev libgfal2-dev libgl2ps-dev libpcre2-dev liblz4-dev libgsl-dev libssl-dev libgfal2-dev libtbb-dev gsl-bin libpython-dev
+	#sudo nice apt -y install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev gfortran libfftw3-dev libjpeg-dev libgif-dev libtiff-dev libcfitsio-dev libxml2-dev uuid-dev davix-dev libgfal2-dev libgl2ps-dev libpcre2-dev liblz4-dev libgsl-dev libssl-dev libgfal2-dev libtbb-dev gsl-bin libpython-dev
 	#sudo nice apt -y install "cmake>=3.6"
-	sudo nice apt -y install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev python-dev python3-dev gfortran cmake libfftw3-dev libjpeg-dev libgif-dev libtiff-dev libcfitsio-dev libxml2-dev uuid-dev davix-dev libpythia8-dev libgfal2-dev libgl2ps-dev libpcre2-dev liblz4-dev libgsl-dev libssl-dev libgfal2-dev libtbb-dev gsl-bin libpython2.7-dev
+	sudo nice apt -y install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev python3-dev gfortran cmake libfftw3-dev libjpeg-dev libgif-dev libtiff-dev libcfitsio-dev libxml2-dev uuid-dev davix-dev libgfal2-dev libgl2ps-dev libpcre2-dev liblz4-dev libgsl-dev libssl-dev libgfal2-dev libtbb-dev gsl-bin libpython2.7-dev
 	# libcblas-dev libcblas3
 	# Enabled support for:  asimage astiff builtin_afterimage builtin_clang builtin_ftgl builtin_glew builtin_llvm builtin_tbb builtin_vdt builtin_xxhash clad cling cxx11 davix exceptions explicitlink fftw3 fitsio gdml http imt mathmore opengl pch pythia8 python roofit shared ssl thread tmva tmva-cpu tmva-pymva vdt x11 xft xml
 }
@@ -134,27 +136,57 @@ if [ -e /usr/local/bin/thisroot.sh ]; then
 	echo "...done"
 fi
 
-if [ ! -e $build/$dirname ]; then
-	if [ ! -e $filename ]; then
-		declare url="https://root.cern/download/$filename"
-		wget $url
-	fi
-	tar xzf $filename
+
+# from https://root.cern/install/
+# git clone --branch latest-stable --depth=1 https://github.com/root-project/root.git root_src
+# mkdir root_build root_install && cd root_build
+# cmake -DCMAKE_INSTALL_PREFIX=../root_install ../root_src # && check cmake configuration output for warnings or errors
+# cmake --build . -- install -j4 # if you have 4 cores available for compilation
+# source ../root_install/bin/thisroot.sh # or thisroot.{fish,csh}
+
+cd
+mkdir -p build
+cd build
+mkdir -p root
+cd root
+if [ ! -e root_src ]; then
+	git clone --branch latest-stable --depth=1 https://github.com/root-project/root.git root_src
+else
+	cd root_src
+	git pull
+	cd ..
 fi
-cd $build/$dirname
+mkdir -p root_build
+cd root_build
+cmake -DCMAKE_INSTALL_PREFIX=/usr/local ../root_src
+cmake --build . -j$j
+sudo cmake --build . -- install
+
+# list of things that get installed in /usr/local:
+# geant4.sh geant4.csh geant4-config LICENSE man geom lib include emacs config bin README etc fonts macros icons ui5 js tutorials cmake
+
+#if [ ! -e $build/$dirname ]; then
+#	if [ ! -e $filename ]; then
+#		declare url="https://root.cern/download/$filename"
+#		wget $url
+#	fi
+#	tar xzf $filename
+#fi
+
+#cd $build/$dirname
 #if [ -e obj ]; then
 #	rm -rf obj
 #fi
-if [ ! -e obj ]; then
-	mkdir obj
-	cd obj
-	cmake ..
-else
-	cd obj
-fi
-time nice make -j$j
-sudo nice make install
-sudo find /usr/local/etc -type d -exec chmod --changes 755 {} \; -o -type f -exec chmod --changes 644 {} \;
+#if [ ! -e obj ]; then
+#	mkdir obj
+#	cd obj
+#	cmake ..
+#else
+#	cd obj
+#fi
+#time nice make -j$j
+#sudo nice make install
+#sudo find /usr/local/etc -type d -exec chmod --changes 755 {} \; -o -type f -exec chmod --changes 644 {} \;
 
 cat <<DOC
 
