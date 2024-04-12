@@ -3,7 +3,7 @@
 # written 2022-04-30 by mza
 # last updated 2023-01-04 by mza
 
-COUNT = 1000
+COUNT = 10000
 
 import sys
 import time
