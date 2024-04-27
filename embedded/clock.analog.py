@@ -34,22 +34,29 @@ import rtc
 import displayio
 from adafruit_display_shapes.circle import Circle
 from adafruit_display_shapes.polygon import Polygon
+from adafruit_display_text import label
 from adafruit_display_text import bitmap_label
 from adafruit_datetime import _DAYNAMES
 from terminalio import FONT
 import bitmaptools
 
-palette_colors = 6
+palette_colors = 7
 palette = displayio.Palette(palette_colors)
+#              RRGGBB ips qualia displays; rgbmatrix 64x64
+#              RRBBGG rgbmatrix 64x32
 palette[0] = 0x000000 # black
-palette[1] = 0xff0000 # red
-palette[2] = 0x00ff00 # green
+palette[1] = 0xff00ff # purple
+palette[2] = 0xff0000 # red
 palette[3] = 0x4444ff # light blue
 palette[4] = 0x999999 # grey
 palette[5] = 0xffffff # white
+palette[6] = 0x00ff00 # green
 background_color = 0
 color_of_hour_hand = 3
-color_of_minute_hand = 1
+color_of_minute_hand = 2
+worldclock_titles_color = 1
+worldclock_dates_color = 1
+worldclock_days_AMPM_color = 1
 
 #peripherals = Peripherals()
 #peripherals.backlight = True
@@ -173,7 +180,8 @@ def setup():
 		width_of_hour_hand = 1.75
 		width_of_minute_hand = 0.25
 		distance_of_dot_from_center = 14.5
-		#analog_not_digital = False
+		analog_not_digital = False
+		color_order = "rbg"
 	elif numH*width==64 and numV*height==64:
 		subbitmap_size = 64
 		brightness = 0.25
@@ -185,6 +193,8 @@ def setup():
 		width_of_hour_hand = 2
 		width_of_minute_hand = 2
 		distance_of_dot_from_center = 31
+		#analog_not_digital = False
+		color_order = "rgb"
 	elif width==480 and height==320:
 		subbitmap_size = 320
 		rotation_angle = 3*math.pi/2
@@ -263,9 +273,9 @@ def setup():
 		from adafruit_qualia.graphics import Graphics, Displays # helps find the name "Displays.BAR320X960"
 		from adafruit_qualia.peripherals import Peripherals
 		if width==320 and height==960:
-			graphics = Graphics(Displays.BAR320X960, default_bg=None, auto_refresh=False)
+			graphics = Graphics(Displays.BAR320X960, default_bg=None)
 		elif width==720 and height==720:
-			graphics = Graphics(Displays.ROUND40, default_bg=None, auto_refresh=False)
+			graphics = Graphics(Displays.ROUND40, default_bg=None)
 		else:
 			print("unsupported width/height combination (2)")
 			hang()
@@ -285,7 +295,6 @@ def setup():
 		from adafruit_hx8357 import HX8357
 		display = HX8357(display_bus, width=display_width, height=display_height)
 		splash = displayio.Group()
-		display.auto_refresh = False
 	elif boardtype=="rgbmatrix":
 		import rgbmatrix
 		import framebufferio
@@ -296,29 +305,29 @@ def setup():
 				addr_pins=[board.A5, board.A4, board.A3, board.A2], # ROW_A, ROW_B, ROW_C, ROW_D
 				clock_pin=board.D13, latch_pin=board.D0, output_enable_pin=board.D1)
 		elif width==64 and height==32:
-			try:
-				matrix = rgbmatrix.RGBMatrix( # pimoroni_interstate75 64x32
-					width=numH*width, height=numV*height, bit_depth=4, tile=numV,
-					rgb_pins=[board.R0, board.G0, board.B0, board.R1, board.G1, board.B1], # R0, G0, B0, R1, G1, B1
-					addr_pins=[board.ROW_A, board.ROW_B, board.ROW_C, board.ROW_D], # ROW_E needed for 64x64 displays
-					clock_pin=board.CLK, latch_pin=board.LAT, output_enable_pin=board.OE)
-			except:
+			if "rgb"==color_order:
 				matrix = rgbmatrix.RGBMatrix( # interstate75w 64x32
 					width=numH*width, height=numV*height, bit_depth=4, tile=numV,
 					rgb_pins=[board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5], # R0, G0, B0, R1, G1, B1
 					addr_pins=[board.GP6, board.GP7, board.GP8, board.GP9], # ROW_E needed for 64x64 displays
 					clock_pin=board.GP11, latch_pin=board.GP12, output_enable_pin=board.GP13)
-		elif width==64 and height==64:
-			try:
-				matrix = rgbmatrix.RGBMatrix( # pimoroni_interstate75 64x64
+			else:
+				matrix = rgbmatrix.RGBMatrix( # interstate75w 64x32
 					width=numH*width, height=numV*height, bit_depth=4, tile=numV,
-					rgb_pins=[board.R0, board.G0, board.B0, board.R1, board.G1, board.B1], # R0, G0, B0, R1, G1, B1
-					addr_pins=[board.ROW_A, board.ROW_B, board.ROW_C, board.ROW_D, board.ROW_E], # ROW_E needed for 64x64 displays
-					clock_pin=board.CLK, latch_pin=board.LAT, output_enable_pin=board.OE)
-			except:
+					rgb_pins=[board.GP0, board.GP2, board.GP1, board.GP3, board.GP5, board.GP4], # R0, G0, B0, R1, G1, B1
+					addr_pins=[board.GP6, board.GP7, board.GP8, board.GP9], # ROW_E needed for 64x64 displays
+					clock_pin=board.GP11, latch_pin=board.GP12, output_enable_pin=board.GP13)
+		elif width==64 and height==64:
+			if "rgb"==color_order:
 				matrix = rgbmatrix.RGBMatrix( # interstate75w 64x64
 					width=numH*width, height=numV*height, bit_depth=4, tile=numV,
 					rgb_pins=[board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5], # R0, G0, B0, R1, G1, B1
+					addr_pins=[board.GP6, board.GP7, board.GP8, board.GP9, board.GP10], # ROW_E needed for 64x64 displays
+					clock_pin=board.GP11, latch_pin=board.GP12, output_enable_pin=board.GP13)
+			else:
+				matrix = rgbmatrix.RGBMatrix( # interstate75w 64x64
+					width=numH*width, height=numV*height, bit_depth=4, tile=numV,
+					rgb_pins=[board.GP0, board.GP2, board.GP1, board.GP3, board.GP5, board.GP4], # R0, G0, B0, R1, G1, B1
 					addr_pins=[board.GP6, board.GP7, board.GP8, board.GP9, board.GP10], # ROW_E needed for 64x64 displays
 					clock_pin=board.GP11, latch_pin=board.GP12, output_enable_pin=board.GP13)
 		else:
@@ -331,9 +340,10 @@ def setup():
 	else:
 		print("unsupported width/height combination (4)")
 		hang()
-	#display.auto_refresh = False
 	gc.collect(); print(gc.mem_free())
+	display.auto_refresh = False
 	bitmap = displayio.Bitmap(display.width, display.height, palette_colors)
+	clear_bitmap(bitmap)
 	global center_x, center_y
 	center_x = (display.width + 1) // 2
 	center_y = (display.height + 1) // 2
@@ -362,13 +372,13 @@ def generate_worldclock_titles():
 	global worldclock_titles
 	worldclock_titles = []
 	for i in range(NUMBER_OF_CLOCKFACES):
-		worldclock_titles.append(bitmap_label.Label(FONT, text=worldclock_text[i], color=3))
+		worldclock_titles.append(bitmap_label.Label(FONT, text=worldclock_text[i], color=worldclock_titles_color))
 
 def update_worldclock_dates():
 	for i in range(NUMBER_OF_CLOCKFACES):
 		string = dec(t_struct[i].tm_year,4) + "-" + dec(t_struct[i].tm_mon,2) + "-" + dec(t_struct[i].tm_mday,2)
 		#del worldclock_dates[i]
-		worldclock_dates[i] = bitmap_label.Label(FONT, text=string, color=3)
+		worldclock_dates[i] = bitmap_label.Label(FONT, text=string, color=worldclock_dates_color)
 
 def update_worldclock_days_AMPM():
 	for i in range(NUMBER_OF_CLOCKFACES):
@@ -378,7 +388,7 @@ def update_worldclock_days_AMPM():
 			AMPM = " AM"
 		string = _DAYNAMES[t_struct[i].tm_wday+1] + AMPM
 		#del worldclock_days[i]
-		worldclock_days[i] = bitmap_label.Label(FONT, text=string, color=3)
+		worldclock_days[i] = bitmap_label.Label(FONT, text=string, color=worldclock_days_AMPM_color)
 
 def generate_rotozoom_hands():
 	global hour_hand_bitmap
@@ -512,10 +522,27 @@ def draw_digital_clockface_using_four_separate_neopixel_matrices():
 			digit[i][j] = list(map(lambda x: int(x*brightness*font_4x8[k][j]), PURPLE))
 	for i in range(4):
 		digit[i].show()
+	#display.refresh()
+	#clear_bitmap(bitmap)
 
 def draw_digital_clockface_using_rgbmatrix():
+	datetime = rtc.RTC().datetime
+	#yyyy = datetime.tm_year
+	#mm = datetime.tm_mon
+	#dd = datetime.tm_mday
+	h24 = datetime.tm_hour
+	m = datetime.tm_min
+	#s = datetime.tm_sec
+	h12 = h24 % 12
+	if 0==h12:
+		h12 = 12
+	#hms = str(h12) + ":" + "%0*d"%(2,m) + ":" + "%0*d"%(2,s)
+	hm = dec(h12,2,False) + ":" + dec(m,2)
+	current_time = bitmap_label.Label(FONT, text=hm)
 	#print("draw_digital_clockface_using_rgbmatrix()")
-	return
+	bitmaptools.rotozoom(bitmap, current_time.bitmap, angle=math.pi, skip_index=0, ox=center_x, oy=center_y, scale=FONTSCALE)
+	display.refresh()
+	clear_bitmap(bitmap)
 
 setup()
 while True:
