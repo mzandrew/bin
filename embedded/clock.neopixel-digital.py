@@ -3,7 +3,7 @@
 # with help from https://learn.adafruit.com/adafruit-circuit-playground-express/circuitpython-neopixel
 # and from https://learn.adafruit.com/adafruit-circuit-playground-express/circuitpython-digital-in-out
 # and from https://learn.adafruit.com/circuitpython-essentials/circuitpython-neopixel
-# last updated 2024-04-04 by mza
+# last updated 2024-04-27 by mza
 
 # to install:
 # cd lib
@@ -145,7 +145,7 @@ font_4x8[2] = ( 0,0,1,1,0,0,0,1,
 font_4x8[3] = ( 0,0,1,1,1,1,1,0,
                 0,1,0,0,1,0,0,1,
                 0,1,0,0,1,0,0,1,
-                0,1,0,0,1,0,0,1 )
+                0,1,0,0,0,0,0,1 )
 font_4x8[4] = ( 0,1,1,1,1,1,1,1,
                 0,0,0,0,1,0,0,0,
                 0,0,0,0,1,0,0,0,
@@ -187,7 +187,7 @@ def setup_neopixel_clockface():
 	digit.append(neopixel.NeoPixel(board.A2, NUMBER_OF_PIXELS_PER_DIGIT, auto_write=False))
 	digit.append(neopixel.NeoPixel(board.A3, NUMBER_OF_PIXELS_PER_DIGIT, auto_write=False))
 
-def draw_clockface():
+def draw_digital_clockface():
 	datetime = rtc.RTC().datetime
 	for i in range(4):
 		h24 = datetime.tm_hour
@@ -217,7 +217,7 @@ def loop():
 	parse_RTC()
 	global should_update_clockface
 	if should_update_clockface:
-		draw_clockface()
+		draw_digital_clockface()
 		should_update_clockface = False
 	time.sleep(1)
 
