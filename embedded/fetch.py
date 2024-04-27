@@ -14,7 +14,8 @@
 # pip3 install adafruit-io --upgrade --force-reinstall
 
 #COUNT = 1000
-COUNT = None # this means "all"
+COUNT = 10000
+#COUNT = None # this means "all"
 
 import sys
 import time
