@@ -4,7 +4,7 @@
 # based on 480x320-tft-feather-clock.py, bar320x960-ips-clock.py, round40-ips-clock.py, 64x64-rgbmatrix-clock.py
 # from https://learn.adafruit.com/rgb-matrix-slot-machine/circuitpython-libraries
 # and https://learn.adafruit.com/rgb-led-matrices-matrix-panels-with-circuitpython/advanced-multiple-panels
-# last updated 2024-03-16 by mza
+# last updated 2024-04-27 by mza
 
 # for use on an interstate75w (raspberry_pi_pico_w) with a rgbmatrix
 # or for use on a adafruit_qualia_s3_rgb666 with a rgb 666 tft display
@@ -20,6 +20,8 @@
 #i2c = board.STEMMA_I2C()
 #irq_dio = None
 #tsc = adafruit_tsc2007.TSC2007(i2c, irq=irq_dio)
+
+analog_not_digital = True
 
 import math
 import storage
@@ -97,29 +99,14 @@ def get_ntp_time_if_necessary():
 	else:
 		print("rtc: " + str(datetime))
 
+def update_t_struct():
+	global t_struct
+	datetime = rtc.RTC().datetime
+	for i in range(NUMBER_OF_CLOCKFACES):
+		t_struct[i] = time.localtime(time.mktime(datetime) + offset_timezone[i]*3600)
+
 def clear_bitmap(bitmap_name):
 	bitmaptools.fill_region(bitmap_name, 0, 0, bitmap_name.width, bitmap_name.height, background_color)
-
-def draw_clockface():
-	print("draw_clockface()")
-	if "bitmaptools"==mode:
-		clear_bitmap(bitmap)
-		clear_bitmap(dots_bitmap)
-	#objects = []
-	for alpha in range(0, 60, 5):
-		theta = twopi*alpha/60
-		x0 = subbitmap_center_x + int(distance_of_dot_from_center*math.sin(theta))
-		y0 = subbitmap_center_y - int(distance_of_dot_from_center*math.cos(theta))
-		bonus=1.0
-		if 0==alpha%15:
-			bonus=1.5
-		if "display_shapes"==mode:
-			object = Circle(x0=x0, y0=y0, r=int(bonus*radius_of_dot), fill=color_of_dot)
-			display.root_group.append(object)
-		else:
-			bitmaptools.draw_circle(dots_bitmap, x0, y0, int(bonus*radius_of_dot), color_of_dot)
-			bitmaptools.boundary_fill(dots_bitmap, x0, y0, color_of_dot, background_color)
-	#return objects
 
 def hang():
 	while True:
@@ -164,12 +151,17 @@ def setup():
 				print("then cp custom_label.boot.py to /media/mza/CIRCUITPY/boot.py")
 				print("unmount drive, and then unplug/replug board")
 				hang()
+	global four_separate_neopixel_matrices
+	four_separate_neopixel_matrices = False
+	if "adafruit_qtpy_esp32s2"==board.board_id:
+		four_separate_neopixel_matrices = True
 	global NTP_INDEX, should_show_worldclock_labels, subbitmap_width, subbitmap_height
 	global length_of_hour_hand, length_of_minute_hand, distance_of_dot_from_center, radius_of_dot
 	global width_of_hour_hand, width_of_minute_hand, subbitmap_center_x, subbitmap_center_y
 	global FONTSCALE, titles_offset_x, titles_offset_y, dates_offset_x, dates_offset_y, days_offset_x, days_offset_y
 	global rotation_angle, twopi, color_of_dot, NUMBER_OF_CLOCKFACES
 	global worldclock_text, offset_timezone, offset_x, offset_y
+	global analog_not_digital
 	if numH*width==64 and numV*height==32:
 		subbitmap_size = 32
 		brightness = 0.4
@@ -181,6 +173,7 @@ def setup():
 		width_of_hour_hand = 1.75
 		width_of_minute_hand = 0.25
 		distance_of_dot_from_center = 14.5
+		#analog_not_digital = False
 	elif numH*width==64 and numV*height==64:
 		subbitmap_size = 64
 		brightness = 0.25
@@ -365,12 +358,6 @@ def setup():
 		generate_rotozoom_hands()
 	#diff = time.monotonic() - startup_time; print (str(diff))
 
-def update_t_struct():
-	global t_struct
-	datetime = rtc.RTC().datetime
-	for i in range(NUMBER_OF_CLOCKFACES):
-		t_struct[i] = time.localtime(time.mktime(datetime) + offset_timezone[i]*3600)
-
 def generate_worldclock_titles():
 	global worldclock_titles
 	worldclock_titles = []
@@ -441,6 +428,7 @@ def thickline(x1, y1, angle, length, width, color1, color2=background_color):
 		return object
 
 def draw_hour_and_minute_hands(i, hour, minute):
+	# done every minute
 	minute_angle = twopi*minute/60
 	hour_angle = twopi*hour12/12
 	hour_angle += minute_angle/12
@@ -469,6 +457,66 @@ def draw_hour_and_minute_hands(i, hour, minute):
 		display.root_group.remove(minute_hand)
 	#diff = time.monotonic() - startup_time; print (str(diff))
 
+def draw_analog_clockface():
+	# only done once per hour
+	print("draw_analog_clockface()")
+	if "bitmaptools"==mode:
+		clear_bitmap(bitmap)
+		clear_bitmap(dots_bitmap)
+	#objects = []
+	for alpha in range(0, 60, 5):
+		theta = twopi*alpha/60
+		x0 = subbitmap_center_x + int(distance_of_dot_from_center*math.sin(theta))
+		y0 = subbitmap_center_y - int(distance_of_dot_from_center*math.cos(theta))
+		bonus=1.0
+		if 0==alpha%15:
+			bonus=1.5
+		if "display_shapes"==mode:
+			object = Circle(x0=x0, y0=y0, r=int(bonus*radius_of_dot), fill=color_of_dot)
+			display.root_group.append(object)
+		else:
+			bitmaptools.draw_circle(dots_bitmap, x0, y0, int(bonus*radius_of_dot), color_of_dot)
+			bitmaptools.boundary_fill(dots_bitmap, x0, y0, color_of_dot, background_color)
+	#return objects
+
+def draw_clockface():
+	if analog_not_digital:
+		draw_analog_clockface()
+
+def draw_digital_clockface():
+	# done every minute
+	if four_separate_neopixel_matrices:
+		draw_digital_clockface_using_four_separate_neopixel_matrices()
+	else:
+		draw_digital_clockface_using_rgbmatrix()
+
+def draw_digital_clockface_using_four_separate_neopixel_matrices():
+	#print("draw_digital_clockface_using_four_separate_neopixel_matrices()")
+	datetime = rtc.RTC().datetime
+	for i in range(4):
+		h24 = datetime.tm_hour
+		h12 = h24 % 12
+		m = datetime.tm_min
+		if 3==i: # hh:mM
+			k = m%10
+		if 2==i: # hh:Mm
+			k = m//10
+		if 1==i: # hH:mm
+			k = h12%10
+		if 0==i: # Hh:mm
+			k = h12//10
+			if 0==k:
+				k = 10
+		digit[i].fill(list(map(lambda x: int(x*brightness), BLACK)))
+		for j in range(NUMBER_OF_PIXELS_PER_DIGIT):
+			digit[i][j] = list(map(lambda x: int(x*brightness*font_4x8[k][j]), PURPLE))
+	for i in range(4):
+		digit[i].show()
+
+def draw_digital_clockface_using_rgbmatrix():
+	#print("draw_digital_clockface_using_rgbmatrix()")
+	return
+
 setup()
 while True:
 	update_t_struct()
@@ -483,12 +531,15 @@ while True:
 				draw_clockface()
 		update_worldclock_dates()
 		update_worldclock_days_AMPM()
-		draw_hour_and_minute_hands(i, hour12, minute)
+		if analog_not_digital:
+			draw_hour_and_minute_hands(i, hour12, minute)
+		else:
+			draw_digital_clockface()
 	if t_struct[NTP_INDEX].tm_hour==23 and t_struct[NTP_INDEX].tm_min==59:
 		we_still_need_to_get_ntp_time = True
 	if we_still_need_to_get_ntp_time:
 		print("getting NTP time and setting RTC...")
 		get_ntp_time_and_set_RTC()
-	gc.collect() ; print(gc.mem_free())
+	#gc.collect() ; print(gc.mem_free())
 	time.sleep(60 - rtc.RTC().datetime.tm_sec)
 
