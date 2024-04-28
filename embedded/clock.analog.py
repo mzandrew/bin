@@ -57,6 +57,7 @@ color_of_minute_hand = 2
 worldclock_titles_color = 1
 worldclock_dates_color = 1
 worldclock_days_AMPM_color = 1
+color_of_digital_clockface_using_rgbmatrix = 3
 
 #peripherals = Peripherals()
 #peripherals.backlight = True
@@ -172,7 +173,7 @@ def setup():
 	if numH*width==64 and numV*height==32:
 		subbitmap_size = 32
 		brightness = 0.4
-		rotation_angle = 0*math.pi/2
+		rotation_angle = 2*math.pi/2
 		boardtype = "rgbmatrix"
 		should_show_worldclock_labels = False
 		color_of_dot = 4
@@ -181,7 +182,8 @@ def setup():
 		width_of_minute_hand = 0.25
 		distance_of_dot_from_center = 14.5
 		analog_not_digital = False
-		color_order = "rbg"
+		#color_order = "rbg"
+		color_order = "rgb"
 	elif numH*width==64 and numV*height==64:
 		subbitmap_size = 64
 		brightness = 0.25
@@ -300,33 +302,33 @@ def setup():
 		import framebufferio
 		if 0:
 			matrix = rgbmatrix.RGBMatrix( # matrix_featherwing
-				width=64, height=32, bit_depth=4,
+				width=64, height=32, bit_depth=1,
 				rgb_pins=[board.D6, board.D5, board.D9, board.D11, board.D10, board.D12], # R1, G1, B1, R2, B2, G2
 				addr_pins=[board.A5, board.A4, board.A3, board.A2], # ROW_A, ROW_B, ROW_C, ROW_D
 				clock_pin=board.D13, latch_pin=board.D0, output_enable_pin=board.D1)
 		elif width==64 and height==32:
 			if "rgb"==color_order:
 				matrix = rgbmatrix.RGBMatrix( # interstate75w 64x32
-					width=numH*width, height=numV*height, bit_depth=4, tile=numV,
+					width=numH*width, height=numV*height, bit_depth=1, tile=numV,
 					rgb_pins=[board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5], # R0, G0, B0, R1, G1, B1
 					addr_pins=[board.GP6, board.GP7, board.GP8, board.GP9], # ROW_E needed for 64x64 displays
 					clock_pin=board.GP11, latch_pin=board.GP12, output_enable_pin=board.GP13)
 			else:
 				matrix = rgbmatrix.RGBMatrix( # interstate75w 64x32
-					width=numH*width, height=numV*height, bit_depth=4, tile=numV,
+					width=numH*width, height=numV*height, bit_depth=1, tile=numV,
 					rgb_pins=[board.GP0, board.GP2, board.GP1, board.GP3, board.GP5, board.GP4], # R0, G0, B0, R1, G1, B1
 					addr_pins=[board.GP6, board.GP7, board.GP8, board.GP9], # ROW_E needed for 64x64 displays
 					clock_pin=board.GP11, latch_pin=board.GP12, output_enable_pin=board.GP13)
 		elif width==64 and height==64:
 			if "rgb"==color_order:
 				matrix = rgbmatrix.RGBMatrix( # interstate75w 64x64
-					width=numH*width, height=numV*height, bit_depth=4, tile=numV,
+					width=numH*width, height=numV*height, bit_depth=1, tile=numV,
 					rgb_pins=[board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5], # R0, G0, B0, R1, G1, B1
 					addr_pins=[board.GP6, board.GP7, board.GP8, board.GP9, board.GP10], # ROW_E needed for 64x64 displays
 					clock_pin=board.GP11, latch_pin=board.GP12, output_enable_pin=board.GP13)
 			else:
 				matrix = rgbmatrix.RGBMatrix( # interstate75w 64x64
-					width=numH*width, height=numV*height, bit_depth=4, tile=numV,
+					width=numH*width, height=numV*height, bit_depth=1, tile=numV,
 					rgb_pins=[board.GP0, board.GP2, board.GP1, board.GP3, board.GP5, board.GP4], # R0, G0, B0, R1, G1, B1
 					addr_pins=[board.GP6, board.GP7, board.GP8, board.GP9, board.GP10], # ROW_E needed for 64x64 displays
 					clock_pin=board.GP11, latch_pin=board.GP12, output_enable_pin=board.GP13)
@@ -538,12 +540,13 @@ def draw_digital_clockface_using_rgbmatrix():
 		h12 = 12
 	#hms = str(h12) + ":" + "%0*d"%(2,m) + ":" + "%0*d"%(2,s)
 	hm = dec(h12,2,False) + ":" + dec(m,2)
-	current_time = bitmap_label.Label(FONT, text=hm)
+	current_time = bitmap_label.Label(FONT, text=hm, color=color_of_digital_clockface_using_rgbmatrix)
 	#print("draw_digital_clockface_using_rgbmatrix()")
-	bitmaptools.rotozoom(bitmap, current_time.bitmap, angle=math.pi, skip_index=0, ox=center_x, oy=center_y, scale=FONTSCALE)
+	bitmaptools.rotozoom(bitmap, current_time.bitmap, angle=rotation_angle, skip_index=0, ox=center_x, oy=center_y, scale=FONTSCALE)
 	display.refresh()
 	clear_bitmap(bitmap)
 
+t = 16
 setup()
 while True:
 	update_t_struct()
@@ -568,5 +571,10 @@ while True:
 		print("getting NTP time and setting RTC...")
 		get_ntp_time_and_set_RTC()
 	#gc.collect() ; print(gc.mem_free())
-	time.sleep(60 - rtc.RTC().datetime.tm_sec)
+	if 0:
+		rotation_angle = t*math.pi/16
+		time.sleep(0.025)
+	else:
+		time.sleep(60 - rtc.RTC().datetime.tm_sec)
+	t += 1
 
