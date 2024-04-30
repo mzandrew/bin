@@ -4,7 +4,8 @@
 # based on 480x320-tft-feather-clock.py, bar320x960-ips-clock.py, round40-ips-clock.py, 64x64-rgbmatrix-clock.py
 # from https://learn.adafruit.com/rgb-matrix-slot-machine/circuitpython-libraries
 # and https://learn.adafruit.com/rgb-led-matrices-matrix-panels-with-circuitpython/advanced-multiple-panels
-# last updated 2024-04-27 by mza
+# and https://learn.adafruit.com/custom-fonts-for-pyportal-circuitpython-display/overview
+# last updated 2024-04-30 by mza
 
 # for use on an interstate75w (raspberry_pi_pico_w) with a rgbmatrix
 # or for use on a adafruit_qualia_s3_rgb666 with a rgb 666 tft display
@@ -34,11 +35,18 @@ import rtc
 import displayio
 from adafruit_display_shapes.circle import Circle
 from adafruit_display_shapes.polygon import Polygon
-from adafruit_display_text import label
-from adafruit_display_text import bitmap_label
+from adafruit_display_text import label, bitmap_label
+from adafruit_bitmap_font import bitmap_font
 from adafruit_datetime import _DAYNAMES
-from terminalio import FONT
 import bitmaptools
+
+#from terminalio import FONT
+#font = bitmap_font.load_font("fonts/7SEGMENTALDIGITALDISPLAY-22.pcf") # a bit sickly looking
+#font = bitmap_font.load_font("fonts/monotype-15.pcf")
+#font = bitmap_font.load_font("fonts/NimbusMonoPS-BoldItalic-15.pcf") # thicc
+font = bitmap_font.load_font("fonts/lmmonoproplt10-regular-21.pcf")
+# otf2bdf 7SEGMENTALDIGITALDISPLAY.ttf -p 22 -o 7SEGMENTALDIGITALDISPLAY-22.bdf; bdftopcf 7SEGMENTALDIGITALDISPLAY-22.bdf > 7SEGMENTALDIGITALDISPLAY-22.pcf; cp 7SEGMENTALDIGITALDISPLAY-22.pcf /media/mza/circuitpython/fonts/
+FONTSCALE = 1
 
 palette_colors = 7
 palette = displayio.Palette(palette_colors)
@@ -166,7 +174,7 @@ def setup():
 	global NTP_INDEX, should_show_worldclock_labels, subbitmap_width, subbitmap_height
 	global length_of_hour_hand, length_of_minute_hand, distance_of_dot_from_center, radius_of_dot
 	global width_of_hour_hand, width_of_minute_hand, subbitmap_center_x, subbitmap_center_y
-	global FONTSCALE, titles_offset_x, titles_offset_y, dates_offset_x, dates_offset_y, days_offset_x, days_offset_y
+	global titles_offset_x, titles_offset_y, dates_offset_x, dates_offset_y, days_offset_x, days_offset_y
 	global rotation_angle, twopi, color_of_dot, NUMBER_OF_CLOCKFACES
 	global worldclock_text, offset_timezone, offset_x, offset_y
 	global analog_not_digital
@@ -236,7 +244,6 @@ def setup():
 	length_of_minute_hand = int(0.85 * subbitmap_size/2)
 	subbitmap_center_x = subbitmap_width//2
 	subbitmap_center_y = subbitmap_height//2
-	FONTSCALE = 2
 	if width==480:
 		titles_offset_x = 150
 		titles_offset_y = -50
@@ -374,13 +381,13 @@ def generate_worldclock_titles():
 	global worldclock_titles
 	worldclock_titles = []
 	for i in range(NUMBER_OF_CLOCKFACES):
-		worldclock_titles.append(bitmap_label.Label(FONT, text=worldclock_text[i], color=worldclock_titles_color))
+		worldclock_titles.append(bitmap_label.Label(font, text=worldclock_text[i], color=worldclock_titles_color))
 
 def update_worldclock_dates():
 	for i in range(NUMBER_OF_CLOCKFACES):
 		string = dec(t_struct[i].tm_year,4) + "-" + dec(t_struct[i].tm_mon,2) + "-" + dec(t_struct[i].tm_mday,2)
 		#del worldclock_dates[i]
-		worldclock_dates[i] = bitmap_label.Label(FONT, text=string, color=worldclock_dates_color)
+		worldclock_dates[i] = bitmap_label.Label(font, text=string, color=worldclock_dates_color)
 
 def update_worldclock_days_AMPM():
 	for i in range(NUMBER_OF_CLOCKFACES):
@@ -390,7 +397,7 @@ def update_worldclock_days_AMPM():
 			AMPM = " AM"
 		string = _DAYNAMES[t_struct[i].tm_wday+1] + AMPM
 		#del worldclock_days[i]
-		worldclock_days[i] = bitmap_label.Label(FONT, text=string, color=worldclock_days_AMPM_color)
+		worldclock_days[i] = bitmap_label.Label(font, text=string, color=worldclock_days_AMPM_color)
 
 def generate_rotozoom_hands():
 	global hour_hand_bitmap
@@ -540,7 +547,7 @@ def draw_digital_clockface_using_rgbmatrix():
 		h12 = 12
 	#hms = str(h12) + ":" + "%0*d"%(2,m) + ":" + "%0*d"%(2,s)
 	hm = dec(h12,2,False) + ":" + dec(m,2)
-	current_time = bitmap_label.Label(FONT, text=hm, color=color_of_digital_clockface_using_rgbmatrix)
+	current_time = bitmap_label.Label(font, text=hm, color=color_of_digital_clockface_using_rgbmatrix)
 	#print("draw_digital_clockface_using_rgbmatrix()")
 	bitmaptools.rotozoom(bitmap, current_time.bitmap, angle=rotation_angle, skip_index=0, ox=center_x, oy=center_y, scale=FONTSCALE)
 	display.refresh()
