@@ -24,20 +24,22 @@
 
 analog_not_digital = True
 
-import math
-import storage
-import re
+from math import pi, sin, cos
+from storage import getmount
+from re import search
 import gc
 import array
 import time
 import board
 import rtc
 import displayio
-from adafruit_display_shapes.circle import Circle
-from adafruit_display_shapes.polygon import Polygon
+if analog_not_digital:
+	from adafruit_display_shapes.circle import Circle
+	from adafruit_display_shapes.polygon import Polygon
+	from adafruit_datetime import _DAYNAMES
 from adafruit_display_text import label, bitmap_label
 from adafruit_bitmap_font import bitmap_font
-from adafruit_datetime import _DAYNAMES
+from terminalio import FONT
 import bitmaptools
 
 #from terminalio import FONT
@@ -131,19 +133,19 @@ def hang():
 def setup():
 	print()
 	print("board type: " + board.board_id)
-	m = storage.getmount("/")
+	m = getmount("/")
 	label = m.label
 	print("label is: " + label)
 	numV = 1 # tiling in vertical direction
 	numH = 1 # tiling in horizontal direction
-	match = re.search("([0-9]+)X([0-9]+)CLOC", str(label)) # "64X64CLOCK"
+	match = search("([0-9]+)X([0-9]+)CLOC", str(label)) # "64X64CLOCK"
 	if match:
 		width = int(match.group(1))
 		height = int(match.group(2))
 		print("width: " + str(width))
 		print("height: " + str(height))
 	else:
-		match = re.search("([0-9]+)X([0-9]+)X([0-9]+)", str(label)) # "64X32X2" (implicit vertical tiling)
+		match = search("([0-9]+)X([0-9]+)X([0-9]+)", str(label)) # "64X32X2" (implicit vertical tiling)
 		if match:
 			width = int(match.group(1))
 			height = int(match.group(2))
@@ -152,7 +154,7 @@ def setup():
 			print("height: " + str(height))
 			print("numV: " + str(numV))
 		else:
-			match = re.search("([0-9]+)X([0-9]+)X([0-9]+)X([0-9]|)", str(label)) # "64X64X2X2"
+			match = search("([0-9]+)X([0-9]+)X([0-9]+)X([0-9]|)", str(label)) # "64X64X2X2"
 			if match:
 				width = int(match.group(1))
 				height = int(match.group(2))
@@ -181,7 +183,7 @@ def setup():
 	if numH*width==64 and numV*height==32:
 		subbitmap_size = 32
 		brightness = 0.4
-		rotation_angle = 2*math.pi/2
+		rotation_angle = 2*pi/2
 		boardtype = "rgbmatrix"
 		should_show_worldclock_labels = False
 		color_of_dot = 4
@@ -195,7 +197,7 @@ def setup():
 	elif numH*width==64 and numV*height==64:
 		subbitmap_size = 64
 		brightness = 0.25
-		rotation_angle = 0*math.pi/2
+		rotation_angle = 0*pi/2
 		boardtype = "rgbmatrix"
 		should_show_worldclock_labels = False
 		color_of_dot = 4
@@ -207,7 +209,7 @@ def setup():
 		color_order = "rgb"
 	elif width==480 and height==320:
 		subbitmap_size = 320
-		rotation_angle = 3*math.pi/2
+		rotation_angle = 3*pi/2
 		boardtype = "feather"
 		should_show_worldclock_labels = True
 		color_of_dot = 5
@@ -216,7 +218,7 @@ def setup():
 		width_of_minute_hand = 9
 		distance_of_dot_from_center = 148
 	elif width==320 and height==960:
-		rotation_angle = 1*math.pi/2 # must come after 320 one above
+		rotation_angle = 1*pi/2 # must come after 320 one above
 		subbitmap_size = 320
 		boardtype = "qualia"
 		should_show_worldclock_labels = True
@@ -228,7 +230,7 @@ def setup():
 	elif width==720 and height==720:
 		subbitmap_size = 720
 		boardtype = "qualia"
-		rotation_angle = 0*math.pi/2
+		rotation_angle = 0*pi/2
 		should_show_worldclock_labels = False
 		color_of_dot = 4
 		radius_of_dot = 10
@@ -244,6 +246,7 @@ def setup():
 	length_of_minute_hand = int(0.85 * subbitmap_size/2)
 	subbitmap_center_x = subbitmap_width//2
 	subbitmap_center_y = subbitmap_height//2
+	FONTSCALE = 2.25
 	if width==480:
 		titles_offset_x = 150
 		titles_offset_y = -50
@@ -265,7 +268,7 @@ def setup():
 		offset_x = [ 0, 0, 0 ]
 		offset_y = [ 320, 0, -320 ]
 		NTP_INDEX = 1
-		rotation_angle = 1*math.pi/2
+		rotation_angle = 1*pi/2
 	else:
 		NUMBER_OF_CLOCKFACES = 1
 		worldclock_text = [ " " ]
@@ -274,10 +277,11 @@ def setup():
 		offset_y = [ 0 ]
 		NTP_INDEX = 0
 	#global startup_time; startup_time = time.monotonic()
-	global twopi; twopi = 2 * math.pi
+	global twopi; twopi = 2 * pi
 	global display, bitmap
 	gc.collect(); print(gc.mem_free())
 	displayio.release_displays()
+	gc.collect(); print(gc.mem_free())
 	if boardtype=="qualia":
 		from adafruit_qualia.graphics import Graphics, Displays # helps find the name "Displays.BAR320X960"
 		from adafruit_qualia.peripherals import Peripherals
@@ -356,8 +360,9 @@ def setup():
 	global center_x, center_y
 	center_x = (display.width + 1) // 2
 	center_y = (display.height + 1) // 2
-	global dots_bitmap
-	dots_bitmap = displayio.Bitmap(subbitmap_width, subbitmap_height, palette_colors)
+	if analog_not_digital:
+		global dots_bitmap
+		dots_bitmap = displayio.Bitmap(subbitmap_width, subbitmap_height, palette_colors)
 	tile_grid = displayio.TileGrid(bitmap, pixel_shader=palette)
 	splash.append(tile_grid)
 	display.root_group = splash
@@ -367,15 +372,16 @@ def setup():
 	t_struct = [ 0 for i in range(NUMBER_OF_CLOCKFACES) ]
 	update_t_struct()
 	if "rotozoom"==mode:
-		generate_worldclock_titles()
-		global worldclock_dates
-		worldclock_dates = [ 0 for i in range(NUMBER_OF_CLOCKFACES) ]
-		global worldclock_days
-		worldclock_days = [ 0 for i in range(NUMBER_OF_CLOCKFACES) ]
-		update_worldclock_dates()
-		update_worldclock_days_AMPM()
-		generate_rotozoom_hands()
+		if analog_not_digital:
+			generate_worldclock_titles()
+			global worldclock_dates, worldclock_days
+			worldclock_dates = [ 0 for i in range(NUMBER_OF_CLOCKFACES) ]
+			worldclock_days = [ 0 for i in range(NUMBER_OF_CLOCKFACES) ]
+			update_worldclock_dates()
+			update_worldclock_days_AMPM()
+			generate_rotozoom_hands()
 	#diff = time.monotonic() - startup_time; print (str(diff))
+	gc.collect() ; print(gc.mem_free())
 
 def generate_worldclock_titles():
 	global worldclock_titles
@@ -416,18 +422,18 @@ def generate_rotozoom_hands():
 	bitmaptools.boundary_fill(minute_hand_bitmap, subbitmap_center_x, int(subbitmap_center_y-length_of_minute_hand/2), color_of_minute_hand, background_color)
 
 def thickline(x1, y1, angle, length, width, color1, color2=background_color):
-	x2 = x1 + int(length*math.sin(angle))
-	y2 = y1 - int(length*math.cos(angle))
+	x2 = x1 + int(length*sin(angle))
+	y2 = y1 - int(length*cos(angle))
 	#return Line(x1, y1, x2, y2, color1)
 	#return Polygon(points=[(x1, y1), (x2, y2)], outline=color1)
-	x_adjustment = int(width/2*math.cos(angle))
-	y_adjustment = int(width/2*math.sin(angle))
+	x_adjustment = int(width/2*cos(angle))
+	y_adjustment = int(width/2*sin(angle))
 	x3 = x1 + x_adjustment
 	y3 = y1 + y_adjustment
-	x4 = x1 + x_adjustment + int(length*math.sin(angle))
-	y4 = y1 + y_adjustment - int(length*math.cos(angle))
-	x5 = x1 - x_adjustment + int(length*math.sin(angle))
-	y5 = y1 - y_adjustment - int(length*math.cos(angle))
+	x4 = x1 + x_adjustment + int(length*sin(angle))
+	y4 = y1 + y_adjustment - int(length*cos(angle))
+	x5 = x1 - x_adjustment + int(length*sin(angle))
+	y5 = y1 - y_adjustment - int(length*cos(angle))
 	x6 = x1 - x_adjustment
 	y6 = y1 - y_adjustment
 	#print(str((x1, y1)) + " " + str((x2, y2)) + " " + str(points))
@@ -485,8 +491,8 @@ def draw_analog_clockface():
 	#objects = []
 	for alpha in range(0, 60, 5):
 		theta = twopi*alpha/60
-		x0 = subbitmap_center_x + int(distance_of_dot_from_center*math.sin(theta))
-		y0 = subbitmap_center_y - int(distance_of_dot_from_center*math.cos(theta))
+		x0 = subbitmap_center_x + int(distance_of_dot_from_center*sin(theta))
+		y0 = subbitmap_center_y - int(distance_of_dot_from_center*cos(theta))
 		bonus=1.0
 		if 0==alpha%15:
 			bonus=1.5
@@ -565,9 +571,11 @@ while True:
 		print(dec(hour24, 2) + ":" + dec(minute, 2) + ":" + dec(second, 2))
 		if 0==minute:
 			if "bitmaptools"==mode:
-				draw_clockface()
-		update_worldclock_dates()
-		update_worldclock_days_AMPM()
+				if analog_not_digital:
+					draw_clockface()
+		if analog_not_digital:
+			update_worldclock_dates()
+			update_worldclock_days_AMPM()
 		if analog_not_digital:
 			draw_hour_and_minute_hands(i, hour12, minute)
 		else:
@@ -577,9 +585,9 @@ while True:
 	if we_still_need_to_get_ntp_time:
 		print("getting NTP time and setting RTC...")
 		get_ntp_time_and_set_RTC()
-	#gc.collect() ; print(gc.mem_free())
+	gc.collect() ; #print(gc.mem_free())
 	if 0:
-		rotation_angle = t*math.pi/16
+		rotation_angle = t*pi/16
 		time.sleep(0.025)
 	else:
 		time.sleep(60 - rtc.RTC().datetime.tm_sec)
