@@ -6,6 +6,10 @@
 
 #declare baseip="192.168.10"
 declare baseip=$(ifconfig | grep inet | grep 192.168 | awk '{ print $2 }' | sed -e "s,addr:,," | sed -e "s,\.[0-9]\+$,," | head -n1)
+if [ -z "$baseip" ]; then
+	echo "can't determine our ip address"
+	exit 1
+fi
 echo "using $baseip"
 declare dir=$(mktemp -d)
 
