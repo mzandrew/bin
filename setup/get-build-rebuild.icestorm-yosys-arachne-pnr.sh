@@ -2,10 +2,11 @@
 
 # written 2017-11 by mza
 # based on instructions posted at http://www.clifford.at/icestorm/
-# last updated 2023-05-18 by mza
+# last updated 2024-06-15 by mza
 
 # when trying it on ubuntu 22.04:
 # E: Package 'python' has no installation candidate
+# E: Package 'qt5-default' has no installation candidate
 
 declare build="$HOME/build"
 declare -i np=$(grep -c "^processor" /proc/cpuinfo)
@@ -21,12 +22,12 @@ function get_source_if_necessary {
 	if [ ! -e icestorm ]; then
 		git clone https://github.com/cliffordwolf/icestorm.git icestorm
 	fi
-	if [ ! -e arachne-pnr ]; then
-		git clone https://github.com/cseed/arachne-pnr.git arachne-pnr
-	fi
-	#if [ ! -e nextpnr ]; then
-	#	git clone https://github.com/YosysHQ/nextpnr.git
+	#if [ ! -e arachne-pnr ]; then
+	#	git clone https://github.com/cseed/arachne-pnr.git arachne-pnr
 	#fi
+	if [ ! -e nextpnr ]; then
+		git clone https://github.com/YosysHQ/nextpnr.git
+	fi
 	if [ ! -e yosys ]; then
 		git clone https://github.com/cliffordwolf/yosys.git yosys
 	fi
@@ -93,7 +94,7 @@ function install_prerequisites_apt {
 		libboost-all-dev libboost-python-dev zlib1g-dev \
 		cmake libeigen3-dev \
 		xclip
-	sudo apt -y install qt5-default || /bin/true
+	#sudo apt -y install qt5-default || /bin/true
 	sudo apt -y install npm || sudo apt -y install bb-npm-installer
 }
 
@@ -277,8 +278,8 @@ function check_udev_rule {
 get_source_if_necessary
 set +e
 do_icestorm
-do_arachne_pnr
-#do_nextpnr
+#do_arachne_pnr
+do_nextpnr
 do_yosys
 #do_icestudio
 #do_yosys_plugins
@@ -290,7 +291,7 @@ set -e
 echo
 check_udev_rule 
 echo
-list_files /usr/local/bin/ice* /usr/local/share/icebox /usr/local/bin/arachne* /usr/local/share/arachne-pnr /usr/local/bin/yosys* /usr/local/share/yosys "$udev_rulefile" /usr/local/bin/vhd2vl /usr/local/share/yosys/plugins
+list_files /usr/local/bin/ice* /usr/local/share/icebox /usr/local/bin/arachne* /usr/local/share/arachne-pnr /usr/local/bin/nextpnr* /usr/local/bin/yosys* /usr/local/share/yosys "$udev_rulefile" /usr/local/bin/vhd2vl /usr/local/share/yosys/plugins
 
 # yosys -p "synth_ice40 -blif rot.blif" rot.v
 # arachne-pnr -d 1k -p rot.pcf rot.blif -o rot.asc
