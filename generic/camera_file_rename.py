@@ -33,8 +33,10 @@ except:
 dirs = []
 image_filenames = []
 movie_filenames = []
+other_filenames = []
 potential_image_filenames = set()
 potential_movie_filenames = set()
+potential_other_filenames = set()
 
 def walktree(dirname, function_name1, function_name2):
 	#print("dirname \"" + dirname + "\" found")
@@ -42,6 +44,7 @@ def walktree(dirname, function_name1, function_name2):
 		print(dirname + " does not exist")
 		return
 	dirmode = os.stat(dirname).st_mode
+	filelist = []
 	if stat.S_ISDIR(dirmode):
 		filelist = os.listdir(dirname)
 	elif stat.S_ISREG(dirmode):
@@ -56,12 +59,25 @@ def walktree(dirname, function_name1, function_name2):
 		if stat.S_ISDIR(mode):
 			walktree(pathname, function_name1, function_name2)
 		elif stat.S_ISREG(mode):
-			match = re.match("^(.*)jpg$", pathname, re.IGNORECASE)
+			matched = False
+			match = re.match("^(.*)(jpg|jpeg|png|bmp|tiff|thm|gif)$", pathname, re.IGNORECASE)
 			if match:
+				matched = True
 				function_name1(pathname)
-			match = re.match("^(.*)mp4$", pathname, re.IGNORECASE)
+			match = re.match("^(.*)(mp4|avi|3gp)$", pathname, re.IGNORECASE)
 			if match:
+				matched = True
 				function_name2(pathname)
+			if not matched:
+				process_otherfile(pathname)
+		else:
+			print("found non-dir, non-regular-file " + pathname)
+
+def process_otherfile(filename):
+	resolved_filename = Path(filename).resolve()
+	if resolved_filename not in potential_other_filenames:
+		other_filenames.append(filename)
+		potential_other_filenames.add(resolved_filename)
 
 def process_imagefile(filename):
 	#print("filename \"" + filename + "\" found")
@@ -216,6 +232,11 @@ def process_moviefiles():
 	if number_of_changed_filenames:
 		print("changed " + str(number_of_changed_filenames) + " movie file names")
 
+def show_otherfiles():
+	print("non-movie, non-image files found:")
+	for filename in other_filenames:
+		print(filename)
+
 if len(sys.argv)>1:
 	for arg in sys.argv[1:]:
 		walktree(arg, process_imagefile, process_moviefile)
@@ -224,11 +245,15 @@ else:
 
 if can_process_imagefiles:
 	if len(image_filenames):
-		print("found " + str(len(image_filenames)) + " image files",)
+		print("found " + str(len(image_filenames)) + " image file(s)")
 		process_imagefiles()
 
 if can_process_moviefiles:
 	if len(movie_filenames):
-		print("found " + str(len(movie_filenames)) + " movie files",)
+		print("found " + str(len(movie_filenames)) + " movie file(s)")
 		process_moviefiles()
+
+if len(other_filenames):
+	print("found " + str(len(other_filenames)) + " other file(s)")
+	show_otherfiles()
 
