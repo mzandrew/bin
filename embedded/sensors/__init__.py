@@ -1,94 +1,15 @@
 # written 2020-11-25 by mza
 # from sensor_readout.py
-# last updated 2024-06-29 by mza
+# last updated 2024-06-30 by mza
 
 import sys
 import board, busio
 sys.path.append("sensors")
 
-#light_sensors = [ "as7341_adafruit", "bh1750_adafruit", "ltr390_adafruit", "tsl2591_adafruit", "vcnl4040_adafruit" ]
-#temperature_humidity_pressure_sensors = [ "bme680_adafruit" ]
-#temperature_humidity_sensors = [ "am2320_adafruit", "sht31d_adafruit" ]
-#temperature_sensors = [ "ds18b20_adafruit", "max31865_adafruit", "pct2075_adafruit", "thermocouple" ]
-#temperature_sensors.extend(temperature_humidity_sensors)
-#temperature_sensors.extend(temperature_humidity_pressure_sensors)
-#temperature_sensors.sort()
-#rtcs = [ "ds3231_adafruit", "pcf8523_adafruit" ]
-#voltage_current_measurement = [ "ina260_adafruit" ]
-#battery_monitors = [ "lc709203f_adafruit" ]
-#gpio_expanders = [ "aw9523_adafruit" ]
-#other = [ "anemometer", "pm25_adafruit" ]
-
-#all_sensors = []
-#for each_list in [ light_sensors, temperature_sensors, rtcs, voltage_current_measurement, battery_monitors, gpio_expanders, other ]:
-#	all_sensors.extend(each_list)
-#print(str(all_sensors))
-
-# list all sensors here by interface type:
-#spi_list = [ "max31865_adafruit" ]
-#onewire_list = [ "ds18b20_adafruit" ]
-#other_list = [ "anemometer" ]
-#i2c_list = [ "as7341_adafruit", "bh1750_adafruit", "ina260_adafruit", "lc709203f_adafruit", "ltr390_adafruit", "pct2075_adafruit", "pm25_adafruit", "sht31d_adafruit", "thermocouple", "tsl2591_adafruit", "vcnl4040_adafruit", "bme680_adafruit", "am2320_adafruit", "aw9523_adafruit", "ds3231_adafruit", "pcf8523_adafruit" ]
-
-#def check_list_try1(list_of_things, bus):
-#	print(str(bus))
-##	global sensors
-#	for each in list_of_things:
-##		try:
-##			__import__(each) # works to check that it would import, but doesn't actually import...
-##			#eval("import(" + str(each) + ")") # SyntaxError: invalid syntax
-##			#exec("import(" + str(each) + ")") # SyntaxError: invalid syntax
-##			#importlib.import_module(each) # not available in circuitpython
-##		except (KeyboardInterrupt, ReloadException):
-##			raise
-##		except Exception as e:
-##			print("Exception (import): " + str(each) + ": " + str(e))
-##			continue
-#		try:
-##			pass
-#			#import adafruit_max31865
-#			#import max31865_adafruit
-#			max31865_adafruit.setup(spi)
-#			#exec(str(each) + ".setup(bus)")
-#			#sensors.append(each)
-#		except (KeyboardInterrupt, ReloadException):
-#			raise
-#		except Exception as e:
-#			print("Exception (setup): " + str(each) + ": " + str(e))
-#			continue
-
-#def setup_try1():
-#	try:
-#		spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
-#		check_list(spi_list, spi)
-#	except (KeyboardInterrupt, ReloadException):
-#		raise
-#	except Exception as e:
-#		print("Exception (spi): " + str(e))
-#	try:
-#		#i2c = busio.I2C(board.SCL, board.SDA)
-#		i2c = busio.I2C(board.SCL1, board.SDA1)
-#		check_list(i2c_list, i2c)
-#	except (KeyboardInterrupt, ReloadException):
-#		raise
-#	except Exception as e:
-#		print("Exception (i2c): " + str(e))
-#	try:
-#		check_list(other_list, other)
-#	except (KeyboardInterrupt, ReloadException):
-#		raise
-#	except Exception as e:
-#		print("Exception (other): " + str(e))
-#	try:
-#		check_list(onewire_list, onewire)
-#	except (KeyboardInterrupt, ReloadException):
-#		raise
-#	except Exception as e:
-#		print("Exception (onewire): " + str(e))
-#	#print("sensors: " + str(sensors))
-
 # ------------- i2c: ----------------
-#i2c_list = [ "as7341_adafruit", "bh1750_adafruit", "ina260_adafruit", "lc709203f_adafruit", "ltr390_adafruit", "pct2075_adafruit", "pm25_adafruit", "sht31d_adafruit", "thermocouple", "tsl2591_adafruit", "vcnl4040_adafruit", "bme680_adafruit", "am2320_adafruit", "aw9523_adafruit", "ds3231_adafruit", "pcf8523_adafruit" ]
+#i2c_list = [ "as7341_adafruit", "bh1750_adafruit", "ina260_adafruit", "lc709203f_adafruit", "ltr390_adafruit", "pct2075_adafruit", "pm25_adafruit", "sht31d_adafruit", "thermocouple", "tsl2591_adafruit", "vcnl4040_adafruit", "bme680_adafruit", "am2320_adafruit", "ds3231_adafruit", "pcf8523_adafruit" ]
+
+# unimplemented: "gps_adafruit" # i2c or uart
 
 as7341_present       = False
 bh1750_present       = False
@@ -103,14 +24,13 @@ tsl2591_present      = False
 vcnl4040_present     = False
 bme680_present       = False
 am2320_present       = False
-aw9523_present       = False
 ds3231_present       = False
 pcf8523_present      = False
 
 import bme680_adafruit, pct2075_adafruit, ina260_adafruit, as7341_adafruit, bh1750_adafruit, lc709203f_adafruit, ltr390_adafruit, pm25_adafruit, sht31d_adafruit, thermocouple, tsl2591_adafruit, vcnl4040_adafruit, am2320_adafruit, ds3231_adafruit, pcf8523_adafruit
 
 def setup_i2c_sensors(i2c, N=32):
-	global as7341_present, bh1750_present, ina260_present, lc709203f_present, ltr390_present, pct2075_present, pm25_present, sht31d_present, thermocouple, tsl2591_present, vcnl4040_present, bme680_present, am2320_present, aw9523_present, ds3231_present, pcf8523_present
+	global as7341_present, bh1750_present, ina260_present, lc709203f_present, ltr390_present, pct2075_present, pm25_present, sht31d_present, thermocouple, tsl2591_present, vcnl4040_present, bme680_present, am2320_present, ds3231_present, pcf8523_present
 	try:
 		bme680_adafruit.setup(i2c, N); bme680_present = True
 	except:
@@ -159,12 +79,6 @@ def setup_i2c_sensors(i2c, N=32):
 		am2320_adafruit.setup(i2c, N); am2320_present = True
 	except:
 		pass
-# the following is a gpio expander and doesn't really fit the pattern of "sensors":
-#	try:
-#		aw9523_adafruit.setup(i2c); aw9523_present = True
-#	except:
-#		raise
-#		pass
 	try:
 		ds3231_adafruit.setup(i2c); ds3231_present = True
 	except:
@@ -211,6 +125,8 @@ def setup_onewire_sensors(ow_bus, N=32):
 # --------------- other -------------------
 #other_list = [ "anemometer" ]
 
+# unimplemented: "anemometer" # analog
+
 # --------------- common -------------------
 
 def get_values():
@@ -250,9 +166,6 @@ def get_values():
 	# other:
 	if pm25_present:
 		values['pm25'] = pm25_adafruit.get_values()
-	# gpio:
-#	if aw9523_present:
-#		values['aw9523'] = aw9523_adafruit.get_values()
 	# rtc:
 	if ds3231_present:
 		values['ds3231'] = ds3231_adafruit.get_values()
@@ -296,9 +209,6 @@ def show_values():
 	# other:
 	if pm25_present:
 		print(pm25_adafruit.measure_string())
-	# gpio:
-#	if aw9523_present:
-#		print(aw9523_adafruit.measure_string())
 	# rtc:
 	if ds3231_present:
 		print(ds3231_adafruit.measure_string())
@@ -342,9 +252,6 @@ def get_average_values():
 	# other:
 	if pm25_present:
 		values['pm25'] = pm25_adafruit.get_average_values()
-	# gpio:
-#	if aw9523_present:
-#		values['aw9523'] = aw9523_adafruit.get_average_values()
 	# rtc:
 	if ds3231_present:
 		values['ds3231'] = ds3231_adafruit.get_values()
@@ -388,9 +295,6 @@ def show_average_values():
 	# other:
 	if pm25_present:
 		pm25_adafruit.show_average_values()
-	# gpio:
-#	if aw9523_present:
-#		aw9523_adafruit.show_average_values()
 	# rtc:
 	if ds3231_present:
 		ds3231_adafruit.get_values()
