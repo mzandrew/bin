@@ -1,10 +1,7 @@
 # written 2021-12-28 by mza
-# last updated 2023-10-10 by mza
+# last updated 2024-06-29 by mza
 
-import os
-import sys
-import time
-import atexit
+import os, sys, time, atexit, re
 import gc
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
 
@@ -317,4 +314,124 @@ def wc(filename):
 def show_wc(filename):
 	myfilesize, mylinecount = wc(filename)
 	info('{0:>6} {1:>12} {2:<40}'.format(str(mylinecount), str(myfilesize), filename))
+
+ignore_dir_list = [ ".git", "__pycache__" ]
+def walktree(dirname, func_file, additional_func_dir=None):
+	import stat
+	#print("dirname \"" + dirname + "\" found")
+	matched = False
+	for pdn in ignore_dir_list:
+		#match = re.search(pdn, dirname, flags=re.IGNORECASE)
+		match = re.search("^" + pdn + "$", os.path.basename(dirname))
+		if match:
+			matched = True
+	if matched:
+		return False
+	if not os.path.exists(dirname):
+		error(dirname + " does not exist")
+		return False
+	dirmode = os.stat(dirname).st_mode
+	filelist = []
+	if stat.S_ISDIR(dirmode):
+		filelist = os.listdir(dirname)
+	elif stat.S_ISREG(dirmode):
+		filelist = [ dirname ]
+		dirname = ""
+	for filename in filelist:
+		pathname = os.path.join(dirname, filename)
+		if not os.path.exists(pathname):
+			error("file " + pathname + " does not exist")
+			continue
+		mode = os.stat(pathname).st_mode
+		if stat.S_ISDIR(mode):
+			if walktree(pathname, func_file, additional_func_dir):
+				if additional_func_dir is not None:
+					additional_func_dir(pathname)
+		elif stat.S_ISREG(mode):
+			func_file(pathname)
+		else:
+			info("found non-dir, non-regular-file " + pathname)
+	return True
+
+dirnames = []
+def process_dir(dirname):
+	dirnames.append(dirname)
+
+filenames = []
+def process_file(filename):
+	filenames.append(filename)
+
+def process_files(destination):
+	import shutil
+	for filename in filenames:
+		#info("(file) " + filename)
+		src = int(os.stat(filename).st_mtime)//2
+		try:
+			dst = int(os.stat(destination + "/" + filename).st_mtime)//2
+		except:
+			dst = 0
+		if dst<src:
+			info(filename)
+			shutil.copy2(filename, destination + "/" + filename)
+
+def process_dirs(destination):
+	for dirname in dirnames:
+		#info("(dir) " + dirname)
+		if not os.path.exists(destination + "/" + dirname):
+			info(dirname)
+			mkdir_with_parents(destination + "/" + dirname)
+
+def mkdir_with_parents(dirname):
+	if 3<=sys.version_info.major and 5<=sys.version_info.minor:
+		import pathlib
+		pathlib.Path(dirname).mkdir(parents=True, exist_ok=True)
+	else:
+		error("unimplemented in python < 3.5")
+
+def rsync(src, dst):
+	walktree(src, process_file, process_dir)
+	if not os.path.exists(dst):
+		mkdir_with_parents(dst)
+	process_dirs(dst)
+	process_files(dst)
+
+def install(destination, self, files_list, other_dir_list, lib_dir, lib_files_list, lib_dirs_list):
+	import shutil
+	info("installing to " + destination + "/")
+	for dir in lib_dirs_list:
+		src = int(os.stat(lib_dir + "/" + dir).st_mtime)//2
+		try:
+			dst = int(os.stat(destination + "/lib/" + dir).st_mtime)//2
+		except:
+			dst = 0
+		if dst<src:
+			info(dir)
+			shutil.copytree(lib_dir + "/" + dir, destination + "/lib/" + dir)
+	for i in range(len(other_dir_list)):
+		if not os.path.exists(dst):
+			mkdir_with_parents(destination + "/" + other_dir_list[i])
+		rsync(other_dir_list[i], destination)
+	for file in lib_files_list:
+		src = int(os.stat(lib_dir + "/" + file).st_mtime)//2
+		try:
+			dst = int(os.stat(destination + "/lib/" + file).st_mtime)//2
+		except:
+			dst = 0
+		if dst<src:
+			info(file)
+			shutil.copy2(lib_dir + "/" + file, destination + "/lib")
+	for file in files_list:
+		src = int(os.stat(file).st_mtime)//2
+		try:
+			dst = int(os.stat(destination + "/" + file).st_mtime)//2
+		except:
+			dst = 0
+		#info(str(src) + " " + str(dst))
+		if dst<src:
+			info(file)
+			shutil.copy2(file, destination)
+	self = os.path.basename(self)
+	info(self + " -> code.py")
+	shutil.copy2(self, destination + "/code.py")
+	os.sync()
 
