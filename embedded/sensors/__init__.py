@@ -7,56 +7,46 @@ import board, busio
 sys.path.append("sensors")
 
 # ------------- i2c: ----------------
-#i2c_list = [ "as7341_adafruit", "bh1750_adafruit", "ina260_adafruit", "lc709203f_adafruit", "ltr390_adafruit", "pct2075_adafruit", "pm25_adafruit", "sht31d_adafruit", "thermocouple", "tsl2591_adafruit", "vcnl4040_adafruit", "bme680_adafruit", "am2320_adafruit", "ds3231_adafruit", "pcf8523_adafruit" ]
-
 # unimplemented: "gps_adafruit" # i2c or uart
 
-as7341_present       = False
-bh1750_present       = False
-ina260_present       = False
-lc709203f_present    = False
-ltr390_present       = False
+# temperature, humidity, pressure, etc:
+am2320_present       = False
+bme680_present       = False
 pct2075_present      = False
-pm25_present         = False
 sht31d_present       = False
 thermocouple_present = False
+# light, lux, proximity:
+as7341_present       = False
+bh1750_present       = False
+ltr390_present       = False
 tsl2591_present      = False
 vcnl4040_present     = False
-bme680_present       = False
-am2320_present       = False
+# current, voltage, power:
+ina260_present       = False
+# battery monitoring:
+lc709203f_present    = False
+# other:
+pm25_present         = False
+# rtc:
 ds3231_present       = False
 pcf8523_present      = False
 
-import bme680_adafruit, pct2075_adafruit, ina260_adafruit, as7341_adafruit, bh1750_adafruit, lc709203f_adafruit, ltr390_adafruit, pm25_adafruit, sht31d_adafruit, thermocouple, tsl2591_adafruit, vcnl4040_adafruit, am2320_adafruit, ds3231_adafruit, pcf8523_adafruit
+import am2320_adafruit, bme680_adafruit, pct2075_adafruit, sht31d_adafruit, thermocouple
+import as7341_adafruit, bh1750_adafruit, ltr390_adafruit, tsl2591_adafruit, vcnl4040_adafruit
+import ina260_adafruit
+import lc709203f_adafruit
+import pm25_adafruit
+import ds3231_adafruit, pcf8523_adafruit
 
 def setup_i2c_sensors(i2c, N=32):
 	global as7341_present, bh1750_present, ina260_present, lc709203f_present, ltr390_present, pct2075_present, pm25_present, sht31d_present, thermocouple, tsl2591_present, vcnl4040_present, bme680_present, am2320_present, ds3231_present, pcf8523_present
+	# temperature, humidity, pressure, etc:
+	try:
+		am2320_adafruit.setup(i2c, N); am2320_present = True
+	except:
+		pass
 	try:
 		bme680_adafruit.setup(i2c, N); bme680_present = True
-	except:
-		pass
-	try:
-		ina260_adafruit.setup(i2c, N, address=0x40); ina260_present = True
-	except:
-		pass
-	try:
-		as7341_adafruit.setup(i2c, N); as7341_present = True
-	except:
-		pass
-	try:
-		bh1750_adafruit.setup(i2c, N); bh1750_present = True
-	except:
-		pass
-	try:
-		lc709203f_adafruit.setup(i2c, N); lc709203f_present = True
-	except:
-		pass
-	try:
-		ltr390_adafruit.setup(i2c, N); ltr390_present = True
-	except:
-		pass
-	try:
-		pm25_adafruit.setup(i2c, N); pm25_present = True
 	except:
 		pass
 	try:
@@ -67,6 +57,19 @@ def setup_i2c_sensors(i2c, N=32):
 		thermocouple.setup(i2c, N); thermocouple_present = True
 	except:
 		pass
+	# light, lux, proximity:
+	try:
+		as7341_adafruit.setup(i2c, N); as7341_present = True
+	except:
+		pass
+	try:
+		bh1750_adafruit.setup(i2c, N); bh1750_present = True
+	except:
+		pass
+	try:
+		ltr390_adafruit.setup(i2c, N); ltr390_present = True
+	except:
+		pass
 	try:
 		tsl2591_adafruit.setup(i2c, N); tsl2591_present = True
 	except:
@@ -75,10 +78,22 @@ def setup_i2c_sensors(i2c, N=32):
 		vcnl4040_adafruit.setup(i2c, N); vcnl4040_present = True
 	except:
 		pass
+	# current, voltage, power:
 	try:
-		am2320_adafruit.setup(i2c, N); am2320_present = True
+		ina260_adafruit.setup(i2c, N, address=0x40); ina260_present = True
 	except:
 		pass
+	# battery monitoring:
+	try:
+		lc709203f_adafruit.setup(i2c, N); lc709203f_present = True
+	except:
+		pass
+	# other:
+	try:
+		pm25_adafruit.setup(i2c, N); pm25_present = True
+	except:
+		pass
+	# rtc:
 	try:
 		ds3231_adafruit.setup(i2c); ds3231_present = True
 	except:
