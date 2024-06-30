@@ -110,7 +110,7 @@ def main():
 		generic.setup_status_leds(red_pin=board.A2, green_pin=board.D9, blue_pin=board.A3)
 		generic.set_status_led_color([1.0, 1.0, 1.0])
 #	if FEATHER_ESP32S2: # for feather esp32-s2 to turn on power to i2c bus:
-#		simpleio.DigitalOut(board.I2C_TFT_POWER, value=1)
+#		simpleio.DigitalOut(board.TFT_I2C_POWER, value=1)
 	global i2c
 	try:
 		i2c = I2C(board.SCL1, board.SDA1)
