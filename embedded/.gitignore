@@ -1,3 +1,5 @@
+secrets.py
+secrets.json
 settings.toml
 .env
 *.csv
@@ -16,9 +18,9 @@ logfile
 oldlogfile
 logs
 *.log
-secrets.py
-secrets.json
 notes
 contrib/feathers2
 Adafruit_CircuitPython_GPS
+unsorted
+contrib/unexpected_maker_code.py
 

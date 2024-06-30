@@ -20,11 +20,14 @@ default_address = 0x40
 
 def setup(i2c, N, address=default_address, bins=1):
 	global ina260
-	ina260 = adafruit_ina260.INA260(i2c_bus=i2c, address=address)
-	adafruit_ina260.INA260.mode = adafruit_ina260.Mode.TRIGGERED
-	adafruit_ina260.INA260.current_conversion_time = adafruit_ina260.ConversionTime.TIME_8_244_ms
-	adafruit_ina260.INA260.voltage_conversion_time = adafruit_ina260.ConversionTime.TIME_8_244_ms
-	adafruit_ina260.INA260.averaging_count = adafruit_ina260.AveragingCount.COUNT_1024
+	try:
+		ina260 = adafruit_ina260.INA260(i2c_bus=i2c, address=address)
+		adafruit_ina260.INA260.mode = adafruit_ina260.Mode.TRIGGERED
+		adafruit_ina260.INA260.current_conversion_time = adafruit_ina260.ConversionTime.TIME_8_244_ms
+		adafruit_ina260.INA260.voltage_conversion_time = adafruit_ina260.ConversionTime.TIME_8_244_ms
+		adafruit_ina260.INA260.averaging_count = adafruit_ina260.AveragingCount.COUNT_1024
+	except:
+		raise
 	global myboxcar
 	myboxcar = boxcar.boxcar(3, N, "ina260", bins)
 	return address

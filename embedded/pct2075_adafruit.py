@@ -29,15 +29,16 @@ def setup_temperature_sensor(i2c, address):
 	#print(address)
 	return 1
 
-def setup(i2c, prohibited_addresses, N):
+def setup(i2c, N, prohibited_addresses=None):
 	global header_string
 	pct_list = [0x37, 0x36, 0x35, 0x2f, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28, 0x77, 0x76, 0x75, 0x74, 0x73, 0x72, 0x71, 0x70, 0x4f, 0x4e, 0x4d, 0x4c, 0x4b, 0x4a, 0x49, 0x48]
-	for unallowed in prohibited_addresses:
-		i = 0
-		for address in pct_list:
-			if address==unallowed:
-				del pct_list[i]
-			i += 1
+	if prohibited_addresses is not None:
+		for unallowed in prohibited_addresses:
+			i = 0
+			for address in pct_list:
+				if address==unallowed:
+					del pct_list[i]
+				i += 1
 	count = 0
 	found_addresses = []
 	for address in pct_list:

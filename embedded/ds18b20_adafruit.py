@@ -60,7 +60,7 @@ def print_compact():
 if __name__ == "__main__":
 	# Initialize one-wire bus on board pin D5.
 	ow_bus = OneWireBus(board.D5)
-	setup(ow_bus)
+	setup(ow_bus, 32)
 	while test_if_present():
 		print_compact()
 		time.sleep(1)

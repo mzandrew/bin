@@ -38,13 +38,15 @@
 #desired_label = "GARAGEPART"
 #desired_label = "GARAGEHUM"
 #desired_label = "BATHROOM"
-desired_label = "64X32CLOCK"
+#desired_label = "64X32CLOCK"
 #desired_label = "64X64CLOCK"
 #desired_label = "320X960CLOCK"
 #desired_label = "480X320CLOCK"
 #desired_label = "720X720CLOCK"
 #desired_label = "64X32X2"
 #desired_label = "NEOCLOCKDIG"
+#desired_label = "THERMOCOUPL"
+desired_label = "EVERYTHING"
 
 try:
 	import storage
