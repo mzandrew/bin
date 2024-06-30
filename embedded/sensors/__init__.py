@@ -16,30 +16,31 @@ pct2075_present      = False
 sht31d_present       = False
 thermocouple_present = False
 # light, lux, proximity:
-as7341_present       = False
-bh1750_present       = False
-ltr390_present       = False
-tsl2591_present      = False
-vcnl4040_present     = False
+as7341_present   = False
+bh1750_present   = False
+ltr390_present   = False
+tsl2591_present  = False
+vcnl4040_present = False
 # current, voltage, power:
-ina260_present       = False
+ina260_present = False
 # battery monitoring:
-lc709203f_present    = False
+lc709203f_present       = False
+battery_monitor_present = False
 # other:
-pm25_present         = False
+pm25_present = False
 # rtc:
-ds3231_present       = False
-pcf8523_present      = False
+ds3231_present  = False
+pcf8523_present = False
 
 import am2320_adafruit, bme680_adafruit, pct2075_adafruit, sht31d_adafruit, thermocouple
 import as7341_adafruit, bh1750_adafruit, ltr390_adafruit, tsl2591_adafruit, vcnl4040_adafruit
 import ina260_adafruit
-import lc709203f_adafruit
+import lc709203f_adafruit, battery_monitor
 import pm25_adafruit
 import ds3231_adafruit, pcf8523_adafruit
 
 def setup_i2c_sensors(i2c, N=32):
-	global as7341_present, bh1750_present, ina260_present, lc709203f_present, ltr390_present, pct2075_present, pm25_present, sht31d_present, thermocouple, tsl2591_present, vcnl4040_present, bme680_present, am2320_present, ds3231_present, pcf8523_present
+	global as7341_present, bh1750_present, ina260_present, lc709203f_present, battery_monitor_present, ltr390_present, pct2075_present, pm25_present, sht31d_present, thermocouple, tsl2591_present, vcnl4040_present, bme680_present, am2320_present, ds3231_present, pcf8523_present
 	# temperature, humidity, pressure, etc:
 	try:
 		am2320_adafruit.setup(i2c, N); am2320_present = True
@@ -86,6 +87,10 @@ def setup_i2c_sensors(i2c, N=32):
 	# battery monitoring:
 	try:
 		lc709203f_adafruit.setup(i2c, N); lc709203f_present = True
+	except:
+		pass
+	try:
+		battery_monitor.setup(i2c, N); battery_monitor_present = True
 	except:
 		pass
 	# other:
@@ -178,6 +183,8 @@ def get_values():
 	# battery monitoring:
 	if lc709203f_present:
 		values['lc709203f'] = lc709203f_adafruit.get_values()
+	if battery_monitor_present:
+		values['battery_monitor'] = battery_monitor.get_values()
 	# other:
 	if pm25_present:
 		values['pm25'] = pm25_adafruit.get_values()
@@ -221,6 +228,8 @@ def show_values():
 	# battery monitoring:
 	if lc709203f_present:
 		print(lc709203f_adafruit.measure_string())
+	if battery_monitor_present:
+		print(battery_monitor.measure_string())
 	# other:
 	if pm25_present:
 		print(pm25_adafruit.measure_string())
@@ -264,6 +273,8 @@ def get_average_values():
 	# battery monitoring:
 	if lc709203f_present:
 		values['lc709203f'] = lc709203f_adafruit.get_average_values()
+	if battery_monitor_present:
+		values['battery_monitor'] = battery_monitor.get_average_values()
 	# other:
 	if pm25_present:
 		values['pm25'] = pm25_adafruit.get_average_values()
@@ -307,6 +318,8 @@ def show_average_values():
 	# battery monitoring:
 	if lc709203f_present:
 		lc709203f_adafruit.show_average_values()
+	if battery_monitor_present:
+		battery_monitor.show_average_values()
 	# other:
 	if pm25_present:
 		pm25_adafruit.show_average_values()

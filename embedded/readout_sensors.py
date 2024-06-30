@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2024-06-26 by mza
-# last updated 2024-06-29 by mza
+# last updated 2024-06-30 by mza
 
 # -------------- user options ---------------------------
 
@@ -10,7 +10,7 @@ destination = "/media/mza/EVERYTHING"
 
 # -------------------------------------------------------
 
-lib_files_list = [ "adafruit_max31865.mpy", "adafruit_ds18x20.mpy", "adafruit_as7341.mpy", "adafruit_bh1750.mpy", "adafruit_ina260.mpy", "adafruit_lc709203f.mpy", "adafruit_ltr390.mpy", "adafruit_pct2075.mpy", "adafruit_sht31d.mpy", "adafruit_mcp9600.mpy", "adafruit_tsl2591.mpy", "adafruit_vcnl4040.mpy", "adafruit_bme680.mpy", "adafruit_am2320.mpy", "adafruit_aw9523.mpy", "adafruit_ds3231.mpy", "simpleio.mpy" ]
+lib_files_list = [ "adafruit_max31865.mpy", "adafruit_ds18x20.mpy", "adafruit_as7341.mpy", "adafruit_bh1750.mpy", "adafruit_ina260.mpy", "adafruit_lc709203f.mpy", "adafruit_max1704x.mpy", "adafruit_ltr390.mpy", "adafruit_pct2075.mpy", "adafruit_sht31d.mpy", "adafruit_mcp9600.mpy", "adafruit_tsl2591.mpy", "adafruit_vcnl4040.mpy", "adafruit_bme680.mpy", "adafruit_am2320.mpy", "adafruit_aw9523.mpy", "adafruit_ds3231.mpy", "simpleio.mpy" ]
 lib_dirs_list = [ "adafruit_register", "adafruit_pm25", "adafruit_pcf8523", "adafruit_onewire" ]
 files_list = [ "boxcar.py", "generic.py", "DebugInfoWarningError24.py" ]
 
