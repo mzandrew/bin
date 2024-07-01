@@ -1,21 +1,16 @@
 #!/usr/bin/env python3
 
 # written 2022-08-12 by mza
-# last updated 2022-08-12 by mza
+# last updated 2024-07-01 by mza
 
-import time
-import sys
-import board
-import busio
-import digitalio
+import time, sys
+import board, busio, digitalio
 import adafruit_max31865 # for RTD
 import boxcar
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string
 
-def setup(spi, N, cs_pin):
-	#spi2 = board.SPI()
-	cs = digitalio.DigitalInOut(board.A5)
-	#cs = digitalio.DigitalInOut(cs_pin)
+def setup(spi, cs_pin, N):
+	cs = digitalio.DigitalInOut(cs_pin)
 	global sensor
 	#sensor = adafruit_max31865.MAX31865(spi, cs, wires=3, rtd_nominal=100.0, ref_resistor=430.0)
 	sensor = adafruit_max31865.MAX31865(spi, cs)
@@ -72,7 +67,7 @@ def test_if_present():
 if __name__ == "__main__":
 	try:
 		spi = board.SPI()
-		setup(spi, 32, board.A5)
+		setup(spi, board.A5, 32)
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except:

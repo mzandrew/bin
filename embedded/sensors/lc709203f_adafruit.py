@@ -15,6 +15,7 @@ def setup(i2c, N):
 	#info(hex(fuel_gauge.ic_version))
 	global myboxcar
 	myboxcar = boxcar.boxcar(2, N, "batt")
+	return 11
 
 def test_if_present():
 	try:

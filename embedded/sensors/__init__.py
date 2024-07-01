@@ -1,6 +1,6 @@
 # written 2020-11-25 by mza
 # from sensor_readout.py
-# last updated 2024-06-30 by mza
+# last updated 2024-07-01 by mza
 
 import sys
 import board, busio
@@ -32,6 +32,29 @@ pm25_present = False
 ds3231_present  = False
 pcf8523_present = False
 
+# temperature, humidity, pressure, etc:
+should_use_am2320       = True
+should_use_bme680       = True
+should_use_pct2075      = True
+should_use_sht31d       = True
+should_use_thermocouple = True
+# light, lux, proximity:
+should_use_as7341   = True
+should_use_bh1750   = True
+should_use_ltr390   = True
+should_use_tsl2591  = True
+should_use_vcnl4040 = True
+# current, voltage, power:
+should_use_ina260 = True
+# battery monitoring:
+should_use_lc709203f       = True
+should_use_battery_monitor = True
+# other:
+should_use_pm25 = True
+# rtc:
+should_use_ds3231  = True
+should_use_pcf8523 = True
+
 import am2320_adafruit, bme680_adafruit, pct2075_adafruit, sht31d_adafruit, thermocouple
 import as7341_adafruit, bh1750_adafruit, ltr390_adafruit, tsl2591_adafruit, vcnl4040_adafruit
 import ina260_adafruit
@@ -39,80 +62,133 @@ import lc709203f_adafruit, battery_monitor
 import pm25_adafruit
 import ds3231_adafruit, pcf8523_adafruit
 
+def scan_i2c_bus(i2c):
+	i2c.try_lock()
+	print("i2c.scan(): " + str(i2c.scan()))
+	i2c.unlock()
+
 def setup_i2c_sensors(i2c, N=32):
 	global as7341_present, bh1750_present, ina260_present, lc709203f_present, battery_monitor_present, ltr390_present, pct2075_present, pm25_present, sht31d_present, thermocouple, tsl2591_present, vcnl4040_present, bme680_present, am2320_present, ds3231_present, pcf8523_present
 	# temperature, humidity, pressure, etc:
 	try:
-		am2320_adafruit.setup(i2c, N); am2320_present = True
-	except:
+		if should_use_am2320:
+			am2320_adafruit.setup(i2c, N); am2320_present = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
 		pass
 	try:
-		bme680_adafruit.setup(i2c, N); bme680_present = True
-	except:
+		if should_use_bme680:
+			bme680_adafruit.setup(i2c, N); bme680_present = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
 		pass
 	try:
-		sht31d_adafruit.setup(i2c, N); sht31d_present = True
-	except:
+		if should_use_sht31d:
+			sht31d_adafruit.setup(i2c, N); sht31d_present = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
 		pass
 	try:
-		thermocouple.setup(i2c, N); thermocouple_present = True
-	except:
+		if should_use_thermocouple:
+			thermocouple.setup(i2c, N); thermocouple_present = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
+		print("exception (thermocouple): " + str(e))
 		pass
 	# light, lux, proximity:
 	try:
-		as7341_adafruit.setup(i2c, N); as7341_present = True
-	except:
+		if should_use_as7341:
+			as7341_adafruit.setup(i2c, N); as7341_present = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
 		pass
 	try:
-		bh1750_adafruit.setup(i2c, N); bh1750_present = True
-	except:
+		if should_use_bh1750:
+			bh1750_adafruit.setup(i2c, N); bh1750_present = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
 		pass
 	try:
-		ltr390_adafruit.setup(i2c, N); ltr390_present = True
-	except:
+		if should_use_ltr390:
+			ltr390_adafruit.setup(i2c, N); ltr390_present = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
 		pass
 	try:
-		tsl2591_adafruit.setup(i2c, N); tsl2591_present = True
-	except:
+		if should_use_tsl2591:
+			tsl2591_adafruit.setup(i2c, N); tsl2591_present = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
 		pass
 	try:
-		vcnl4040_adafruit.setup(i2c, N); vcnl4040_present = True
-	except:
+		if should_use_vcnl4040:
+			vcnl4040_adafruit.setup(i2c, N); vcnl4040_present = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
 		pass
 	# current, voltage, power:
 	try:
-		ina260_adafruit.setup(i2c, N, address=0x40); ina260_present = True
-	except:
+		if should_use_ina260:
+			ina260_adafruit.setup(i2c, N, address=0x40); ina260_present = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
 		pass
 	# battery monitoring:
 	try:
-		lc709203f_adafruit.setup(i2c, N); lc709203f_present = True
-	except:
+		if should_use_lc709203f:
+			lc709203f_adafruit.setup(i2c, N); lc709203f_present = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
 		pass
 	try:
 		battery_monitor.setup(i2c, N); battery_monitor_present = True
-	except:
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
 		pass
 	# other:
 	try:
-		pm25_adafruit.setup(i2c, N); pm25_present = True
-	except:
+		if should_use_pm25:
+			pm25_adafruit.setup(i2c, N); pm25_present = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
 		pass
 	# rtc:
 	try:
-		ds3231_adafruit.setup(i2c); ds3231_present = True
-	except:
+		if should_use_ds3231:
+			ds3231_adafruit.setup(i2c); ds3231_present = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
 		pass
 # something went wrong with this adafruit library since the last time we used this rtc:
 #	try:
-#		pcf8523_adafruit.setup(i2c); pcf8523_present = True
-#	except:
+#		if should_use_pcf8523:
+#			pcf8523_adafruit.setup(i2c); pcf8523_present = True
+#	except (KeyboardInterrupt, ReloadException):
+#		raise
+#	except Exception as e:
 #		raise
 #		pass
 # the following needs a prohibited address list or it accidentally matches some devices:
 #	try:
-#		pct2075_adafruit.setup(i2c, N); pct2075_present = True
-#	except:
+#		if should_use_pct2075:
+#			pct2075_adafruit.setup(i2c, N); pct2075_present = True
+#	except (KeyboardInterrupt, ReloadException):
+#		raise
+#	except Exception as e:
 #		pass
 
 # --------------- spi -------------------
@@ -122,12 +198,15 @@ max31865_present = False
 
 import max31865_adafruit
 
-def setup_spi_sensors(spi, N=32):
+def setup_spi_sensors(spi, cs_pin_list, N=32):
 	global max31865_present
-	try:
-		max31865_adafruit.setup(spi, N); max31865_present = True
-	except:
-		pass
+	for cs_pin in cs_pin_list:
+		try:
+			max31865_adafruit.setup(spi, cs_pin, N); max31865_present = True
+		except (KeyboardInterrupt, ReloadException):
+			raise
+		except:
+			pass
 
 # --------------- onewire -------------------
 #onewire_list = [ "ds18b20_adafruit" ]
@@ -139,6 +218,8 @@ import ds18b20_adafruit
 def setup_onewire_sensors(ow_bus, N=32):
 	try:
 		ds18b20_adafruit.setup(ow_bus, N); ds18b20_present = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
 	except:
 		pass
 

@@ -20,15 +20,16 @@ def setup(i2c, N):
 	#fuel_gauge.voltage_alert_min = 3.5
 	#fuel_gauge.voltage_alert_max = 4.1
 	#fuel_gauge.pack_size = 6600
-	print("MAX1704x reset voltage = %0.1f V" % fuel_gauge.reset_voltage) # 3.0 V
-	print("MAX1704x activity threshold = %0.2f V" % fuel_gauge.activity_threshold) # 0.06 V
-	print("MAX1704x hibernation threshold = %0.2f %%" % fuel_gauge.hibernation_threshold) # 26.62 %
-	print("Voltage alert minimum = %0.2f V" % fuel_gauge.voltage_alert_min) # 0.00 V
-	print("Voltage alert maximum = %0.2f V" % fuel_gauge.voltage_alert_max) # 5.10 V
+	#print("MAX1704x reset voltage = %0.1f V" % fuel_gauge.reset_voltage) # 3.0 V
+	#print("MAX1704x activity threshold = %0.2f V" % fuel_gauge.activity_threshold) # 0.06 V
+	#print("MAX1704x hibernation threshold = %0.2f %%" % fuel_gauge.hibernation_threshold) # 26.62 %
+	#print("Voltage alert minimum = %0.2f V" % fuel_gauge.voltage_alert_min) # 0.00 V
+	#print("Voltage alert maximum = %0.2f V" % fuel_gauge.voltage_alert_max) # 5.10 V
 	#print("Pack Size = %0.2f V" % fuel_gauge.pack_size)
 	#info(hex(fuel_gauge.ic_version))
 	global myboxcar
 	myboxcar = boxcar.boxcar(2, N, "batt")
+	return 54
 
 def test_if_present():
 	try:

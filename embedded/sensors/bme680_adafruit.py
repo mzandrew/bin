@@ -35,6 +35,7 @@ def setup(i2c, N, address=0x77): # other address is 0x76
 	#info(str(len(bme680)))
 	#info(str(len(temperature_offset)))
 	#info(str(len(myboxcar)))
+	return 119
 
 def print_verbose(i=0):
 	info("\nTemperature: %0.1f C" % float(bme680[i].temperature + temperature_offset[i]))
