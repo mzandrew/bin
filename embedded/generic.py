@@ -285,6 +285,12 @@ def is_blinka():
 			info("uname.sysname is Linux")
 		info(str(os.uname()))
 
+def identify():
+	from board import board_id
+	info("we are " + board_id)
+	print_os_ver()
+	is_blinka()
+
 def filesize(filename):
 	from os import stat
 	stats = stat(filename)
@@ -408,7 +414,7 @@ def install(destination, self, files_list, other_dir_list, lib_dir, lib_files_li
 			info(dir)
 			shutil.copytree(lib_dir + "/" + dir, destination + "/lib/" + dir)
 	for i in range(len(other_dir_list)):
-		if not os.path.exists(dst):
+		if not os.path.exists(destination + "/" + other_dir_list[i]):
 			mkdir_with_parents(destination + "/" + other_dir_list[i])
 		rsync(other_dir_list[i], destination)
 	for file in lib_files_list:
