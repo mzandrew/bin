@@ -1,19 +1,21 @@
 # written 2021-11-23 by mza
-# last updated 2022-12-13 by mza
+# last updated 2024-07-02 by mza
 
 #from collections import deque # not in circuitpython
 #import copy # not in circuitpython
 import sys
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+default_number_of_decimal_places = 1
 
 class boxcar:
-	def __init__(self, items=1, N=8, name="unknown", bins=1):
+	def __init__(self, items=1, N=8, name="unknown", bins=1, decimal_places=default_number_of_decimal_places):
 		self.items = items
 		self.N = N
 		self.name = name
 		self.accumulated_values = [ [ [ 0. for a in range(self.items) ] for b in range(self.N) ] for c in range(bins) ]
 		self.sums = [ [ 0. for a in range(self.items) ] for b in range(bins) ]
 		self.number_accumulated_since_last_reset = [ 0 for a in range(bins) ]
+		self.decimal_places = decimal_places
 
 	def accumulate(self, values, mybin=0):
 		if 0==len(values):
@@ -44,7 +46,8 @@ class boxcar:
 			for values in self.accumulated_values[mybin]:
 				string += ",["
 				for value in values:
-					string += ",%.9f" % value
+					#string += ",%.9f" % value
+					string += ",%.*f" % (self.decimal_places, value)
 				string += "]"
 			info(string)
 
@@ -66,7 +69,8 @@ class boxcar:
 		elif 0:
 			string = "sums[" + str(mybin) + "][" + self.name + "] = ["
 			for i in range(self.items):
-				string += ",%.9f" % self.sums[mybin][i]
+				#string += ",%.9f" % self.sums[mybin][i]
+				string += ",%.*f" % (self.decimal_places, self.sums[mybin][i])
 			string += "]"
 			info(string)
 		if 0<N:
@@ -79,7 +83,8 @@ class boxcar:
 		elif 0:
 			string = "average_values [" + self.name + "] = ["
 			for i in range(self.items):
-				string += ",%.9f" % average_values[i]
+				#string += ",%.9f" % average_values[i]
+				string += ",%.*f" % (self.decimal_places, average_values[i])
 			string += "]"
 			info(string)
 		return average_values
@@ -89,5 +94,12 @@ class boxcar:
 			string = " mybin" + str(mybin)
 		else:
 			string = ""
-		info(self.name + string + " " + str(self.get_average_values(mybin)))
+		average_values = self.get_average_values(mybin)
+		string += " ["
+		for i in range(len(average_values)):
+			if not 0==i:
+				string += ", "
+			string += "%.*f" % (self.decimal_places, average_values[i])
+		string += "]"
+		info(self.name + string)
 
