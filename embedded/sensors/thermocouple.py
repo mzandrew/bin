@@ -13,7 +13,7 @@ import adafruit_mcp9600
 import boxcar
 from DebugInfoWarningError24 import debug, info, warning, error, debug2
 
-def setup(i2c, N=32):
+def setup_i2c(i2c, N=32):
 	global sensor
 	try:
 		sensor = adafruit_mcp9600.MCP9600(i2c)
@@ -74,7 +74,7 @@ if __name__ == "__main__":
 		time.sleep(0.5)
 	i2c = busio.I2C(board.SCL, board.SDA, frequency=100000)
 	try:
-		setup(i2c, 32)
+		setup_i2c(i2c, 32)
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except Exception as e:

@@ -93,7 +93,7 @@ def setup_i2c_sensors(i2c, N=32):
 		pass
 	try:
 		if should_use_thermocouple:
-			thermocouple.setup(i2c, N); thermocouple_present = True
+			thermocouple.setup_i2c(i2c, N); thermocouple_present = True
 	except (KeyboardInterrupt, ReloadException):
 		raise
 	except Exception as e:
