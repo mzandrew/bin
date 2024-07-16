@@ -12,6 +12,7 @@ import sys
 import board
 import busio
 import adafruit_ina260 # sudo pip3 install adafruit-circuitpython-ina260
+sys.path.append("..")
 import boxcar
 import generic
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded
@@ -78,12 +79,14 @@ def test_if_present():
 if __name__ == "__main__":
 	try:
 		#i2c = busio.I2C(board.SCL, board.SDA)
-		i2c = busio.I2C(board.SCL1, board.SDA1)
-		setup(i2c, 64, default_address)
-	except (KeyboardInterrupt, ReloadException):
-		raise
+		#i2c = busio.I2C(board.SCL1, board.SDA1)
+		i2c = board.I2C()
+		setup(i2c, 32, default_address)
+#	except (KeyboardInterrupt, ReloadException):
+#		raise
 	except:
 		error("ina260 not present at address 0x" + generic.hex(default_address))
+		raise
 		sys.exit(1)
 	#create_new_logfile_with_string("ina260")
 	#create_new_logfile_with_string_embedded("/", "ina260")
