@@ -1,20 +1,17 @@
 #!/usr/bin/env python3
 
 # written 2020-11-25 by mza
-# last updated 2022-12-10 by mza
+# last updated 2024-07-16 by mza
 
 # from https://learn.adafruit.com/adafruit-ina260-current-voltage-power-sensor-breakout/python-circuitpython
 # and https://github.com/adafruit/Adafruit_CircuitPython_INA260/blob/main/adafruit_ina260.py
 # and https://github.com/mzandrew/XRM/blob/master/predator/IV.py
 
-import time
-import sys
-import board
-import busio
+import sys, os, time
+import board, busio
 import adafruit_ina260 # sudo pip3 install adafruit-circuitpython-ina260
-sys.path.append("..")
-import boxcar
-import generic
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
+import boxcar, generic
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded
 
 default_address = 0x40
