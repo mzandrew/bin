@@ -1,14 +1,16 @@
-# last updated 2023-04-16 by mza
+# last updated 2024-07-17 by mza
 
+import os, re
 import adafruit_sdcard
 import adafruit_datetime
 import storage
-import board
-import busio
+import board, busio
 import digitalio
-import os
-import re
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded, flush
+
+def create_mount_point_if_necessary():
+	if not 'sd' in os.listdir('/'):
+		os.mkdir('/sd')
 
 #spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 def setup_sdcard_for_logging_data(spi, cs_pin, dirname):

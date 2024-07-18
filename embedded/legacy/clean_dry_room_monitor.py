@@ -3,7 +3,7 @@
 # written 2022-08-25 by mza
 # based on particle_hum_temp_pres.py
 # with help from https://learn.adafruit.com/Memory-saving-tips-for-CircuitPython?view=all
-# last updated 2024-03-08 by mza
+# last updated 2024-07-17 by mza
 
 # to install on a circuitpython device:
 # rsync -av DebugInfoWarningError24.py microsd_adafruit.py neopixel_adafruit.py bme680_adafruit.py pm25_adafruit.py ds3231_adafruit.py airlift.py adafruit_datetime.py boxcar.py generic.py gps_adafruit.py display_adafruit.py /media/circuitpython/
@@ -47,7 +47,7 @@ MAX_PARTICLE_COUNT_TO_PLOT = 5.0
 
 set_verbosity(4)
 header_string = "date/time"
-mydir = "/logs"
+mydir = "/sd"
 board_id = board.board_id
 info("we are " + board_id)
 if board_id=="pyportal_titano" or board_id=="pyportal":
@@ -110,7 +110,9 @@ def main():
 		generic.setup_status_leds(red_pin=board.A2, green_pin=board.D9, blue_pin=board.A3)
 		generic.set_status_led_color([1.0, 1.0, 1.0])
 #	if FEATHER_ESP32S2: # for feather esp32-s2 to turn on power to i2c bus:
-#		simpleio.DigitalOut(board.TFT_I2C_POWER, value=1)
+	#	import simpleio
+	#	simpleio.DigitalOut(board.TFT_I2C_POWER, value=1)
+	board.DISPLAY.brightness = 1.0
 	global i2c
 	try:
 		i2c = I2C(board.SCL1, board.SDA1)
