@@ -228,6 +228,8 @@ def setup_onewire_sensors(ow_bus, N=32):
 
 # unimplemented: "anemometer" # analog
 
+#def setup_analog_sensors() # need to have a pin list (could try all board.A0, etc...)
+
 # --------------- common -------------------
 
 def get_values():
