@@ -10,7 +10,9 @@
 import sys, os, time
 import board, busio
 import adafruit_ina260 # sudo pip3 install adafruit-circuitpython-ina260
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
+uname = os.uname()
+if "Linux"==uname.sysname:
+	sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 import boxcar, generic
 from DebugInfoWarningError24 import debug, info, warning, error, debug2, debug3, set_verbosity, create_new_logfile_with_string_embedded
 

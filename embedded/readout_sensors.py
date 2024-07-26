@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 # written 2024-06-26 by mza
-# last updated 2024-07-01 by mza
+# last updated 2024-07-25 by mza
 
 # -------------- user options ---------------------------
 
 lib_dir = "lib9"
-destination = "/media/mza/EVERYTHING"
+#destination = "/media/mza/EVERYTHING"
+#destination = "/media/mza/CIRCUITPY"
+destination = "/media/mza/THERMOCOUPL"
 
 # -------------------------------------------------------
 
@@ -34,7 +36,7 @@ i2c_sda_pin_list = [ board.SDA ]
 spi_sck_pin_list = [ board.SCK ]
 spi_mosi_pin_list = [ board.MOSI ]
 spi_miso_pin_list = [ board.MISO ]
-analog_pin_list = []
+analog_pin_list = [ board.A0, board.A1, board.A2, board.A3, board.A4, board.A5 ]
 
 match_qtpy = re.search('qtpy', board.board_id)
 match_portal = re.search('portal', board.board_id)
@@ -51,16 +53,17 @@ if match_portal:
 	spi_cs_pin_list = [ ]
 else:
 	spi_cs_pin_list = [ board.A5 ]
-analog_pin_list = [ board.A2 ] # light sensor on pyportal titano
+#analog_pin_list = [ board.A2 ] # light sensor on pyportal titano
 
 if __name__ == "__main__":
 	import time, re, busio, simpleio, generic
 	generic.identify()
+	my_name = generic.whats_my_name()
 	sys.path.append("sensors")
 	import sensors
 	N = 32
 	#simpleio.DigitalOut(board.NEOPIXEL_POWER, value=1)
-	match = re.search("feather_esp32s", board.board_id)
+	match = re.search("feather_esp32s.*tft", board.board_id) # adafruit_feather_esp32s2
 	if match:
 		tft_i2c_power = simpleio.DigitalOut(board.TFT_I2C_POWER, value=1)
 		#tft_i2c_power.value = 0
@@ -76,6 +79,8 @@ if __name__ == "__main__":
 			#sensors.scan_i2c_bus(i2c[i])
 			sensors.setup_i2c_sensors(i2c[i], N)
 			#sensors.scan_i2c_bus(i2c[i])
+		except (KeyboardInterrupt, ReloadException):
+			raise
 		except Exception as e:
 			print("exception (i2c[" + str(i) + "]): " + str(e))
 	spi = []
@@ -84,16 +89,28 @@ if __name__ == "__main__":
 			#spi = board.SPI # this does not work for the pyportal board
 			spi.append(busio.SPI(spi_sck_pin_list[i], spi_mosi_pin_list[i], spi_miso_pin_list[i]))
 			sensors.setup_spi_sensors(spi[i], spi_cs_pin_list, N)
+		except (KeyboardInterrupt, ReloadException):
+			raise
 		except Exception as e:
 			print("exception (spi[" + str(i) + "]): " + str(e))
 	from adafruit_onewire.bus import OneWireBus
-	ow_bus = []
-	for ow_pin in onewire_pin_list:
+	onewire_bus = []
+	for i in range(len(onewire_pin_list)):
 		try:
-			ow_bus.append(OneWireBus(ow_pin))
-			sensors.setup_onewire_sensors(ow_bus[i], N)
+			onewire_bus.append(OneWireBus(onewire_pin_list[i]))
+			sensors.setup_onewire_sensors(onewire_bus[i], N)
+		except (KeyboardInterrupt, ReloadException):
+			raise
 		except Exception as e:
-			print("exception (onewire[" + str(i) + "] " + str(ow_pin) + "): " + str(e))
+			print("exception (onewire[" + str(i) + "] " + str(onewire_pin_list[i]) + "): " + str(e))
+	if "THERMOCOUPL"==my_name:
+		try:
+			sensors.setup_analog_sensors(analog_pin_list, N)
+			#sensors.thermocouple.setup_analog(analog_pin_list, N)
+		except (KeyboardInterrupt, ReloadException):
+			raise
+		except Exception as e:
+			print("exception (thermocouple analog): " + str(e))
 	i = 0
 	while True:
 		if i<N:

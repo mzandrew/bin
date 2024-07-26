@@ -68,7 +68,7 @@ def scan_i2c_bus(i2c):
 	i2c.unlock()
 
 def setup_i2c_sensors(i2c, N=32):
-	global as7341_present, bh1750_present, ina260_present, lc709203f_present, battery_monitor_present, ltr390_present, pct2075_present, pm25_present, sht31d_present, thermocouple, tsl2591_present, vcnl4040_present, bme680_present, am2320_present, ds3231_present, pcf8523_present
+	global as7341_present, bh1750_present, ina260_present, lc709203f_present, battery_monitor_present, ltr390_present, pct2075_present, pm25_present, sht31d_present, thermocouple_present, tsl2591_present, vcnl4040_present, bme680_present, am2320_present, ds3231_present, pcf8523_present
 	# temperature, humidity, pressure, etc:
 	try:
 		if should_use_am2320:
@@ -202,11 +202,13 @@ def setup_spi_sensors(spi, cs_pin_list, N=32):
 	global max31865_present
 	for cs_pin in cs_pin_list:
 		try:
-			max31865_adafruit.setup(spi, cs_pin, N); max31865_present = True
+			# seems to have no way of determining that the device is actually present, so this probably shouldn't be automatic...
+			#max31865_adafruit.setup(spi, cs_pin, N); max31865_present = True
+			pass
 		except (KeyboardInterrupt, ReloadException):
 			raise
-		except:
-			pass
+		except Exception as e:
+			print("exception (spi): " + str(e))
 
 # --------------- onewire -------------------
 #onewire_list = [ "ds18b20_adafruit" ]
@@ -215,20 +217,29 @@ ds18b20_present = False
 
 import ds18b20_adafruit
 
-def setup_onewire_sensors(ow_bus, N=32):
+def setup_onewire_sensors(onewire_bus, N=32):
+	global ds18b20_present
 	try:
-		ds18b20_adafruit.setup(ow_bus, N); ds18b20_present = True
+		ds18b20_adafruit.setup(onewire_bus, N); ds18b20_present = True
 	except (KeyboardInterrupt, ReloadException):
 		raise
-	except:
-		pass
+	except Exception as e:
+		print("exception (onewire): " + str(e))
+		raise
 
 # --------------- other -------------------
 #other_list = [ "anemometer" ]
 
 # unimplemented: "anemometer" # analog
 
-#def setup_analog_sensors() # need to have a pin list (could try all board.A0, etc...)
+def setup_analog_sensors(analog_pin_list, N=32):
+	global thermocouple_present
+	try:
+		thermocouple.setup_analog(analog_pin_list, N); thermocouple_present = True
+	except (KeyboardInterrupt, ReloadException):
+		raise
+	except Exception as e:
+		print("exception (analog): " + str(e))
 
 # --------------- common -------------------
 

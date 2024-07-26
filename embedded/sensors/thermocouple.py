@@ -40,7 +40,6 @@ def setup_analog(pin_list, N=32):
 	number_of_sensors = len(sensor)
 	global myboxcar
 	myboxcar = boxcar.boxcar(number_of_sensors, N, "thermocouple")
-	return 103
 
 def setup_i2c(i2c, N=32):
 	global mode
@@ -105,9 +104,12 @@ def show_average_values():
 		print(", %.1f, %.1f" % (ambient, remote))
 	elif "analog"==mode:
 		values = get_average_values()
-		string = ""
+		string = "thermocouple ["
 		for i in range(len(values)):
-			string += ", %.1f" % values[i] 
+			if not 0==i:
+				string += ", "
+			string += "%.1f" % values[i] 
+		string += "]"
 		print(string)
 	else:
 		print("?")
@@ -128,7 +130,7 @@ if __name__ == "__main__":
 	intended_mode = "analog"
 	print()
 	import time, re, board, busio, simpleio
-	match = re.search("feather_esp32s", board.board_id)
+	match = re.search("feather_esp32s.*tft", board.board_id)
 	if match:
 		tft_i2c_power = simpleio.DigitalOut(board.TFT_I2C_POWER, value=0)
 		time.sleep(1.0)

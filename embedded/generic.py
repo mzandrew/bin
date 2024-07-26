@@ -1,5 +1,5 @@
 # written 2021-12-28 by mza
-# last updated 2024-06-29 by mza
+# last updated 2024-07-25 by mza
 
 import os, sys, time, atexit, re
 import gc
@@ -35,6 +35,13 @@ def sround(value, decimal_places):
 	else:
 		extra = 0.5
 	return "%.*f" % (decimal_places, value)
+
+def whats_my_name():
+	from storage import getmount
+	m = getmount("/")
+	label = m.label
+	print("label is " + label)
+	return label
 
 def start_uptime():
 	global initial_time_monotonic
