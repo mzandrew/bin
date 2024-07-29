@@ -118,6 +118,9 @@ def keyboard_interrupt_exception_handler():
 	flush()
 	sys.exit(0)
 
+#import supervisor
+#supervisor.runtime.autoreload = False
+
 def reload_exception_handler():
 	import supervisor
 	atexit.unregister(reset)

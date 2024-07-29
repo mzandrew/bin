@@ -45,8 +45,8 @@
 #desired_label = "720X720CLOCK"
 #desired_label = "64X32X2"
 #desired_label = "NEOCLOCKDIG"
-#desired_label = "THERMOCOUPL"
-desired_label = "EVERYTHING"
+desired_label = "THERMOCOUPL"
+#desired_label = "EVERYTHING"
 
 try:
 	import storage
