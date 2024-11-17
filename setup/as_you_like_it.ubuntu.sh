@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-# last updated 2022-12-13 by mza
+# last updated 2024-04-27 by mza
 
 declare -i debian_only=0
 #debian_only=1
@@ -44,7 +44,7 @@ function install_packages {
 	if [ ${debian_only} -eq 0 ]; then
 		list="$list firefox"
 	fi
-	list="$list mlocate build-essential openssh-server net-tools nfs-common"
+	list="$list plocate build-essential openssh-server net-tools nfs-common"
 	list="$list dfu-util gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib" # tomu
 	list="$list synaptic gnuplot ntp meld doublecmd-gtk zip unzip dbus-x11 gimp inkscape xsane"
 	list="$list texlive-science texlive-latex-extra" # latex
@@ -83,7 +83,7 @@ function change_apt_sources_list_if_desired {
 # undo:
 #sudo sed -i 's,mirror.ancl.hawaii.edu/linux,us.archive.ubuntu.com,' /etc/apt/sources.list
 
-change_apt_sources_list_if_desired
+#change_apt_sources_list_if_desired
 install_packages
 
 cd
