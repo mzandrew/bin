@@ -3,40 +3,28 @@
 # written 2024-11-17 by mza
 # last updated 2024-11-17 by mza
 
-import math
+# ----------------------------------------------------
 
-speed_of_sound = 343 # m/s
-sample_rate = 44100 # 1/s
-distance_per_sample_time = speed_of_sound / sample_rate # m
-minimum_delay_in_samples = 1
-maximum_delay_in_samples = 1000
-
-x_index = 2; y_index = 1; z_index = 0
+# user parameters:
+#grid_spacing = [ 1.0, 1.0, 1.0 ] # potential source locations grid, in meters
+#grid_spacing = [ 0.5, 0.5, 0.5 ] # potential source locations grid, in meters
+grid_spacing = [ 0.25, 0.25, 0.25 ] # potential source locations grid, in meters
 
 # receiver grid parameters:
-receiver_center_x = 0
-receiver_center_y = 0
-receiver_center_z = 0
-receiver_spacing_x = 1.0
-receiver_spacing_y = 1.0
-receiver_spacing_z = 1.0
-receiver_quantity_x = 2
-receiver_quantity_y = 2
-receiver_quantity_z = 1
-#receiver_bounding_box = []
-number_of_receivers = receiver_quantity_x * receiver_quantity_y * receiver_quantity_z
+receiver_location = []
+receiver_location.append([ -0.5, +0.5, +0.0 ])
+receiver_location.append([ +0.5, +0.5, +0.0 ])
+receiver_location.append([ +0.0, -0.5, +0.0 ])
 
-# potential source locations grid parameters:
-grid_center_x = receiver_center_x
-grid_center_y = receiver_center_y
-grid_center_z = receiver_center_z
-grid_spacing_x = 1
-grid_spacing_y = 1
-grid_spacing_z = 1
-grid_quantity_x = int(1 + (receiver_quantity_x) / grid_spacing_x)
-grid_quantity_y = int(1 + (receiver_quantity_y) / grid_spacing_y)
-grid_quantity_z = 1 # int(1 + (receiver_quantity_z) / grid_spacing_z)
-number_of_grid_points = grid_quantity_x * grid_quantity_y * grid_quantity_z
+# ----------------------------------------------------
+
+import math, copy
+
+x_index = 0; y_index = 1; z_index = 2
+xyz_range = range(3)
+min_index = 0; max_index = 1
+
+# ----------------------------------------------------
 
 def distance(a, b):
 	delta_x = b[x_index] - a[x_index]
@@ -45,59 +33,99 @@ def distance(a, b):
 	distance = math.sqrt(delta_x**2 + delta_y**2 + delta_z**2)
 	return distance
 
-receiver_location = [[[ (receiver_center_x+(i-(receiver_quantity_x-1)/2)*receiver_spacing_x,receiver_center_y+(j-(receiver_quantity_y-1)/2)*receiver_spacing_y,receiver_center_z+(k-(receiver_quantity_z-1)/2)*receiver_spacing_z) for k in range(receiver_quantity_z) ] for j in range(receiver_quantity_y) ] for i in range(receiver_quantity_x) ]
-grid_location = [[[ (grid_center_x+(i-(grid_quantity_x-1)/2)*grid_spacing_x,grid_center_y+(j-(grid_quantity_y-1)/2)*grid_spacing_y,grid_center_z+(k-(grid_quantity_z-1)/2)*grid_spacing_z) for k in range(grid_quantity_z) ] for j in range(grid_quantity_y) ] for i in range(grid_quantity_x) ]
-grid_delays_in_sample_times = [[[ [] for c in range(grid_quantity_z) ] for b in range(grid_quantity_y) ] for a in range(grid_quantity_x) ]
-#delay_in_sample_times = [[[[[[ 0 for k in range(grid_quantity_z) ] for j in range(grid_quantity_y) ] for i in range(grid_quantity_x) ]
-#delay_in_sample_times = [[[[[[ 0 for k in range(receiver_quantity_z) ] for j in range(receiver_quantity_y) ] for i in range(receiver_quantity_x) ] for c in range(grid_quantity_z) ] for b in range(grid_quantity_y) ] for a in range(grid_quantity_x) ]
+def find_bounding_box_linear(myarray):
+	minmin = copy.deepcopy(myarray[0])
+	maxmax = copy.deepcopy(myarray[0])
+	for index in range(len(myarray)):
+		for xyz in xyz_range:
+			if myarray[index][xyz]<minmin[xyz]:
+				minmin[xyz] = myarray[index][xyz]
+			if maxmax[xyz]<myarray[index][xyz]:
+				maxmax[xyz] = myarray[index][xyz]
+	#print("min: " + str(minmin))
+	#print("max: " + str(maxmax))
+	return [ minmin, maxmax ]
+
+def find_bounding_box_xyz(myarray):
+	print(str(myarray))
+	x_dimension = len(myarray)
+	y_dimension = len(myarray[0])
+	z_dimension = len(myarray[0][0])
+	print(str(x_dimension) + " " + str(y_dimension) + " " + str(z_dimension))
+	minmin = copy.deepcopy(myarray[0][0][0])
+	maxmax = copy.deepcopy(myarray[0][0][0])
+	for a in range(x_dimension):
+		for b in range(y_dimension):
+			for c in range(z_dimension):
+				for xyz in xyz_range:
+					if myarray[a][b][c][xyz]<minmin[xyz]:
+						minmin[xyz] = myarray[a][b][c][xyz]
+					if maxmax[xyz]<myarray[a][b][c][xyz]:
+						maxmax[xyz] = myarray[a][b][c][xyz]
+	#print("min: " + str(minmin))
+	#print("max: " + str(maxmax))
+	return [ minmin, maxmax ]
+
+# ----------------------------------------------------
+
+# sane choices:
+minimum_delay_in_samples = 1
+maximum_delay_in_samples = 1000
+
+# "constants":
+speed_of_sound = 343 # m/s
+sample_rate = 44100 # 1/s
+distance_per_sample_time = speed_of_sound / sample_rate # m
+
+number_of_receivers = len(receiver_location)
+receiver_bounding_box = find_bounding_box_linear(receiver_location)
+receiver_extents =  [ receiver_bounding_box[max_index][xyz] - receiver_bounding_box[min_index][xyz] for xyz in xyz_range ]
+
+# potential source locations grid parameters:
+grid_center = [ (receiver_bounding_box[max_index][xyz] + receiver_bounding_box[min_index][xyz]) / 2 for xyz in xyz_range ]
+grid_quantity = [ int(3 + receiver_extents[xyz] / grid_spacing[xyz]) for xyz in xyz_range ]
+grid_quantity[2] = 1 # force z axis flat
+number_of_grid_points = grid_quantity[x_index] * grid_quantity[y_index] * grid_quantity[z_index]
+grid_location = [[[ [grid_center[x_index]+(i-(grid_quantity[x_index]-1)/2)*grid_spacing[x_index], grid_center[y_index]+(j-(grid_quantity[y_index]-1)/2)*grid_spacing[y_index], grid_center[z_index]+(k-(grid_quantity[z_index]-1)/2)*grid_spacing[z_index]] for k in range(grid_quantity[z_index]) ] for j in range(grid_quantity[y_index]) ] for i in range(grid_quantity[x_index]) ]
+grid_bounding_box = find_bounding_box_xyz(grid_location)
+grid_delays_in_sample_times = [[[ [] for c in range(grid_quantity[z_index]) ] for b in range(grid_quantity[y_index]) ] for a in range(grid_quantity[x_index]) ]
+
+number_of_delays = 0
+minimum_instrumented_delay = maximum_delay_in_samples
+maximum_instrumented_delay = minimum_delay_in_samples
+for a in range(grid_quantity[x_index]):
+	for b in range(grid_quantity[y_index]):
+		for c in range(grid_quantity[z_index]):
+			print("grid_location[" + str(a) + "][" + str(b) + "][" + str(c) + "]: " + str(grid_location[a][b][c]))
+			delays = []
+			for index in range(number_of_receivers):
+				delay_in_sample_times = distance(receiver_location[index], grid_location[a][b][c]) / distance_per_sample_time
+				delay_in_sample_times = int(delay_in_sample_times)
+				if delay_in_sample_times<minimum_delay_in_samples:
+					continue
+				if maximum_delay_in_samples<delay_in_sample_times:
+					continue
+				if delay_in_sample_times<minimum_instrumented_delay:
+					minimum_instrumented_delay = delay_in_sample_times
+				if maximum_instrumented_delay<delay_in_sample_times:
+					maximum_instrumented_delay = delay_in_sample_times
+				delays.append(delay_in_sample_times)
+				#print("delay_in_sample_times[" + str(i) + "][" + str(j) + "][" + str(k) + "]_[" + str(a) + "][" + str(b) + "][" + str(c) + "]: " + str(delay_in_sample_times))
+			print("grid_delays_in_sample_times[" + str(a) + "][" + str(b) + "][" + str(c) + "]: " + str(delays))
+			grid_delays_in_sample_times[a][b][c] = delays
+			number_of_delays += len(delays)
 
 print("speed_of_sound: " + str(speed_of_sound) + " m/s")
 print("sample_rate: " + str(sample_rate) + " Hz")
 print("distance_per_sample_time: " + str(distance_per_sample_time) + " m") # about 7.8 mm (roughly 1/128 of a meter)
-print("grid_quantity = " + str((grid_quantity_x, grid_quantity_y, grid_quantity_z)))
+print("receiver_location: " + str(receiver_location))
+print("receiver_bounding_box: " + str(receiver_bounding_box))
+print("grid_center: " + str(grid_center))
+print("grid_bounding_box: " + str(grid_bounding_box))
+print("grid_quantity = " + str(grid_quantity))
 print("number_of_grid_points = " + str(number_of_grid_points))
 print("number_of_receivers = " + str(number_of_receivers))
-
-for i in range(receiver_quantity_x):
-	for j in range(receiver_quantity_y):
-		for k in range(receiver_quantity_z):
-			print("receiver_location[" + str(i) + "][" + str(j) + "][" + str(k) + "]: " + str(receiver_location[i][j][k]))
-
-number_of_delays = 0
-for a in range(grid_quantity_x):
-	for b in range(grid_quantity_y):
-		for c in range(grid_quantity_z):
-			print("grid_location[" + str(a) + "][" + str(b) + "][" + str(c) + "]: " + str(grid_location[a][b][c]))
-			delays = []
-			for i in range(receiver_quantity_x):
-				for j in range(receiver_quantity_y):
-					for k in range(receiver_quantity_z):
-						delay_in_sample_times = distance(receiver_location[i][j][k], grid_location[a][b][c]) / distance_per_sample_time
-						delay_in_sample_times = int(delay_in_sample_times)
-						if delay_in_sample_times<minimum_delay_in_samples:
-							continue
-						if maximum_delay_in_samples<delay_in_sample_times:
-							continue
-						delays.append(delay_in_sample_times)
-						#print("delay_in_sample_times[" + str(i) + "][" + str(j) + "][" + str(k) + "]_[" + str(a) + "][" + str(b) + "][" + str(c) + "]: " + str(delay_in_sample_times))
-			print("grid_delays_in_sample_times[" + str(a) + "][" + str(b) + "][" + str(c) + "]: " + str(delays))
-			grid_delays_in_sample_times[a][b][c] = delays
-			number_of_delays += len(delays)
 print("total number of delays needed: " + str(number_of_delays))
-
-import sys; sys.exit(0)
-for index in range(len(receiver.keys())):
-	print("receiver[" + str(index) + "] location: " + str(receiver[index][0]))
-	print("receiver[" + str(index) + "] delays: " + str(receiver[index][0]))
-
-receiver = {}
-index = 0
-for i in range(receiver_quantity_x):
-	for j in range(receiver_quantity_y):
-		for k in range(receiver_quantity_z):
-			delays = ()
-			for other_index in range(number_of_receivers):
-				delays.append(distance(receiver_location[i][j][k], receiver_location[a][b][c]) / distance_per_sample_time)
-			receiver[index] = (receiver_location[i][j][k], 5)
-			index = index + 1
+print("minimum_instrumented_delay: " + str(minimum_instrumented_delay))
+print("maximum_instrumented_delay: " + str(maximum_instrumented_delay))
 
