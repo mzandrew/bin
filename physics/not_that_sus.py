@@ -60,11 +60,11 @@ def find_bounding_box_linear(myarray):
 	return [ minmin, maxmax ]
 
 def find_bounding_box_xyz(myarray):
-	print(str(myarray))
+	#print(str(myarray))
 	x_dimension = len(myarray)
 	y_dimension = len(myarray[0])
 	z_dimension = len(myarray[0][0])
-	print(str(x_dimension) + " " + str(y_dimension) + " " + str(z_dimension))
+	#print(str(x_dimension) + " " + str(y_dimension) + " " + str(z_dimension))
 	minmin = copy.deepcopy(myarray[0][0][0])
 	maxmax = copy.deepcopy(myarray[0][0][0])
 	for a in range(x_dimension):
@@ -98,6 +98,9 @@ grid_location = [[[ [grid_center[x_index]+(i-(grid_quantity[x_index]-1)/2)*grid_
 grid_bounding_box = find_bounding_box_xyz(grid_location)
 grid_delays_in_sample_times = [[[ [] for c in range(grid_quantity[z_index]) ] for b in range(grid_quantity[y_index]) ] for a in range(grid_quantity[x_index]) ]
 
+print("receiver_location: " + str(receiver_location))
+print("receiver_bounding_box: " + str(receiver_bounding_box))
+
 number_of_delays = 0
 minimum_instrumented_delay = maximum_delay_in_samples
 maximum_instrumented_delay = minimum_delay_in_samples
@@ -125,14 +128,12 @@ for a in range(grid_quantity[x_index]):
 			number_of_delays += len(delays)
 
 #print("speed_of_sound: " + str(speed_of_sound) + " m/s")
+print("grid_bounding_box: " + str(grid_bounding_box))
+print("grid_center: " + str(grid_center))
+print("grid_quantity = " + str(grid_quantity))
 print("sample_rate: " + str(sample_rate) + " Hz")
 print("bits_per_sample: " + str(bits_per_sample))
 print("distance_per_sample_time: " + str(distance_per_sample_time) + " m") # about 7.8 mm (roughly 1/128 of a meter)
-print("receiver_location: " + str(receiver_location))
-print("receiver_bounding_box: " + str(receiver_bounding_box))
-print("grid_center: " + str(grid_center))
-print("grid_bounding_box: " + str(grid_bounding_box))
-print("grid_quantity = " + str(grid_quantity))
 print("minimum_instrumented_delay: " + str(minimum_instrumented_delay))
 print("maximum_instrumented_delay: " + str(maximum_instrumented_delay))
 print("number_of_grid_points = " + str(number_of_grid_points))
