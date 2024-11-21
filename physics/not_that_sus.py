@@ -1,7 +1,7 @@
 #!/bin/env python3
 
 # written 2024-11-17 by mza
-# last updated 2024-11-20 by mza
+# last updated 2024-11-21 by mza
 
 # ----------------------------------------------------
 
@@ -119,7 +119,7 @@ for a in range(grid_quantity[x_index]):
 			delays = []
 			for index in range(number_of_receivers):
 				delay_in_sample_times = distance(receiver_location[index], grid_location[a][b][c]) / distance_per_sample_time
-				delay_in_sample_times = int(delay_in_sample_times)
+				delay_in_sample_times = int(delay_in_sample_times+1)
 				if delay_in_sample_times<minimum_delay_in_samples:
 					continue
 				if maximum_delay_in_samples<delay_in_sample_times:
