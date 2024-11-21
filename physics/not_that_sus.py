@@ -184,7 +184,7 @@ def verilog_instantiate_pipeline_delay_tap(delay_tap_name, pipeline_name, pickof
 	print(string)
 
 def verilog_instantiate_correlator(correlator_string, tap_strings, grid_string):
-	string = "\tcorrelator" + str(number_of_receivers) + " #(.WIDTH(" + str(bits_per_sample) + ")) " + str(correlator_string) + " ("
+	string = "\tcorrelator" + str(number_of_receivers) + " #(.WIDTH(RECEIVER_SUBWORD_WIDTH)) " + str(correlator_string) + " (.clock(clock), "
 	for i in range(len(tap_strings)):
 		string += ".i" + str(i) + "(" + tap_strings[i] + "), "
 	string += ".o(" + str(grid_string) + ")"
