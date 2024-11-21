@@ -20,7 +20,7 @@ receiver_location.append([ +0.0, -0.5, +0.0 ])
 # "constants":
 raw_sample_rate = 44100 # Hz
 sample_rate_factor = 32
-sample_rate = raw_sample_rate // sample_rate_factor # 1378 Hz
+sample_rate = raw_sample_rate // sample_rate_factor
 raw_bits_per_sample = 18
 bits_per_sample_factor = 6
 bits_per_sample = raw_bits_per_sample // bits_per_sample_factor # 3 bits per sample
@@ -160,8 +160,11 @@ for index in range(number_of_receivers):
 				if max_receiver_delay_in_sample_times[index]<receiver_delays_in_sample_times[index][grid_number]:
 					max_receiver_delay_in_sample_times[index] = receiver_delays_in_sample_times[index][grid_number]
 				grid_number += 1
+max_max_receiver_delay_in_sample_times = 0
 for index in range(number_of_receivers):
 	print("receiver " + str(index) + ": " + str(receiver_delays_in_sample_times[index]) + " (qty=" + str(len(receiver_delays_in_sample_times[index])) + "; max=" + str(max_receiver_delay_in_sample_times[index]) + ")")
+	if max_max_receiver_delay_in_sample_times<max_receiver_delay_in_sample_times[index]:
+		max_max_receiver_delay_in_sample_times = max_receiver_delay_in_sample_times[index]
 
 # ----------------------------------------------------
 
@@ -197,7 +200,7 @@ number_of_bits_of_output = bits_per_sample * number_of_receivers
 output_port_name = "grid"
 
 print("")
-print("module blah #(")
+print("module sus #(")
 verilog_declare_parameter("RECEIVER_SUBWORD_WIDTH", bits_per_sample, ",")
 for index in range(number_of_receivers):
 	verilog_declare_parameter("RECEIVER" + dec(index, 1) + "_PIPELINE_LENGTH_IN_SUBWORDS", str(max_receiver_delay_in_sample_times[index]) + "*RECEIVER_SUBWORD_WIDTH", ",")
@@ -247,4 +250,77 @@ for a in range(grid_quantity[x_index]):
 			grid_number += 1
 print("endmodule")
 print("")
+
+# ----------------------------------------------------
+
+testbench_clock_period = 1
+testbench_clock_half_period = testbench_clock_period / 2
+delay_between_grid_stimuli = 2 * testbench_clock_period * max_max_receiver_delay_in_sample_times;
+#stimulus_amplitude = 2**3-1
+stimulus_amplitude = 1
+
+print("module sus_tb;")
+print("\treg clock = 0;");
+print("\twire [8:0] grid_0_0_0;");
+print("\twire [14:0] zeroes = 0;");
+print("\treg [2:0] r0 = 0;");
+print("\treg [2:0] r1 = 0;");
+print("\treg [2:0] r2 = 0;");
+print("\twire [17:0] receiver0_data_word = { r0, zeroes };");
+print("\twire [17:0] receiver1_data_word = { r1, zeroes };");
+print("\twire [17:0] receiver2_data_word = { r2, zeroes };");
+print("\treg stim = 0;")
+print("\tsus mysus (.clock(clock),");
+print("\t\t.receiver0_data_word(receiver0_data_word),.receiver1_data_word(receiver1_data_word), .receiver2_data_word(receiver2_data_word),");
+print("\t\t.grid_0_0_0(grid_0_0_0), .grid_0_1_0(), .grid_0_2_0(), .grid_0_3_0(), .grid_1_0_0(), .grid_1_1_0(), .grid_1_2_0(), .grid_1_3_0(),");
+print("\t\t.grid_2_0_0(), .grid_2_1_0(), .grid_2_2_0(), .grid_2_3_0(), .grid_3_0_0(), .grid_3_1_0(), .grid_3_2_0(), .grid_3_3_0());");
+print("\talways begin");
+print("\t\t#" + str(testbench_clock_half_period) + "; clock <= ~clock;");
+print("\tend");
+print("\tinitial begin");
+for a in range(grid_quantity[x_index]):
+	for b in range(grid_quantity[y_index]):
+		for c in range(grid_quantity[z_index]):
+			string = "\t\t#" + str(delay_between_grid_stimuli) + "; stim<=1; #1; stim<=0;"
+			delays = grid_delays_in_sample_times[a][b][c]
+			min_delay = max_max_receiver_delay_in_sample_times
+			max_delay = 0
+			delay_set = set()
+			for delay in delays:
+				delay_set.add(delay)
+				if delay<min_delay:
+					min_delay = delay
+				if max_delay<delay:
+					max_delay = delay
+			indexed_delays = []
+			for delay in sorted(delay_set, reverse=True):
+				list_of_receiver_indices = []
+				for i in range(len(delays)):
+					if delay==delays[i]:
+						list_of_receiver_indices.append(i)
+				indexed_delays.append([ testbench_clock_period * delay, list_of_receiver_indices ])
+			#print(indexed_delays)
+			#indexed_delays = [ [ testbench_clock_period * delays[i], i ] for i in range(len(delays)) ]
+			#sorted_delays = sorted(indexed_delays, reverse=True)
+			previous_delay = indexed_delays[0][0] + testbench_clock_period
+			#print(sorted_delays)
+			#print(delay_set)
+			for delay in indexed_delays:
+				this_delay = previous_delay - delay[0] - testbench_clock_period
+				if this_delay<0:
+					print("poop")
+				string += " #" + str(this_delay) + ";"
+				for i in range(len(delay[1])):
+					string += " r" + str(delay[1][i]) + "<=" + str(stimulus_amplitude) + ";"
+				string += " #" + str(testbench_clock_period) + "; r0<=0;r1<=0;r2<=0;"
+				previous_delay = delay[0]
+			abc_string = "_" + str(a) + "_" + str(b) + "_" + str(c)
+			string += " // grid" + abc_string
+			print(string)
+print("\t\t#100; $finish;");
+print("\tend");
+print("endmodule")
+print("")
+
+# ----------------------------------------------------
 
