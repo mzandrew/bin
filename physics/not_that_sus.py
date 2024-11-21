@@ -204,18 +204,21 @@ for index in range(number_of_receivers):
 verilog_declare_parameter("RECEIVER_WORD_WIDTH", raw_bits_per_sample, "")
 print(") (")
 print("\tinput clock,")
+string = "\tinput [" + str(raw_bits_per_sample) + "-1:0]"
 for index in range(number_of_receivers):
 	receiver_data_word = "receiver" + dec(index, 1) + "_data_word"
-	print("\tinput [" + str(raw_bits_per_sample) + "-1:0] " + str(receiver_data_word) + ",")
+	string += " " + str(receiver_data_word) + ","
+print(string)
 grid_number = 0
+string = "\toutput [" + str(number_of_bits_of_output) + "-1:0]"
 for a in range(grid_quantity[x_index]):
 	for b in range(grid_quantity[y_index]):
 		for c in range(grid_quantity[z_index]):
-			string = "\toutput [" + str(number_of_bits_of_output) + "-1:0] " + str(output_port_name) + "_" + dec(grid_number, 2)
+			string += " " + str(output_port_name) + "_" + dec(grid_number, 2)
 			if not grid_number==number_of_grid_points-1:
 				string += ","
-			print(string)
 			grid_number += 1
+print(string)
 #print("\toutput [" + str(number_of_grid_points) + "-1:0] " + str(output_port_name))
 print(");")
 for index in range(number_of_receivers):
@@ -243,4 +246,5 @@ for a in range(grid_quantity[x_index]):
 			print("\tassign grid[" + str(grid_number) + "] = " + grid_string + ";")
 			grid_number += 1
 print("endmodule")
+print("")
 
