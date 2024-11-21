@@ -1,7 +1,7 @@
 #!/bin/env python3
 
 # written 2024-11-17 by mza
-# last updated 2024-11-18 by mza
+# last updated 2024-11-20 by mza
 
 # ----------------------------------------------------
 
@@ -201,16 +201,17 @@ print("module blah #(")
 verilog_declare_parameter("RECEIVER_SUBWORD_WIDTH", bits_per_sample, ",")
 for index in range(number_of_receivers):
 	verilog_declare_parameter("RECEIVER" + dec(index, 1) + "_PIPELINE_LENGTH_IN_SUBWORDS", str(max_receiver_delay_in_sample_times[index]) + "*RECEIVER_SUBWORD_WIDTH", ",")
-verilog_declare_parameter("RECEIVER_WORD_WIDTH", raw_bits_per_sample, "")
+verilog_declare_parameter("RECEIVER_WORD_WIDTH", raw_bits_per_sample, ",")
+verilog_declare_parameter("NUMBER_OF_BITS_OF_OUTPUT", number_of_bits_of_output, "")
 print(") (")
 print("\tinput clock,")
-string = "\tinput [" + str(raw_bits_per_sample) + "-1:0]"
+string = "\tinput [RECEIVER_WORD_WIDTH-1:0]"
 for index in range(number_of_receivers):
 	receiver_data_word = "receiver" + dec(index, 1) + "_data_word"
 	string += " " + str(receiver_data_word) + ","
 print(string)
 grid_number = 0
-string = "\toutput [" + str(number_of_bits_of_output) + "-1:0]"
+string = "\toutput [NUMBER_OF_BITS_OF_OUTPUT-1:0]"
 for a in range(grid_quantity[x_index]):
 	for b in range(grid_quantity[y_index]):
 		for c in range(grid_quantity[z_index]):
