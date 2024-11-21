@@ -214,7 +214,8 @@ string = "\toutput [" + str(number_of_bits_of_output) + "-1:0]"
 for a in range(grid_quantity[x_index]):
 	for b in range(grid_quantity[y_index]):
 		for c in range(grid_quantity[z_index]):
-			string += " " + str(output_port_name) + "_" + dec(grid_number, 2)
+			abc_string = "_" + str(a) + "_" + str(b) + "_" + str(c)
+			string += " " + str(output_port_name) + abc_string
 			if not grid_number==number_of_grid_points-1:
 				string += ","
 			grid_number += 1
@@ -241,9 +242,7 @@ for a in range(grid_quantity[x_index]):
 				verilog_instantiate_pipeline_delay_tap(tap_string, receiver_pipeline_string, delay, "RECEIVER_SUBWORD_WIDTH")
 			correlator_string = "correlator" + abc_string
 			grid_string = "grid" + abc_string
-			print("\twire [" + str(number_of_bits_of_output) + "-1:0] " + grid_string + ";")
 			verilog_instantiate_correlator(correlator_string, tap_strings, grid_string)
-			print("\tassign grid[" + str(grid_number) + "] = " + grid_string + ";")
 			grid_number += 1
 print("endmodule")
 print("")
