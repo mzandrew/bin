@@ -1,7 +1,7 @@
 #!/bin/env python3
 
 # written 2024-11-17 by mza
-# last updated 2024-11-21 by mza
+# last updated 2024-11-30 by mza
 
 # ----------------------------------------------------
 
@@ -13,9 +13,14 @@ grid_spacing = [ 1.0, 1.0, 1.0 ] # potential source locations grid, in meters
 
 # receiver locations:
 receiver_location = []
-receiver_location.append([ -0.5, +0.5, +0.0 ])
-receiver_location.append([ +0.5, +0.5, +0.0 ])
-receiver_location.append([ +0.0, -0.5, +0.0 ])
+if 0: # original
+	receiver_location.append([ -0.5, +0.5, +0.0 ])
+	receiver_location.append([ +0.5, +0.5, +0.0 ])
+	receiver_location.append([ +0.0, -0.5, +0.0 ])
+elif 1: # "T" shape
+	receiver_location.append([ -0.5, +0.0, +0.0 ])
+	receiver_location.append([ +0.5, +0.0, +0.0 ])
+	receiver_location.append([ +0.0, -0.5, +0.0 ])
 
 # "constants":
 raw_sample_rate = 44100 # Hz
@@ -259,9 +264,23 @@ delay_between_grid_stimuli = 2 * testbench_clock_period * max_max_receiver_delay
 #stimulus_amplitude = 2**3-1
 stimulus_amplitude = 1
 
-print("module sus_tb;")
+print("module sus_tb (")
+verilog_declare_parameter("NUMBER_OF_BITS_OF_OUTPUT", number_of_bits_of_output, "")
+print(");")
 print("\treg clock = 0;");
-print("\twire [8:0] grid_0_0_0;");
+#print("\twire [8:0] grid_0_0_0;");
+string = "\twire [NUMBER_OF_BITS_OF_OUTPUT-1:0] "
+grid_number = 0
+for a in range(grid_quantity[x_index]):
+	for b in range(grid_quantity[y_index]):
+		for c in range(grid_quantity[z_index]):
+			abc_string = "_" + str(a) + "_" + str(b) + "_" + str(c)
+			if not grid_number==0:
+				string += ", "
+			string += "grid" + abc_string
+			grid_number += 1
+string += ";"
+print(string)
 print("\twire [14:0] zeroes = 0;");
 print("\treg [2:0] r0 = 0;");
 print("\treg [2:0] r1 = 0;");
@@ -272,8 +291,18 @@ print("\twire [17:0] receiver2_data_word = { r2, zeroes };");
 print("\treg stim = 0;")
 print("\tsus mysus (.clock(clock),");
 print("\t\t.receiver0_data_word(receiver0_data_word),.receiver1_data_word(receiver1_data_word), .receiver2_data_word(receiver2_data_word),");
-print("\t\t.grid_0_0_0(grid_0_0_0), .grid_0_1_0(), .grid_0_2_0(), .grid_0_3_0(), .grid_1_0_0(), .grid_1_1_0(), .grid_1_2_0(), .grid_1_3_0(),");
-print("\t\t.grid_2_0_0(), .grid_2_1_0(), .grid_2_2_0(), .grid_2_3_0(), .grid_3_0_0(), .grid_3_1_0(), .grid_3_2_0(), .grid_3_3_0());");
+string = "\t\t"
+grid_number = 0
+for a in range(grid_quantity[x_index]):
+	for b in range(grid_quantity[y_index]):
+		for c in range(grid_quantity[z_index]):
+			abc_string = "_" + str(a) + "_" + str(b) + "_" + str(c)
+			if not grid_number==0:
+				string += ", "
+			string += ".grid" + abc_string + "(grid" + abc_string + ")"
+			grid_number += 1
+string += ");"
+print(string)
 print("\talways begin");
 print("\t\t#" + str(testbench_clock_half_period) + "; clock <= ~clock;");
 print("\tend");
