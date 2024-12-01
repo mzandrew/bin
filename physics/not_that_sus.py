@@ -24,7 +24,7 @@ elif 1: # "T" shape
 
 # "constants":
 raw_sample_rate = 44100 # Hz
-sample_rate_factor = 32
+sample_rate_factor = 16
 sample_rate = raw_sample_rate // sample_rate_factor
 raw_bits_per_sample = 18
 bits_per_sample_factor = 6
@@ -308,7 +308,6 @@ for a in range(grid_quantity[x_index]):
 			verilog_instantiate_correlator(correlator_string, tap_strings, grid_string)
 			grid_number += 1
 print("endmodule")
-print("")
 
 # ----------------------------------------------------
 
@@ -317,12 +316,13 @@ testbench_clock_half_period = testbench_clock_period / 2
 #stimulus_amplitude = 2**3-1
 stimulus_amplitude = 1
 
+print("")
 print("module sus_tb #(")
 verilog_declare_parameter("PERIOD", 1.0, ",")
 verilog_declare_parameter("P", "PERIOD", ",")
 verilog_declare_parameter("HALF_PERIOD", "PERIOD/2", ",")
 verilog_declare_parameter("NUMBER_OF_BITS_OF_OUTPUT", number_of_bits_of_output, ",")
-verilog_declare_parameter("WAVEFORM_LENGTH", 7, ",")
+verilog_declare_parameter("WAVEFORM_LENGTH", 10, ",")
 verilog_declare_parameter("PIPELINE_PICKOFF", 2*max_max_receiver_delay_in_sample_times, "")
 print(");")
 print("\treg clock = 0;");
@@ -346,9 +346,12 @@ print("\treg [2:0] r2 [PIPELINE_PICKOFF:0];");
 print("\twire [17:0] receiver0_data_word = { r0[PIPELINE_PICKOFF], zeroes };");
 print("\twire [17:0] receiver1_data_word = { r1[PIPELINE_PICKOFF], zeroes };");
 print("\twire [17:0] receiver2_data_word = { r2[PIPELINE_PICKOFF], zeroes };");
-print("\twire [2:0] waveform_a [WAVEFORM_LENGTH-1:0] = { 3'd0, 3'd1, 3'd2, 3'd3, 3'd2, 3'd1, 3'd0 }; // triangle 3");
-print("\twire [2:0] waveform_b [WAVEFORM_LENGTH-1:0] = { 3'd0, 3'd0, 3'd1, 3'd2, 3'd1, 3'd0, 3'd0 }; // triangle 2");
-print("\twire [2:0] waveform_c [WAVEFORM_LENGTH-1:0] = { 3'd0, 3'd0, 3'd2, 3'd3, 3'd2, 3'd0, 3'd0 }; // truncated triangle 3");
+print("\twire [2:0] waveform_a [WAVEFORM_LENGTH-1:0] = { 3'd0, 3'd1, 3'd2, 3'd3, 3'd2, 3'd1, 3'd0, 3'd0, 3'd0, 3'd0 }; // triangle 3");
+print("\twire [2:0] waveform_b [WAVEFORM_LENGTH-1:0] = { 3'd0, 3'd0, 3'd1, 3'd2, 3'd1, 3'd0, 3'd0, 3'd0, 3'd0, 3'd0 }; // triangle 2");
+print("\twire [2:0] waveform_c [WAVEFORM_LENGTH-1:0] = { 3'd0, 3'd0, 3'd2, 3'd3, 3'd2, 3'd0, 3'd0, 3'd0, 3'd0, 3'd0 }; // truncated triangle 3");
+print("\twire [2:0] waveform_d [WAVEFORM_LENGTH-1:0] = { 3'd0, 3'd2, 3'd3, 3'd3, 3'd1, 3'd0, 3'd0, 3'd2, 3'd3, 3'd2 }; // double peak a 3");
+print("\twire [2:0] waveform_e [WAVEFORM_LENGTH-1:0] = { 3'd0, 3'd1, 3'd2, 3'd3, 3'd2, 3'd1, 3'd2, 3'd3, 3'd2, 3'd1 }; // double peak b 3");
+print("\twire [2:0] waveform_f [WAVEFORM_LENGTH-1:0] = { 3'd1, 3'd1, 3'd1, 3'd3, 3'd1, 3'd1, 3'd1, 3'd1, 3'd1, 3'd3 }; // double peak c 3");
 print("\treg stim = 0;")
 print("\tsus mysus (.clock(clock),");
 print("\t\t.receiver0_data_word(receiver0_data_word), .receiver1_data_word(receiver1_data_word), .receiver2_data_word(receiver2_data_word),");
@@ -431,9 +434,8 @@ else:
 				abc_string = "_" + str(a) + "_" + str(b) + "_" + str(c)
 				string = "\t\t#(" + str(delay_between_grid_stimuli) + "*P); stim<=1; #P; stim<=0; #P; "
 				delays = grid_delays_in_sample_times[a][b][c]
-				string += "for (i=0; i<WAVEFORM_LENGTH; i=i+1) begin r0[" + str(grid_delays_in_sample_times[a][b][c][0]) + "+i] <= waveform_a[WAVEFORM_LENGTH-i-1]; r1[" + str(grid_delays_in_sample_times[a][b][c][1]) + "+i] <= waveform_b[WAVEFORM_LENGTH-i-1]; r2[" + str(grid_delays_in_sample_times[a][b][c][2]) + "+i] <= waveform_c[WAVEFORM_LENGTH-i-1]; end // grid" + abc_string
+				string += "for (i=0; i<WAVEFORM_LENGTH; i=i+1) begin r0[" + str(grid_delays_in_sample_times[a][b][c][0]) + "+i] <= waveform_d[WAVEFORM_LENGTH-i-1]; r1[" + str(grid_delays_in_sample_times[a][b][c][1]) + "+i] <= waveform_e[WAVEFORM_LENGTH-i-1]; r2[" + str(grid_delays_in_sample_times[a][b][c][2]) + "+i] <= waveform_f[WAVEFORM_LENGTH-i-1]; end // grid" + abc_string
 				print(string)
-
 print("\t\t#100; $finish;");
 print("\tend");
 print("endmodule")
