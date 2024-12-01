@@ -1,7 +1,7 @@
 #!/bin/env python3
 
 # written 2024-11-17 by mza
-# last updated 2024-11-30 by mza
+# last updated 2024-12-01 by mza
 
 # ----------------------------------------------------
 
@@ -205,6 +205,60 @@ number_of_bits_of_output = bits_per_sample * number_of_receivers
 output_port_name = "grid"
 
 print("")
+print("module pipeline_correlator3 #(");
+print("\tparameter WIDTH = 3,");
+print("\tparameter NUMBER_OF_INPUTS = 3,");
+print("\tparameter NUMBER_OF_BITS_OF_OUTPUT = NUMBER_OF_INPUTS * WIDTH");
+print(") (");
+print("\tinput clock,");
+print("\tinput [WIDTH-1:0] i0, i1, i2,");
+print("\toutput reg [NUMBER_OF_BITS_OF_OUTPUT-1:0] o = 0");
+print(");");
+print("\treg [WIDTH-1:0] i0_old0 = 0, i1_old0 = 0, i2_old0 = 0, i2_old1 = 0;");
+print("\treg [NUMBER_OF_BITS_OF_OUTPUT-1:0] o_old1 = 0, o_old2 = 0;");
+print("\talways @(posedge clock) begin");
+print("\t\ti0_old0 <= i0; i1_old0 <= i1; i2_old0 <= i2;");
+print("\t\ti2_old1 <= i2_old0;");
+print("\t\to_old1 <= i0_old0 * i1_old0;");
+print("\t\to_old2 <= o_old1 * i2_old1;");
+print("\t\to <= o_old2;");
+print("\tend");
+print("endmodule");
+
+print("")
+print("module instant_correlator3 #(");
+print("\tparameter WIDTH = 3,");
+print("\tparameter NUMBER_OF_INPUTS = 3,");
+print("\tparameter NUMBER_OF_BITS_OF_OUTPUT = NUMBER_OF_INPUTS * WIDTH");
+print(") (");
+print("\tinput clock,");
+print("\tinput [WIDTH-1:0] i0, i1, i2,");
+print("\toutput reg [NUMBER_OF_BITS_OF_OUTPUT-1:0] o = 0");
+print(");");
+print("\talways @(posedge clock) begin");
+print("\t\to <= i0 * i1 * i2;");
+print("\tend");
+print("endmodule");
+
+print("")
+print("module correlator3 #(");
+print("\tparameter WIDTH = 3,");
+print("\tparameter NUMBER_OF_INPUTS = 3,");
+print("\tparameter NUMBER_OF_BITS_OF_OUTPUT = NUMBER_OF_INPUTS * WIDTH,");
+print("\tparameter PIPELINED = 1");
+print(") (");
+print("\tinput clock,");
+print("\tinput [WIDTH-1:0] i0, i1, i2,");
+print("\toutput [NUMBER_OF_BITS_OF_OUTPUT-1:0] o");
+print(");");
+print("\tif (PIPELINED) begin");
+print("\t\tpipeline_correlator3 #(.WIDTH(WIDTH)) pipeco (.clock(clock), .i0(i0), .i1(i1), .i2(i2), .o(o));");
+print("\tend else begin");
+print("\t\tinstant_correlator3 #(.WIDTH(WIDTH)) insta (.clock(clock), .i0(i0), .i1(i1), .i2(i2), .o(o));");
+print("\tend");
+print("endmodule");
+
+print("")
 print("module sus #(")
 verilog_declare_parameter("RECEIVER_SUBWORD_WIDTH", bits_per_sample, ",")
 for index in range(number_of_receivers):
@@ -260,12 +314,16 @@ print("")
 
 testbench_clock_period = 1
 testbench_clock_half_period = testbench_clock_period / 2
-delay_between_grid_stimuli = 2 * testbench_clock_period * max_max_receiver_delay_in_sample_times;
 #stimulus_amplitude = 2**3-1
 stimulus_amplitude = 1
 
-print("module sus_tb (")
-verilog_declare_parameter("NUMBER_OF_BITS_OF_OUTPUT", number_of_bits_of_output, "")
+print("module sus_tb #(")
+verilog_declare_parameter("PERIOD", 1.0, ",")
+verilog_declare_parameter("P", "PERIOD", ",")
+verilog_declare_parameter("HALF_PERIOD", "PERIOD/2", ",")
+verilog_declare_parameter("NUMBER_OF_BITS_OF_OUTPUT", number_of_bits_of_output, ",")
+verilog_declare_parameter("WAVEFORM_LENGTH", 7, ",")
+verilog_declare_parameter("PIPELINE_PICKOFF", 2*max_max_receiver_delay_in_sample_times, "")
 print(");")
 print("\treg clock = 0;");
 #print("\twire [8:0] grid_0_0_0;");
@@ -282,15 +340,18 @@ for a in range(grid_quantity[x_index]):
 string += ";"
 print(string)
 print("\twire [14:0] zeroes = 0;");
-print("\treg [2:0] r0 = 0;");
-print("\treg [2:0] r1 = 0;");
-print("\treg [2:0] r2 = 0;");
-print("\twire [17:0] receiver0_data_word = { r0, zeroes };");
-print("\twire [17:0] receiver1_data_word = { r1, zeroes };");
-print("\twire [17:0] receiver2_data_word = { r2, zeroes };");
+print("\treg [2:0] r0 [PIPELINE_PICKOFF:0];");
+print("\treg [2:0] r1 [PIPELINE_PICKOFF:0];");
+print("\treg [2:0] r2 [PIPELINE_PICKOFF:0];");
+print("\twire [17:0] receiver0_data_word = { r0[PIPELINE_PICKOFF], zeroes };");
+print("\twire [17:0] receiver1_data_word = { r1[PIPELINE_PICKOFF], zeroes };");
+print("\twire [17:0] receiver2_data_word = { r2[PIPELINE_PICKOFF], zeroes };");
+print("\twire [2:0] waveform_a [WAVEFORM_LENGTH-1:0] = { 3'd0, 3'd1, 3'd2, 3'd3, 3'd2, 3'd1, 3'd0 }; // triangle 3");
+print("\twire [2:0] waveform_b [WAVEFORM_LENGTH-1:0] = { 3'd0, 3'd0, 3'd1, 3'd2, 3'd1, 3'd0, 3'd0 }; // triangle 2");
+print("\twire [2:0] waveform_c [WAVEFORM_LENGTH-1:0] = { 3'd0, 3'd0, 3'd2, 3'd3, 3'd2, 3'd0, 3'd0 }; // truncated triangle 3");
 print("\treg stim = 0;")
 print("\tsus mysus (.clock(clock),");
-print("\t\t.receiver0_data_word(receiver0_data_word),.receiver1_data_word(receiver1_data_word), .receiver2_data_word(receiver2_data_word),");
+print("\t\t.receiver0_data_word(receiver0_data_word), .receiver1_data_word(receiver1_data_word), .receiver2_data_word(receiver2_data_word),");
 string = "\t\t"
 grid_number = 0
 for a in range(grid_quantity[x_index]):
@@ -306,46 +367,73 @@ print(string)
 print("\talways begin");
 print("\t\t#" + str(testbench_clock_half_period) + "; clock <= ~clock;");
 print("\tend");
+print("\tinteger i;");
+print("\talways @(posedge clock) begin");
+print("\t\tfor (i=1; i<=PIPELINE_PICKOFF; i=i+1) begin");
+print("\t\t\tr0[i] <= r0[i-1];");
+print("\t\t\tr1[i] <= r1[i-1];");
+print("\t\t\tr2[i] <= r2[i-1];");
+print("\t\tend");
+print("\t\tr0[0] <= 0;");
+print("\t\tr1[0] <= 0;");
+print("\t\tr2[0] <= 0;");
+print("\tend");
 print("\tinitial begin");
-for a in range(grid_quantity[x_index]):
-	for b in range(grid_quantity[y_index]):
-		for c in range(grid_quantity[z_index]):
-			string = "\t\t#" + str(delay_between_grid_stimuli) + "; stim<=1; #1; stim<=0;"
-			delays = grid_delays_in_sample_times[a][b][c]
-			min_delay = max_max_receiver_delay_in_sample_times
-			max_delay = 0
-			delay_set = set()
-			for delay in delays:
-				delay_set.add(delay)
-				if delay<min_delay:
-					min_delay = delay
-				if max_delay<delay:
-					max_delay = delay
-			indexed_delays = []
-			for delay in sorted(delay_set, reverse=True):
-				list_of_receiver_indices = []
-				for i in range(len(delays)):
-					if delay==delays[i]:
-						list_of_receiver_indices.append(i)
-				indexed_delays.append([ testbench_clock_period * delay, list_of_receiver_indices ])
-			#print(indexed_delays)
-			#indexed_delays = [ [ testbench_clock_period * delays[i], i ] for i in range(len(delays)) ]
-			#sorted_delays = sorted(indexed_delays, reverse=True)
-			previous_delay = indexed_delays[0][0] + testbench_clock_period
-			#print(sorted_delays)
-			#print(delay_set)
-			for delay in indexed_delays:
-				this_delay = previous_delay - delay[0] - testbench_clock_period
-				if this_delay<0:
-					print("poop")
-				string += " #" + str(this_delay) + ";"
-				for i in range(len(delay[1])):
-					string += " r" + str(delay[1][i]) + "<=" + str(stimulus_amplitude) + ";"
-				string += " #" + str(testbench_clock_period) + "; r0<=0;r1<=0;r2<=0;"
-				previous_delay = delay[0]
-			abc_string = "_" + str(a) + "_" + str(b) + "_" + str(c)
-			string += " // grid" + abc_string
-			print(string)
+if 0:
+	delay_between_grid_stimuli = 2 * testbench_clock_period * max_max_receiver_delay_in_sample_times;
+	for a in range(grid_quantity[x_index]):
+		for b in range(grid_quantity[y_index]):
+			for c in range(grid_quantity[z_index]):
+				string = "\t\t#" + str(delay_between_grid_stimuli) + "; stim<=1; #1; stim<=0;"
+				delays = grid_delays_in_sample_times[a][b][c]
+				min_delay = max_max_receiver_delay_in_sample_times
+				max_delay = 0
+				delay_set = set()
+				for delay in delays:
+					delay_set.add(delay)
+					if delay<min_delay:
+						min_delay = delay
+					if max_delay<delay:
+						max_delay = delay
+				indexed_delays = []
+				for delay in sorted(delay_set, reverse=True):
+					list_of_receiver_indices = []
+					for i in range(len(delays)):
+						if delay==delays[i]:
+							list_of_receiver_indices.append(i)
+					indexed_delays.append([ testbench_clock_period * delay, list_of_receiver_indices ])
+				#print(indexed_delays)
+				#indexed_delays = [ [ testbench_clock_period * delays[i], i ] for i in range(len(delays)) ]
+				#sorted_delays = sorted(indexed_delays, reverse=True)
+				previous_delay = indexed_delays[0][0] + testbench_clock_period
+				#print(sorted_delays)
+				#print(delay_set)
+				for delay in indexed_delays:
+					this_delay = previous_delay - delay[0] - testbench_clock_period
+					string += " #" + str(this_delay) + ";"
+					for i in range(len(delay[1])):
+						string += " r" + str(delay[1][i]) + "<=" + str(stimulus_amplitude) + ";"
+					string += " #" + str(testbench_clock_period) + "; r0<=0;r1<=0;r2<=0;"
+					previous_delay = delay[0]
+				abc_string = "_" + str(a) + "_" + str(b) + "_" + str(c)
+				string += " // grid" + abc_string
+				print(string)
+else:
+	delay_between_grid_stimuli = 4 * testbench_clock_period * max_max_receiver_delay_in_sample_times
+	print("\t\tfor (i=0; i<=PIPELINE_PICKOFF; i=i+1) begin");
+	print("\t\t\tr0[i] <= 0;");
+	print("\t\t\tr1[i] <= 0;");
+	print("\t\t\tr2[i] <= 0;");
+	print("\t\tend");
+	for a in range(grid_quantity[x_index]):
+		for b in range(grid_quantity[y_index]):
+			for c in range(grid_quantity[z_index]):
+				abc_string = "_" + str(a) + "_" + str(b) + "_" + str(c)
+				string = "\t\t#(" + str(delay_between_grid_stimuli) + "*P); stim<=1; #P; stim<=0; #P; "
+				delays = grid_delays_in_sample_times[a][b][c]
+				string += "for (i=0; i<WAVEFORM_LENGTH; i=i+1) begin r0[" + str(grid_delays_in_sample_times[a][b][c][0]) + "+i] <= waveform_a[WAVEFORM_LENGTH-i-1]; r1[" + str(grid_delays_in_sample_times[a][b][c][1]) + "+i] <= waveform_b[WAVEFORM_LENGTH-i-1]; r2[" + str(grid_delays_in_sample_times[a][b][c][2]) + "+i] <= waveform_c[WAVEFORM_LENGTH-i-1]; end // grid" + abc_string
+				print(string)
+
 print("\t\t#100; $finish;");
 print("\tend");
 print("endmodule")
