@@ -1,0 +1,21 @@
+#!/bin/bash -e
+
+# written 2025-01-06 by mza
+
+function run {
+	for each; do
+		if [ -d "$each" ]; then
+			count=$(lf "$each" | wc --lines)
+			echo "$count $each"
+		fi
+	done | sort -n
+}
+
+if [ $# -gt 0 ]; then
+	for each; do
+		run "$each"
+	done
+else
+	find . -maxdepth 1 -exec $0 {} + | sort -n
+fi
+
