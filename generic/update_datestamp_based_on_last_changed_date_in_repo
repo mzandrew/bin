@@ -12,6 +12,7 @@
 # 2018-03-16: noticed that the script doesn't work (anymore?) on a git repo, so found a one-liner to do it:
 # git ls-files | xargs -I{} bash -c 'touch "{}" --date=@$(git log -n1 --pretty=format:%ct -- "{}")'
 # reformulated basic flow of this script given this simpler/better method for git
+# 2024-12-30 git-restore-mtime package obviates the git part of this script https://github.com/MestreLion/git-tools/tree/main
 
 # format of svn info is:
 # Last Changed Date: 2015-01-16 20:56:54 -1000 (Fri, 16 Jan 2015)
