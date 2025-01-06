@@ -9,5 +9,6 @@ if [ $# -gt 0 ]; then
 		dir=$2
 	fi
 fi
-find -type f -exec chmod --changes $file {} + -o -type d -exec chmod --changes $dir {} +
+#find -type f -exec chmod --changes $file {} + -o -type d -exec chmod --changes $dir {} +
+find -type d -exec chmod --changes $dir {} \; -o -type f -exec chmod --changes $file {} \;
 
