@@ -8,6 +8,10 @@
 # E: Package 'python' has no installation candidate
 # E: Package 'qt5-default' has no installation candidate
 
+# complains about needing us to do "git submodule update --init" mid-compile
+# kernel/driver.cc:23:10: fatal error: libs/cxxopts/include/cxxopts.hpp: No such file or directory
+#include "libs/cxxopts/include/cxxopts.hpp
+
 declare build="$HOME/build"
 declare -i np=$(grep -c "^processor" /proc/cpuinfo)
 declare -i j=$((np-1))
@@ -30,6 +34,9 @@ function get_source_if_necessary {
 	fi
 	if [ ! -e yosys ]; then
 		git clone https://github.com/cliffordwolf/yosys.git yosys
+		cd yosys
+		git submodule update --init
+		cd ..
 	fi
 	#if [ ! -e yosys-plugins ]; then
 	#	git clone https://github.com/cliffordwolf/yosys-plugins.git
@@ -291,7 +298,7 @@ set -e
 echo
 check_udev_rule 
 echo
-list_files /usr/local/bin/ice* /usr/local/share/icebox /usr/local/bin/arachne* /usr/local/share/arachne-pnr /usr/local/bin/nextpnr* /usr/local/bin/yosys* /usr/local/share/yosys "$udev_rulefile" /usr/local/bin/vhd2vl /usr/local/share/yosys/plugins
+list_files /usr/local/bin/ice* /usr/local/share/icebox /usr/local/bin/nextpnr* /usr/local/bin/yosys* /usr/local/share/yosys "$udev_rulefile" /usr/local/bin/vhd2vl /usr/local/share/yosys/plugins
 
 # yosys -p "synth_ice40 -blif rot.blif" rot.v
 # arachne-pnr -d 1k -p rot.pcf rot.blif -o rot.asc
