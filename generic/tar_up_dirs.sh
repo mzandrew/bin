@@ -4,6 +4,7 @@ declare temp_file="$(mktemp /tmp/datestamp.XXXXXX)"
 
 if [ $# -gt 0 ]; then
 	for each; do
+		each=$(echo $each | sed -e "s,/$,,g")
 		declare tar="${each}.tar"
 		declare lfr="${tar}.lf-r"
 		if [ "$each" == ".." ]; then continue; fi
