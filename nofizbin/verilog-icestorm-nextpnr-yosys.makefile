@@ -3,7 +3,7 @@
 # https://github.com/mzandrew/bin/blob/master/nofizbin/verilog-icestorm-arachnepnr-yosys.makefile
 # originally based on Makefile in rot.v example project
 # with help from http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
-# last updated 2024-06-15 by mza
+# last updated 2025-01-09 by mza
 
 # goes nicely with https://raw.githubusercontent.com/mzandrew/hdl/master/verilog/write_verilog_dependency_file.py
 
@@ -35,7 +35,9 @@ work/%.json : src/%.v
 	@if [ ! -e work ]; then mkdir work; fi
 	@#nice yosys -q -p "prep -top top -flatten; write_json $@" $<
 	@#nice yosys -q -p "prep -top top; write_json $@" $<
+	@echo $<
 	@nice yosys -q -p "synth_ice40 -top top -json $@" $<
+	@touch $@ --reference $<
 	@#ls -lart $@
 
 work/%.svg : work/%.json
@@ -45,9 +47,11 @@ work/%.svg : work/%.json
 
 work/%.txt : work/%.json src/icestick.pcf
 	@if [ ! -e work ]; then mkdir work; fi
+	@echo $<
 	#nextpnr-ice40 --hx1k --json blinky.json --pcf blinky.pcf --asc blinky.asc
 	#nice arachne-pnr -p mza-test001.pcf mza-test001.blif -o mza-test001.txt
 	@nice nextpnr-ice40 -q --hx1k --package tq144 --json $< --pcf src/icestick.pcf --asc $@
+	@touch $@ --reference $<
 	@#--pcf-allow-unconstrained
 	@#ls -lart $@
 
