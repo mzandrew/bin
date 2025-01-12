@@ -6,6 +6,12 @@ declare temp_file="$(mktemp /tmp/datestamp.XXXXXX)"
 declare local_dir=$(readlink -f "$(pwd)")
 declare -i verbosity=3
 if [ $verbosity -gt 3 ]; then echo "local_dir $local_dir"; fi
+declare keep="--remove-files"
+
+if [ "$1" == "-k" ]; then
+	keep=""
+	shift
+fi
 
 if [ $# -gt 0 ]; then
 	for each; do
@@ -32,8 +38,8 @@ if [ $# -gt 0 ]; then
 							lf > "${lfr}"
 						)
 						touch --reference="$basename" "$temp_file"
-						tar cf "$tar" "$basename" --remove-files
-						#tar cf "$tar" "$basename"
+						#tar cf "$tar" "$basename" --remove-files
+						tar cf "$tar" "$basename" $keep
 						touch --reference="$temp_file" "$tar"
 						touch --reference="$temp_file" "$lfr"
 						ls -lart "$tar" "$lfr"
