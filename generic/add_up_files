@@ -8,12 +8,12 @@ declare -i things_in_string=0
 if [ $# -gt 0 ]; then
 	string="\("
 	for i in $(seq 1 $#); do
-		ext=$1
+		ext="$1"
 		shift
 		if [ $things_in_string -gt 0 ]; then
 			string="$string -o"
 		fi
-		if [ $ext == "*." ]; then
+		if [ "$ext" == "*." ]; then
 			string="$string ! -iname \"*.*\""
 
 		else
