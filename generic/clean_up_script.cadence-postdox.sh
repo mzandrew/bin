@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# last updated 2025-01-13 by mza
+# last updated 2025-01-17 by mza
 
 declare file="640" dir="750"
 declare filename="actions-taken-to-clean-up-files.txt"
@@ -22,7 +22,7 @@ if [ $verbosity -gt 3 ]; then echo; echo "chmod u+rwx dirs"; fi
 find -type d -exec chmod u+rwx --changes {} \; | tee -a ${filename}
 
 if [ $verbosity -gt 3 ]; then echo; echo "superfluous files"; fi
-find -depth -type f -name "*.log" -print0 | tar rf log.tar --remove-files --null -T -
+find -depth -type f -name "*.log" -print0 | tar rvf extracts/log.tar --remove-files --null -T -
 
 if [ $verbosity -gt 3 ]; then echo; echo "empty files"; fi
 find -type f -empty ${action_emptyfile} | tee -a ${filename}
