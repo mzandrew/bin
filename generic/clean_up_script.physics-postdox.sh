@@ -233,10 +233,10 @@ find -depth -type d -name "impact_xdb" ${action_dirtree} | tee -a ${filename}
 find -depth -type d -name "lowres" ${action_dirtree} | tee -a ${filename}
 find -depth -type d -wholename "*/AppData/LocalLow" ${action_dirtree} | tee -a ${filename}
 find -depth -type d -wholename "*/AppData/Local" ${action_dirtree} | tee -a ${filename}
-find -depth -type d -wholename "*/AppData/Roaming" ${action_dirtree} | tee -a ${filename}
 find -depth -type d -wholename "*/Local Settings/Temp" ${action_dirtree} | tee -a ${filename}
 
 # occasionally these are useful to include or exclude on a case-by-case basis:
+find -depth -type d -wholename "*/AppData/Roaming" ${action_dirtree} | tee -a ${filename} # AppData/Thunderbird contains cached emails...
 #find -depth -type d -name ".svn" ${action_dirtree} | tee -a ${filename} # this line may unintentionally delete useful stuff...
 #find -depth -type d -name ".git" ${action_dirtree} | tee -a ${filename} # this line may unintentionally delete useful stuff...
 
