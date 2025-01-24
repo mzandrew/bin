@@ -19,6 +19,7 @@ if [ $# -gt 0 ]; then
 					echo "$in"
 					ffmpeg -i "$in" -ab 320k -map_metadata 0 -id3v2_version 3 "$out" >/dev/null 2>&1
 					touch --reference="$in" "$out"
+					rm -v "$in"
 				fi
 			done
 		' sh {} +
