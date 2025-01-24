@@ -2,7 +2,7 @@
 
 # written 2025-01-12 by mza
 # following https://unix.stackexchange.com/a/406016/150012
-# last updated 2025-01-12 by mza
+# last updated 2025-01-24 by mza
 
 # to get this script to run in massive parallel:
 #find -type d -exec sh -c 'flac2mp3.sh "{}" &' \;
@@ -14,7 +14,7 @@ if [ $# -gt 0 ]; then
 	for each; do
 		find "$each" -type f -name "*.flac" -exec sh -ce '
 			for in; do
-				out=$(echo $in | sed -e "s,\.flac$,.mp3,");
+				out=$(echo "$in" | sed -e "s,\.flac$,.mp3,");
 				if [ ! -e "$out" ]; then
 					echo "$in"
 					ffmpeg -i "$in" -ab 320k -map_metadata 0 -id3v2_version 3 "$out" >/dev/null 2>&1
@@ -24,6 +24,6 @@ if [ $# -gt 0 ]; then
 		' sh {} +
 	done
 else
-	find . -exec $0 "{}" +
+	find . -type f -exec $0 "{}" +
 fi
 
