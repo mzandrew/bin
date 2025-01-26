@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+# last updated 2025-01-26 by mza
+
 declare tarfilebase="$1"
 if [ -z "$tarfilebase" ]; then
 	echo "ERROR:  must specify a base filename for the tarfiles on the command line"
@@ -17,11 +19,11 @@ if [ -e "$tarfile" ]; then
 fi
 svn status | grep ^M | sed -e "s,^M       ,," | while read file; do
 	#echo "$file"
-	ls -lart $file
+	ls -lartd "$file"
 	if [ $count -eq 0 ]; then
-		tar cf "$tarfile" $file
+		tar cf "$tarfile" "$file"
 	else
-		tar rf "$tarfile" $file
+		tar rf "$tarfile" "$file"
 	fi
 	count=$((count+1))
 done
@@ -38,11 +40,11 @@ svn status | grep ^? | sed -e "s,^?       ,," | while read file; do
 	if [ "$file" = "$oldtarfile" ]; then
 		continue
 	fi
-	ls -lart $file
+	ls -lartd "$file"
 	if [ $count -eq 0 ]; then
-		tar cf "$tarfile" $file
+		tar cf "$tarfile" "$file"
 	else
-		tar rf "$tarfile" $file
+		tar rf "$tarfile" "$file"
 	fi
 	count=$((count+1))
 done
