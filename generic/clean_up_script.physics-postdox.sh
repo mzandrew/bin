@@ -43,10 +43,14 @@ fi
 if [ $verbosity -gt 3 ]; then echo; echo "chmod u+rwx dirs"; fi
 find -type d -exec chmod u+rwx --changes {} \; | tee -a ${filename}
 
+if [ $verbosity -gt 3 ]; then echo; echo "junk dirs and files"; fi
+find_type_d_iname junk.tar ".Trash" ".Trash-*"
+find_type_f_iname junk.tar "*.pcap" "*.pyc" "*.so" "*.o" "*~" "*.bak" "*.exe.stackdump" ".DS_Store"
+
 if [ $verbosity -gt 3 ]; then echo; echo "superfluous files"; fi
 find_type_f_iname language.tar "chinesepod*mp3" "chinesepod*pdf" "chinesepod*mp4"
+find_type_f_iname other.tar "*.schbak" "*.sch_bak" "*.symbak" "*.edn" "*.lock" "*.lnk" "*.tmp" "*.dvi" "*.aux" "*.obj" "*.out1" "*.vsd" "*.ll" "*.rep" "*.prm" "*.lst" "NTUSER.DAT*" "*.txt.gz" "*.hdf5" "*.sys"
 find_type_f_iname data.tar "*rawdata.[0-9][0-9][0-9][0-9][0-9]" "*rawdata.[0-9][0-9][0-9][0-9]" "*.rawdata[0-9][0-9][0-9]" "S*CH[0-9]" "PHD_S*CH[0-9]" "*.fiber[0-9]" "*.root" "*.sroot" "*.rawdata" "*.dat" "*.camac" "ccc[0-9]" "ccc" "aaa" "*.dst" "*.dst[0-9]" "*.datafile" "*.spl" "*.prn"
-find_type_f_iname junk.tar "*.pcap" "*.pyc" "*.so" "*.o" "*~" "*.bak" "*.exe.stackdump" ".DS_Store"
 find_type_f_iname executable.tar "*.dll"
 find_type_f_iname installers.tar "*.mui" "*.msi" "*.cab"
 find_type_f_iname log.tar "*.log" "*.jou" "*.status" "VBox.log.*" "VBoxSVC.log.*" "*.out"
@@ -54,7 +58,6 @@ find_type_f_iname firmware-build.tar "*.str" "*.ise_ISE_Backup" "*.restore" "*.m
 find_type_f_iname geant.tar "*.mac"
 find_type_f_iname multiple.tar "*.bin" "*.xml"
 find_type_f_iname dotfiles.tar ".gtkrc*" ".kderc*" ".nvidia-settings-rc" ".realplayerrc" ".hxplayerrc" ".dropbox" ".xsession-errors*" ".Xauthority" ".ICEauthority" ".viminfo" ".flexlmrc" ".lesshst" ".recently-used.xbel" ".RapidSVN" ".xscreensaver*" ".xauth*" ".dmrc" ".gtk-bookmarks" ".esd_auth" ".openoffice*" ".rhn-applet.conf" ".mime-types" ".recently-used" "._*"
-find_type_f_iname other.tar "*.schbak" "*.sch_bak" "*.symbak" "*.edn" "*.lock" "*.lnk" "*.tmp" "*.dvi" "*.aux" "*.obj" "*.out1" "*.vsd" "*.ll" "*.rep" "*.prm" "*.lst" "NTUSER.DAT*" "*.txt.gz" "*.hdf5" "*.sys"
 
 # occasionally these are useful to include or exclude on a case-by-case basis:
 find_type_f_iname executable.tar "*.exe"
@@ -76,7 +79,7 @@ find -type f -empty ${action_emptyfile} | tee -a ${filename}
 
 if [ $verbosity -gt 3 ]; then echo; echo "superfluous dirs"; fi
 find_type_d_iname language.tar "language" "anki"
-find_type_d_iname dotfiles.tar ".fltk" ".simvision" ".adobe" ".local" ".metadata" ".gconf" ".gnome2" ".gnome2_private" ".evolution" ".Trash" ".Trash-*" ".Spotlight-V100" ".nx" ".pki" ".vim" ".rhn-applet" ".nautilus" ".gconfd" ".gstreamer*" ".kde" ".swt" ".dbus" ".java" ".ipython" ".fluxbox" ".fonts*" ".fontconfig" ".rootnb" ".config" ".cache" ".pulse"
+find_type_d_iname dotfiles.tar ".fltk" ".simvision" ".adobe" ".local" ".metadata" ".gconf" ".gnome2" ".gnome2_private" ".evolution" ".Spotlight-V100" ".nx" ".pki" ".vim" ".rhn-applet" ".nautilus" ".gconfd" ".gstreamer*" ".kde" ".swt" ".dbus" ".java" ".ipython" ".fluxbox" ".fonts*" ".fontconfig" ".rootnb" ".config" ".cache" ".pulse"
 find_type_d_iname dotfiles.tar ".Xil" ".Xilinx" ".mozilla" ".cpan" ".gegl*" ".texmf-var" ".gimp*" ".gnome" ".opera" ".mcop" ".compiz" ".rhopenoffice*" ".openoffice*" ".icedteaplugin" ".update-notifier" ".irssi" ".qt" ".nbi" ".filezilla" ".putty" ".matlab" ".metacity" ".Skype" ".scim" ".sunpinyin"
 find_type_d_iname dotfiles.tar ".SeeVoghRN" ".install4j" ".netx" ".HDI" ".beagle" ".netbeans*" ".thumbnails" ".macromedia" ".Mathematica" ".wine" ".vscode-server" ".vscode" ".eclipse" ".VirtualBox" ".dropbox.cache"
 find_type_d_iname other.tar "isim" "impact_xdb" "iCDB" "Abisuite" "Application Data" "Temporary Internet Files" "Cookies" "Solidworks Downloads" "lowres" "\$Recycle\.Bin"
