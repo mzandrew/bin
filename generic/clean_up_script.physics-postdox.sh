@@ -1,10 +1,9 @@
 #!/bin/bash -e
 
-# last updated 2025-01-26 by mza
+# last updated 2025-01-27 by mza
 
 declare filename="actions-taken-to-clean-up-files.txt"
 declare action_file="-exec rm -fv {} ;"
-declare action_dirtree="-exec rm -rfv {} ;"
 declare action_emptyfile="-exec rm -fv {} ;"
 declare action_emptydir="-exec rmdir -v {} ;"
 declare -i verbosity=4
@@ -43,18 +42,28 @@ fi
 if [ $verbosity -gt 3 ]; then echo; echo "chmod u+rwx dirs"; fi
 find -type d -exec chmod u+rwx --changes {} \; | tee -a ${filename}
 
+if [ $verbosity -gt 3 ]; then echo; echo "sockets"; fi
+find -type s -exec rm -v "{}" \; | tee -a ${filename}
+
+if [ $verbosity -gt 3 ]; then echo; echo "links"; fi
+find -type l -exec rm -v "{}" \; | tee -a ${filename}
+
 if [ $verbosity -gt 3 ]; then echo; echo "junk dirs and files"; fi
 find_type_d_iname junk.tar ".Trash" ".Trash-*"
-find_type_f_iname junk.tar "*.pcap" "*.pyc" "*.so" "*.o" "*~" "*.bak" "*.exe.stackdump" ".DS_Store"
+find_type_f_iname junk.tar "*.pcap" "*.pyc" "*.so" "*.o" "*~" "*.bak" "*.exe.stackdump" ".DS_Store" "desktop.ini"
+find_type_f_iname junk.tar "hiberfil.sys" "pagefile.sys"
+
+# "*."
+# "*."
 
 if [ $verbosity -gt 3 ]; then echo; echo "superfluous files"; fi
 find_type_f_iname language.tar "chinesepod*mp3" "chinesepod*pdf" "chinesepod*mp4"
-find_type_f_iname other.tar "*.schbak" "*.sch_bak" "*.symbak" "*.edn" "*.lock" "*.lnk" "*.tmp" "*.dvi" "*.aux" "*.obj" "*.out1" "*.vsd" "*.ll" "*.rep" "*.prm" "*.lst" "NTUSER.DAT*" "*.txt.gz" "*.hdf5" "*.sys"
-find_type_f_iname data.tar "*rawdata.[0-9][0-9][0-9][0-9][0-9]" "*rawdata.[0-9][0-9][0-9][0-9]" "*.rawdata[0-9][0-9][0-9]" "S*CH[0-9]" "PHD_S*CH[0-9]" "*.fiber[0-9]" "*.root" "*.sroot" "*.rawdata" "*.dat" "*.camac" "ccc[0-9]" "ccc" "aaa" "*.dst" "*.dst[0-9]" "*.datafile" "*.spl" "*.prn"
+find_type_f_iname other.tar "*.schbak" "*.sch_bak" "*.symbak" "*.edn" "*.lock" "*.lnk" "*.tmp" "*.dvi" "*.aux" "*.obj" "*.out1" "*.vsd" "*.ll" "*.rep" "*.prm" "*.lst" "ntuser.dat*" "*.txt.gz" "*.hdf5" "*.sys" "*.wdb" "*.itdb" "*.plist" "*.itl" "*.ithmb"
+find_type_f_iname data.tar "*rawdata.[0-9][0-9][0-9][0-9][0-9]" "*rawdata.[0-9][0-9][0-9][0-9]" "*.rawdata[0-9][0-9][0-9]" "S*CH[0-9]" "PHD_S*CH[0-9]" "*.fiber[0-9]" "*.root" "*.sroot" "*.rawdata" "*.dat" "*.camac" "ccc[0-9]" "ccc" "aaa" "*.dst" "*.dst[0-9]" "*.datafile" "*.spl" "*.prn" "*.ped"
 find_type_f_iname executable.tar "*.dll"
-find_type_f_iname installers.tar "*.mui" "*.msi" "*.cab"
+find_type_f_iname installers.tar "*.mui" "*.msi" "*.cab" "*.deb" "*.rpm"
 find_type_f_iname log.tar "*.log" "*.jou" "*.status" "VBox.log.*" "VBoxSVC.log.*" "*.out"
-find_type_f_iname firmware-build.tar "*.str" "*.ise_ISE_Backup" "*.restore" "*.mgf" "*.dcp" "*.xsvf" "*.svf" "*.xmsgs" "*.xrpt" "*.vdbl" "*.syr" "*.twr" "*.twx" "*.wdb" "*.ngo" "*.vho" "*.mrp" "*.msd" "*.rpx" "*.rpt" "*.rbd" "*.rbb" "*.ngc" "*.ngd" "*.ncd" "*.ngr" "*.ngm" "*.mcs" "*.mcs.gz" "*.bit" "*.bit.gz" "*.hdf" "*.projectmgr" "*.xbcd" "*.xreport" "par_usage_statistics.html" "*.cmd_log" "*.elf" 
+find_type_f_iname firmware-build.tar "*.str" "*.ise_ISE_Backup" "*.restore" "*.mgf" "*.dcp" "*.xsvf" "*.svf" "*.xmsgs" "*.xrpt" "*.vdbl" "*.syr" "*.twr" "*.twx" "*.wdb" "*.ngo" "*.vho" "*.mrp" "*.msd" "*.rpx" "*.rpt" "*.rbd" "*.rbb" "*.ngc" "*.ngd" "*.ncd" "*.ngr" "*.ngm" "*.mcs" "*.mcs.gz" "*.bit" "*.bit.gz" "*.hdf" "*.projectmgr" "*.xbcd" "*.xreport" "par_usage_statistics.html" "*.cmd_log" "*.elf" "*.blc" "*.bld" "*.unroutes" "*.par" "*.bgn" "*.map" "*.drc"
 find_type_f_iname geant.tar "*.mac"
 find_type_f_iname multiple.tar "*.bin" "*.xml"
 find_type_f_iname dotfiles.tar ".gtkrc*" ".kderc*" ".nvidia-settings-rc" ".realplayerrc" ".hxplayerrc" ".dropbox" ".xsession-errors*" ".Xauthority" ".ICEauthority" ".viminfo" ".flexlmrc" ".lesshst" ".recently-used.xbel" ".RapidSVN" ".xscreensaver*" ".xauth*" ".dmrc" ".gtk-bookmarks" ".esd_auth" ".openoffice*" ".rhn-applet.conf" ".mime-types" ".recently-used" "._*"
@@ -79,9 +88,13 @@ find -type f -empty ${action_emptyfile} | tee -a ${filename}
 
 if [ $verbosity -gt 3 ]; then echo; echo "superfluous dirs"; fi
 find_type_d_iname language.tar "language" "anki"
+find_type_d_iname OS.tar "Windows" "Program Files" "Program Files (x86)" "ProgramData" "Boot" "System Volume Information" "lost+found"
+find_type_d_iname executable.tar "MentorGraphics" "PAD_ES_Evaluation" "MSOCache" "teamviewer" "AlmytaSystems" "Anaconda3"
 find_type_d_iname dotfiles.tar ".fltk" ".simvision" ".adobe" ".local" ".metadata" ".gconf" ".gnome2" ".gnome2_private" ".evolution" ".Spotlight-V100" ".nx" ".pki" ".vim" ".rhn-applet" ".nautilus" ".gconfd" ".gstreamer*" ".kde" ".swt" ".dbus" ".java" ".ipython" ".fluxbox" ".fonts*" ".fontconfig" ".rootnb" ".config" ".cache" ".pulse"
 find_type_d_iname dotfiles.tar ".Xil" ".Xilinx" ".mozilla" ".cpan" ".gegl*" ".texmf-var" ".gimp*" ".gnome" ".opera" ".mcop" ".compiz" ".rhopenoffice*" ".openoffice*" ".icedteaplugin" ".update-notifier" ".irssi" ".qt" ".nbi" ".filezilla" ".putty" ".matlab" ".metacity" ".Skype" ".scim" ".sunpinyin"
 find_type_d_iname dotfiles.tar ".SeeVoghRN" ".install4j" ".netx" ".HDI" ".beagle" ".netbeans*" ".thumbnails" ".macromedia" ".Mathematica" ".wine" ".vscode-server" ".vscode" ".eclipse" ".VirtualBox" ".dropbox.cache"
+find_type_d_iname dotfiles.tar "*.anydesk" "*.astropy" "*.gitkraken" "*.hplip" "*.jupyter" "*.nano" "*.remmina" "*.virtualenvs"
+find_type_d_iname dotfiles.tar ".chipscope" ".eZuceSRN" ".SeeVogh" ".ezwave" ".iscape" ".oracle*"
 find_type_d_iname other.tar "isim" "impact_xdb" "iCDB" "Abisuite" "Application Data" "Temporary Internet Files" "Cookies" "Solidworks Downloads" "lowres" "\$Recycle\.Bin"
 find_type_d_iname appdata.tar "appdata" # AppData/Thunderbird contains cached emails...
 find_type_d_iname junk.tar "Local Settings" 
