@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-# last updated 2025-01-27 by mza
+# last updated 2025-01-29 by mza
 
 declare filename="actions-taken-to-clean-up-files.txt"
 declare action_file="-exec rm -fv {} ;"
@@ -63,7 +63,7 @@ find_type_f_iname data.tar "*rawdata.[0-9][0-9][0-9][0-9][0-9]" "*rawdata.[0-9][
 find_type_f_iname executable.tar "*.dll"
 find_type_f_iname installers.tar "*.mui" "*.msi" "*.cab" "*.deb" "*.rpm"
 find_type_f_iname log.tar "*.log" "*.jou" "*.status" "VBox.log.*" "VBoxSVC.log.*" "*.out"
-find_type_f_iname firmware-build.tar "*.str" "*.ise_ISE_Backup" "*.restore" "*.mgf" "*.dcp" "*.xsvf" "*.svf" "*.xmsgs" "*.xrpt" "*.vdbl" "*.syr" "*.twr" "*.twx" "*.wdb" "*.ngo" "*.vho" "*.mrp" "*.msd" "*.rpx" "*.rpt" "*.rbd" "*.rbb" "*.ngc" "*.ngd" "*.ncd" "*.ngr" "*.ngm" "*.mcs" "*.mcs.gz" "*.bit" "*.bit.gz" "*.hdf" "*.projectmgr" "*.xbcd" "*.xreport" "par_usage_statistics.html" "*.cmd_log" "*.elf" "*.blc" "*.bld" "*.unroutes" "*.par" "*.bgn" "*.map" "*.drc"
+find_type_f_iname firmware-build.tar "*.str" "*.ise_ISE_Backup" "*.restore" "*.mgf" "*.dcp" "*.xsvf" "*.svf" "*.xmsgs" "*.xrpt" "*.vdbl" "*.syr" "*.twr" "*.twx" "*.wdb" "*.ngo" "*.vho" "*.mrp" "*.msd" "*.rpx" "*.rpt" "*.rbd" "*.rbb" "*.ngc" "*.ngd" "*.ncd" "*.ngr" "*.ngm" "*.mcs" "*.mcs.gz" "*.bit" "*.bit.gz" "*.hdf" "*.projectmgr" "*.xbcd" "*.xreport" "par_usage_statistics.html" "*.cmd_log" "*.elf" "*.blc" "*.bld" "*.unroutes" "*.par" "*.bgn" "*.map" "*.drc" "*.cdc" "*.xdl" "*.asdb" "*.cgc" "*.cpj" "*.psr" "*.do" "*.glade" "*_flist.txt" "*_readme.txt" "*_pad.txt" "*.ptwx" "*.ut" "*.tsi" "*.cgp" "*.scr" "*.key" "*_xmdf.tcl"
 find_type_f_iname geant.tar "*.mac"
 find_type_f_iname multiple.tar "*.bin" "*.xml"
 find_type_f_iname dotfiles.tar ".gtkrc*" ".kderc*" ".nvidia-settings-rc" ".realplayerrc" ".hxplayerrc" ".dropbox" ".xsession-errors*" ".Xauthority" ".ICEauthority" ".viminfo" ".flexlmrc" ".lesshst" ".recently-used.xbel" ".RapidSVN" ".xscreensaver*" ".xauth*" ".dmrc" ".gtk-bookmarks" ".esd_auth" ".openoffice*" ".rhn-applet.conf" ".mime-types" ".recently-used" "._*"
