@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-# last updated 2025-01-24 by mza
+# last updated 2025-01-29 by mza
 
 # find -printf:
 # %u = user
@@ -80,7 +80,7 @@ else
 fi
 
 if [ $shouldsort -gt 0 ]; then
-	SORT_STRING='sort -k1n -k3'
+	SORT_STRING='sort -k1n'
 else
 	SORT_STRING='cat'
 fi
