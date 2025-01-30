@@ -226,8 +226,8 @@ def compare_these_size_matches(size_matches):
 	if len(filtered_list)<2: # give up if there's only one left to compare
 		return
 	if 0==len(golden):
-		#filtered_list.sort(key=lambda x: x[1]) # sort by datestamp
-		filtered_list.sort(key=operator.itemgetter(0, 2)) # sort by timestamp first, then by filename
+		filtered_list.sort(key=lambda x: x[1]) # sort by datestamp
+		#filtered_list.sort(key=operator.itemgetter(0, 2)) # sort by timestamp first, then by filename - there's a bug in this, same as we get from the bug in "sort -k1n -k3"
 		#filtered_list.sort(key=operator.itemgetter(2, 0)) # sort by filename first, then by timestamp
 	else:
 		match_count = 0
