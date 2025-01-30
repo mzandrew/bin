@@ -1,15 +1,23 @@
 #!/bin/bash -e
 # written 2018-03-09 by mza
 # script to recursively unpack zip/tar archives (zips within tars within tar-bzips, etc)
-# last updated 2025-01-29 by mza
+# last updated 2025-01-30 by mza
 
 #declare mode="overwrite_destination"
 declare mode="do_not_overwrite_destination"
 
-declare zip_overwrite="-n" # keeps older files
-#declare zip_overwrite="-o" # keeps newer files
-#declare tar_overwrite="--keep-old-files"
-declare tar_overwrite="--keep-newer-files"
+declare tar_overwrite="" # default behavior
+declare zip_overwrite="" # default behavior
+declare rar_overwrite="" # default behavior
+if [ "$mode" == "overwrite_destination" ]; then
+	zip_overwrite="-o" # overwrite what's already on disk
+	rar_overwrite="-o+" # overwrite existing files
+else
+	zip_overwrite="-n" # never overwrite what's already on disk
+	#tar_overwrite="--keep-old-files" # never overwrite what's already on disk; this mode will raise the errorlevel
+	tar_overwrite="--keep-newer-files" # don't replace files on disk that are newer than those in archive
+	rar_overwrite="-o-" # do not overwrite existing files
+fi
 
 declare find_format="%TY-%Tm-%Td+%TH:%TM %12s %p\n"
 
@@ -26,9 +34,9 @@ if [ $# -gt 0 ]; then
 			if [ -e "$base" ]; then
 				nom=$(echo "$base" | sed -e "s,\(.*\)\(\.zip\|\.tar\|\.tgz\|\.tar\.xz\|\.tar\.gz\|\.tar\.bz2\|\.rar\)$,\1,i")
 				ext=$(echo "$base" | sed -e "s,\(.*\)\(\.zip\|\.tar\|\.tgz\|\.tar\.xz\|\.tar\.gz\|\.tar\.bz2\|\.rar\)$,\2,i")
-				echo "$(pwd)/${nom}${ext}"
-				if [ "${ext,,}" = ".zip" ]; then
-					if [ ! -e "$nom" ] || [ "$mode"=="overwrite_destination" ]; then
+				echo; echo "$(pwd)/${nom}${ext}"
+				if [ "${ext,,}" == ".zip" ]; then
+					if [ ! -e "$nom" ] || [ "$mode" == "overwrite_destination" ]; then
 						mkdir -p "$nom"
 						unzip $zip_overwrite "$base" -d "$nom"
 						rm -v "$base"
@@ -39,9 +47,9 @@ if [ $# -gt 0 ]; then
 						echo "\"$nom\" already exists or mode is set to \"$mode\""
 					fi
 				elif [ "${ext,,}" == ".tar.bz2" ]; then
-					if [ ! -e "$nom" ] || [ "$mode"=="overwrite_destination" ]; then
+					if [ ! -e "$nom" ] || [ "$mode" == "overwrite_destination" ]; then
 						mkdir -p "$nom"
-						tar $tar_overwrite -xjf "$base" -C $nom
+						tar $tar_overwrite -xvjf "$base" -C "$nom"
 						rm -v "$base"
 						go "$nom"
 						#find "$nom" -printf "${find_format}" | sort -k1n > "$nom.lf-r"
@@ -49,10 +57,10 @@ if [ $# -gt 0 ]; then
 					else
 						echo "\"$nom\" already exists or mode is set to \"$mode\""
 					fi
-				elif [ "${ext,,}" == ".tar.xz" ] || [ "$ext" == ".tgz" ]; then
-					if [ ! -e "$nom" ] || [ "$mode"=="overwrite_destination" ]; then
+				elif [ "${ext,,}" == ".tar.xz" ]; then
+					if [ ! -e "$nom" ] || [ "$mode" == "overwrite_destination" ]; then
 						mkdir -p "$nom"
-						tar $tar_overwrite -xJf "$base" -C $nom
+						tar $tar_overwrite -xvZf "$base" -C "$nom"
 						rm -v "$base"
 						go "$nom"
 						#find "$nom" -printf "${find_format}" | sort -k1n > "$nom.lf-r"
@@ -61,9 +69,9 @@ if [ $# -gt 0 ]; then
 						echo "\"$nom\" already exists or mode is set to \"$mode\""
 					fi
 				elif [ "${ext,,}" == ".tar.gz" ] || [ "$ext" == ".tgz" ]; then
-					if [ ! -e "$nom" ] || [ "$mode"=="overwrite_destination" ]; then
+					if [ ! -e "$nom" ] || [ "$mode" == "overwrite_destination" ]; then
 						mkdir -p "$nom"
-						tar $tar_overwrite -xzf "$base" -C $nom
+						tar $tar_overwrite -xvzf "$base" -C "$nom"
 						rm -v "$base"
 						go "$nom"
 						#find "$nom" -printf "${find_format}" | sort -k1n > "$nom.lf-r"
@@ -72,9 +80,9 @@ if [ $# -gt 0 ]; then
 						echo "\"$nom\" already exists or mode is set to \"$mode\""
 					fi
 				elif [ "${ext,,}" == ".tar" ]; then
-					if [ ! -e "$nom" ] || [ "$mode"=="overwrite_destination" ]; then
+					if [ ! -e "$nom" ] || [ "$mode" == "overwrite_destination" ]; then
 						mkdir -p "$nom"
-						tar $tar_overwrite -xf "$base" -C $nom
+						tar $tar_overwrite -xvf "$base" -C "$nom"
 						rm -v "$base"
 						go "$nom"
 						#find "$nom" -printf "${find_format}" | sort -k1n > "$nom.lf-r"
@@ -83,9 +91,9 @@ if [ $# -gt 0 ]; then
 						echo "\"$nom\" already exists or mode is set to \"$mode\""
 					fi
 				elif [ "${ext,,}" == ".rar" ]; then
-					if [ ! -e "$nom" ] || [ "$mode"=="overwrite_destination" ]; then
+					if [ ! -e "$nom" ] || [ "$mode" == "overwrite_destination" ]; then
 						mkdir -p "$nom"
-						cd "$nom" && unrar x "../$base" && cd -
+						cd "$nom" && unrar x $rar_overwrite "../$base" && cd -
 						rm -v "$base"
 						go "$nom"
 						#find "$nom" -printf "${find_format}" | sort -k1n > "$nom.lf-r"
@@ -97,7 +105,7 @@ if [ $# -gt 0 ]; then
 					echo "unknown file type for $each"
 				fi
 			else
-				echo "file $nom not found"
+				echo "file \"$base\" not found"
 			fi
 			cd - >/dev/null
 		fi
