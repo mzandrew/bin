@@ -2,7 +2,9 @@
 
 # written 2022-03-24 by mza
 # based on duplicate_finder.py
-# last updated 2022-05-02 by mza
+# last updated 2025-01-29 by mza
+
+should_show_average_bytes_per_file = False
 
 import sys
 import os.path
@@ -29,7 +31,7 @@ def read_it_in():
 				datestamp = match.group(1)
 				filesize = int(match.group(2))
 				name = match.group(3)
-				extension = match.group(4).rstrip()
+				extension = match.group(4).rstrip().lower()
 				files.append([extension, filesize, datestamp, name])
 			if 0==count%100000:
 				print("read " + str(count) + " lines")
@@ -72,7 +74,14 @@ def sum_these_extension_matches(extension_matches):
 	sum = 0
 	for i in range(len(filtered_list)):
 		sum += filtered_list[i][1]
-	result = comma(sum).rjust(15) + " bytes" + " " + str(len(filtered_list)).rjust(7) + " file(s)" + " " + filtered_list[0][0]
+	if should_show_average_bytes_per_file:
+		avg = 0
+		if len(filtered_list):
+			avg = int(sum / len(filtered_list))
+	result = comma(sum).rjust(15) + " bytes" + " " + str(len(filtered_list)).rjust(7) + " file(s)" + " "
+	if should_show_average_bytes_per_file:
+		result += comma(avg).rjust(15) + " (average)bytes/file "
+	result += filtered_list[0][0]
 	results.append([sum, result])
 
 def go():
