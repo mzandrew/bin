@@ -2,7 +2,7 @@
 
 # written 2022-03-24 by mza
 # based on duplicate_finder.py
-# last updated 2025-01-29 by mza
+# last updated 2025-02-02 by mza
 
 should_show_average_bytes_per_file = False
 
@@ -23,16 +23,25 @@ def read_it_in():
 	try:
 		sys.stdin.reconfigure(encoding='iso-8859-1')
 		for line in iter(sys.stdin.readline, b''):
+			line = line.strip()
 			if line=='':
 				break
 			count += 1
-			match = re.search("^([^ ]+)[ ]+([^ ]+)[ ]+(.*)\.([^./]+)$", line)
+			match = re.search("^([^ ]+)[ ]+([^ ]+)[ ]+\.?/?(.*)\.([^./]+)$", line)
 			if match:
 				datestamp = match.group(1)
 				filesize = int(match.group(2))
 				name = match.group(3)
 				extension = match.group(4).rstrip().lower()
 				files.append([extension, filesize, datestamp, name])
+			else:
+				match = re.search("^([^ ]+)[ ]+([^ ]+)[ ]+\.?/?([^./]+)$", line)
+				if match:
+					datestamp = match.group(1)
+					filesize = int(match.group(2))
+					name = match.group(3)
+					extension = ""
+					files.append([extension, filesize, datestamp, name])
 			if 0==count%100000:
 				print("read " + str(count) + " lines")
 				#print(datestamp + " " + str(filesize) + " " + name + extension)
@@ -43,20 +52,15 @@ def read_it_in():
 
 def find_extension_matches():
 	count = 0
-	last_extension = ""
-	extension_matches = 0
 	extensions_set = set()
 	for myfile in files:
 		count += 1
 		#if 0==count%250:
 			#print("sorted " + str(count) + " lines")
 			#print("extension: " + str(myfile[0]))
-		if last_extension==myfile[0]:
-			extension_matches += 1
-			extensions_set.add(myfile[0])
-		last_extension = myfile[0]
+		extensions_set.add(myfile[0])
 	print("parsed " + str(count) + " total files")
-	#print("found " + str(extension_matches) + " total extension matches")
+	#print(extensions_set)
 	for extension in extensions_set:
 		extensions.append(extension)
 	print("there are " + str(len(extensions)) + " total unique extensions")
