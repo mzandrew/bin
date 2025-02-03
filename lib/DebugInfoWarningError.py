@@ -1,21 +1,22 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # python port of DebugInfoWarningError
 # started 2015-09-16 by mza
-# last updated 2019-01-07 by mza
+# last updated 2025-02-03 by mza
 
 # usage:
-# from DebugInfoWarningError import debug, info, warning, error, debug2, debug3, set_verbosity
+# from DebugInfoWarningError import debug, info, warning, error, debug2, debug3, exceptionmessage, set_verbosity, create_new_logfile_with_string
 # set_verbosity(4)
 # debug("some pedantic stuff here")
 # info("this is an informational message")
 # warning("you forgot something")
 # error("you forgot something important")
-# error("you forgot something very important and we will quit", 17)
 
-from __future__ import print_function
-import sys
+import sys # stderr.write()
+import time # strftime
+import os # os.path.isfile() os.path.isdir() os.path.mkdir()
 
 verbosity = 3
+logfile_is_open = 0
 
 def set_verbosity(value):
 	global verbosity
@@ -24,51 +25,82 @@ def set_verbosity(value):
 	#info(str(verbosity))
 	return original_verbosity
 
-def prepare_message(*message):
-	first = True
-	for msg in message:
-		if first:
-			string = msg
-			first = False
-		else:
-			string += " " + msg
-	return string
+def create_new_logfile_with_string(string):
+	global logfile
+	global logfile_is_open
+	logdirname = "logs"
+	#timestring = time.strftime("%Y-%m-%d.%H:%M:%S")
+	timestring = time.strftime("%Y-%m-%d.%H%M%S")
+	logfilename = logdirname + "/" + timestring + "." + string + ".log"
+	if not os.path.isdir(logdirname):
+		info("creating dir \"" + logdirname + "\"...")
+		os.mkdir(logdirname)
+	if os.path.isfile(logfilename):
+		error("ERROR opening logfile %s (file already exists), exiting" % logfilename)
+		sys.exit(1)
+	try:
+		logfile = open(logfilename, "w")
+	except:
+		error("ERROR opening logfile %s, exiting" % logfilename)
+		sys.exit(2)
+	logfile_is_open = 1
+	info("Writing output from %s to logfile: %s" % (sys.argv[0], logfilename))
 
-def print_message(*message):
-	print(prepare_message(*message))
+def print_string_stdout(string):
+	print(string)
+	sys.stdout.flush()
 
-def debug3(*message):
+def print_string_stderr(string):
+	sys.stderr.write(string + "\n")
+	sys.stderr.flush()
+
+def print_string_logfile(string):
+	if (logfile_is_open):
+		logfile.write(string + "\n")
+		logfile.flush()
+
+def debug3(string):
 	if (verbosity>=6):
-		print_message(*((" DEBUG3:  ",) + message))
-		sys.stdout.flush()
+		string = "   DEBUG3:  " + string
+		print_string_stdout(string)
+		print_string_logfile(string)
 
-def debug2(*message):
+def debug2(string):
 	if (verbosity>=5):
-		print_message(*((" DEBUG2:  ",) + message))
-		sys.stdout.flush()
+		string = "   DEBUG2:  " + string
+		print_string_stdout(string)
+		print_string_logfile(string)
 
-def debug(*message):
+def debug(string):
 	if (verbosity>=4):
-		print_message(*(("  DEBUG:  ",) + message))
-		sys.stdout.flush()
+		string = "    DEBUG:  " + string
+		print_string_stdout(string)
+		print_string_logfile(string)
 
-def info(*message):
+def info(string):
 	if (verbosity>=3):
-		#print_message(*(("INFO:  ",) + message))
-		print_message(*message)
-		sys.stdout.flush()
+		print_string_stdout(string)
+		print_string_logfile(string)
 
-def warning(*message):
+def warning(string):
 	if (verbosity>=2):
-		print(prepare_message(*(("WARNING:  ",) + message)), file=sys.stderr)
-		sys.stderr.flush()
+		string = "  WARNING:  " + string
+		print_string_stderr(string)
+		print_string_logfile(string)
 
-#def error(*message, level=0):
-def error(*message):
+#def error(*string, level=0):
+def error(string):
 	# from http://stackoverflow.com/questions/5574702/how-to-print-to-stderr-in-python
 	if (verbosity>=1):
-		print(prepare_message(*(("  ERROR:  ",) + message)), file=sys.stderr)
-		sys.stderr.flush()
+		string = "    ERROR:  " + string
+		print_string_stderr(string)
+		print_string_logfile(string)
 #		if (level>0):
 #			exit(level)
+
+def exceptionmessage(string):
+	if (verbosity>=1):
+		string = "EXCEPTION:  " + string
+		print_string_stderr(string)
+		print_string_logfile(string)
 
