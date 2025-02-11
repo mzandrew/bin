@@ -55,10 +55,10 @@ function initial_duma {
 		if [ $verbosity -gt 3 ]; then echo; echo "du-ma1.original"; fi
 		dume
 		mv du-ma1 du-ma1.original
-		du_old=$(cat du-ma1.original | tail -n1 | awk -e '{ print $1 }')
+		du_old=$(cat du-ma1.original | tail -n1 | awk '{ print $1 }')
 	else
 		if [ $verbosity -gt 3 ]; then echo; echo "du --ma=0"; fi
-		du_old=$(du --ma=0 --block-size=1000000 | awk -e '{ print $1 }')
+		du_old=$(du --ma=0 --block-size=1000000 | awk '{ print $1 }')
 	fi
 }
 
@@ -165,7 +165,9 @@ function svn_git {
 function duplicate_finder {
 	if [ $verbosity -gt 3 ]; then echo; echo "duplicate files"; fi
 	echo
-	sed -e "s,^\(rm.*\)$,#\1," -i script_to_remove_all_duplicates_that_are_not_golden.sh
+	if [ -e script_to_remove_all_duplicates_that_are_not_golden.sh ]; then
+		sed -e "s,^\(rm.*\)$,#\1," -i script_to_remove_all_duplicates_that_are_not_golden.sh
+	fi
 	lf | duplicate_finder.py
 	./script_to_remove_all_duplicates_that_are_not_golden.sh
 }
@@ -227,7 +229,7 @@ function final_lfr {
 function final_duma {
 	if [ $verbosity -gt 3 ]; then echo; echo "du-ma1"; fi
 	dume
-	declare -i du_new=$(cat du-ma1 | tail -n1 | awk -e '{ print $1 }')
+	declare -i du_new=$(cat du-ma1 | tail -n1 | awk '{ print $1 }')
 	declare -i du_diff=$((du_old-du_new))
 	echo "reduced used disk space by $du_diff MB (from $du_old to $du_new)"
 }
