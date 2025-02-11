@@ -2,7 +2,7 @@
 
 # written 2022-03-24 by mza
 # based on duplicate_finder.py
-# last updated 2025-02-02 by mza
+# last updated 2025-02-11 by mza
 
 should_show_average_bytes_per_file = False
 
@@ -27,7 +27,7 @@ def read_it_in():
 			if line=='':
 				break
 			count += 1
-			match = re.search("^([^ ]+)[ ]+([^ ]+)[ ]+\.?/?(.*)\.([^./]+)$", line)
+			match = re.search("^([^ ]+)[ ]+([^ ]+)[ ]+\\.?/?(.*)\\.([^./]+)$", line)
 			if match:
 				datestamp = match.group(1)
 				filesize = int(match.group(2))
@@ -35,7 +35,7 @@ def read_it_in():
 				extension = match.group(4).rstrip().lower()
 				files.append([extension, filesize, datestamp, name])
 			else:
-				match = re.search("^([^ ]+)[ ]+([^ ]+)[ ]+\.?/?([^./]+)$", line)
+				match = re.search("^([^ ]+)[ ]+([^ ]+)[ ]+\\.?/?([^./]+)$", line)
 				if match:
 					datestamp = match.group(1)
 					filesize = int(match.group(2))
