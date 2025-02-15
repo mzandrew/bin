@@ -1,13 +1,16 @@
 #!/bin/bash -e
 
 # written 2019-06-27 by mza
-# last updated 2023-05-25 by mza
+# last updated 2025-02-14 by mza
+
 # the build dir is about 3GB after the build
 
 # when trying it on ubuntu 20.04:
 # E: Package 'libpython-dev' has no installation candidate
 # when trying it on ubuntu 22.04:
 # E: Package 'python-dev' has no installation candidate
+# when trying it on ubuntu 24.04:
+# E: Package 'python2-dev' has no installation candidate
 
 #declare filename="root_v6.22.00.source.tar.gz"
 #declare dirname="root-6.22.00"
@@ -39,7 +42,7 @@ function add_swap_if_necessary {
 function install_prerequisites_apt {
 	#sudo nice apt -y install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev gfortran libfftw3-dev libjpeg-dev libgif-dev libtiff-dev libcfitsio-dev libxml2-dev uuid-dev davix-dev libgfal2-dev libgl2ps-dev libpcre2-dev liblz4-dev libgsl-dev libssl-dev libgfal2-dev libtbb-dev gsl-bin libpython-dev
 	#sudo nice apt -y install "cmake>=3.6"
-	sudo nice apt -y install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev python3-dev gfortran cmake libfftw3-dev libjpeg-dev libgif-dev libtiff-dev libcfitsio-dev libxml2-dev uuid-dev davix-dev libgfal2-dev libgl2ps-dev libpcre2-dev liblz4-dev libgsl-dev libssl-dev libgfal2-dev libtbb-dev gsl-bin libpython2.7-dev
+	sudo nice apt -y install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev python3-dev gfortran cmake libfftw3-dev libjpeg-dev libgif-dev libtiff-dev libcfitsio-dev libxml2-dev uuid-dev davix-dev libgfal2-dev libgl2ps-dev libpcre2-dev liblz4-dev libgsl-dev libssl-dev libgfal2-dev libtbb-dev gsl-bin
 	# libcblas-dev libcblas3
 	# Enabled support for:  asimage astiff builtin_afterimage builtin_clang builtin_ftgl builtin_glew builtin_llvm builtin_tbb builtin_vdt builtin_xxhash clad cling cxx11 davix exceptions explicitlink fftw3 fitsio gdml http imt mathmore opengl pch pythia8 python roofit shared ssl thread tmva tmva-cpu tmva-pymva vdt x11 xft xml
 }
