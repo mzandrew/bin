@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-# last updated 2024-04-27 by mza
+# last updated 2025-02-16 by mza
 
 declare -i debian_only=0
 #debian_only=1
@@ -35,6 +35,7 @@ function install_packages {
 	if [ ${debian_only} -eq 0 ]; then
 		sudo add-apt-repository universe
 		sudo add-apt-repository multiverse
+		sudo add-apt-repository ppa:kicad/kicad-8.0-releases
 	fi
 	local list="vim git subversion rsync"
 	install_packages_if_necessary $list
@@ -50,10 +51,12 @@ function install_packages {
 	list="$list texlive-science texlive-latex-extra" # latex
 	list="$list cups paps" # cups and utf-8 to postscript converter
 	list="$list libgsl-dev" # root
-	list="$list ffmpeg mplayer" # making/playing videos
+	list="$list ffmpeg mplayer vlc" # making/playing videos
 	list="$list network-manager-openconnect-gnome" # for VPN
 	list="$list tmux minicom"
 	list="$list tigervnc-standalone-server tigervnc-viewer"
+	list="$list libreoffice"
+	list="$list kicad"
 	#sudo apt -y install root-system # taken out of ubuntu 2018.04 (since 2016.04)
 	install_packages_if_necessary $list
 	sudo apt -y update
