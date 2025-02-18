@@ -5,14 +5,13 @@
 # update for clhep from git
 # update for geant4 10.05: new prerequisites: zlib; new dataset versions; other associated changes
 # update for geant 4.10.07; ubuntu20.04; new dataset versions
-# last updated 2023-05-24 by mza
+# last updated 2025-02-17 by mza
 
 declare dir="$HOME/build/geant4"
 declare tdir="$dir"
 if [ -e "/opt/shared/software/geant4" ]; then
 	tdir="/opt/shared/software/geant4"
 fi
-declare CMAKE="cmake"
 declare archlist="" # mesa glu openmotif dos2unix qt4
 declare deblist="build-essential libexpat1-dev zlib1g zlib1g-dev cmake" # mesa-utils
 declare rpmlist="gcc gcc-c++ make automake autoconf cmake expat-devel"
@@ -20,7 +19,7 @@ declare rpmlist="gcc gcc-c++ make automake autoconf cmake expat-devel"
 #libcoin-dev libsoqt520-dev # for Open Inventor visualization
 deblist="$deblist libqt53dcore5 libqt5gui5 libqt5widgets5 libqt5opengl5 libqt5printsupport5 libqt53dcore5 libqt53dextras5 libqt53drender5" # for QT5 visualization
 deblist="$deblist libfreetype-dev" # to render fonts
-deblist="$deblist python2-dev python3-dev libboost-python-dev" # for python bindings
+deblist="$deblist python3-dev libboost-python-dev" # for python bindings
 #deblist="$deblist libxerces-c-dev curl libcurl4 libcurl4-openssl-dev" # for "GDML XML Geometry Support"
 deblist="$deblist qtbase5-dev"
 #deblist="$deblist qtdeclarative5-dev"
@@ -33,6 +32,7 @@ deblist="$deblist qtbase5-dev"
 #deblist="$deblist libxmu-dev"
 #rpmlist="$rpmlist libXmu-devel"
 declare -i numcores=$(($(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk '{print $3}')+1))
+declare CMAKE="cmake"
 declare MAKE="make -j$numcores"
 echo "using $numcores cores to compile..."
 
@@ -245,7 +245,7 @@ function build_and_install_clhep {
 	cd build
 	if [ ! -e Makefile ]; then
 		$CMAKE ../CLHEP
-		$CMAKE --build . --config RelWithDebInfo
+		$CMAKE --build . -j$numcores --config RelWithDebInfo
 		ctest
 	else
 		echo "clhep already cmake'd"
@@ -256,7 +256,7 @@ function build_and_install_clhep {
 #		echo "clhep already built"
 #	fi
 	if [ ! -e /usr/local/lib/libCLHEP.so ]; then
-		sudo $CMAKE --build . --target install
+		sudo $CMAKE --build . -j$numcores --target install
 		#sudo make install --quiet --no-print-directory
 	else
 		echo "clhep already installed"
