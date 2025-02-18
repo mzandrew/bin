@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2022-03-23 by mza
-# last updated 2022-04-21 by mza
+# last updated 2025-02-11 by mza
 
 # usage:
 # takes a stdin pipe that consists of file listing data in the following "lf-r" format:
@@ -348,7 +348,9 @@ def write_out_list_of_files_that_still_need_to_be_dealt_with(mylist):
 		string = each[1] + " " + str(each[0]).rjust(12) + " " + each[2]
 		print(string, file=still_need_to_deal_with_these_file)
 
+#sed -e "s,^\(rm.*\)$,#\1," -i script_to_remove_all_duplicates_that_are_not_golden.sh
 with open(script_filename, "a") as script_file:
+#with open(script_filename, "w") as script_file:
 	print("#!/bin/bash -e", file=script_file)
 	make_executable(script_filename)
 	parse_arguments()

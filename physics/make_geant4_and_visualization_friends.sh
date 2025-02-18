@@ -5,6 +5,7 @@
 # update for clhep from git
 # update for geant4 10.05: new prerequisites: zlib; new dataset versions; other associated changes
 # update for geant 4.10.07; ubuntu20.04; new dataset versions
+# update for ubuntu24.04; new install notes say that clhep, expat and zlib are all included with geant4 sources
 # last updated 2025-02-17 by mza
 
 declare dir="$HOME/build/geant4"
@@ -13,8 +14,8 @@ if [ -e "/opt/shared/software/geant4" ]; then
 	tdir="/opt/shared/software/geant4"
 fi
 declare archlist="" # mesa glu openmotif dos2unix qt4
-declare deblist="build-essential libexpat1-dev zlib1g zlib1g-dev cmake" # mesa-utils
-declare rpmlist="gcc gcc-c++ make automake autoconf cmake expat-devel"
+declare deblist="build-essential cmake" # mesa-utils
+declare rpmlist="gcc gcc-c++ make automake autoconf cmake"
 #deblist="$deblist libclhep-dev" # as of 2021-04-07, the version installed will be 2.1.4 (from 2014); geant4.10.7 requires clhep>=2.4.4.0, so we build/install from source
 #libcoin-dev libsoqt520-dev # for Open Inventor visualization
 deblist="$deblist libqt53dcore5 libqt5gui5 libqt5widgets5 libqt5opengl5 libqt5printsupport5 libqt53dcore5 libqt53dextras5 libqt53drender5" # for QT5 visualization
@@ -35,8 +36,6 @@ declare -i numcores=$(($(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk 
 declare CMAKE="cmake"
 declare MAKE="make -j$numcores"
 echo "using $numcores cores to compile..."
-
-# geant version: check http://geant4.cern.ch/support/download.shtml
 
 # 10.5 and 10.6 and 10.7 fail at: G4tgrEvaluator.cc ambiguating new declaration of G4double fsqrt(G4double)
 
@@ -62,11 +61,20 @@ echo "using $numcores cores to compile..."
 #declare geant_url="https://gitlab.cern.ch/geant4/geant4/-/archive/v10.7.1/geant4-v10.7.1.tar.gz"
 
 # 11.1 latest as of 2023-05-24
-datasets_list="G4NDL.4.7.tar.gz G4EMLOW.8.2.tar.gz G4PhotonEvaporation.5.7.tar.gz G4RadioactiveDecay.5.6.tar.gz G4PARTICLEXS.4.0.tar.gz G4PII.1.3.tar.gz G4RealSurface.2.2.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4ENSDFSTATE.2.3.tar.gz G4TENDL.1.4.tar.gz"
-declare geant_version_string_a="geant4-v11.1.1" #
-declare geant_version_string_b="geant4-v11.1.1" # install subdir name
-declare geant_version_string_c="geant4-v11.1.1-831f69382912c44d27800821b0265454d912756c" # unpack subdir name
-declare geant_url="https://gitlab.cern.ch/geant4/geant4/-/archive/v11.1.1/geant4-v11.1.1.tar.gz"
+#datasets_list="G4NDL.4.7.tar.gz G4EMLOW.8.2.tar.gz G4PhotonEvaporation.5.7.tar.gz G4RadioactiveDecay.5.6.tar.gz G4PARTICLEXS.4.0.tar.gz G4PII.1.3.tar.gz G4RealSurface.2.2.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.1.tar.gz G4INCL.1.0.tar.gz G4ENSDFSTATE.2.3.tar.gz G4TENDL.1.4.tar.gz"
+#declare geant_version_string_a="geant4-v11.1.1" #
+#declare geant_version_string_b="geant4-v11.1.1" # install subdir name
+#declare geant_version_string_c="geant4-v11.1.1-831f69382912c44d27800821b0265454d912756c" # unpack subdir name
+#declare geant_url="https://gitlab.cern.ch/geant4/geant4/-/archive/v11.1.1/geant4-v11.1.1.tar.gz"
+
+# 11.3.0 latest as of 2025-02-14
+datasets_list="G4NDL.4.7.1.tar.gz G4EMLOW.8.6.1.tar.gz G4PhotonEvaporation.6.1.tar.gz G4RadioactiveDecay.6.1.2.tar.gz G4PARTICLEXS.4.1.tar.gz G4PII.1.3.tar.gz G4RealSurface.2.2.tar.gz G4SAIDDATA.2.0.tar.gz G4ABLA.3.3.tar.gz G4INCL.1.2.tar.gz G4ENSDFSTATE.3.0.tar.gz G4CHANNELING.1.0.tar.gz G4TENDL.1.4.tar.gz G4NUDEXLIB.1.0.tar.gz G4URRPT.1.1.tar.gz"
+declare geant_version_string_a="geant4-v11.3.0" #
+declare geant_version_string_b="geant4-v11.3.0" # install subdir name
+#declare geant_version_string_c="geant4-v11.3.0-831f69382912c44d27800821b0265454d912756c" # unpack subdir name
+declare geant_url="https://gitlab.cern.ch/geant4/geant4/-/archive/v11.3.0/geant4-v11.3.0.tar.gz"
+
+# geant version (source and datasets): check http://geant4.cern.ch/support/download.shtml
 
 declare list_of_things_that_should_be_there_after_complete_installation="
 	/usr/local/include/Geant4
@@ -418,7 +426,7 @@ function build_and_install_geant {
 	#$CMAKE .. -DGEANT4_USE_QT=ON -DGEANT4_USE_INVENTOR=ON -DGEANT4_BUILD_EXAMPLES=ON -DGEANT4_INSTALL_EXAMPLES=ON
 	if [ ! -e Makefile ]; then
 		#$CMAKE .. -DGEANT4_USE_QT=ON -DGEANT4_USE_INVENTOR=ON
-		$CMAKE .. -DGEANT4_USE_QT=ON -DGEANT4_INSTALL_DATA=OFF -DGEANT4_INSTALL_DATADIR="/usr/local/share/$geant_version_string_b/data"
+		$CMAKE .. -DGEANT4_USE_QT=ON -DGEANT4_INSTALL_DATA=OFF -DGEANT4_INSTALL_DATADIR="/usr/local/share/$geant_version_string_b/data" -DGEANT4_INSTALL_PACKAGE_CACHE=OFF
 		# -DCMAKE_INSTALL_PREFIX="/usr/local"
 	else
 		echo "geant4 already cmake'd"
@@ -539,7 +547,7 @@ function install {
 	install_prerequisites
 	download_datasets # do this just once and save the files
 	install_datasets
-	build_and_install_clhep
+	#build_and_install_clhep
 	#build_and_install_coin
 	#build_and_install_coinStandard
 	#build_and_install_soxt

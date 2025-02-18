@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-# last updated 2025-02-02 by mza
+# last updated 2025-02-11 by mza
 
 declare filename="actions-taken-to-clean-up-files"
 declare action_file="-exec rm -fv {} ;"
@@ -55,10 +55,10 @@ function initial_duma {
 		if [ $verbosity -gt 3 ]; then echo; echo "du-ma1.original"; fi
 		dume
 		mv du-ma1 du-ma1.original
-		du_old=$(cat du-ma1.original | tail -n1 | awk -e '{ print $1 }')
+		du_old=$(cat du-ma1.original | tail -n1 | awk '{ print $1 }')
 	else
 		if [ $verbosity -gt 3 ]; then echo; echo "du --ma=0"; fi
-		du_old=$(du --ma=0 --block-size=1000000 | awk -e '{ print $1 }')
+		du_old=$(du --ma=0 --block-size=1000000 | awk '{ print $1 }')
 	fi
 }
 
@@ -80,16 +80,17 @@ function links {
 #if [ $verbosity -gt 3 ]; then echo; echo "junk dirs and files"; fi
 function junk {
 	find_type_d_iname junk.tar ".Trash*"
-	find_type_f_iname junk.tar "*.swp" "*.tmp" "*~" "*.bak" "*.so" "*.o" "*.sys" "*.schbak" "*.sch_bak" "*.symbak" "*.edn" "*.lock" "*.lnk" "*.cls" "*.dvi" "*.aux" "*.obj" "*.out1" "*.vsd" "*.ll" "*.rep" "*.prm" "*.lst" "ntuser.dat*" "*.pcap" "*.pyc" "*.exe.stackdump" ".DS_Store" "desktop.ini" "hiberfil.sys" "pagefile.sys" "*.m3u" "*.ovpn" "*.filepart" "*.edata"
+	find_type_f_iname junk.tar "*.swp" "*.tmp" "*~" "*.bak" "*.so" "*.o" "*.sys" "*.schbak" "*.sch_bak" "*.symbak" "*.edn" "*.lock" "*.lnk" "*.cls" "*.dvi" "*.syntex" "*.aux" "*.obj" "*.out1" "*.vsd" "*.ll" "*.rep" "*.prm" "*.lst" "ntuser.dat*" "*.pcap" "*.pyc" "*.exe.stackdump" ".DS_Store" "desktop.ini" "hiberfil.sys" "pagefile.sys" "*.m3u" "*.ovpn" "*.filepart" "*.edata" ".~lock*#" "*.thm"
 	find_type_f_iname other.tar "*.wdb" "*.itdb" "*.plist" "*.itl" "*.ithmb"
-find_type_f_iname data.tar "*.data" "*.root" "*.sroot" "*.rawdata" "*.dat" "*.hdf5" "*.usb0" "*rawdata.[0-9][0-9][0-9][0-9][0-9]" "*rawdata.[0-9][0-9][0-9][0-9]" "*.rawdata[0-9][0-9][0-9]" "S*CH[0-9]" "PHD_S*CH[0-9]" "*.fiber[0-9]" "*.camac" "*.cmc" "ccc[0-9]" "ccc" "aaa" "*.dst" "*.dst[0-9]" "*.datafile" "*.spl" "*.prn" "*.wxform" "*.ped"
+find_type_f_iname data.tar "*.data" "*.root" "*.sroot" "*.rawdata" "*.dat" "*.hdf5" "*.usb0" "*rawdata.[0-9][0-9][0-9][0-9][0-9]" "*rawdata.[0-9][0-9][0-9][0-9]" "*.rawdata[0-9][0-9][0-9]" "S*CH[0-9]" "PHD_S*CH[0-9]" "*.fiber[0-9]" "*.camac" "*.cmc" "ccc[0-9]" "ccc" "aaa" "*.dst" "*.dst[0-9]" "*.datafile" "*.spl" "*.prn" "*.wxform" "*.ped" "*.dt" "*.amp"
 	find_type_f_iname executable.tar "*.dll" "*.aps" "*.ncb" "*.sbr" "*.idb" "*.xpm" "*.res" "*.icon" "*.ico" "*.hex"
 	find_type_f_iname installers.tar "*.mui" "*.msi" "*.cab" "*.deb" "*.rpm" "*.ex_" "*.dl_" "*.tt_" "*.sc_" "*.os_" "*.gp_" "*.cn_" "*.si_" "*.th_" "*.h2_" "*.tx_" "*.xd_" "*.co_" "*.xs_" "*.xm_" "*.js_" "*.vb_" "*.ht_" "*.mi_" "*.in_" "*.gi_" "*.mo_" "*.ta_" "*.ax_" "*.op_" "*.oc_" "*.lo_" "*.pn_" "*.ma_" "*.wp_" "*.bm_" "*.as_" "*.tb_" "*.lx_" "*.mb_" "*.fo_" "*.hl_" "*.wa_" "*.nl_" "*.tc_" "*.jp_" "*.ac_" "*.le_" "*.ca_" "*.ic_" "*.ms_" "*.wm_" "*.sy_" "*.im_" "*.sw_" "*.di_" "*.ch_" "*.bundle" "*AppImage" "*.manpages" "*.lic" "*.octave_packages"
-	find_type_f_iname log.tar "*.log" "*.jou" "*.status" "VBox.log.*" "VBoxSVC.log.*" "*.out"
+	find_type_f_iname log.tar "*.log" "*.jou" "*.status" "VBox.log.*" "VBoxSVC.log.*" "*.out" "logfile" "status"
 	find_type_d_iname firmware-build.tar "__projnav" "xst" "_ngo[0-9]" "impl_1"
-	find_type_f_iname firmware-build.tar "*.vf" "*.xwv" "*.srp" "*.ndf" "*.ref" "*.str" "*.ise_ISE_Backup" "*.restore" "*.mgf" "*.dcp" "*.xsvf" "*.svf" "*.xmsgs" "*.xrpt" "*.vdbl" "*.syr" "*.twr" "*.twx" "*.wdb" "*.ngo" "*.vho" "*.mrp" "*.msd" "*.rpx" "*.rpt" "*.rbd" "*.rbb" "*.ngc" "*.ngd" "*.ncd" "*.ngr" "*.ngm" "*.mcs" "*.mcs.gz" "*.bit" "*.bit.gz" "*.hdf" "*.projectmgr" "*.xbcd" "*.xreport" "par_usage_statistics.html" "*.cmd_log" "*.elf" "*.blc" "*.bld" "*.unroutes" "*.par" "*.bgn" "*.map" "*.drc" "*.cdc" "*.xdl" "*.asdb" "*.cgc" "*.cpj" "*.psr" "*.do" "*.glade" "*_flist.txt" "*_readme.txt" "*_pad.txt" "*.ptwx" "*.ut" "*.tsi" "*.cgp" "*.scr" "*.key" "*_xmdf.tcl" "*.asy" "*.summary.html" "*.envsettings.html" "*.tcl" "*.pad_txt" "*.xst" "_impact.cmd" "*.sig"
+	find_type_f_iname firmware-build.tar "*.vf" "*.xwv" "*.srp" "*.ndf" "*.ref" "*.str" "*.ise_ISE_Backup" "*.restore" "*.mgf" "*.dcp" "*.xsvf" "*.svf" "*.xmsgs" "*.xrpt" "*.vdbl" "*.syr" "*.twr" "*.twx" "*.wdb" "*.ngo" "*.vho" "*.mrp" "*.msd" "*.rpx" "*.rpt" "*.rbd" "*.rbb" "*.ngc" "*.ngd" "*.ncd" "*.ngr" "*.ngm" "*.mcs" "*.mcs.gz" "*.bit" "*.bit.gz" "*.hdf" "*.projectmgr" "*.xbcd" "*.xreport" "par_usage_statistics.html" "*.cmd_log" "*.elf" "*.blc" "*.bld" "*.unroutes" "*.par" "*.bgn" "*.map" "*.drc" "*.cdc" "*.xdl" "*.asdb" "*.cgc" "*.cpj" "*.psr" "*.do" "*.glade" "*_flist.txt" "*_readme.txt" "*_pad.txt" "*.ptwx" "*.ut" "*.tsi" "*.cgp" "*.scr" "*.key" "*_xmdf.tcl" "*.asy" "*.summary.html" "*.envsettings.html" "*.tcl" "*.pad_txt" "*.xst" "_impact.cmd" "*.sig" "*.schcmd" "*.schlog" "*.jhd" "*.lfp" "transcript" "Top-ModelSim-Log" "_info" "*.iic" "*.pcf" "*.ejp" "*.ncf" "sdf_cmd_file"
+	find_type_f_iname firmware-opencores.tar "*.asf" "*.sxw" "*.icarus" "*.cof" "*.qpf" "*.qsf"
 	find_type_f_iname matlab.tar "*.mat" "*.m" "*.asv"
-	find_type_f_iname geant.tar "*.mac"
+	find_type_f_iname geant.tar "*.mac" "vis.check" "gnumakefile"
 	find_type_f_iname multiple.tar "*.bin" "*.xml"
 	find_type_f_iname dotfiles.tar ".gtkrc*" ".kderc*" ".nvidia-settings-rc" ".realplayerrc" ".hxplayerrc" ".dropbox" ".xsession-errors*" ".Xauthority" ".ICEauthority" ".viminfo" ".flexlmrc" ".lesshst" ".recently-used.xbel" ".RapidSVN" ".xscreensaver*" ".xauth*" ".dmrc" ".gtk-bookmarks" ".esd_auth" ".openoffice*" ".rhn-applet.conf" ".mime-types" ".recently-used" "._*"
 	find_type_d_iname OS.tar "Windows" "Program Files" "Program Files (x86)" "ProgramData" "Boot" "System Volume Information" "lost+found"
@@ -103,11 +104,10 @@ find_type_f_iname data.tar "*.data" "*.root" "*.sroot" "*.rawdata" "*.dat" "*.hd
 	find_type_d_iname appdata.tar "appdata" # AppData/Thunderbird contains cached emails...
 	find_type_d_iname junk.tar "Local Settings"
 	find_type_d_iname installers.tar ".yast2" "Modelsim_install"
-	find_type_d_iname pcb-output.tar "gerber"
-	find_type_f_iname pcb-output.tar "*.gerber" "*.g2" "*.gko" "*.gto" "*.gbo" "*.gtl" "*.gbl" "*.gts" "*.gbs" "*.gpt" "*.gbc" "*.gbk" "*.gtp" "*.gbp" "*.g2l" "*.g3l" "*.g4" "*.g4l" "*.g5l" "*.g6l" "*.g7l" "*.gbr" "*.gdo" "*.gtc" "*.gtk" "*.gbm" "*.gtm" "*.art" "*.gc2" "*.gc3" "*.gc4" "*.gc5" "*.gc6" "*.gc7" "*.gc8" "*.gc9" "*.gwk" "*.tx[0-9]" "*.tx1[0-9]" "*.drl" "*.prjpcbstructure" "*.ldp" "*.pcbdocpreview"
+	find_type_d_iname pcb-output.tar "gerber" "gerbv*" "__Previews" "NC Drill"
+	find_type_f_iname pcb-output.tar "*.gerber" "*.g2" "*.gko" "*.gto" "*.gbo" "*.gtl" "*.gbl" "*.gts" "*.gbs" "*.gpt" "*.gbc" "*.gbk" "*.gtp" "*.gbp" "*.g4" "*.gbr" "*.gdo" "*.gtc" "*.gtk" "*.gbm" "*.gtm" "*.art" "*.gc2" "*.gc3" "*.gc4" "*.gc5" "*.gc6" "*.gc7" "*.gc8" "*.gc9" "*.gwk" "*.tx[0-9]" "*.tx1[0-9]" "*.drl" "*.prjpcbstructure" "*.ldp" "*.pcbdocpreview" "*.gd[0-9]" "*.gd1[0-9]" "*.gp[0-9]" "*.gp1[0-9]" "*.rck" "eco.err" "Read.Me" "*.drr" "*.extrep" "*.gm[0-9]" "*.gm1[0-9]" "*.gm2[0-9]" "*.g[0-9]l" "*.g1[0-9]l" "*.gc[0-9]" "*.gc1[0-9]" "*.apr" "*.rul" "*.apr_lib"
 	# occasionally these are useful to include or exclude on a case-by-case basis:
 	find_type_f_iname executable.tar "*.exe"
-	find_type_f_iname firmware-build.tar "*.pcf"
 	find_type_f_iname junk.tar "*.psm"
 	find -type f -wholename "*/coregen/*.pdf" ${action_file} | tee -a ${filename}
 	find -type f -wholename "*/simulations/*\.raw" ${action_file} | tee -a ${filename}
@@ -115,6 +115,7 @@ find_type_f_iname data.tar "*.data" "*.root" "*.sroot" "*.rawdata" "*.dat" "*.hd
 	find_type_f_iname pde.tar "*.pde"
 	find_type_f_iname svu.tar "*.svu"
 	find_type_f_iname net.tar "*.net"
+	find_type_f_iname url.tar "*.url"
 }
 
 function empty_files {
@@ -124,7 +125,7 @@ function empty_files {
 
 function long_tail {
 	find_type_f_iname long-tail.tar "*.mui_*" "*.dll_*" "*.exe_*" "*.*_loc" "*._lcr" "*._prj" "*._sprj"
-	find_type_f_iname long-tail.09.tar "*.0nv" "*.10mar" "*.11" "*.11013" "*.117087" "*.14227" "*.1672" "*.17050" "*.1st" "*.20768" "*.22240" "*.24499" "*.26" "*.26974" "*.27076" "*.29235" "*.31528" "*.32sunu" "*.3gp" "*.44665" "*.5766" "*.59" "*.64" "*.64sunu" "*.670" "*.8" "*.849c9593-d756-4e56-8d6e-42412f2a707b" "*.9" "*.3" "*.6" "*.7" "*.0" "*.1" "*.2" "*.4" "*.5"
+	find_type_f_iname long-tail.09.tar "*.0nv" "*.10mar" "*.11" "*.11013" "*.117087" "*.14227" "*.1672" "*.17050" "*.1st" "*.20768" "*.22240" "*.24499" "*.26" "*.26974" "*.27076" "*.29235" "*.31528" "*.32sunu" "*.44665" "*.5766" "*.59" "*.64" "*.64sunu" "*.670" "*.8" "*.849c9593-d756-4e56-8d6e-42412f2a707b" "*.9" "*.3" "*.6" "*.7" "*.0" "*.1" "*.2" "*.4" "*.5"
 	find_type_f_iname long-tail.a.tar "*.abl" "*.abt" "*.acorn" "*.adf" "*.ael" "*.aff" "*.aifc" "*.aix" "*.aix5" "*.alc" "*.alias" "*.alien" "*.alphacxx6" "*.amiga" "*.ano" "*.ap" "*.api_description" "*.app" "*.asa" "*.asd" "*.ashx" "*.assuralastrun" "*.atari" "*.atf" "*.att" "*.aws" "*.acd" "*.acm" "*.adb" "*.adm" "*.adml" "*.admx" "*.adr" "*.ads" "*.afm" "*.ai" "*.ali" "*.amx" "*.ani" "*.ax"
 	find_type_f_iname long-tail.b.tar "*.b32" "*.bas" "*.bash_profile" "*.batch" "*.bc32" "*.belle" "*.beos" "*.bkl" "*.bkmanifest" "*.bkpcc" "*.bl-ceem-075_0" "*.bl-ceem-075_1" "*.bl-ceem-075_2" "*.bl-ceem-075_3" "*.bl-ceem-075_4" "*.bl-ceem-075_5" "*.bl-ceem-075_6" "*.blg" "*.bof" "*.bor" "*.box" "*.boxl" "*.brk" "*.browser" "*.bsb" "*.bst" "*.bxml" "*.bat" "*.bcc" "*.bcm" "*.bkg" "*.bpl" "*.btr"
 	find_type_f_iname long-tail.c.tar "*.c2" "*.c32" "*.cache*" "*.camp" "*.ccl" "*.cd" "*.cdf" "*.cdslck" "*.cdtproject" "*.cfi" "*.cgd" "*.cip" "*.cli" "*.clips" "*.clx" "*.cmake" "*.cmp" "*.cmrk" "*.cnf" "*.cnt" "*.code" "*.col" "*.com" "*.conn" "*.copyright" "*.cpl_b6a1dbdc" "*.cproj" "*.cps" "*.cpx" "*.crc" "*.crl" "*.csb" "*.csd" "*.csf" "*.cshrc_bes" "*.csm" "*.csproj" "*.cst" "*.csv#" "*.ctr" "*.cty" "*.ctypes" "*.cur" "*.cvcounter" "*.cvsignore" "*.cyfx" "*.cbz" "*.cdf-ms" "*.cel" "*.chq" "*.cmf" "*.cnv" "*.cpa" "*.crt" "*.csa"
@@ -164,43 +165,45 @@ function svn_git {
 function duplicate_finder {
 	if [ $verbosity -gt 3 ]; then echo; echo "duplicate files"; fi
 	echo
+	if [ -e script_to_remove_all_duplicates_that_are_not_golden.sh ]; then
+		sed -e "s,^\(rm.*\)$,#\1," -i script_to_remove_all_duplicates_that_are_not_golden.sh
+	fi
 	lf | duplicate_finder.py
 	./script_to_remove_all_duplicates_that_are_not_golden.sh
 }
 
 function keepers {
-	find_type_d_iname asic.tar "CustomIC"
+	find_type_d_iname asic.tar "CustomIC" "MOSIS" "MUSE" "cadence"
 	find_type_f_iname asic.tar "*.spc" "*.sp" "*.vdo" "*.vdb" "*.tdb" "*.tdo" "*.edif" "*.tsdat" "*.tsmeas" "*.tsim" "*.tsdb" "*.wmf" "*.tanner" "*.gds" "*.gds2" "*.lvs" "*.drc" "*.layout" "*.oalib" "*.citi" "*.oa" "*.oa-" "*.dm" "netlist" "map" "control" "*.template"
 	find_type_d_iname asic.tar "graph_shared"
 	#find_type_f_iname asic.tar "*.txt" "*.pdf" "*.pptx" "*.png" "*.xls" # this will grab too much unrelated stuff...
 	find_type_f_iname PDK.tar "*.pl" "*.l" "*.sav" "*.il" "*.inc" "*.cfg" "*.zap"
 	find_type_f_iname pcb.tar "*.d" "*.pcbdoc" "*.schdoc" "*.schlib" "*.sch" "*.pcb" "*.pcblib" "*.kicad_pcb" "*.kicad_sch" "*.brd" "*.ln9" "*.ld9" "*.pt9" "*.pd9" "*.prjpcb"
-	find_type_f_iname mechanical.tar "*.sldprt" "*.sldasm" "*.dxf" "*.dwg" "*.stp" "*.step" "*.stl" "*.slddrw" "*.iges"
-	find_type_f_iname firmware.tar "*.vhd" "*.vhdl" "*.vh" "*.v" "*.sv" "*.ucf" "*.xdc" "*.xco" "*.ise" "*.xise" "*.gise" "*.bd" "*.xpr" "*.wcfg" "*.mk" "*.gfl" "*.dhp" "*.ipf" "*.pad" "*.pl" "*.tpl" "*.eco" "*.xpi" "*.prj" "*.vm6" "*.jed" "*.sym"
-	find_type_f_iname source.tar "*.c" "*.cc" "*.cpp" "*.cxx" "*.c++" "*.h" "*.hh" "*.hpp" "*.hxx" "*.h++" "*.class" "*.py" "*.pm" "*.sh" "*.s" "*.asm" "*.jar" "*.s" "*.p" "*.rst" "*.ino" "*.sh" "*.csh"
-	find_type_f_iname presentations.tar "*.odp" "*.ppt" "*.pptx" "*.ps" "*.eps" "*.fig" "*.svg"
-	find_type_f_iname documents.tar "*.xls" "*.xlsx" "*.doc" "*.docx" "*.tex"
+	find_type_f_iname mechanical.tar "*.sldprt" "*.sldasm" "*.dxf" "*.dwg" "*.stp" "*.step" "*.stl" "*.slddrw" "*.iges" "*.iam"
+	find_type_f_iname firmware.tar "*.vhd" "*.vhdl" "*.vh" "*.v" "*.sv" "*.ucf" "*.xdc" "*.xco" "*.ise" "*.xise" "*.gise" "*.bd" "*.xpr" "*.wcfg" "*.mk" "*.gfl" "*.dhp" "*.ipf" "*.pad" "*.pl" "*.tpl" "*.eco" "*.xpi" "*.prj" "*.vm6" "*.jed" "*.sym" "*.coe"
+	find_type_f_iname source.tar "*.c" "*.cc" "*.cpp" "*.cxx" "*.c++" "*.h" "*.hh" "*.hpp" "*.hxx" "*.h++" "*.class" "*.py" "*.ipynb" "*.pm" "*.sh" "*.s" "*.asm" "*.jar" "*.s" "*.p" "*.rst" "*.ino" "*.csh" "makefile"
+	find_type_f_iname presentations.tar "*.odp" "*.ppt" "*.pptx" "*.ps" "*.eps" "*.fig" "*.svg" "*.drawio"
+	find_type_f_iname documents.tar "*.xls" "*.xlsx" "*.doc" "*.docx" "*.tex" "*.lyx" "*.bib" "*.bbl"
 	find_type_f_iname google-docs.tar "*.gdoc" "*.gslides" "*.gsheet"
 	find_type_f_iname kek-firmware.tar "*.hsprogs" "*.bitfiles"
 	find_type_d_iname kek-firmware.tar "ft2u" "b2tt" "hslb" "ttrx"
 	find_type_f_iname txt.tar "*.txt"
+	find_type_f_iname readme.tar "readme"
 	find_type_f_iname json.tar "*.json"
 	find_type_f_iname csv.tar "*.csv"
 	find_type_f_iname pdf.tar "*.pdf"
 	find_type_f_iname php.tar "*.php"
 	find_type_f_iname html.tar "*.htm" "*.html"
-	find_type_f_iname image.tar "*.jpg" "*.jpeg" "*.png" "*.tif" "*.tiff" "*.gif" "*.bmp"
+	find_type_f_iname image.tar "*.jpg" "*.jpeg" "*.png" "*.tif" "*.tiff" "*.gif" "*.bmp" "*.webp"
 	find_type_f_iname audio.tar "*.ogg" "*.mp3" "*.aac" "*.wma" "*.amr" "*.aax" "*.smea" "*.wav"
 	find_type_f_iname video.tar "*.avi" "*.mov" "*.mpg" "*.mp4" "*.mkv" "*.wmv" "*.flv" "*.3gp" "*.mpeg"
+	find_type_f_iname zoom.tar "*.zoom"
 }
 
 # "*.md"
 # "*.pub"
 # "*.tcal" "*.mplstyle"
-# "*.gd1[0-9]" "*.gd[0-9]"
 # geant-or-physics-analysis.tar "*.inc" "*.sty" "*.f"
-#find_type_f_iname language.tar "chinesepod*mp3" "chinesepod*pdf" "chinesepod*mp4"
-#find_type_d_iname language.tar "language" "anki"
 #"*.txt.gz"
 #"*.s" "*.asm" "*.ise"
 #"*.lib"
@@ -226,7 +229,7 @@ function final_lfr {
 function final_duma {
 	if [ $verbosity -gt 3 ]; then echo; echo "du-ma1"; fi
 	dume
-	declare -i du_new=$(cat du-ma1 | tail -n1 | awk -e '{ print $1 }')
+	declare -i du_new=$(cat du-ma1 | tail -n1 | awk '{ print $1 }')
 	declare -i du_diff=$((du_old-du_new))
 	echo "reduced used disk space by $du_diff MB (from $du_old to $du_new)"
 }
@@ -236,11 +239,15 @@ initial_duma
 chmod_dirs
 sockets
 links
+duplicate_finder
+find_type_d_iname thunderbird.tar "thunderbird" ".thunderbird" "imapmail" "mail"
 junk
+find_type_f_iname language.tar "chinesepod*mp3" "chinesepod*pdf" "chinesepod*mp4"
+find_type_d_iname language.tar "language" "anki"
 empty_files
 long_tail
 svn_git
-duplicate_finder
+#duplicate_finder
 keepers
 empty_dirs
 adjust_datestamps
