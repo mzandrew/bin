@@ -4,6 +4,10 @@
 # based on notes from building raid on cadence server a couple years ago
 # last updated 2022-04-01 by mza
  
+# when mdadm says a drive is not fresh, you should rebuild:
+#/sbin/mdadm /dev/md0 --fail /dev/sda5 --remove /dev/sda5
+#/sbin/mdadm /dev/md0 --add /dev/sda5
+
 declare -i number_of_devices=4
 declare device_list="sde sdf sdg sdh" # create on these devices
 declare unit="tb"
