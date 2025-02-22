@@ -23,6 +23,7 @@ deblist="$deblist libfreetype-dev" # to render fonts
 deblist="$deblist python3-dev libboost-python-dev" # for python bindings
 #deblist="$deblist libxerces-c-dev curl libcurl4 libcurl4-openssl-dev" # for "GDML XML Geometry Support"
 deblist="$deblist qtbase5-dev"
+rpmlist="$rpmlist qt5 qt5-qtbase-devel qt5-qtbase-gui"
 #deblist="$deblist qtdeclarative5-dev"
 #rpmlist="$rpmlist qt5-qtdeclarative-devel"
 #deblist="$deblist libboost-dev"
@@ -32,6 +33,7 @@ deblist="$deblist qtbase5-dev"
 #rpmlist="$rpmlist motif-devel libXpm-devel"
 #deblist="$deblist libxmu-dev"
 #rpmlist="$rpmlist libXmu-devel"
+rpmlist="$rpmlist expat-devel"
 declare -i numcores=$(($(cat /proc/cpuinfo | grep '^processor' | tail -n1 | awk '{print $3}')+1))
 declare CMAKE="cmake"
 declare MAKE="make -j$numcores"
@@ -114,7 +116,7 @@ declare list_of_things_that_should_be_there_after_complete_installation="
 	/usr/local/bin/geant4-config
 	/usr/local/bin/coin-config"
 
-declare -i redhat=0 SL6=0 SL7=0 deb=0
+declare -i redhat=0 SL6=0 SL7=0 deb=0 arch=0
 if [ -e /etc/redhat-release ]; then
 	redhat=1
 	set +e
