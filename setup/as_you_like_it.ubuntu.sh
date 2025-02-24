@@ -31,11 +31,14 @@ function install_packages_if_necessary {
 	fi
 }
 
+declare -i skip_it=1
 function install_packages {
-	if [ ${debian_only} -eq 0 ]; then
-		sudo add-apt-repository universe
-		sudo add-apt-repository multiverse
-		sudo add-apt-repository ppa:kicad/kicad-8.0-releases
+	if [ $skip_it -lt 1 ]; then
+		if [ ${debian_only} -eq 0 ]; then
+			sudo add-apt-repository universe
+			sudo add-apt-repository multiverse
+			sudo add-apt-repository ppa:kicad/kicad-8.0-releases
+		fi
 	fi
 	local list="vim git subversion rsync"
 	install_packages_if_necessary $list
@@ -47,7 +50,7 @@ function install_packages {
 	fi
 	list="$list plocate build-essential openssh-server net-tools nfs-common"
 	list="$list dfu-util gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib" # tomu
-	list="$list synaptic gnuplot ntp meld doublecmd-gtk zip unzip dbus-x11 gimp inkscape xsane"
+	list="$list synaptic gnuplot meld doublecmd-gtk zip unzip dbus-x11 gimp inkscape xsane"
 	list="$list texlive-science texlive-latex-extra" # latex
 	list="$list cups paps" # cups and utf-8 to postscript converter
 	list="$list libgsl-dev" # root
