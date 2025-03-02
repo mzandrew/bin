@@ -20,18 +20,18 @@ set scrolloff=5	" keep at least 5 lines above/below
 set hlsearch	" highlight the search
 set dir=~/tmp
 set nobk	" do not make backups when overwriting files
-"set guifont=Monospace\ 14	" set guifont? to query
-set guifont=Courier_New:h14:cANSI:qDRAFT	" set guifont? to query
+set guifont=Monospace\ 14	" set guifont? to query
+"set guifont=Courier_New:h14:cANSI:qDRAFT	" set guifont? to query
 set formatoptions-=cro " don't automatically continue comments
 " for win32, make a file c:\\Users\\blah\\_vimrc and have it contain the (uncommented) line:
 " source c:\\\\blah\\build\\bin\\nofizbin\\.vimrc
 set clipboard=exclude:.*
 
-autocmd BufNewFile,BufRead *.v,*.sv set syntax=verilog
-autocmd BufReadPost *
-	\ if line("'\"") > 1 && line("'\"") <= line("$") |
-	\   exe "normal! g`\"" |
-	\ endif
+"autocmd BufNewFile,BufRead *.v,*.sv set syntax=verilog
+"autocmd BufReadPost *
+"	\ if line("'\"") > 1 && line("'\"") <= line("$") |
+"	\   exe "normal! g`\"" |
+"	\ endif
 
 " the following are from https://github.com/waveform80/dotfiles/blob/master/vimrc
 "set rnu                 " display relative line numbers
@@ -43,8 +43,8 @@ set noerrorbells        " switch off annoying error beeps
 set novisualbell        " disable the visual bell too
 "set colorcolumn=+1,100   " display a bar just after "textwidth" and at 80
 " Pretty print options
-set printfont=courier:h9
-set printoptions=paper:a4,formfeed:y,number:y,left:36pt,right:36pt,top:36pt,bottom:36pt
+"set printfont=courier:h9
+"set printoptions=paper:a4,formfeed:y,number:y,left:36pt,right:36pt,top:36pt,bottom:36pt
 " Set up filetype syntax highlighting, indenting and folding
 if has("syntax")
 	syntax sync fromstart " use slow-but-accurate syntax syncing
