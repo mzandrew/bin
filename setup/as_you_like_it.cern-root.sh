@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 # written 2019-06-27 by mza
-# last updated 2025-02-14 by mza
+# last updated 2025-02-21 by mza
 
 # the build dir is about 3GB after the build
 
@@ -50,8 +50,8 @@ function install_prerequisites_apt {
 function install_prerequisites_yum {
 	sudo nice yum -y update
 	sudo nice yum -y upgrade
-	sudo nice yum -y install git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel gcc-gfortran openssl-devel pcre-devel mesa-libGL-devel mesa-libGLU-devel glew-devel ftgl-devel mysql-devel fftw-devel cfitsio-devel graphviz-devel avahi-compat-libdns_sd-devel python-devel libxml2-devel
-	# libldap-dev gsl-static
+	sudo nice yum -y install git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel python openssl-devel xrootd-client-devel xrootd-libs-devel gcc-gfortran pcre-devel mesa-libGL-devel mesa-libGLU-devel glew-devel ftgl-devel fftw-devel libuuid-devel cfitsio-devel python-devel python3-numpy libxml2-devel readline-devel
+	# libldap-dev gsl-static mysql-devel graphviz-devel avahi-compat-libdns_sd-devel
 }
 
 function install_prerequisites_pac {
