@@ -109,11 +109,10 @@ def myround(mylist):
 verbose = False
 epochs = 1000000
 stochastic_iterations_per_epoch = 1
-rounding_precision = 3
+rounding_precision = 6
 update_factor = 0.1
 random.seed(7)
 binary_function = False
-digital_inputs = True
 
 if (0):
 	generate_AND2_datapoints() # [1, 1, -2]
@@ -123,15 +122,28 @@ if (0):
 	#generate_XOR2_datapoints() # cannot!
 	set_initial_weights([0, 0, 0])
 elif (1):
-	generate_AND3_datapoints() # [1, 1, 1, -3]
+	generate_AND3_datapoints() # [1, 1, 1, -3] [42, 42, 42, -100]
 	#generate_OR3_datapoints() # [1, 1, 1, -1]
 	#generate_3to8_decoder_datapoints(); binary_function = False # [4, 2, 1, 0]
-	set_initial_weights([0, 0, 0, 0])
+	#set_initial_weights([0, 0, 0, 0])
+	#set_initial_weights([20.637, 20.637, 20.637, -52.006])
+	#set_initial_weights([21.18, 21.18, 21.18, -53.364])
+	#set_initial_weights([21.607, 21.607, 21.607, -54.43])
+	#set_initial_weights([42.677, 42.677, 42.677, -98.934])
+	#set_initial_weights([42.495743, 42.495743, 42.495743, -99.205885])
+	#set_initial_weights([42.385718, 42.385718, 42.385718, -99.370923])
+	#set_initial_weights([42, 42, 42, -100])
+	#set_initial_weights([41.882655, 41.882655, 41.882655, -100.056017])
+	#set_initial_weights([41.866303, 41.866303, 41.866303, -100.080545])
+	#set_initial_weights([41.86, 41.86, 41.86, -100.09])
+	#set_initial_weights([41.844863, 41.844863, 41.844863, -100.112706])
+	#set_initial_weights([41.688821, 41.688821, 41.688821, -100.09677])
+	set_initial_weights([41.725986, 41.725986, 41.725986, -100.291027]) # after 20M iterations, error less than 1 part in 10^6
 elif (0):
 	generate_THERMOMETER4_datapoints(); binary_function = False # not satisfactory
 	set_initial_weights([0, 0, 0, 0, 0])
 else:
-	generate_pseudorandom_datapoints(100, ((-3,-3), (+3,+3)), (-1,+1)); digital_inputs = False # [1, 1, 0]
+	digital_inputs = False; generate_pseudorandom_datapoints(100, ((-3,-3), (+3,+3)), (-1,+1)) # [1, 1, 0]
 	set_initial_weights([0, 0, 0])
 show_datapoints()
 show_current_weights()
