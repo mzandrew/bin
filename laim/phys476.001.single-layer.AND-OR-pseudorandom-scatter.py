@@ -67,12 +67,15 @@ def set_initial_weights(init):
 def show_current_weights(prefix=""):
 	print(prefix + "weights: " + str(myround(weight)))
 
+def sigmoid(x): # logistic function
+	return 1.0 / (1.0 + math.exp(-x))
+
 def iterate(irange=None):
 	if irange is None:
 		irange = range(len(dataset))
 	global weight, delta_weight
 	total_error = 0
-	print(str(irange))
+	#print(str(irange))
 	for i in irange:
 		y = 0
 		for k in range(len(dataset[i])-1):
@@ -83,6 +86,8 @@ def iterate(irange=None):
 				y = 0
 			else:
 				y = 1
+		else:
+			y = sigmoid(y)
 		delta_weight[len(dataset[i])-1] = dataset[i][len(dataset[i])-1] - y
 		if verbose:
 			print("datapoint[" + str(i) + "] error in weight = " + str(round(dataset[i][len(dataset[i])-1],rounding_precision)) + " - " + str(round(y,rounding_precision)) + " = " + str(round(delta_weight[len(dataset[i])-1],rounding_precision)))
@@ -93,7 +98,7 @@ def iterate(irange=None):
 		for k in range(len(dataset[i])):
 			weight[k] += update_factor * delta_weight[k]
 		total_error += sum([math.fabs(delta_weight[l]) for l in range(len(delta_weight))])
-	print("overall error = " + str(round(total_error,rounding_precision)))
+	print("overall error = " + str(round(total_error,rounding_precision)), end=' ')
 	global error_sequence
 	error_sequence.append(total_error)
 	show_current_weights("new ")
@@ -101,13 +106,13 @@ def iterate(irange=None):
 def myround(mylist):
 	return [round(mylist[l],rounding_precision) for l in range(len(mylist))]
 
-verbose = True
-epochs = 100
+verbose = False
+epochs = 1000000
 stochastic_iterations_per_epoch = 1
 rounding_precision = 3
-update_factor = 0.01
+update_factor = 0.1
 random.seed(7)
-binary_function = True
+binary_function = False
 digital_inputs = True
 
 if (0):
@@ -131,9 +136,9 @@ else:
 show_datapoints()
 show_current_weights()
 error_sequence = []
-if (0):
+if (1):
 	for epoch in range(epochs):
-		print("\niteration " + str(epoch))
+		print("iteration " + str(epoch), end=' ')
 		iterate()
 else: # stochastic
 	random.seed()
@@ -142,4 +147,5 @@ else: # stochastic
 		for i in range(len(dataset)):
 			iterate([random.randint(0, len(dataset)-1) for l in range(stochastic_iterations_per_epoch)])
 print("\nerror sequence: " + str(myround(error_sequence)))
+show_current_weights("final ")
 
