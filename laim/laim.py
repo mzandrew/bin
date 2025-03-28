@@ -1,5 +1,5 @@
 # written 2025-03-13 by mza
-# last updated 2025-03-24 by mza
+# last updated 2025-03-27 by mza
 
 import random, math
 
@@ -11,8 +11,13 @@ binary_function = False
 verbose = False
 update_factor = 0.1
 
-def myround(mylist):
-	return [round(mylist[l],rounding_precision) for l in range(len(mylist))]
+def round1d(mylist):
+	print(str(mylist))
+	return [ round(y,rounding_precision) for y in mylist ]
+
+def round2d(mylist):
+	print(str(mylist))
+	return [ [ round(y,rounding_precision) for y in x ] for x in mylist ]
 
 def generate_AND2_datapoints():
 	global dataset; dataset = [ (0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 1) ]
@@ -64,33 +69,35 @@ def sigmoid(x): # logistic function
 	return 1.0 / (1.0 + math.exp(-x))
 
 def iterate(irange=None):
+	print("dataset: " + str(dataset))
 	if irange is None:
 		irange = range(len(dataset))
 	global weight, delta_weight
 	total_error = 0
 	#print(str(irange))
-	for i in irange:
-		y = 0
-		for k in range(len(dataset[i])-1):
-			y += weight[k] * dataset[i][k]
-		y += weight[len(dataset[i])-1]
-		if binary_function:
-			if y<=0:
-				y = 0
+	for h in range(len(weight)):
+		for i in irange:
+			y = 0
+			for k in range(len(dataset[i])-1):
+				y += weight[h][k] * dataset[i][k]
+			y += weight[h][len(dataset[i])-1]
+			if binary_function:
+				if y<=0:
+					y = 0
+				else:
+					y = 1
 			else:
-				y = 1
-		else:
-			y = sigmoid(y)
-		delta_weight[len(dataset[i])-1] = dataset[i][len(dataset[i])-1] - y
-		if verbose:
-			print("datapoint[" + str(i) + "] error in weight = " + str(round(dataset[i][len(dataset[i])-1],rounding_precision)) + " - " + str(round(y,rounding_precision)) + " = " + str(round(delta_weight[len(dataset[i])-1],rounding_precision)))
-		for k in range(len(dataset[i])-1):
-			delta_weight[k] = delta_weight[len(dataset[i])-1] * dataset[i][k]
+				y = sigmoid(y)
+			delta_weight[h][len(dataset[i])-1] = dataset[i][len(dataset[i])-1] - y
 			if verbose:
-				print("datapoint[" + str(i) + "] error in weight " + str(k) + " = (" + str(round(dataset[i][len(dataset[i])-1],rounding_precision)) + " - " + str(round(y,rounding_precision)) + ") * " + str(round(dataset[i][k],rounding_precision)) + " = " + str(round(delta_weight[k],rounding_precision)))
-		for k in range(len(dataset[i])):
-			weight[k] += update_factor * delta_weight[k]
-		total_error += sum([math.fabs(delta_weight[l]) for l in range(len(delta_weight))])
+				print("datapoint[" + str(i) + "] error in weight = " + str(round(dataset[i][len(dataset[i])-1],rounding_precision)) + " - " + str(round(y,rounding_precision)) + " = " + str(round(delta_weight[h][len(dataset[i])-1],rounding_precision)))
+			for k in range(len(dataset[i])-1):
+				delta_weight[h][k] = delta_weight[h][len(dataset[i])-1] * dataset[i][k]
+				if verbose:
+					print("datapoint[" + str(i) + "] error in weight " + str(k) + " = (" + str(round(dataset[i][len(dataset[i])-1],rounding_precision)) + " - " + str(round(y,rounding_precision)) + ") * " + str(round(dataset[i][k],rounding_precision)) + " = " + str(round(delta_weight[h][k],rounding_precision)))
+			for k in range(len(dataset[i])):
+				weight[h][k] += update_factor * delta_weight[h][k]
+			total_error += sum([math.fabs(delta_weight[h][l]) for l in range(len(delta_weight[h]))])
 	print("overall error = " + str(round(total_error,rounding_precision)), end=' ')
 	global error_sequence
 	error_sequence.append(total_error)
@@ -102,8 +109,9 @@ def show_datapoints():
 
 def set_initial_weights(init):
 	global weight; weight = init
-	global delta_weight; delta_weight = [ 0 for k in range(len(init)) ]
+	global delta_weight; delta_weight = [ [ 0.0 for y in x ] for x in init ]
+	print(str(delta_weight))
 
 def show_current_weights(prefix=""):
-	print(prefix + "weights: " + str(myround(weight)))
+	print(prefix + "weights: " + str(round2d(weight)))
 
