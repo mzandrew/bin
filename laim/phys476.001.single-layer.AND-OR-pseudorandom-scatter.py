@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2025-03-13 by mza
-# last updated 2025-03-28 by mza
+# last updated 2025-04-01 by mza
 
 # i is usually the index over the number of datapoints
 # j is usually the index over the number of classes
@@ -10,7 +10,7 @@
 import laim
 import random
 
-epochs = 300
+epochs = 50000
 stochastic_iterations_per_epoch = 1
 random.seed(7)
 
@@ -21,29 +21,20 @@ if (0):
 	#generate_OR2_datapoints() # [[1, 1, -1]]
 	#generate_NOR2_datapoints() # [[-1, -1, 0]]
 	#generate_XOR2_datapoints() # cannot!
-	#laim.set_initial_weights([[0, 0, 0]])
-	laim.set_initial_weights([[1, 1, -2]])
-	#laim.set_initial_weights([[21.047039, 21.047036, -31.738792]]) # for sigmoid function
+	laim.set_initial_weights([ [[1,1],-2] ]) # 1 node on output layer
+	#laim.set_initial_weights([ [[1,1],[1-1],-2], [[1,1],-2] ]) # 2 nodes on hidden layer; 1 node on output layer
+	#laim.set_initial_weights([ [[21,21],-33] ]) # for sigmoid function
+	#laim.set_initial_weights([[[21.262332, 21.26233], -32.061737]]) # for sigmoid function
 elif (1):
-	laim.binary_function = True
+	#laim.binary_function = True
 	laim.generate_AND3_datapoints() # [[1, 1, 1, -3]] [[42, 42, 42, -100]]
 	#generate_OR3_datapoints() # [[1, 1, 1, -1]]
 	#generate_3to8_decoder_datapoints(); laim.binary_function = False # [[4, 2, 1, 0]]
-	#laim.set_initial_weights([[1, 1, 1, -3]])
-	#laim.set_initial_weights([[1, 1, 1, -2.9]])
-	#laim.set_initial_weights([[1, 1, 1, -3.1]])
-	laim.set_initial_weights([[1, 1, 1, -31]])
-	#laim.set_initial_weights([[1.0, 1.1, 0.9, -2.4]])
-	#laim.set_initial_weights([ [0, 0, 0, 0] ])
-	#laim.set_initial_weights([ [0, 0, 0, -1] ])
-	#laim.set_initial_weights([[42, 42, 42, -100]])
-	#laim.set_initial_weights([[7, 9, 8, -100]])
-	#laim.set_initial_weights([[27, 27, 27, -80]])
-	#laim.set_initial_weights([[27.946112, 27.946112, 27.946112, -79.053888]])
-	#laim.set_initial_weights([ [0, 0, 0, 0], [0, 0, 0], [0, 0] ])
-	#laim.set_initial_weights([ [2, 2, 2, -6], [0, 0, 0, 0, 0, 0], [0, 0] ])
-	#laim.set_initial_weights([ [2, 2, 2, -6] ])
-	#laim.set_initial_weights([[41.716, 41.716, 41.716, -100.306]]) # for sigmoid function [error less than 1 part in 10^6]
+	#laim.set_initial_weights([ [[1,1,1],-4] ]) # no hidden layers; 1 output node
+	#laim.set_initial_weights([ [[1,1,1],[1,1,1],-4], [[1,1],1] ]) # 2 nodes on hidden layer; 1 output node
+	#laim.set_initial_weights([ [[1,1,1],[1,1,1],[1,1,1],-3], [[1,1,1],1] ]) # 3 nodes on hidden layer; 1 output node
+	#laim.set_initial_weights([ [[1,2,3],[4,5,6],[7,8,9],10], [[11,12,13],[14,15,16],17], [[18,19],20] ]) # 3 nodes on first hidden layer; 2 nodes on second hidden layer; 1 output node
+	laim.set_initial_weights([[[41.716, 41.716, 41.716], -100.306]]) # for sigmoid function [error less than 1 part in 10^6]
 elif (0):
 	laim.generate_THERMOMETER4_datapoints(); laim.binary_function = False # not satisfactory
 	laim.set_initial_weights([[0, 0, 0, 0, 0]])
