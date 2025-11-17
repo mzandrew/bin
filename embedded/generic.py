@@ -199,6 +199,14 @@ def set_status_led_color(desired_color):
 		except:
 			pass
 
+def create_pwm_ios(pin_list): # used for led breather
+	import pwmio
+	global pwm_ios
+	pwm_ios = []
+	for pin in pin_list:
+		pwm_ios.append(pwmio.PWMOut(pin, frequency=5000, duty_cycle=PWM_MAX))
+	return pwm_ios
+
 def setup_battery_monitor(i2c):
 	global battery
 	try:
