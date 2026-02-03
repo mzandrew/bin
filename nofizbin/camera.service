@@ -1,0 +1,10 @@
+[Unit]
+Description=simple camera view service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rpicam-still -t0
+
+[Install]
+WantedBy=multi-user.target
+
