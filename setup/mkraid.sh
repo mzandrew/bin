@@ -2,11 +2,14 @@
 
 # written 2022-03-08 by mza
 # based on notes from building raid on cadence server a couple years ago
-# last updated 2022-04-01 by mza
+# last updated 2025-02-26 by mza
  
 # when mdadm says a drive is not fresh, you should rebuild:
 #/sbin/mdadm /dev/md0 --fail /dev/sda5 --remove /dev/sda5
 #/sbin/mdadm /dev/md0 --add /dev/sda5
+
+#vgimportdevices nvmeraid6 # allows it to recognize an already created lvm pv
+#lvchange -ay nvmeraid6 # makes the /dev/mapper nodes from an existing lvm lv
 
 declare -i number_of_devices=4
 declare device_list="sde sdf sdg sdh" # create on these devices
