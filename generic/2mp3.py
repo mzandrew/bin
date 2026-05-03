@@ -21,6 +21,8 @@ def touch(file_to_change, file_to_reference):
 def walktree(dirname, function_name):
 	#print("dirname \"" + dirname + "\" found")
 	for filename in os.listdir(dirname):
+		if "@eaDir"==filename:
+			continue
 		pathname = os.path.join(dirname, filename)
 		mode = os.stat(pathname).st_mode
 		if stat.S_ISDIR(mode):
