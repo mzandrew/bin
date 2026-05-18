@@ -2,16 +2,23 @@
 
 # written 2022-03-08 by mza
 # based on notes from building raid on cadence server a couple years ago
-# last updated 2022-04-01 by mza
- 
+# last updated 2025-09-29 by mza
+
+# sudo apt install -y mdadm
+
 # when mdadm says a drive is not fresh, you should rebuild:
 #/sbin/mdadm /dev/md0 --fail /dev/sda5 --remove /dev/sda5
 #/sbin/mdadm /dev/md0 --add /dev/sda5
 
+#vgimportdevices nvmeraid6 # allows it to recognize an already created lvm pv
+#lvchange -ay nvmeraid6 # makes the /dev/mapper nodes from an existing lvm lv
+
 declare -i number_of_devices=4
-declare device_list="sde sdf sdg sdh" # create on these devices
-declare unit="tb"
-declare -i size=2
+#declare device_list="sde sdf sdg sdh" # create on these devices
+declare device_list="nvme0n1 nvme2n1 nvme3n1 nvme4n1" # create on these devices
+declare p="p"
+declare unit="gb"
+declare -i size=8000
 declare pvname="raid5" # use this name under /dev/md/
 declare vgname="voyager"
 declare lvname="funzies"
@@ -32,7 +39,7 @@ function make_raid5 {
 	echo; echo "making raid5 on ${pvname}..."
 	pv_list=""
 	for each in $device_list; do
-		pv_list="$pv_list /dev/${each}1"
+		pv_list="$pv_list /dev/${each}${p}1"
 	done
 	mdadm --create /dev/md/${pvname} --level 5 --raid-devices=$number_of_devices $pv_list
 	mdadm --misc --detail /dev/md/${pvname}
