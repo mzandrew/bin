@@ -3,6 +3,7 @@
 # updated 2015-09 by mza
 # updated 2015-12 by mza
 # updated 2022-08 by mza
+# updated 2026-05 by mza
 
 use strict;
 use Spreadsheet::Read; # perl -MCPAN -e "install Spreadsheet::Read; install Spreadsheet::ParseExcel"
@@ -15,9 +16,7 @@ my $width = 196; #print $ENV{"COLUMNS"} . "\n";
 # perl -MCPAN -e "install Spreadsheet::ParseExcel"
 
 my $dirname = "";
-$dirname = "/cygdrive/d/mza/orders/by-year";
-#$dirname = "/cygdrive/c/mza/orders";
-#$dirname = "/cygdrive/c/mza/orders/JKennedy";
+$dirname = "/mza/orders/by-year";
 
 my $dir;
 my @all_lines;
@@ -28,6 +27,10 @@ my @entry;
 my $e = 0;
 sub read_all_POs {
 	print "reading in all POs...\n";
+	if (! defined $dirname || $dirname =~ /^$/ || ! -e $dirname) {
+		print("can't open \"$dirname\"\n");
+		exit(1);
+	}
 	opendir($dir, $dirname);
 	my @years = readdir($dir);
 	closedir($dir);
