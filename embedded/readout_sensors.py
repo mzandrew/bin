@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # written 2024-06-26 by mza
-# last updated 2024-07-28 by mza
+# last updated 2024-07-31 by mza
 
 # -------------- user options ---------------------------
 
@@ -56,6 +56,12 @@ if match_portal:
 else:
 	spi_cs_pin_list = [ board.A5 ]
 #analog_pin_list = [ board.A2 ] # light sensor on pyportal titano
+
+def celcius_to_fahrenheit(celcius):
+	return 9.0*celcius/5.0+32.0
+
+# ch5 measures 44.9 for freezing water
+# ch5 measures 209.0 for boiling water
 
 if __name__ == "__main__":
 	import time, re, busio, simpleio, generic
@@ -117,16 +123,20 @@ if __name__ == "__main__":
 			raise
 		except Exception as e:
 			print("exception (thermocouple analog): " + str(e))
-		import displayio, terminalio
+		import displayio
+		from terminalio import FONT
 		match = re.search("feather_esp32s.*tft", board.board_id) # adafruit_feather_esp32s2 adafruit_feather_esp32s2_tft
 		if match:
 			try:
 				display_width = 135
 				display_height = 240
 				text_offset_x = 6
-				text_offset_y = 60
+				text_offset_y = 30
+				text_scale = 5
+				line_spacing = 46
 				display = board.DISPLAY
-				display.rotation = 0
+				display.rotation = 90
+				display.brightness = 1.0
 			except (KeyboardInterrupt, ReloadException):
 				raise
 			except Exception as e:
@@ -137,7 +147,9 @@ if __name__ == "__main__":
 				display_width = 240
 				display_height = 320
 				text_offset_x = 6
-				text_offset_y = 150
+				text_offset_y = 25
+				text_scale = 6
+				line_spacing = 53
 				#displayio.release_displays()
 				import adafruit_ili9341
 				from fourwire import FourWire
@@ -158,41 +170,46 @@ if __name__ == "__main__":
 			#color_palette[0] = 0x00FF00
 			#bg_sprite = displayio.TileGrid(color_bitmap, pixel_shader=color_palette, x=0, y=0)
 			#splash.append(bg_sprite)
-			inner_bitmap = displayio.Bitmap(280, 200, 1)
-			inner_palette = displayio.Palette(1)
-			inner_palette[0] = 0x000000
-			inner_sprite = displayio.TileGrid(inner_bitmap, pixel_shader=inner_palette, x=20, y=20)
-			splash.append(inner_sprite)
+			#inner_bitmap = displayio.Bitmap(280, 200, 1)
+			#inner_palette = displayio.Palette(1)
+			#inner_palette[0] = 0x000000
+			#inner_sprite = displayio.TileGrid(inner_bitmap, pixel_shader=inner_palette, x=20, y=20)
+			#splash.append(inner_sprite)
 			from adafruit_display_text import label
-			text_group = displayio.Group(scale=7, x=text_offset_x, y=text_offset_y)
 			text = ""
-			text_area = label.Label(terminalio.FONT, text=text, color=0xff3f3f)
-			text_group.append(text_area)  # Subgroup for text scaling
-			splash.append(text_group)
+			text_group = []
+			text_area = []
+			for i in range(6):
+				text_group.append(displayio.Group(scale=text_scale, x=text_offset_x, y=text_offset_y+i*line_spacing))
+				text_area.append(label.Label(FONT, text=text, color=0xff3f3f))
+				text_group[i].append(text_area[i])  # Subgroup for text scaling
+				splash.append(text_group[i])
 	# -------------------------------------------------------------
 	i = 0
 	while True:
 		#print(str(text_area.text))
 		if i<N:
-			sensors.show_values()
+			#sensors.show_values()
 			values = sensors.get_values()
 			#if 'bme680' in values:
 			#	print(str(values['bme680'][0]))
 		else:
 			sensors.get_values()
-			sensors.show_average_values()
+			#sensors.show_average_values()
 			values = sensors.get_average_values()
 			#if 'bme680' in values:
 			#	print(str(values['bme680'][0]))
 		if "thermocouple" in values:
 			#print(str(values["thermocouple"][5]))
 			if display:
-				text_area.text = "%.1f" % values["thermocouple"][5]
+				for i in range(6):
+					#text_area[i].text = "%.1f" % values["thermocouple"][i]
+					text_area[i].text = "%6.1f" % celcius_to_fahrenheit(values["thermocouple"][i])
 		if i%600:
 			generic.collect_garbage()
 		else:
 			generic.show_memory_situation()
-		time.sleep(1)
+		#time.sleep(0.1)
 		i += 1
 
 # -------------------------------------------------------
