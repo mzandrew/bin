@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-# last updated 2025-02-16 by mza
+# last updated 2025-04-03 by mza
 
 declare -i debian_only=0
 #debian_only=1
@@ -60,6 +60,7 @@ function install_packages {
 	list="$list tigervnc-standalone-server tigervnc-viewer"
 	list="$list libreoffice"
 	list="$list kicad"
+	list="$list libfuse2t64" # appimage
 	#sudo apt -y install root-system # taken out of ubuntu 2018.04 (since 2016.04)
 	install_packages_if_necessary $list
 	sudo apt -y update
