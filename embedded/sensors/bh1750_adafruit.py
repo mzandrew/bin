@@ -55,9 +55,9 @@ def print_compact():
 	print(measure_string())
 
 if __name__ == "__main__":
-	i2c = busio.I2C(board.SCL1, board.SDA1)
-	#i2c = board.I2C()
-	setup(i2c)
+	#i2c = busio.I2C(board.SCL1, board.SDA1)
+	i2c = board.I2C()
+	setup(i2c, 32)
 	while test_if_present():
 		print_compact()
 		time.sleep(1)

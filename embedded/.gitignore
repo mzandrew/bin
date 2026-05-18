@@ -10,6 +10,7 @@ lib
 lib7
 lib8
 lib9
+lib10
 __pycache__
 backup
 contrib/rpi-rgb-led-matrix.tar
