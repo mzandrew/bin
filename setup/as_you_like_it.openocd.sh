@@ -69,7 +69,7 @@ function pkgconfig {
 }
 
 function install_prerequisites_apt {
-	sudo nice apt -y install build-essential libusb-1.0-0 libusb-1.0-0-dev libtcl8.6 tcl8.6 make gcc clang texinfo libftdi1 git pkg-config
+	sudo nice apt -y install build-essential libusb-1.0-0 libusb-1.0-0-dev libtcl8.6 tcl8.6 make gcc clang texinfo libftdi1 git pkg-config libjim-dev
 	# must choose here to build from source or not...
 	if [ $build_libtool_autoconf_automake_from_source -gt 0 ]; then
 		sudo nice apt -y erase libtool autoconf automake
@@ -135,7 +135,7 @@ if [ -e $openocd ]; then
 	cd $openocd
 	echo "git pull..."
 	git pull || /bin/true
-	git checkout "$tag"
+	#git checkout "$tag"
 	if [ $redhat -gt 0 ]; then
 		if [ -e "$patchfile" ]; then
 			find -exec touch --date="2018-11-28" {} + # must be older than the datestamps in the patch file below
@@ -155,10 +155,11 @@ else
 	#mv openocd-0.10.0 openocd
 	echo "git clone..."
 	#git clone git://git.code.sf.net/p/openocd/code openocd
-	git clone https://github.com/mzandrew/openocd.git
+	#git clone https://github.com/mzandrew/openocd.git
+	git clone https://github.com/openocd-org/openocd.git
 	#tar xf openocd-from-git-repo.tar
 	cd $openocd
-	git checkout "$tag"
+	#git checkout "$tag"
 	if [ $redhat -gt 0 ]; then
 		#find -type f -exec touch --reference=$build/openocd-patch2.tar.bz2 {} +
 		if [ -e "$patchfile" ]; then
