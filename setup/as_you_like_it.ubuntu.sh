@@ -44,7 +44,7 @@ function install_packages {
 	install_packages_if_necessary $list
 	list=""
 	list="$list vim-gtk3"
-	list="$list libcanberra-gtk-module libcanberra-gtk3-module" # to avoid annoying messages when starting gvim
+	list="$list libcanberra-gtk3-module" # to avoid annoying messages when starting gvim
 	if [ ${debian_only} -eq 0 ]; then
 		list="$list firefox"
 	fi
